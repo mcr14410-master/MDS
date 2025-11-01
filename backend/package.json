@@ -1,15 +1,19 @@
 {
-  "name": "fertigungsdaten-management-backend",
+  "name": "mds-backend",
   "version": "1.0.0",
-  "description": "Backend für Fertigungsdaten Management System",
+  "description": "Backend API für Fertigungsdaten Management System",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "init-db": "node src/config/initDb.js"
+    "migrate": "node-pg-migrate",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create",
+    "seed": "node src/config/seeds.js"
   },
-  "keywords": ["fertigung", "cnc", "manufacturing"],
-  "author": "",
+  "keywords": ["fertigung", "cnc", "manufacturing", "pdm", "mes"],
+  "author": "mcr14410-master",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
@@ -17,9 +21,14 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "multer": "^1.4.5-lts.1",
-    "express-validator": "^7.0.1"
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "qrcode": "^1.5.3",
+    "chokidar": "^3.5.3"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "node-pg-migrate": "^6.2.2"
   }
 }

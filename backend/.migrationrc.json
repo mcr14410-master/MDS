@@ -1,0 +1,12 @@
+{
+  "migrations-dir": "./src/migrations",
+  "schema": "public",
+  "database-url": {
+    "env": "DATABASE_URL"
+  },
+  "ignore-pattern": "\\..*",
+  "migration-file-language": "js",
+  "migration-filename-format": "utc",
+  "template-file-name": "template.js",
+  "check-order": true
+}

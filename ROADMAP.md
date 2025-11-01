@@ -9,31 +9,48 @@
 ## 📅 Monat 1: Fundament + Kern (Wochen 1-4)
 
 ### ✅ Woche 1: Projekt-Setup & Datenbank
-**Status:** 🔄 IN ARBEIT
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Datenbank-Schema steht, Migrations funktionieren
+**Zeitaufwand:** ~8 Stunden
 
 - [x] GitHub Repo angelegt
 - [x] Projekt-Struktur erstellt
-- [x] Dokumentation initialisiert
-- [ ] PostgreSQL DB-Schema entwerfen
-- [ ] node-pg-migrate einrichten
-- [ ] Erste Migrations schreiben
-- [ ] Seed-Daten für Tests
+- [x] Dokumentation initialisiert (README, QUICKSTART, CONTRIBUTING)
+- [x] PostgreSQL DB-Schema entworfen (28 Tabellen)
+- [x] node-pg-migrate eingerichtet
+- [x] Erste Migrations geschrieben (5 Migrations)
+- [x] Seed-Daten für Tests erstellt
+- [x] Express Server Basis erstellt
+- [x] Health Check API implementiert
 
-**Deliverable:** Funktionierende Datenbank mit allen Tabellen
+**Deliverable:** ✅ Funktionierende Datenbank mit allen Tabellen + minimaler Server
+
+**Errungenschaften:**
+```
+✅ 28 Tabellen in 6 Kategorien
+✅ 5 Migrations (auth, production, machines, audit, maintenance)
+✅ Seeds mit 6 Rollen, 27 Permissions, 1 Admin-User
+✅ Express Server läuft auf http://localhost:5000
+✅ 3 API Endpoints (/api/health, /api/db/info, /)
+```
+
+**Abgeschlossen am:** 2025-11-01
 
 ---
 
 ### 📋 Woche 2: Backend Basis + Auth
-**Status:** 📋 GEPLANT
+**Status:** 🔜 **NEXT** - Bereit zum Start!
 **Ziel:** API läuft, Login funktioniert
 
-- [ ] Express Server aufsetzen
+- [ ] Express Server erweitern
 - [ ] JWT Auth implementieren
 - [ ] User/Role/Permission System
 - [ ] CRUD Endpoints für Bauteile
 - [ ] Audit-Log Middleware
-- [ ] API testen
+- [ ] API testen (Postman/Jest)
+- [ ] Password Hashing (bcrypt)
+- [ ] Auth Middleware
+- [ ] Error Handling verbessern
 
 **Deliverable:** Backend API mit Auth läuft auf localhost:5000
 
@@ -43,12 +60,13 @@
 **Status:** 📋 GEPLANT  
 **Ziel:** UI läuft, Login funktioniert
 
-- [ ] React App Setup
+- [ ] React App Setup (Vite)
 - [ ] Login/Logout UI
 - [ ] Bauteile-Übersicht
 - [ ] Bauteile CRUD (Erstellen, Bearbeiten, Löschen)
-- [ ] Responsive Design
+- [ ] Responsive Design (TailwindCSS)
 - [ ] Fehlerbehandlung
+- [ ] State Management (Context/Zustand)
 
 **Deliverable:** Basis-UI läuft auf localhost:3000
 
@@ -63,6 +81,7 @@
 - [ ] Benutzer-Rollen testen
 - [ ] Bug-Fixes
 - [ ] Code aufräumen
+- [ ] E2E Tests
 
 **Deliverable:** ✅ **MEILENSTEIN 1**: Lauffähiges Basis-System
 
@@ -74,11 +93,11 @@
 **Status:** 📋 GEPLANT
 **Ziel:** Bauteile haben Arbeitsgänge
 
-- [ ] Operations Tabelle
-- [ ] Backend: Operations CRUD
+- [ ] Operations Backend CRUD
 - [ ] Frontend: Operations pro Bauteil
 - [ ] OP-Nummern (OP10, OP20, ...)
 - [ ] Maschinen-Zuweisung
+- [ ] Sequence Management
 
 **Deliverable:** Teil → Operations funktioniert
 
@@ -88,12 +107,11 @@
 **Status:** 📋 GEPLANT
 **Ziel:** NC-Programme hochladen
 
-- [ ] Programs Tabelle
 - [ ] File Upload (Multer)
-- [ ] Program Revisions Tabelle
 - [ ] Backend: Program CRUD
 - [ ] Frontend: Program Upload
 - [ ] Programm-Download
+- [ ] File Validation
 
 **Deliverable:** Programme können hochgeladen werden
 
@@ -117,8 +135,7 @@
 **Status:** 📋 GEPLANT
 **Ziel:** Maschinenpark verwalten
 
-- [ ] Machines Tabelle
-- [ ] Maschinen CRUD
+- [ ] Maschinen CRUD (Backend + Frontend)
 - [ ] Steuerungstypen
 - [ ] Netzwerk-Pfade
 - [ ] Programme zu Maschinen zuordnen
@@ -133,7 +150,6 @@
 **Status:** 📋 GEPLANT
 **Ziel:** Status-Workflows
 
-- [ ] Workflow States Tabelle
 - [ ] Status-Übergänge (Entwurf → Freigabe)
 - [ ] Berechtigungs-Checks
 - [ ] Freigabe-Workflow
@@ -163,7 +179,7 @@
 **Status:** 📋 GEPLANT
 **Ziel:** Wartungspläne
 
-- [ ] Maintenance Plans Tabelle
+- [ ] Maintenance Plans Backend
 - [ ] Wartungstypen (täglich, wöchentlich, ...)
 - [ ] Fälligkeitsberechnung
 - [ ] Wartungs-Historie
@@ -208,8 +224,8 @@
 **Status:** 📋 GEPLANT
 **Ziel:** Komplette Dokumentation
 
-- [ ] Setup Sheets Tabelle
-- [ ] Setup Photos
+- [ ] Setup Sheets Backend/Frontend
+- [ ] Setup Photos Upload
 - [ ] PDF-Generierung
 - [ ] Foto-Upload
 - [ ] Download-Funktion
@@ -262,24 +278,63 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ████░░░░░░░░░░░░░░░░ 5%
+Gesamt: ███░░░░░░░░░░░░░░░░░ 15%
 
-Monat 1: ░░░░░░░░░░░░░░░░░░░░ 0%
-Monat 2: ░░░░░░░░░░░░░░░░░░░░ 0%
-Monat 3: ░░░░░░░░░░░░░░░░░░░░ 0%
-Monat 4: ░░░░░░░░░░░░░░░░░░░░ 0%
+Phase 1 (Monat 1): ████░░░░░░░░░░░░░░░░ 25%
+  └─ Woche 1:      ████████████████████ 100% ✅
+  └─ Woche 2:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
+  └─ Woche 3:      ░░░░░░░░░░░░░░░░░░░░   0%
+  └─ Woche 4:      ░░░░░░░░░░░░░░░░░░░░   0%
+
+Phase 2 (Monat 2): ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
-**Arbeitszeit:** 0h / ~480h geschätzt
-**Geschätzte Fertigstellung:** April 2025
+**Arbeitszeit:** 8h / ~480h geschätzt  
+**Geschätzte Fertigstellung:** April 2025  
+**Aktueller Sprint:** Woche 2 - Backend API + Auth
+
+---
+
+## 🎉 Meilensteine erreicht
+
+- ✅ **2025-11-01:** Woche 1 abgeschlossen - Datenbank-Schema komplett (28 Tabellen)
+- 🔜 **Next:** Woche 2 - Backend API + JWT Authentication
+
+---
+
+## 📈 Velocity Tracking
+
+| Woche | Geplant | Erreicht | Status |
+|-------|---------|----------|--------|
+| **Woche 1** | DB-Schema | 28 Tabellen + Server | ✅ 100% |
+| **Woche 2** | Backend API | - | 🔜 Next |
 
 ---
 
 ## 💡 Hinweise
 
-- Zeitbudget: 30-35h/Woche
-- Jede Woche wird aktualisiert
-- Bei Problemen/Verzögerungen: Timeline anpassen
-- Reihenfolge kann sich ändern basierend auf Prioritäten
+- **Zeitbudget:** 30-35h/Woche
+- **Flexibilität:** Timeline kann angepasst werden
+- **Priorisierung:** Kritische Features zuerst
+- **Qualität:** Lieber langsamer aber gut!
 
-**Letzte Aktualisierung:** 2025-01-15
+---
+
+## 📝 Nächste Session
+
+**Woche 2 Tasks:**
+1. JWT Authentication implementieren
+2. User Login/Register Endpoints
+3. Role & Permission Middleware
+4. Bauteile CRUD Endpoints
+5. Audit-Log System
+6. API Testing
+
+**Geschätzte Zeit:** 6-8 Stunden
+
+---
+
+**Letzte Aktualisierung:** 2025-11-01  
+**Aktueller Status:** ✅ Woche 1 komplett | 🔜 Woche 2 bereit zum Start
