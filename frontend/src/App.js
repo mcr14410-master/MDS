@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Package, FileText, Tool, ChevronDown, ChevronRight, X, Save } from 'lucide-react';
-import { bauteilService, ncProgrammService, werkzeugService } from '../services/api';
+import { Search, Plus, Edit2, Trash2, Package, FileText, Wrench, ChevronDown, ChevronRight, X, Save } from 'lucide-react';
+import { bauteilService, ncProgrammService, werkzeugService } from './services/api';
 import './App.css';
 
 function App() {
@@ -103,7 +103,7 @@ function App() {
             className={activeModule === 'werkzeuge' ? 'active' : ''}
             onClick={() => setActiveModule('werkzeuge')}
           >
-            <Tool size={18} />
+            <Wrench size={18} />
             Werkzeuge
           </button>
         </nav>
