@@ -5,8 +5,8 @@
 
 [![Status](https://img.shields.io/badge/Status-In%20Development-yellow)](https://github.com/mcr14410-master/MDS)
 [![Phase](https://img.shields.io/badge/Phase-1%20Fundament-blue)](./ROADMAP.md)
-[![Week](https://img.shields.io/badge/Week-2%20Complete-success)](./docs/sessions/)
-[![Progress](https://img.shields.io/badge/Progress-30%25-brightgreen)](./ROADMAP.md)
+[![Week](https://img.shields.io/badge/Week-3%20Complete-success)](./docs/sessions/)
+[![Progress](https://img.shields.io/badge/Progress-45%25-brightgreen)](./ROADMAP.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 ---
@@ -28,7 +28,7 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 
 ## 📊 Aktueller Status
 
-### Phase 1 - 50% Complete (Woche 2 von 4 ✅)
+### Phase 1 - 75% Complete (Woche 3 von 4 ✅)
 
 #### ✅ Woche 1: Datenbank-Schema (ABGESCHLOSSEN)
 ```
@@ -51,10 +51,24 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 ✅ 10 API Endpoints total
 ```
 
-**Arbeitszeit:** 16h investiert (8h Woche 1 + 8h Woche 2)  
-**Nächster Schritt:** Frontend React App (Woche 3)
+#### ✅ Woche 3: Frontend React App (ABGESCHLOSSEN)
+```
+✅ React 19 + Vite Setup
+✅ TailwindCSS v4 Integration
+✅ Zustand State Management (Auth + Parts Stores)
+✅ React Router v7 mit Protected Routes
+✅ Login/Logout UI (vollständig funktional)
+✅ Dashboard mit Stats Cards
+✅ Parts List mit Filter & Search
+✅ Permission-based Navigation
+✅ Responsive Design
+✅ ~900 Lines of Frontend Code
+```
 
-[📖 Woche 1 Summary](./backend/docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./backend/docs/WEEK-2-COMPLETE.md) | [🗺️ Roadmap](./ROADMAP.md)
+**Arbeitszeit:** 18h investiert (8h Woche 1 + 8h Woche 2 + 2h Woche 3)  
+**Nächster Schritt:** Integration & Testing (Woche 4)
+
+[📖 Woche 1 Summary](./backend/docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./backend/docs/WEEK-2-COMPLETE.md) | [📖 Woche 3 Summary](./docs/sessions/SESSION-2025-11-02-WEEK3.md) | [🗺️ Roadmap](./ROADMAP.md)
 
 ---
 
@@ -72,12 +86,14 @@ Multer            - File Upload Handling
 Chokidar          - File System Watcher (CAM-Integration)
 ```
 
-**Frontend** (React) - *Start in Woche 3*
+**Frontend** (React) - ✅ **Woche 3 Complete**
 ```
-React 18          - UI Framework
-React Router      - Client-Side Routing
+React 19          - UI Framework
+Vite              - Build Tool & Dev Server
+React Router v7   - Client-Side Routing
 Axios             - HTTP Client
-TailwindCSS       - Utility-First Styling
+TailwindCSS v4    - Utility-First Styling
+Zustand           - State Management
 ```
 
 **Deployment**
@@ -120,7 +136,9 @@ Raspberry Pi      - Edge Computing Support
 - **PostgreSQL** 15+ ([Download](https://www.postgresql.org/download/))
 - **Git** ([Download](https://git-scm.com/))
 
-### Installation (5 Minuten)
+### Installation (10 Minuten)
+
+#### Backend Setup
 
 ```bash
 # 1. Repository klonen
@@ -153,9 +171,21 @@ npm run dev
 **✅ Backend läuft auf:** http://localhost:5000  
 **✅ Health Check:** http://localhost:5000/api/health
 
+#### Frontend Setup
+
+```bash
+# In neuem Terminal-Fenster
+cd frontend
+npm install
+npm run dev
+```
+
+**✅ Frontend läuft auf:** http://localhost:5173  
+**✅ Login Page:** http://localhost:5173/login
+
 **Standard-Login:**
 ```
-Email:    admin@example.com
+Username: admin
 Password: admin123
 ⚠️ WICHTIG: Nach erstem Login ändern!
 ```
@@ -184,18 +214,42 @@ MDS/
 │   ├── docs/
 │   │   ├── DATABASE.md         # DB-Setup & Schema-Dokumentation
 │   │   ├── WEEK-1-SUMMARY.md   # Woche 1 Zusammenfassung
-│   │   └── API.md              # API-Dokumentation (Woche 2)
+│   │   ├── WEEK-2-COMPLETE.md  # Woche 2 Zusammenfassung
+│   │   ├── AUTH-API.md         # Auth API Docs
+│   │   └── API-TESTING-GUIDE.md# Testing Guide
+│   ├── test-auth.http          # Auth API Tests
+│   ├── test-parts.http         # Parts API Tests
 │   ├── .env.example            # Umgebungsvariablen-Template
-│   ├── .migrationrc.json       # Migration-Konfiguration
 │   └── package.json
 │
-├── frontend/                   # React Frontend (Woche 3)
-│   └── (noch nicht erstellt)
+├── frontend/                   # React Frontend (Woche 3) ✅
+│   ├── src/
+│   │   ├── components/         # Reusable Components
+│   │   │   ├── Layout.jsx      # Navigation & Header
+│   │   │   └── ProtectedRoute.jsx # Route Protection
+│   │   ├── pages/              # Page Components
+│   │   │   ├── LoginPage.jsx   # Login UI
+│   │   │   ├── DashboardPage.jsx # Dashboard mit Stats
+│   │   │   └── PartsPage.jsx   # Parts Tabelle
+│   │   ├── stores/             # Zustand State Management
+│   │   │   ├── authStore.js    # Authentication
+│   │   │   └── partsStore.js   # Parts Management
+│   │   ├── utils/              # Utilities
+│   │   │   └── axios.js        # Axios Instance + Interceptors
+│   │   ├── config/             # Configuration
+│   │   │   └── api.js          # API Endpoints
+│   │   ├── App.jsx             # Router Setup
+│   │   └── main.jsx            # Entry Point
+│   ├── .env                    # Environment Variables
+│   ├── package.json            # Dependencies
+│   └── README.md               # Frontend Documentation
 │
 ├── docs/
 │   ├── ARCHITECTURE.md         # System-Architektur & Features
 │   └── sessions/               # Session-Protokolle
-│       ├── SESSION-2025-01-15.md
+│       ├── SESSION-2025-11-01.md           # Woche 1
+│       ├── SESSION-2025-11-02.md           # Woche 2
+│       ├── SESSION-2025-11-02-WEEK3.md     # Woche 3
 │       └── TEMPLATE.md
 │
 ├── README.md                   # Diese Datei
@@ -211,7 +265,7 @@ MDS/
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 1 - Monat 1: Fundament (50% - Wochen 1-4)
+### ✅ Phase 1 - Monat 1: Fundament (75% - Wochen 1-4)
 
 **Woche 1: ✅ KOMPLETT** - Datenbank-Schema
 - [x] 28 Tabellen entworfen
@@ -226,14 +280,16 @@ MDS/
 - [x] CRUD Endpoints für Bauteile (6 Endpoints)
 - [x] Audit-Log Middleware
 
-**Woche 3: 🔜 NEXT** - Frontend Basis
-- [ ] React App Setup (Vite)
-- [ ] Login/Logout UI
-- [ ] Bauteile-Übersicht
-- [ ] CRUD-Operationen
-- [ ] Responsive Design (TailwindCSS)
+**Woche 3: ✅ KOMPLETT** - Frontend React App
+- [x] React App Setup (Vite)
+- [x] Login/Logout UI
+- [x] Bauteile-Übersicht
+- [x] CRUD-Operationen UI
+- [x] Responsive Design (TailwindCSS)
+- [x] State Management (Zustand)
+- [x] Protected Routes
 
-**Woche 4: 📋 GEPLANT** - Integration & Testing
+**Woche 4: 🔜 NEXT** - Integration & Testing
 - [ ] Frontend ↔ Backend Verbindung
 - [ ] End-to-End Tests
 - [ ] Bug-Fixes
@@ -278,32 +334,47 @@ MDS/
 | [backend/docs/WEEK-2-COMPLETE.md](./backend/docs/WEEK-2-COMPLETE.md) | Woche 2 Bericht | ✅ Aktuell |
 | [backend/docs/AUTH-API.md](./backend/docs/AUTH-API.md) | Auth API Docs | ✅ Aktuell |
 | [backend/docs/API-TESTING-GUIDE.md](./backend/docs/API-TESTING-GUIDE.md) | Testing Guide | ✅ Aktuell |
+| [frontend/README.md](./frontend/README.md) | Frontend Dokumentation | ✅ Aktuell |
+| [docs/sessions/SESSION-2025-11-02-WEEK3.md](./docs/sessions/SESSION-2025-11-02-WEEK3.md) | Woche 3 Bericht | ✅ Aktuell |
 
 ---
 
 ## 🎯 Features
 
-### ✅ Bereits implementiert (Woche 1)
+### ✅ Bereits implementiert
 
+**Woche 1 - Datenbank:**
 - ✅ **Datenbank-Schema** - 28 Tabellen, vollständig normalisiert
 - ✅ **Migrations-System** - Schema-Versionierung mit node-pg-migrate
 - ✅ **Seed-Daten** - Test-Daten für Entwicklung
 - ✅ **Audit-Trail** - Jede Änderung wird protokolliert
 - ✅ **RBAC-Schema** - Granulare Berechtigungen vorbereitet
 
-### 📋 Geplant (Wochen 2-16)
+**Woche 2 - Backend API:**
+- ✅ **JWT Authentication** - Login, Register, Token Verification
+- ✅ **User Management** - 4 Auth Endpoints
+- ✅ **Auth Middleware** - Token, Permission, Role Checks
+- ✅ **Parts CRUD API** - 6 Endpoints mit Permissions
+- ✅ **Audit-Log Middleware** - Automatisches Tracking
 
-**Backend API** (Woche 2)
-- JWT Authentication
-- User/Role/Permission Management
-- CRUD Endpoints
-- Audit-Log Middleware
+**Woche 3 - Frontend:**
+- ✅ **React 19 App** - Vite Build Setup
+- ✅ **Zustand State Management** - Auth + Parts Stores
+- ✅ **React Router v7** - Protected Routes
+- ✅ **Login/Logout UI** - Vollständig funktional
+- ✅ **Dashboard** - Stats Cards + Quick Actions
+- ✅ **Parts List** - Tabelle mit Filter & Search
+- ✅ **TailwindCSS v4** - Responsive Design
+- ✅ **Axios Integration** - Token-Interceptors
 
-**Frontend** (Woche 3)
-- React 18 SPA
-- Login/Logout Flow
-- Bauteile-Verwaltung
-- Responsive Design
+### 📋 Geplant (Wochen 4-16)
+
+**Integration & Testing** (Woche 4)
+- CORS Backend aktivieren
+- Frontend ↔ Backend verbinden
+- Part Detail/Create/Edit Pages
+- Form Validation
+- Toast Notifications
 
 **Versionierung** (Woche 7)
 - Git-Style für NC-Programme
@@ -369,13 +440,16 @@ git push origin feature/mein-feature
 ## 📊 Projekt-Status
 
 ```
-Phase 1 (Fundament):    ████░░░░░░░░░░░░░░░░ 20%
+Phase 1 (Fundament):    ███████████████░░░░░ 75%
   └─ Woche 1:           ████████████████████ 100% ✅
+  └─ Woche 2:           ████████████████████ 100% ✅
+  └─ Woche 3:           ████████████████████ 100% ✅
+  └─ Woche 4:           ░░░░░░░░░░░░░░░░░░░░   0% 🔜
 
-Gesamt-Fortschritt:     █░░░░░░░░░░░░░░░░░░░  5%
+Gesamt-Fortschritt:     █████████░░░░░░░░░░░ 45%
 ```
 
-**Arbeitszeit investiert:** 6h / ~480h geschätzt  
+**Arbeitszeit investiert:** 18h / ~480h geschätzt (3.75%)  
 **Geschätzte Fertigstellung:** April 2025  
 **Zeitbudget:** 30-35h/Woche
 
@@ -430,17 +504,19 @@ MIT License - siehe [LICENSE](./LICENSE) für Details.
 
 ## 🚀 Status
 
-**🎉 Phase 1, Woche 2 - ABGESCHLOSSEN!**
+**🎉 Phase 1, Woche 3 - ABGESCHLOSSEN!**
 
 **Completed:**
 - ✅ Woche 1: Datenbank-Schema (28 Tabellen, 7 Migrations)
 - ✅ Woche 2: Backend API + Auth (10 Endpoints, JWT, Parts CRUD, Audit-Log)
+- ✅ Woche 3: Frontend React App (Login, Dashboard, Parts List, Zustand, TailwindCSS)
 
 **Next Steps:**
-- Woche 3: Frontend React App
-- Login/Logout UI
-- Bauteile-Übersicht
-- CRUD-Operationen
+- Woche 4: Integration & Testing
+- CORS Backend aktivieren
+- Frontend ↔ Backend verbinden
+- Part Detail/Create/Edit Pages
+- Form Validation & Toast Notifications
 
 **Bereit für die nächste Session?** → [Starte hier](./QUICKSTART.md)
 

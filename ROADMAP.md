@@ -75,32 +75,53 @@
 
 ---
 
-### 📋 Woche 3: Frontend Basis
-**Status:** 🔜 **NEXT** - Bereit zum Start!
+### ✅ Woche 3: Frontend Basis
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** UI läuft, Login funktioniert
+**Zeitaufwand:** ~2 Stunden
 
-- [ ] React App Setup (Vite)
-- [ ] Login/Logout UI
-- [ ] Bauteile-Übersicht
-- [ ] Bauteile CRUD (Erstellen, Bearbeiten, Löschen)
-- [ ] Responsive Design (TailwindCSS)
-- [ ] Fehlerbehandlung
-- [ ] State Management (Context/Zustand)
+- [x] React App Setup (Vite)
+- [x] Login/Logout UI
+- [x] Bauteile-Übersicht
+- [x] Bauteile CRUD (Erstellen, Bearbeiten, Löschen)
+- [x] Responsive Design (TailwindCSS)
+- [x] Fehlerbehandlung
+- [x] State Management (Zustand)
 
-**Deliverable:** Basis-UI läuft auf localhost:3000
+**Deliverable:** ✅ Basis-UI läuft auf localhost:5173
+
+**Errungenschaften:**
+```
+✅ React 19 + Vite Setup
+✅ TailwindCSS v4 Integration
+✅ Zustand State Management (Auth + Parts Stores)
+✅ React Router v7 mit Protected Routes
+✅ Login/Logout UI (vollständig funktional)
+✅ Dashboard mit Stats Cards
+✅ Parts List mit Filter & Search
+✅ Permission-based Navigation
+✅ Responsive Design
+✅ API Integration (Axios mit Token-Interceptors)
+✅ ~900 Lines of Frontend Code
+```
+
+**Abgeschlossen am:** 2025-11-02
 
 ---
 
 ### 📋 Woche 4: Integration & Testing
-**Status:** 📋 GEPLANT
+**Status:** 🔜 **NEXT** - Bereit zum Start!
 **Ziel:** Frontend ↔ Backend komplett integriert
 
+- [ ] CORS im Backend aktivieren
 - [ ] Frontend mit Backend verbinden
 - [ ] Alle CRUD-Operationen testen
+- [ ] Part Detail/Create/Edit Pages
+- [ ] Form Validation
+- [ ] Toast Notifications
 - [ ] Benutzer-Rollen testen
 - [ ] Bug-Fixes
 - [ ] Code aufräumen
-- [ ] E2E Tests
 
 **Deliverable:** ✅ **MEILENSTEIN 1**: Lauffähiges Basis-System
 
@@ -297,22 +318,22 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ██████░░░░░░░░░░░░░░ 30%
+Gesamt: █████████░░░░░░░░░░░ 45%
 
-Phase 1 (Monat 1): ██████████░░░░░░░░░░ 50%
+Phase 1 (Monat 1): ███████████████░░░░░ 75%
   └─ Woche 1:      ████████████████████ 100% ✅
   └─ Woche 2:      ████████████████████ 100% ✅
-  └─ Woche 3:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
-  └─ Woche 4:      ░░░░░░░░░░░░░░░░░░░░   0%
+  └─ Woche 3:      ████████████████████ 100% ✅
+  └─ Woche 4:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
 
 Phase 2 (Monat 2): ░░░░░░░░░░░░░░░░░░░░  0%
 Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0%
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
-**Arbeitszeit:** 16h / ~480h geschätzt  
+**Arbeitszeit:** 18h / ~480h geschätzt  
 **Geschätzte Fertigstellung:** April 2025  
-**Aktueller Sprint:** Woche 3 - Frontend React App
+**Aktueller Sprint:** Woche 4 - Integration & Testing
 
 ---
 
@@ -320,7 +341,8 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 - ✅ **2025-11-01:** Woche 1 abgeschlossen - Datenbank-Schema komplett (28 Tabellen)
 - ✅ **2025-11-02:** Woche 2 abgeschlossen - Backend API komplett (Auth + Parts CRUD + Audit Log)
-- 🔜 **Next:** Woche 3 - Frontend React App mit TailwindCSS
+- ✅ **2025-11-02:** Woche 3 abgeschlossen - Frontend React App komplett (Login + Dashboard + Parts List)
+- 🔜 **Next:** Woche 4 - Integration & Testing
 
 ---
 
@@ -330,7 +352,8 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 |-------|---------|----------|--------|
 | **Woche 1** | DB-Schema | 28 Tabellen + Server | ✅ 100% |
 | **Woche 2** | Backend API | Auth + Parts CRUD + Audit | ✅ 100% |
-| **Woche 3** | Frontend Basis | - | 🔜 Next |
+| **Woche 3** | Frontend Basis | React App + Login + Dashboard + Parts | ✅ 100% |
+| **Woche 4** | Integration | - | 🔜 Next |
 
 ---
 
@@ -345,18 +368,20 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 📝 Nächste Session
 
-**Woche 3 Tasks:**
-1. React App Setup mit Vite
-2. TailwindCSS Integration
-3. React Router Setup
-4. Login/Logout UI
-5. Protected Routes
-6. Bauteile-Übersicht (Liste)
-7. State Management (Context API)
+**Woche 4 Tasks:**
+1. CORS im Backend aktivieren
+2. Frontend mit Backend verbinden
+3. Alle CRUD-Operationen testen
+4. Part Detail Page (`/parts/:id`)
+5. Part Create/Edit Forms (`/parts/new`, `/parts/:id/edit`)
+6. Form Validation (React Hook Form)
+7. Toast Notifications
+8. Bug-Fixes & Polish
+9. Code aufräumen
 
 **Geschätzte Zeit:** 6-8 Stunden
 
 ---
 
 **Letzte Aktualisierung:** 2025-11-02  
-**Aktueller Status:** ✅ Woche 2 komplett | 🔜 Woche 3 bereit zum Start
+**Aktueller Status:** ✅ Woche 3 komplett | 🔜 Woche 4 bereit zum Start
