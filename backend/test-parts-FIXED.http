@@ -1,0 +1,287 @@
+# Parts API Testing
+# You can use these requests with VS Code REST Client extension
+
+### Variables
+@baseUrl = http://localhost:5000
+
+###############################################
+# 1. LOGIN FIRST (Required for Parts API)
+###############################################
+
+### Login as Admin
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Extract Token
+@token = {{login.response.body.token}}
+
+###############################################
+# PARTS CRUD OPERATIONS
+###############################################
+
+### Get All Parts
+GET {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+
+### Get Parts with Filter (by customer)
+GET {{baseUrl}}/api/parts?customer_id=1
+Authorization: Bearer {{token}}
+
+### Get Parts with Filter (by status)
+GET {{baseUrl}}/api/parts?status=active
+Authorization: Bearer {{token}}
+
+### Get Parts with Search
+GET {{baseUrl}}/api/parts?search=test
+Authorization: Bearer {{token}}
+
+### Get Part Statistics
+GET {{baseUrl}}/api/parts/stats
+Authorization: Bearer {{token}}
+
+### Get Single Part by ID
+GET {{baseUrl}}/api/parts/1
+Authorization: Bearer {{token}}
+
+### Create New Part
+# @name createPart
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "part_number": "P-2024-001",
+  "part_name": "Test Bauteil",
+  "revision": "A",
+  "description": "Dies ist ein Test-Bauteil für die API",
+  "material": "Aluminium 7075",
+  "weight": 2.5,
+  "drawing_number": "DWG-001",
+  "status": "draft"
+}
+
+### Extract Created Part ID
+@partId = {{createPart.response.body.part.id}}
+
+### Get Newly Created Part
+GET {{baseUrl}}/api/parts/{{partId}}
+Authorization: Bearer {{token}}
+
+### Update Part
+PUT {{baseUrl}}/api/parts/{{partId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_name": "Test Bauteil - Updated",
+  "revision": "B",
+  "description": "Aktualisierte Beschreibung",
+  "material": "Aluminium 6061",
+  "weight": 2.8,
+  "status": "active"
+}
+
+### Update Part Status Only
+PUT {{baseUrl}}/api/parts/{{partId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### Delete Part (Soft Delete)
+DELETE {{baseUrl}}/api/parts/{{partId}}
+Authorization: Bearer {{token}}
+
+###############################################
+# VALIDATION TESTS
+###############################################
+
+### Test: Create Part without Required Fields (should fail)
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_number": "P-INVALID"
+}
+
+### Test: Create Part with Duplicate Part Number (should fail)
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "part_number": "P-2024-001",
+  "part_name": "Duplicate Test"
+}
+
+### Test: Create Part with Invalid Customer (should fail)
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 9999,
+  "part_number": "P-9999",
+  "part_name": "Invalid Customer Test"
+}
+
+### Test: Get Non-Existent Part (should return 404)
+GET {{baseUrl}}/api/parts/99999
+Authorization: Bearer {{token}}
+
+### Test: Update Non-Existent Part (should return 404)
+PUT {{baseUrl}}/api/parts/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_name": "This should fail"
+}
+
+### Test: Access Without Token (should return 401)
+GET {{baseUrl}}/api/parts
+
+### Test: Access With Invalid Token (should return 401)
+GET {{baseUrl}}/api/parts
+Authorization: Bearer invalid_token_here
+
+###############################################
+# COMPLETE WORKFLOW TEST
+###############################################
+
+### Workflow Step 1: Create Customer (if needed)
+# Note: You might need to create customers endpoint first
+# For now, we assume customer_id=1 exists from seeds
+
+### Workflow Step 2: Create Part in Draft
+# @name workflowPart
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "part_number": "P-WORKFLOW-001",
+  "part_name": "Workflow Test Part",
+  "revision": "A",
+  "description": "Testing complete workflow",
+  "material": "Steel",
+  "status": "draft"
+}
+
+### Extract Workflow Part ID
+@workflowPartId = {{workflowPart.response.body.part.id}}
+
+### Workflow Step 3: Get Part Details
+GET {{baseUrl}}/api/parts/{{workflowPartId}}
+Authorization: Bearer {{token}}
+
+### Workflow Step 4: Update to Active
+PUT {{baseUrl}}/api/parts/{{workflowPartId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### Workflow Step 5: Verify Update
+GET {{baseUrl}}/api/parts/{{workflowPartId}}
+Authorization: Bearer {{token}}
+
+### Workflow Step 6: Get Statistics
+GET {{baseUrl}}/api/parts/stats
+Authorization: Bearer {{token}}
+
+###############################################
+# PERMISSION TESTS (need different user roles)
+###############################################
+
+### Note: These tests require creating users with different roles
+### For now, admin has all permissions
+
+### Test: Create Part without part.create permission
+# (Would need to login as operator or helper first)
+
+### Test: Delete Part without part.delete permission
+# (Would need to login as operator first)
+
+###############################################
+# cURL Examples (for terminal/command line)
+###############################################
+
+# Login and get token (Bash/Linux/Mac)
+# TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"username":"admin","password":"admin123"}' \
+#   | jq -r '.token')
+
+# Get all parts
+# curl -X GET http://localhost:5000/api/parts \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Create part
+# curl -X POST http://localhost:5000/api/parts \
+#   -H "Authorization: Bearer $TOKEN" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "customer_id": 1,
+#     "part_number": "P-CURL-001",
+#     "part_name": "cURL Test Part",
+#     "material": "Aluminum"
+#   }'
+
+# Get single part
+# curl -X GET http://localhost:5000/api/parts/1 \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Update part
+# curl -X PUT http://localhost:5000/api/parts/1 \
+#   -H "Authorization: Bearer $TOKEN" \
+#   -H "Content-Type: application/json" \
+#   -d '{"status": "active"}'
+
+# Delete part
+# curl -X DELETE http://localhost:5000/api/parts/1 \
+#   -H "Authorization: Bearer $TOKEN"
+
+###############################################
+# PowerShell Examples
+###############################################
+
+# Login and get token (PowerShell/Windows)
+# $response = Invoke-RestMethod -Uri "http://localhost:5000/api/auth/login" `
+#   -Method Post `
+#   -Body '{"username":"admin","password":"admin123"}' `
+#   -ContentType "application/json"
+# $token = $response.token
+
+# Get all parts
+# $headers = @{"Authorization"="Bearer $token"}
+# Invoke-RestMethod -Uri "http://localhost:5000/api/parts" `
+#   -Method Get `
+#   -Headers $headers
+
+# Create part
+# $body = @{
+#   customer_id = 1
+#   part_number = "P-PS-001"
+#   part_name = "PowerShell Test Part"
+#   material = "Steel"
+# } | ConvertTo-Json
+# Invoke-RestMethod -Uri "http://localhost:5000/api/parts" `
+#   -Method Post `
+#   -Headers $headers `
+#   -Body $body `
+#   -ContentType "application/json"

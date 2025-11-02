@@ -1,0 +1,68 @@
+# Auth API Testing - Manual Token Version
+# Kopiere den Token nach dem Login und füge ihn unten ein!
+
+@baseUrl = http://localhost:5000
+
+### 1️⃣ ZUERST: Login durchführen
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### 2️⃣ DANN: Token hier einfügen! 👇
+### Kopiere den "token" aus der Login-Response und füge ihn hier ein:
+@token = HIER_DEN_TOKEN_EINFÜGEN
+
+### Beispiel:
+# @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3MzA0ODI4OTAsImV4cCI6MTczMDU2OTI5MH0.xyz
+
+###############################################
+# 3️⃣ Geschützte Endpoints testen
+###############################################
+
+### Health Check (ungeschützt)
+GET {{baseUrl}}/api/health
+
+### Database Info (ungeschützt)
+GET {{baseUrl}}/api/db/info
+
+### Get User Profile (GESCHÜTZT - braucht Token)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Change Password (GESCHÜTZT - braucht Token)
+POST {{baseUrl}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "currentPassword": "admin123",
+  "newPassword": "admin456"
+}
+
+###############################################
+# Neue User testen
+###############################################
+
+### Register New User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "test123456",
+  "full_name": "Test User"
+}
+
+### Login with Test User
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "test123456"
+}

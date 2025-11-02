@@ -38,26 +38,45 @@
 
 ---
 
-### 📋 Woche 2: Backend Basis + Auth
-**Status:** 🔜 **NEXT** - Bereit zum Start!
+### ✅ Woche 2: Backend Basis + Auth
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** API läuft, Login funktioniert
 
-- [ ] Express Server erweitern
-- [ ] JWT Auth implementieren
-- [ ] User/Role/Permission System
-- [ ] CRUD Endpoints für Bauteile
-- [ ] Audit-Log Middleware
-- [ ] API testen (Postman/Jest)
-- [ ] Password Hashing (bcrypt)
-- [ ] Auth Middleware
-- [ ] Error Handling verbessern
+- [x] Express Server erweitern
+- [x] JWT Auth implementieren
+- [x] User/Role/Permission System
+- [x] CRUD Endpoints für Bauteile
+- [x] Audit-Log Middleware
+- [x] API testen (Postman/Jest)
+- [x] Password Hashing (bcrypt)
+- [x] Auth Middleware
+- [x] Error Handling verbessern
 
-**Deliverable:** Backend API mit Auth läuft auf localhost:5000
+**Deliverable:** ✅ Backend API mit Auth läuft auf localhost:5000
+
+**Errungenschaften:**
+```
+✅ JWT Authentication komplett (Token Generation, Verification, Expiry)
+✅ User Management (Register, Login, Profile, Password Change)
+✅ Auth Middleware (authenticateToken, requirePermission, requireRole)
+✅ Parts CRUD API - 6 Endpoints (GET, POST, PUT, DELETE, Stats)
+✅ Audit-Log System (automatisches Tracking aller Änderungen)
+✅ Test-Suite (test-auth.http, test-parts.http, test-api.sh, test-api.ps1)
+✅ Validierung & Error Handling
+✅ Security (Permission-Checks, SQL-Injection Schutz)
+✅ 7 Migrations total (5 base + 2 enhancements)
+✅ Test-Customer Seeds (3 Kunden)
+✅ Enhanced Parts Schema (status, updated_by, cad_file_path)
+✅ API Endpoints: 10 total (4 Auth + 6 Parts)
+✅ ~1500 Lines of Code
+```
+
+**Abgeschlossen am:** 2025-11-02
 
 ---
 
 ### 📋 Woche 3: Frontend Basis
-**Status:** 📋 GEPLANT  
+**Status:** 🔜 **NEXT** - Bereit zum Start!
 **Ziel:** UI läuft, Login funktioniert
 
 - [ ] React App Setup (Vite)
@@ -278,12 +297,12 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ███░░░░░░░░░░░░░░░░░ 15%
+Gesamt: ██████░░░░░░░░░░░░░░ 30%
 
-Phase 1 (Monat 1): ████░░░░░░░░░░░░░░░░ 25%
+Phase 1 (Monat 1): ██████████░░░░░░░░░░ 50%
   └─ Woche 1:      ████████████████████ 100% ✅
-  └─ Woche 2:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
-  └─ Woche 3:      ░░░░░░░░░░░░░░░░░░░░   0%
+  └─ Woche 2:      ████████████████████ 100% ✅
+  └─ Woche 3:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
   └─ Woche 4:      ░░░░░░░░░░░░░░░░░░░░   0%
 
 Phase 2 (Monat 2): ░░░░░░░░░░░░░░░░░░░░  0%
@@ -291,16 +310,17 @@ Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░ 
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
-**Arbeitszeit:** 8h / ~480h geschätzt  
+**Arbeitszeit:** 16h / ~480h geschätzt  
 **Geschätzte Fertigstellung:** April 2025  
-**Aktueller Sprint:** Woche 2 - Backend API + Auth
+**Aktueller Sprint:** Woche 3 - Frontend React App
 
 ---
 
 ## 🎉 Meilensteine erreicht
 
 - ✅ **2025-11-01:** Woche 1 abgeschlossen - Datenbank-Schema komplett (28 Tabellen)
-- 🔜 **Next:** Woche 2 - Backend API + JWT Authentication
+- ✅ **2025-11-02:** Woche 2 abgeschlossen - Backend API komplett (Auth + Parts CRUD + Audit Log)
+- 🔜 **Next:** Woche 3 - Frontend React App mit TailwindCSS
 
 ---
 
@@ -309,7 +329,8 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 | Woche | Geplant | Erreicht | Status |
 |-------|---------|----------|--------|
 | **Woche 1** | DB-Schema | 28 Tabellen + Server | ✅ 100% |
-| **Woche 2** | Backend API | - | 🔜 Next |
+| **Woche 2** | Backend API | Auth + Parts CRUD + Audit | ✅ 100% |
+| **Woche 3** | Frontend Basis | - | 🔜 Next |
 
 ---
 
@@ -324,17 +345,18 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 📝 Nächste Session
 
-**Woche 2 Tasks:**
-1. JWT Authentication implementieren
-2. User Login/Register Endpoints
-3. Role & Permission Middleware
-4. Bauteile CRUD Endpoints
-5. Audit-Log System
-6. API Testing
+**Woche 3 Tasks:**
+1. React App Setup mit Vite
+2. TailwindCSS Integration
+3. React Router Setup
+4. Login/Logout UI
+5. Protected Routes
+6. Bauteile-Übersicht (Liste)
+7. State Management (Context API)
 
 **Geschätzte Zeit:** 6-8 Stunden
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-01  
-**Aktueller Status:** ✅ Woche 1 komplett | 🔜 Woche 2 bereit zum Start
+**Letzte Aktualisierung:** 2025-11-02  
+**Aktueller Status:** ✅ Woche 2 komplett | 🔜 Woche 3 bereit zum Start

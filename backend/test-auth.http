@@ -1,0 +1,164 @@
+# Auth API Testing
+# You can use these requests with VS Code REST Client extension
+
+### Variables
+@baseUrl = http://localhost:5000
+
+### Health Check
+GET {{baseUrl}}/api/health
+
+### Database Info
+GET {{baseUrl}}/api/db/info
+
+### Register New User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "test123456",
+  "first_name": "Test",
+  "last_name": "User"
+}
+
+### Login with Admin (Token wird automatisch gespeichert)
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Extract Token from Login Response
+@authToken = {{adminLogin.response.body.token}}
+
+### Login with Test User
+# @name testUserLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "test123456"
+}
+
+### Get Current User Profile (Protected) - Using Admin Token
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{authToken}}
+
+### Change Password (Protected)
+POST {{baseUrl}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "currentPassword": "admin123",
+  "newPassword": "newpassword123"
+}
+
+###############################################
+# Testing Workflow
+###############################################
+
+### 1. Login und Token speichern
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### 2. Token extrahieren
+@token = {{login.response.body.token}}
+
+### 3. Geschützten Endpoint aufrufen
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+###############################################
+# Additional Test Cases
+###############################################
+
+### Register without optional fields (first_name, last_name)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "minimal",
+  "email": "minimal@example.com",
+  "password": "minimal123"
+}
+
+### Test Invalid Email Format
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "baduser",
+  "email": "not-an-email",
+  "password": "password123"
+}
+
+### Test Weak Password (should fail)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "weakuser",
+  "email": "weak@example.com",
+  "password": "123"
+}
+
+### Test Duplicate Username (should fail)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email": "newemail@example.com",
+  "password": "password123"
+}
+
+### Test Invalid Login Credentials
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+### Test Missing Authorization Header (should fail)
+GET {{baseUrl}}/api/auth/me
+
+### Test Invalid Token (should fail)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer invalid_token_here
+
+###############################################
+# cURL Examples (for terminal/command line)
+###############################################
+
+# Login und Token in Variable speichern (Bash/Linux/Mac)
+# TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"username":"admin","password":"admin123"}' \
+#   | jq -r '.token')
+# echo $TOKEN
+
+# Login und Token in Variable speichern (PowerShell/Windows)
+# $response = Invoke-RestMethod -Uri "http://localhost:5000/api/auth/login" -Method Post -Body '{"username":"admin","password":"admin123"}' -ContentType "application/json"
+# $token = $response.token
+# echo $token
+
+# Get Profile mit gespeichertem Token (Bash)
+# curl -X GET http://localhost:5000/api/auth/me \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Get Profile mit gespeichertem Token (PowerShell)
+# Invoke-RestMethod -Uri "http://localhost:5000/api/auth/me" -Method Get -Headers @{"Authorization"="Bearer $token"}

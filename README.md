@@ -5,7 +5,8 @@
 
 [![Status](https://img.shields.io/badge/Status-In%20Development-yellow)](https://github.com/mcr14410-master/MDS)
 [![Phase](https://img.shields.io/badge/Phase-1%20Fundament-blue)](./ROADMAP.md)
-[![Week](https://img.shields.io/badge/Week-1%20Complete-success)](./docs/sessions/)
+[![Week](https://img.shields.io/badge/Week-2%20Complete-success)](./docs/sessions/)
+[![Progress](https://img.shields.io/badge/Progress-30%25-brightgreen)](./ROADMAP.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 ---
@@ -27,22 +28,33 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 
 ## 📊 Aktueller Status
 
-### Phase 1, Woche 1 ✅ ABGESCHLOSSEN
+### Phase 1 - 50% Complete (Woche 2 von 4 ✅)
 
-**Datenbank-Schema komplett fertiggestellt!**
-
+#### ✅ Woche 1: Datenbank-Schema (ABGESCHLOSSEN)
 ```
-✅ 28 Tabellen in 5 Kategorien entworfen
-✅ 5 Migrations geschrieben (01-auth bis 05-system)
-✅ Migrations-System (node-pg-migrate) eingerichtet
-✅ Test-Daten (Seeds) für alle Tabellen erstellt
-✅ Vollständige Dokumentation (DATABASE.md)
+✅ 28 Tabellen in 6 Kategorien
+✅ 7 Migrations (5 base + 2 enhancements)
+✅ Test-Daten (Seeds) für alle Tabellen
+✅ Express Server Basis
+✅ 3 Test-Kunden (CUST-001, CUST-002, CUST-003)
 ```
 
-**Arbeitszeit:** 6h investiert  
-**Nächster Schritt:** Backend API + JWT Auth (Woche 2)
+#### ✅ Woche 2: Backend API + Auth (ABGESCHLOSSEN)
+```
+✅ JWT Authentication (Login, Register, Token Verification)
+✅ User Management (4 Endpoints)
+✅ Auth Middleware (Token, Permission, Role Checks)
+✅ Parts CRUD API (6 Endpoints mit Permissions)
+✅ Audit-Log System (automatisches Tracking)
+✅ Test-Suite (test-auth.http, test-parts.http)
+✅ ~1500 Lines of Code
+✅ 10 API Endpoints total
+```
 
-[📖 Detaillierte Wochenübersicht](./backend/docs/WEEK-1-SUMMARY.md) | [🗺️ Vollständige Roadmap](./ROADMAP.md)
+**Arbeitszeit:** 16h investiert (8h Woche 1 + 8h Woche 2)  
+**Nächster Schritt:** Frontend React App (Woche 3)
+
+[📖 Woche 1 Summary](./backend/docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./backend/docs/WEEK-2-COMPLETE.md) | [🗺️ Roadmap](./ROADMAP.md)
 
 ---
 
@@ -199,27 +211,27 @@ MDS/
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 1 - Monat 1: Fundament (Wochen 1-4)
+### ✅ Phase 1 - Monat 1: Fundament (50% - Wochen 1-4)
 
 **Woche 1: ✅ KOMPLETT** - Datenbank-Schema
 - [x] 28 Tabellen entworfen
-- [x] 5 Migrations geschrieben
+- [x] 7 Migrations geschrieben
 - [x] Seeds erstellt
 - [x] Dokumentation
 
-**Woche 2: 📋 GEPLANT** - Backend API + Auth
-- [ ] Express Server aufsetzen
-- [ ] JWT Authentication implementieren
-- [ ] User/Role/Permission System
-- [ ] CRUD Endpoints für Bauteile
-- [ ] Audit-Log Middleware
+**Woche 2: ✅ KOMPLETT** - Backend API + Auth
+- [x] Express Server erweitert
+- [x] JWT Authentication implementiert
+- [x] User/Role/Permission System
+- [x] CRUD Endpoints für Bauteile (6 Endpoints)
+- [x] Audit-Log Middleware
 
-**Woche 3: 📋 GEPLANT** - Frontend Basis
-- [ ] React App Setup
+**Woche 3: 🔜 NEXT** - Frontend Basis
+- [ ] React App Setup (Vite)
 - [ ] Login/Logout UI
 - [ ] Bauteile-Übersicht
 - [ ] CRUD-Operationen
-- [ ] Responsive Design
+- [ ] Responsive Design (TailwindCSS)
 
 **Woche 4: 📋 GEPLANT** - Integration & Testing
 - [ ] Frontend ↔ Backend Verbindung
@@ -263,7 +275,9 @@ MDS/
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System-Architektur | ✅ Aktuell |
 | [backend/docs/DATABASE.md](./backend/docs/DATABASE.md) | Datenbank-Setup | ✅ Aktuell |
 | [backend/docs/WEEK-1-SUMMARY.md](./backend/docs/WEEK-1-SUMMARY.md) | Woche 1 Bericht | ✅ Aktuell |
-| [backend/docs/API.md](./backend/docs/API.md) | API-Dokumentation | 📋 Woche 2 |
+| [backend/docs/WEEK-2-COMPLETE.md](./backend/docs/WEEK-2-COMPLETE.md) | Woche 2 Bericht | ✅ Aktuell |
+| [backend/docs/AUTH-API.md](./backend/docs/AUTH-API.md) | Auth API Docs | ✅ Aktuell |
+| [backend/docs/API-TESTING-GUIDE.md](./backend/docs/API-TESTING-GUIDE.md) | Testing Guide | ✅ Aktuell |
 
 ---
 
@@ -416,13 +430,17 @@ MIT License - siehe [LICENSE](./LICENSE) für Details.
 
 ## 🚀 Status
 
-**🎉 Phase 1, Woche 1 - ABGESCHLOSSEN!**
+**🎉 Phase 1, Woche 2 - ABGESCHLOSSEN!**
+
+**Completed:**
+- ✅ Woche 1: Datenbank-Schema (28 Tabellen, 7 Migrations)
+- ✅ Woche 2: Backend API + Auth (10 Endpoints, JWT, Parts CRUD, Audit-Log)
 
 **Next Steps:**
-- Woche 2: Backend API + JWT Auth
-- Express Server Setup
-- User Authentication
-- CRUD Endpoints
+- Woche 3: Frontend React App
+- Login/Logout UI
+- Bauteile-Übersicht
+- CRUD-Operationen
 
 **Bereit für die nächste Session?** → [Starte hier](./QUICKSTART.md)
 

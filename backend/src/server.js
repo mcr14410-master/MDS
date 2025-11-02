@@ -30,6 +30,20 @@ pool.connect((err, client, release) => {
   }
 });
 
+// Import Middleware
+const { auditLog } = require('./middleware/auditLogMiddleware');
+
+// Import Routes
+const authRoutes = require('./routes/authRoutes');
+const partsRoutes = require('./routes/partsRoutes');
+
+// Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
+app.use(auditLog);
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/parts', partsRoutes);
+
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
   try {
@@ -41,7 +55,7 @@ app.get('/api/health', async (req, res) => {
       timestamp: new Date().toISOString(),
       database: 'connected',
       version: '1.0.0',
-      phase: 'Phase 1, Week 1 Complete',
+      phase: 'Phase 1, Week 2 - Backend COMPLETE (Auth + Parts CRUD + Audit Log)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -79,7 +93,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 1, Week 1 - Database Schema Complete!'
+      message: '🎉 Phase 1, Week 2 - COMPLETE! Auth + Parts CRUD + Audit Log ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -93,11 +107,24 @@ app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
     version: '1.0.0',
-    phase: 'Phase 1, Week 1 - Database Complete ✅',
-    nextPhase: 'Phase 1, Week 2 - Backend API + Auth',
+    phase: 'Phase 1, Week 2 - Backend API + Auth + Parts CRUD ⚡',
     endpoints: {
-      health: '/api/health',
-      dbInfo: '/api/db/info'
+      health: 'GET /api/health',
+      dbInfo: 'GET /api/db/info',
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login',
+        profile: 'GET /api/auth/me (Protected)',
+        changePassword: 'POST /api/auth/change-password (Protected)'
+      },
+      parts: {
+        list: 'GET /api/parts (Protected)',
+        get: 'GET /api/parts/:id (Protected)',
+        create: 'POST /api/parts (Protected)',
+        update: 'PUT /api/parts/:id (Protected)',
+        delete: 'DELETE /api/parts/:id (Protected)',
+        stats: 'GET /api/parts/stats (Protected)'
+      }
     },
     documentation: 'https://github.com/mcr14410-master/MDS'
   });
@@ -111,7 +138,17 @@ app.use((req, res) => {
     availableEndpoints: [
       'GET /',
       'GET /api/health',
-      'GET /api/db/info'
+      'GET /api/db/info',
+      'POST /api/auth/register',
+      'POST /api/auth/login',
+      'GET /api/auth/me',
+      'POST /api/auth/change-password',
+      'GET /api/parts',
+      'GET /api/parts/:id',
+      'POST /api/parts',
+      'PUT /api/parts/:id',
+      'DELETE /api/parts/:id',
+      'GET /api/parts/stats'
     ]
   });
 });
@@ -134,8 +171,23 @@ app.listen(PORT, () => {
   console.log(`   🏥 Health Check: http://localhost:${PORT}/api/health`);
   console.log(`   📊 DB Info: http://localhost:${PORT}/api/db/info`);
   console.log('   ========================================');
-  console.log('   ✅ Phase 1, Week 1 - COMPLETE!');
-  console.log('   📋 Next: Week 2 - Backend API + Auth');
+  console.log('   🔐 Auth Endpoints:');
+  console.log(`      POST /api/auth/register`);
+  console.log(`      POST /api/auth/login`);
+  console.log(`      GET  /api/auth/me`);
+  console.log(`      POST /api/auth/change-password`);
+  console.log('   ========================================');
+  console.log('   🔧 Parts Endpoints:');
+  console.log(`      GET    /api/parts`);
+  console.log(`      GET    /api/parts/:id`);
+  console.log(`      POST   /api/parts`);
+  console.log(`      PUT    /api/parts/:id`);
+  console.log(`      DELETE /api/parts/:id`);
+  console.log(`      GET    /api/parts/stats`);
+  console.log('   ========================================');
+  console.log('   ⚡ Phase 1, Week 2 - COMPLETE!');
+  console.log('   ✅ Auth System + Parts CRUD + Audit Log');
+  console.log('   📋 Next: Week 3 - Frontend React App');
   console.log('   ========================================\n');
 });
 
