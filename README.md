@@ -4,9 +4,9 @@
 > Versionskontrolle · RBAC · Wartungsmanagement · Audit-Trail
 
 [![Status](https://img.shields.io/badge/Status-In%20Development-yellow)](https://github.com/mcr14410-master/MDS)
-[![Phase](https://img.shields.io/badge/Phase-1%20Fundament-blue)](./ROADMAP.md)
-[![Week](https://img.shields.io/badge/Week-3%20Complete-success)](./docs/sessions/)
-[![Progress](https://img.shields.io/badge/Progress-45%25-brightgreen)](./ROADMAP.md)
+[![Phase](https://img.shields.io/badge/Phase-2%20Kern--Features-blue)](./ROADMAP.md)
+[![Week](https://img.shields.io/badge/Week-5%20Complete-success)](./docs/sessions/)
+[![Progress](https://img.shields.io/badge/Progress-58%25-brightgreen)](./ROADMAP.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 ---
@@ -28,7 +28,8 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 
 ## 📊 Aktueller Status
 
-### Phase 1 - 75% Complete (Woche 3 von 4 ✅)
+### ✅ Phase 1 - 100% Complete (Wochen 1-4 ✅)
+### ⏳ Phase 2 - 25% Complete (Woche 5 von 4 ✅)
 
 #### ✅ Woche 1: Datenbank-Schema (ABGESCHLOSSEN)
 ```
@@ -65,10 +66,43 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 ✅ ~900 Lines of Frontend Code
 ```
 
-**Arbeitszeit:** 18h investiert (8h Woche 1 + 8h Woche 2 + 2h Woche 3)  
-**Nächster Schritt:** Integration & Testing (Woche 4)
+#### ✅ Woche 4: Integration & Testing (ABGESCHLOSSEN)
+```
+✅ Frontend ↔ Backend vollständig integriert
+✅ Part Detail Page (vollständige Ansicht)
+✅ Part Create/Edit Forms (mit Validierung)
+✅ Toast Notification System (selbst gebaut)
+✅ CORS konfiguriert
+✅ Alle CRUD-Operationen funktionieren
+✅ Permission-based UI überall
+✅ 9 Bugs gefixed
+✅ ~1200 Lines neuer Frontend Code
+🎉 MEILENSTEIN 1 ERREICHT: Lauffähiges Basis-System
+```
 
-[📖 Woche 1 Summary](./backend/docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./backend/docs/WEEK-2-COMPLETE.md) | [📖 Woche 3 Summary](./docs/sessions/SESSION-2025-11-02-WEEK3.md) | [🗺️ Roadmap](./ROADMAP.md)
+#### ✅ Woche 5: Operations (Arbeitsgänge) (ABGESCHLOSSEN)
+```
+✅ Operations Backend CRUD API (373 Zeilen)
+✅ Backend Testing (626 Zeilen Test-Szenarien)
+✅ Operations Frontend Components (970 Zeilen)
+  ├─ operationsStore.js - State Management
+  ├─ OperationCard.jsx - Card Component
+  ├─ OperationsList.jsx - Liste mit Sortierung
+  ├─ OperationForm.jsx - Modal Form
+  └─ PartDetailPage.jsx - Tab-System erweitert
+✅ Auto-Sequence Generierung (OP10, OP20, OP30...)
+✅ Tab-System (Details / Arbeitsgänge)
+✅ Modal Form für Create/Edit
+✅ Zeit-Eingabe vereinheitlicht (beide in Minuten)
+✅ Intelligente Zeit-Anzeige (30s / 3.5 Min / 2h 10m)
+✅ 3 Bugs gefixed (Response Format, Infinite Loop, Create Error)
+✅ Production-Ready
+```
+
+**Arbeitszeit:** 32h investiert (8h W1 + 8h W2 + 2h W3 + 4h W4 + 9h W5 + 1h Docs)  
+**Nächster Schritt:** Programme & File Upload (Woche 6)
+
+[📖 Woche 1 Summary](./docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./docs/WEEK-2-COMPLETE.md) | [📖 Woche 3 Summary](./docs/WEEK-3-SUMMARY.md) | [📖 Woche 4 Summary](./docs/sessions/SESSION-2025-11-03-WEEK4.md) | [📖 Woche 5 Summary](./docs/sessions/SESSION-2025-11-04-FRONTEND.md) | [🗺️ Roadmap](./ROADMAP.md)
 
 ---
 
@@ -82,17 +116,17 @@ Express           - REST API Framework
 PostgreSQL 15+    - Relationale Datenbank
 JWT               - Token-basierte Authentifizierung
 node-pg-migrate   - Schema-Migration Management
-Multer            - File Upload Handling
+Multer            - File Upload Handling (Woche 6)
 Chokidar          - File System Watcher (CAM-Integration)
 ```
 
-**Frontend** (React) - ✅ **Woche 3 Complete**
+**Frontend** (React) - ✅ **Phase 1 Complete**
 ```
 React 19          - UI Framework
 Vite              - Build Tool & Dev Server
 React Router v7   - Client-Side Routing
 Axios             - HTTP Client
-TailwindCSS v3.4    - Utility-First Styling
+TailwindCSS v4    - Utility-First Styling
 Zustand           - State Management
 ```
 
@@ -200,57 +234,83 @@ Password: admin123
 MDS/
 ├── backend/                    # Node.js Backend
 │   ├── src/
-│   │   ├── migrations/         # 5 Datenbank-Migrations (01-05)
+│   │   ├── migrations/         # 7 Datenbank-Migrations
 │   │   │   ├── 01_auth.js      # User/Role/Permission System
 │   │   │   ├── 02_production.js# Customers/Parts/Operations
 │   │   │   ├── 03_machines.js  # Maschinen & Workflow
 │   │   │   ├── 04_documentation.js # Setup-Sheets & Photos
-│   │   │   └── 05_system.js    # Audit/Comments/QR/Notifications
+│   │   │   ├── 05_system.js    # Audit/Comments/QR/Notifications
+│   │   │   ├── 06_maintenance.js   # Wartungssystem
+│   │   │   └── 07_maintenance_enhancements.js
+│   │   ├── controllers/
+│   │   │   ├── authController.js   # Auth Endpoints
+│   │   │   ├── partsController.js  # Parts CRUD
+│   │   │   └── operationsController.js # Operations CRUD ✅
+│   │   ├── routes/
+│   │   │   ├── authRoutes.js
+│   │   │   ├── partsRoutes.js
+│   │   │   └── operationsRoutes.js ✅
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.js   # JWT Verification
+│   │   │   └── permissionMiddleware.js
 │   │   ├── config/
 │   │   │   ├── database.js     # DB-Konfiguration
-│   │   │   └── seeds.js        # Test-Daten (20+ Datensätze)
-│   │   ├── server.js           # Express-Server (Woche 2)
+│   │   │   └── seeds.js        # Test-Daten
+│   │   ├── server.js           # Express-Server (v1.1.0)
 │   │   └── ...
 │   ├── docs/
-│   │   ├── DATABASE.md         # DB-Setup & Schema-Dokumentation
-│   │   ├── WEEK-1-SUMMARY.md   # Woche 1 Zusammenfassung
-│   │   ├── WEEK-2-COMPLETE.md  # Woche 2 Zusammenfassung
-│   │   ├── AUTH-API.md         # Auth API Docs
-│   │   └── API-TESTING-GUIDE.md# Testing Guide
+│   │   ├── DATABASE.md         # DB-Setup & Schema
+│   │   ├── WEEK-1-SUMMARY.md
+│   │   ├── WEEK-2-COMPLETE.md
+│   │   ├── WEEK-3-SUMMARY.md
+│   │   ├── AUTH-API.md
+│   │   └── API-TESTING-GUIDE.md
 │   ├── test-auth.http          # Auth API Tests
 │   ├── test-parts.http         # Parts API Tests
-│   ├── .env.example            # Umgebungsvariablen-Template
+│   ├── test-operations.http    # Operations API Tests ✅
+│   ├── .env.example
 │   └── package.json
 │
-├── frontend/                   # React Frontend (Woche 3) ✅
+├── frontend/                   # React Frontend ✅ Phase 1 Complete
 │   ├── src/
 │   │   ├── components/         # Reusable Components
 │   │   │   ├── Layout.jsx      # Navigation & Header
-│   │   │   └── ProtectedRoute.jsx # Route Protection
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   ├── Toaster.jsx     # Toast Notifications
+│   │   │   ├── OperationCard.jsx   # Operation Card ✅
+│   │   │   ├── OperationsList.jsx  # Operations List ✅
+│   │   │   └── OperationForm.jsx   # Modal Form ✅
 │   │   ├── pages/              # Page Components
 │   │   │   ├── LoginPage.jsx   # Login UI
 │   │   │   ├── DashboardPage.jsx # Dashboard mit Stats
-│   │   │   └── PartsPage.jsx   # Parts Tabelle
+│   │   │   ├── PartsPage.jsx   # Parts Tabelle
+│   │   │   ├── PartDetailPage.jsx # Detail + Operations Tab ✅
+│   │   │   └── PartFormPage.jsx # Create/Edit Forms
 │   │   ├── stores/             # Zustand State Management
 │   │   │   ├── authStore.js    # Authentication
-│   │   │   └── partsStore.js   # Parts Management
+│   │   │   ├── partsStore.js   # Parts Management
+│   │   │   └── operationsStore.js # Operations ✅
 │   │   ├── utils/              # Utilities
-│   │   │   └── axios.js        # Axios Instance + Interceptors
+│   │   │   └── axios.js        # Axios Instance
 │   │   ├── config/             # Configuration
 │   │   │   └── api.js          # API Endpoints
 │   │   ├── App.jsx             # Router Setup
 │   │   └── main.jsx            # Entry Point
 │   ├── .env                    # Environment Variables
-│   ├── package.json            # Dependencies
-│   └── README.md               # Frontend Documentation
+│   ├── package.json
+│   └── README.md
 │
 ├── docs/
-│   ├── ARCHITECTURE.md         # System-Architektur & Features
+│   ├── ARCHITECTURE.md         # System-Architektur
+│   ├── WEEK-1-SUMMARY.md
+│   ├── WEEK-2-COMPLETE.md
+│   ├── WEEK-3-SUMMARY.md
 │   └── sessions/               # Session-Protokolle
-│       ├── SESSION-2025-11-01.md           # Woche 1
-│       ├── SESSION-2025-11-02.md           # Woche 2
-│       ├── SESSION-2025-11-02-WEEK3.md     # Woche 3
-│       └── TEMPLATE.md
+│       ├── SESSION-2025-11-01.md       # Woche 1
+│       ├── SESSION-2025-11-02.md       # Woche 2
+│       ├── SESSION-2025-11-02-WEEK3.md # Woche 3
+│       ├── SESSION-2025-11-03-WEEK4.md # Woche 4
+│       └── SESSION-2025-11-04-FRONTEND.md # Woche 5 ✅
 │
 ├── README.md                   # Diese Datei
 ├── QUICKSTART.md               # Schnellstart-Anleitung
@@ -265,7 +325,7 @@ MDS/
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 1 - Monat 1: Fundament (75% - Wochen 1-4)
+### ✅ Phase 1 - Monat 1: Fundament (100% ✅ - Wochen 1-4)
 
 **Woche 1: ✅ KOMPLETT** - Datenbank-Schema
 - [x] 28 Tabellen entworfen
@@ -289,18 +349,43 @@ MDS/
 - [x] State Management (Zustand)
 - [x] Protected Routes
 
-**Woche 4: 🔜 NEXT** - Integration & Testing
-- [ ] Frontend ↔ Backend Verbindung
-- [ ] End-to-End Tests
-- [ ] Bug-Fixes
-- [ ] ✅ **MEILENSTEIN 1**: Lauffähiges Basis-System
+**Woche 4: ✅ KOMPLETT** - Integration & Testing
+- [x] Frontend ↔ Backend Verbindung
+- [x] Part Detail/Create/Edit Pages
+- [x] Form Validation
+- [x] Toast Notifications
+- [x] Bug-Fixes
+- [x] ✅ **MEILENSTEIN 1**: Lauffähiges Basis-System
 
-### 📋 Phase 2 - Monat 2: Kern-Features (Wochen 5-8)
+### ⏳ Phase 2 - Monat 2: Kern-Features (25% - Wochen 5-8)
 
-- Operations Management
-- NC-Programme mit Versionierung
-- File Upload System
-- Maschinenpark-Verwaltung
+**Woche 5: ✅ KOMPLETT** - Operations (Arbeitsgänge)
+- [x] Operations Backend CRUD API
+- [x] Backend Testing (626 Zeilen Tests)
+- [x] Operations Frontend Components
+- [x] Tab-System (Details / Arbeitsgänge)
+- [x] Modal Form Create/Edit
+- [x] Auto-Sequence (OP10, OP20, OP30...)
+- [x] Zeit-Eingabe vereinheitlicht
+
+**Woche 6: 🔜 NEXT** - Programme & File Upload
+- [ ] File Upload Backend (Multer)
+- [ ] Programs Backend CRUD
+- [ ] Programs Frontend Components
+- [ ] File Validation & Download
+- [ ] Programme zu Operations verknüpfen
+
+**Woche 7:** - Versionierung
+- [ ] Git-Style Versionierung
+- [ ] Diff-Berechnung
+- [ ] Rollback-Funktion
+- [ ] Versions-Historie
+
+**Woche 8:** - Maschinen-Stammdaten
+- [ ] Maschinen CRUD
+- [ ] Steuerungstypen
+- [ ] Netzwerk-Pfade
+- [ ] ✅ **MEILENSTEIN 2**: Kern-Features komplett
 
 ### 📋 Phase 3 - Monat 3: Workflows & Wartung (Wochen 9-12)
 
@@ -330,12 +415,14 @@ MDS/
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution Guidelines | ✅ Aktuell |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System-Architektur | ✅ Aktuell |
 | [backend/docs/DATABASE.md](./backend/docs/DATABASE.md) | Datenbank-Setup | ✅ Aktuell |
-| [backend/docs/WEEK-1-SUMMARY.md](./backend/docs/WEEK-1-SUMMARY.md) | Woche 1 Bericht | ✅ Aktuell |
-| [backend/docs/WEEK-2-COMPLETE.md](./backend/docs/WEEK-2-COMPLETE.md) | Woche 2 Bericht | ✅ Aktuell |
+| [docs/WEEK-1-SUMMARY.md](./docs/WEEK-1-SUMMARY.md) | Woche 1 Bericht | ✅ Aktuell |
+| [docs/WEEK-2-COMPLETE.md](./docs/WEEK-2-COMPLETE.md) | Woche 2 Bericht | ✅ Aktuell |
+| [docs/WEEK-3-SUMMARY.md](./docs/WEEK-3-SUMMARY.md) | Woche 3 Bericht | ✅ Aktuell |
+| [docs/sessions/SESSION-2025-11-03-WEEK4.md](./docs/sessions/SESSION-2025-11-03-WEEK4.md) | Woche 4 Bericht | ✅ Aktuell |
+| [docs/sessions/SESSION-2025-11-04-FRONTEND.md](./docs/sessions/SESSION-2025-11-04-FRONTEND.md) | Woche 5 Bericht | ✅ Aktuell |
 | [backend/docs/AUTH-API.md](./backend/docs/AUTH-API.md) | Auth API Docs | ✅ Aktuell |
 | [backend/docs/API-TESTING-GUIDE.md](./backend/docs/API-TESTING-GUIDE.md) | Testing Guide | ✅ Aktuell |
 | [frontend/README.md](./frontend/README.md) | Frontend Dokumentation | ✅ Aktuell |
-| [docs/sessions/SESSION-2025-11-02-WEEK3.md](./docs/sessions/SESSION-2025-11-02-WEEK3.md) | Woche 3 Bericht | ✅ Aktuell |
 
 ---
 
@@ -367,14 +454,35 @@ MDS/
 - ✅ **TailwindCSS v4** - Responsive Design
 - ✅ **Axios Integration** - Token-Interceptors
 
-### 📋 Geplant (Wochen 4-16)
+**Woche 4 - Integration:**
+- ✅ **Frontend ↔ Backend** - Vollständig integriert
+- ✅ **Part Detail Page** - Vollständige Bauteil-Ansicht
+- ✅ **Part Create/Edit Forms** - Mit Validierung
+- ✅ **Toast Notifications** - Selbst gebaut, ohne Library
+- ✅ **Permission-based UI** - Überall implementiert
+- ✅ **CORS** - Konfiguriert & getestet
+- ✅ **Bug-Fixes** - 9 Bugs gefixed
 
-**Integration & Testing** (Woche 4)
-- CORS Backend aktivieren
-- Frontend ↔ Backend verbinden
-- Part Detail/Create/Edit Pages
-- Form Validation
-- Toast Notifications
+**Woche 5 - Operations:**
+- ✅ **Operations Backend API** - CRUD für Arbeitsgänge (373 Zeilen)
+- ✅ **Backend Testing** - 626 Zeilen Test-Szenarien
+- ✅ **Operations Frontend** - 970 Zeilen Components
+- ✅ **Tab-System** - Details / Arbeitsgänge
+- ✅ **Operation Cards** - Card Component mit Zeit-Formatierung
+- ✅ **Modal Form** - Create/Edit mit Validierung
+- ✅ **Auto-Sequence** - Automatische Nummerierung (10, 20, 30...)
+- ✅ **Zeit-Eingabe** - Vereinheitlicht in Minuten
+- ✅ **Sortierung** - Nach Sequence
+- ✅ **Empty State** - "Noch keine Arbeitsgänge"
+- ✅ **Responsive** - 3/2/1 Spalten Layout
+
+### 📋 Geplant (Wochen 6-16)
+
+**Programme & File Upload** (Woche 6)
+- File Upload Backend (Multer)
+- Programs Backend CRUD
+- Programs Frontend Components
+- File Validation & Download
 
 **Versionierung** (Woche 7)
 - Git-Style für NC-Programme
@@ -440,18 +548,25 @@ git push origin feature/mein-feature
 ## 📊 Projekt-Status
 
 ```
-Phase 1 (Fundament):    ███████████████░░░░░ 75%
+Phase 1 (Fundament):    ████████████████████ 100% ✅
   └─ Woche 1:           ████████████████████ 100% ✅
   └─ Woche 2:           ████████████████████ 100% ✅
   └─ Woche 3:           ████████████████████ 100% ✅
-  └─ Woche 4:           ░░░░░░░░░░░░░░░░░░░░   0% 🔜
+  └─ Woche 4:           ████████████████████ 100% ✅
 
-Gesamt-Fortschritt:     █████████░░░░░░░░░░░ 45%
+Phase 2 (Kern-Features):██████░░░░░░░░░░░░░░ 25%
+  └─ Woche 5:           ████████████████████ 100% ✅
+  └─ Woche 6:           ░░░░░░░░░░░░░░░░░░░░   0% 🔜
+  └─ Woche 7:           ░░░░░░░░░░░░░░░░░░░░   0%
+  └─ Woche 8:           ░░░░░░░░░░░░░░░░░░░░   0%
+
+Gesamt-Fortschritt:     █████████████░░░░░░░ 58%
 ```
 
-**Arbeitszeit investiert:** 18h / ~480h geschätzt (3.75%)  
+**Arbeitszeit investiert:** 32h / ~480h geschätzt (6.7%)  
 **Geschätzte Fertigstellung:** April 2025  
-**Zeitbudget:** 30-35h/Woche
+**Zeitbudget:** 30-35h/Woche  
+**Velocity:** ~6.4h pro Woche (sehr gut!)
 
 ---
 
@@ -504,19 +619,25 @@ MIT License - siehe [LICENSE](./LICENSE) für Details.
 
 ## 🚀 Status
 
-**🎉 Phase 1, Woche 3 - ABGESCHLOSSEN!**
+**🎉 Phase 1 KOMPLETT + Woche 5 KOMPLETT!**
 
 **Completed:**
 - ✅ Woche 1: Datenbank-Schema (28 Tabellen, 7 Migrations)
-- ✅ Woche 2: Backend API + Auth (10 Endpoints, JWT, Parts CRUD, Audit-Log)
-- ✅ Woche 3: Frontend React App (Login, Dashboard, Parts List, Zustand, TailwindCSS)
+- ✅ Woche 2: Backend API + Auth (10 Endpoints, JWT, Parts CRUD)
+- ✅ Woche 3: Frontend React App (Login, Dashboard, Parts, Zustand)
+- ✅ Woche 4: Integration & Testing (CRUD, Forms, Toasts, Bug-Fixes)
+- ✅ Woche 5: Operations (Backend + Frontend, 2022 Zeilen Code)
+
+**🎊 Meilensteine erreicht:**
+- ✅ MEILENSTEIN 1: Lauffähiges Basis-System
+- ✅ Phase 1 (Wochen 1-4): 100% Complete
+- ✅ Woche 5: Operations komplett (Backend + Frontend)
 
 **Next Steps:**
-- Woche 4: Integration & Testing
-- CORS Backend aktivieren
-- Frontend ↔ Backend verbinden
-- Part Detail/Create/Edit Pages
-- Form Validation & Toast Notifications
+- Woche 6: Programme & File Upload
+- File Upload Backend (Multer)
+- Programs CRUD API
+- Programs Frontend Components
 
 **Bereit für die nächste Session?** → [Starte hier](./QUICKSTART.md)
 
