@@ -12,6 +12,9 @@ export const API_ENDPOINTS = {
   PARTS: `${API_BASE_URL}/api/parts`,
   PARTS_STATS: `${API_BASE_URL}/api/parts/stats`,
   
+  // Operations
+  OPERATIONS: `${API_BASE_URL}/api/operations`,
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

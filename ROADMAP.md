@@ -107,18 +107,18 @@
 
 ## 📅 Monat 2: Kern-Features (Wochen 5-8)
 
-### ⏳ Woche 5: Operations (Arbeitsgänge)
-**Status:** ⏳ **IN PROGRESS** (Backend ✅ 100%, Frontend ❌ ausstehend)
+### ✅ Woche 5: Operations (Arbeitsgänge)
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Bauteile haben Arbeitsgänge
 
 - [x] Operations Backend CRUD
 - [x] Backend Testing (test-operations.http)
-- [ ] Frontend: Operations pro Bauteil
-- [ ] OP-Nummern (OP10, OP20, ...)
-- [ ] Maschinen-Zuweisung
-- [ ] Sequence Management
+- [x] Frontend: Operations pro Bauteil
+- [x] OP-Nummern (OP10, OP20, ...)
+- [x] Maschinen-Zuweisung
+- [x] Sequence Management
 
-**Deliverable:** Teil → Operations funktioniert (Backend API komplett & getestet!)
+**Deliverable:** ✅ Teil → Operations funktioniert (Backend + Frontend komplett!)
 
 **Aktueller Stand (04.11.2025):**
 ```
@@ -126,27 +126,43 @@
 ✅ operationsRoutes.js (53 Zeilen) 
 ✅ server.js aktualisiert (v1.1.0)
 ✅ test-operations.http (626 Zeilen)
-✅ Backend Testing KOMPLETT - Alle Tests erfolgreich!
-✅ Bug-Fix: machine_name/machine_number → m.name as machine_name
-✅ Bug-Fix: test-operations.http Variable-Syntax (### vor @variable)
-❌ Frontend (noch nicht gestartet)
+✅ Backend Testing KOMPLETT
+✅ operationsStore.js (150 Zeilen)
+✅ OperationsList.jsx (145 Zeilen)
+✅ OperationCard.jsx (105 Zeilen)
+✅ OperationForm.jsx (270 Zeilen)
+✅ PartDetailPage.jsx mit Operations Tab (300 Zeilen)
+✅ Frontend Testing KOMPLETT
+✅ Bug-Fixes: 3 Response Format Bugs gefixt
+✅ UX-Verbesserung: Zykluszeit in Minuten (Frontend-Konvertierung)
 ```
 
-**Backend Features getestet:**
+**Backend Features:**
 ```
 ✅ CRUD Operations (Create, Read, Update, Delete)
 ✅ Filter by part_id
-✅ JOIN mit parts & machines (Namen werden geladen)
+✅ JOIN mit parts & machines
 ✅ Auto-Sequence Generierung (10, 20, 30...)
 ✅ Validierung (Pflichtfelder, Unique Constraints)
-✅ Complete Workflow (Part + 3 Operations)
-✅ Realistic Scenarios (Drehteil, Frästeil)
-✅ Update Tests (Partial Updates)
 ✅ Error Handling (404, 409, 401)
 ```
 
-**Abgeschlossen:** Backend API + Testing (04.11.2025)
-**Nächster Schritt:** Operations Frontend
+**Frontend Features:**
+```
+✅ Tab-System (Details / Arbeitsgänge)
+✅ Operations Liste mit Sortierung (Sequence)
+✅ Operation Cards mit Zeit-Formatierung
+✅ Create/Edit Modal Form
+✅ Validierung (OP-Nummer, OP-Name erforderlich)
+✅ Permission-based UI
+✅ Toast Notifications
+✅ Empty State
+✅ Responsive Design (3/2/1 Spalten)
+✅ Zeit-Eingabe vereinheitlicht (beide Zeiten in Minuten)
+```
+
+**Abgeschlossen:** Backend + Frontend komplett (04.11.2025)
+**Nächster Schritt:** Woche 6 - Programme & File Upload
 
 ---
 
@@ -320,12 +336,19 @@
 - [ ] ERP-Integration
 - [ ] Erweiterte Analytics mit KI
 
+### 🔧 Technical Debt / Refactoring-Kandidaten
+- [ ] **Operations Zeit-Einheiten vereinheitlichen:** 
+  - Aktuell: setup_time_minutes (Minuten) + cycle_time_seconds (Sekunden in DB, aber Minuten im Frontend)
+  - Ziel: Beide in Minuten in DB speichern (cycle_time_seconds → cycle_time_minutes)
+  - Aufwand: ~2h (Migration + Backend + Frontend + Tests)
+  - Priorität: Low (funktioniert aktuell mit Frontend-Konvertierung)
+
 ---
 
 ## 📊 Fortschritt
 
 ```
-Gesamt: ████████████░░░░░░░░ 54%
+Gesamt: █████████████░░░░░░░ 58%
 
 Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
@@ -334,7 +357,7 @@ Phase 1 (Monat 1): ████████████████████ 
   └─ Woche 4:      ████████████████████ 100% ✅
 
 Phase 2 (Monat 2): ██████░░░░░░░░░░░░░░ 25%
-  └─ Woche 5:      ████████████████████ 100% ✅ (Backend komplett & getestet!)
+  └─ Woche 5:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 6:      ░░░░░░░░░░░░░░░░░░░░  0%
   └─ Woche 7:      ░░░░░░░░░░░░░░░░░░░░  0%
   └─ Woche 8:      ░░░░░░░░░░░░░░░░░░░░  0%
@@ -343,9 +366,9 @@ Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░ 
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
-**Arbeitszeit:** 25.5h / ~480h geschätzt (5.3%)
+**Arbeitszeit:** 32h / ~480h geschätzt (6.7%)
 **Geschätzte Fertigstellung:** April 2025  
-**Aktueller Sprint:** ✅ Phase 1 KOMPLETT | ✅ Woche 5 Backend KOMPLETT (100%)
+**Aktueller Sprint:** ✅ Phase 1 KOMPLETT | ✅ Woche 5 KOMPLETT (100%)
 
 ---
 
@@ -356,9 +379,11 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 - ✅ **2025-11-02:** Woche 3 abgeschlossen - Frontend React App komplett (Login + Dashboard + Parts)
 - ✅ **2025-11-03:** Woche 4 abgeschlossen - Integration komplett (CRUD + Toast + Fixes)
 - 🎊 **2025-11-03:** **PHASE 1 KOMPLETT - MEILENSTEIN 1 ERREICHT!**
-- ⏳ **2025-11-04:** Woche 5 Backend gestartet - Operations API erstellt (373 Zeilen)
+- ✅ **2025-11-04:** Woche 5 Backend gestartet - Operations API erstellt (373 Zeilen)
 - ✅ **2025-11-04:** Woche 5 Backend komplett - Operations API getestet & alle Tests erfolgreich!
-- 📜 **Next:** Woche 5 Frontend - Operations UI (Liste + Forms + Sequence Management)
+- ✅ **2025-11-04:** Woche 5 Frontend komplett - Operations UI fertig (4 Components, 970 Zeilen)
+- 🎊 **2025-11-04:** **WOCHE 5 KOMPLETT - Operations Frontend + Backend fertig!**
+- 📜 **Next:** Woche 6 - Programme & File Upload
 
 ---
 
@@ -370,7 +395,7 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 2** | Backend API | Auth + Parts CRUD | ✅ 100% |
 | **Woche 3** | Frontend Basis | React App + Login + Dashboard | ✅ 100% |
 | **Woche 4** | Integration | CRUD + Detail + Forms + Toasts | ✅ 100% |
-| **Woche 5** | Operations | Backend API (373 Zeilen) + Testing | ✅ 100% (Backend) |
+| **Woche 5** | Operations | Backend API + Frontend UI + Bug-Fixes | ✅ 100% |
 
 ---
 
@@ -385,21 +410,20 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 5 Tasks - Operations (verbleibend):**
-1. ✅ ~~Operations Backend CRUD API~~ (DONE!)
-2. ✅ ~~Backend testen~~ (DONE!)
-3. ❌ Operations Frontend Komponenten
-4. ❌ OP-Nummern System (OP10, OP20, ...)
-5. ❌ Operations zu Parts zuordnen (UI)
-6. ❌ Sequence Management (Reihenfolge)
-7. ❌ Maschinen-Zuweisung zu Operations (Dropdown)
-8. ❌ Operations Detail/Create/Edit Pages
+**Woche 6 Tasks - Programme & File Upload:**
+1. ❌ File Upload Backend (Multer)
+2. ❌ Programs CRUD API
+3. ❌ Programs Frontend Components
+4. ❌ File Validation (NC-Programme, G-Code)
+5. ❌ Program Download Funktion
+6. ❌ Programme zu Operations verknüpfen
+7. ❌ Program Viewer (Optional: Syntax Highlighting)
 
-**Nächster Schritt:** Operations Frontend starten
+**Nächster Schritt:** Woche 6 Backend starten (File Upload + Programs API)
 
-**Geschätzte Zeit verbleibend:** 5-7 Stunden (Frontend 5-7h)
+**Geschätzte Zeit:** 8-10 Stunden (Backend 4-5h, Frontend 4-5h)
 
 ---
 
 **Letzte Aktualisierung:** 2025-11-04  
-**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ✅ Woche 5 Backend KOMPLETT & GETESTET! (100%)
+**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ✅ Woche 5 KOMPLETT (Backend + Frontend)! 🚀

@@ -1,15 +1,17 @@
 // frontend/src/pages/PartDetailPage.jsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
+import OperationsList from '../components/OperationsList';
 
 export default function PartDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentPart, loading, error, fetchPart, deletePart } = usePartsStore();
   const { hasPermission } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('details'); // 'details' or 'operations'
 
   useEffect(() => {
     if (id) {
@@ -132,167 +134,200 @@ export default function PartDetailPage() {
         </div>
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info Card */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Bauteil-Details</h2>
-            
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Bauteilnummer
-                </label>
-                <p className="text-gray-900 font-medium">{part.part_number}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Bezeichnung
-                </label>
-                <p className="text-gray-900">{part.part_name}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Kunde
-                </label>
-                <p className="text-gray-900">{part.customer_name || '-'}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Revision
-                </label>
-                <p className="text-gray-900 font-mono">{part.revision || 'A'}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Material
-                </label>
-                <p className="text-gray-900">{part.material || '-'}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Abmessungen
-                </label>
-                <p className="text-gray-900">{part.dimensions || '-'}</p>
-              </div>
-            </div>
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex gap-8">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'details'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Details
+          </button>
+          <button
+            onClick={() => setActiveTab('operations')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'operations'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Arbeitsgänge
+          </button>
+        </nav>
+      </div>
 
-            {part.description && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Beschreibung
-                </label>
-                <p className="text-gray-700 whitespace-pre-wrap">{part.description}</p>
-              </div>
-            )}
-
-            {part.notes && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Notizen
-                </label>
-                <p className="text-gray-700 whitespace-pre-wrap">{part.notes}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Meta Info Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Metadaten</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Erstellt am
-                </label>
-                <p className="text-gray-900 text-sm">
-                  {new Date(part.created_at).toLocaleDateString('de-DE', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
+      {/* Tab Content */}
+      {activeTab === 'details' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Info Card */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Bauteil-Details</h2>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Zuletzt geändert
-                </label>
-                <p className="text-gray-900 text-sm">
-                  {new Date(part.updated_at).toLocaleDateString('de-DE', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-              
-              {part.updated_by && (
+              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Geändert von
+                    Bauteilnummer
                   </label>
-                  <p className="text-gray-900 text-sm">{part.updated_by}</p>
+                  <p className="text-gray-900 font-medium">{part.part_number}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Bezeichnung
+                  </label>
+                  <p className="text-gray-900">{part.part_name}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Kunde
+                  </label>
+                  <p className="text-gray-900">{part.customer_name || '-'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Revision
+                  </label>
+                  <p className="text-gray-900 font-mono">{part.revision || 'A'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Material
+                  </label>
+                  <p className="text-gray-900">{part.material || '-'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Abmessungen
+                  </label>
+                  <p className="text-gray-900">{part.dimensions || '-'}</p>
+                </div>
+              </div>
+
+              {part.description && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Beschreibung
+                  </label>
+                  <p className="text-gray-700 whitespace-pre-wrap">{part.description}</p>
+                </div>
+              )}
+
+              {part.notes && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Notizen
+                  </label>
+                  <p className="text-gray-700 whitespace-pre-wrap">{part.notes}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* CAD File Card */}
-          {part.cad_file_path && (
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Meta Info Card */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">CAD-Datei</h3>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <span className="text-sm text-gray-600 truncate">{part.cad_file_path}</span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Metadaten</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Erstellt am
+                  </label>
+                  <p className="text-gray-900 text-sm">
+                    {new Date(part.created_at).toLocaleDateString('de-DE', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Zuletzt geändert
+                  </label>
+                  <p className="text-gray-900 text-sm">
+                    {new Date(part.updated_at).toLocaleDateString('de-DE', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                
+                {part.updated_by && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                      Geändert von
+                    </label>
+                    <p className="text-gray-900 text-sm">{part.updated_by}</p>
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Quick Actions Card */}
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">Schnellaktionen</h3>
-            <div className="space-y-2">
-              <button
-                className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
-                disabled
-              >
-                📋 Arbeitsgänge anzeigen
-              </button>
-              <button
-                className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
-                disabled
-              >
-                💾 Programme anzeigen
-              </button>
-              <button
-                className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
-                disabled
-              >
-                📝 Historie anzeigen
-              </button>
+            {/* CAD File Card */}
+            {part.cad_file_path && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">CAD-Datei</h3>
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm text-gray-600 truncate">{part.cad_file_path}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions Card */}
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4">Schnellaktionen</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setActiveTab('operations')}
+                  className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
+                >
+                  📋 Arbeitsgänge anzeigen
+                </button>
+                <button
+                  className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
+                  disabled
+                >
+                  💾 Programme anzeigen
+                </button>
+                <button
+                  className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-left text-sm font-medium border border-gray-200"
+                  disabled
+                >
+                  📝 Historie anzeigen
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-blue-600">
+                Programme & Historie kommen in Woche 6+
+              </p>
             </div>
-            <p className="mt-3 text-xs text-blue-600">
-              Diese Features kommen in Woche 5+
-            </p>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Operations Tab */
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <OperationsList partId={id} />
+        </div>
+      )}
     </div>
   );
 }
