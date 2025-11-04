@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
 import { useAuthStore } from '../stores/authStore';
 import { usePartsStore } from '../stores/partsStore';
 
@@ -13,7 +12,6 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <Layout>
       <div className="space-y-6">
         {/* Welcome */}
         <div className="bg-white shadow rounded-lg p-6">
@@ -40,7 +38,7 @@ export default function DashboardPage() {
                       Bauteile Gesamt
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900">
-                      {stats?.totalParts || 0}
+                      {stats?.total_parts || 0}
                     </dd>
                   </dl>
                 </div>
@@ -61,7 +59,7 @@ export default function DashboardPage() {
                       Aktiv
                     </dt>
                     <dd className="text-2xl font-semibold text-green-600">
-                      {stats?.byStatus?.active || 0}
+                      {stats?.active_parts || 0}
                     </dd>
                   </dl>
                 </div>
@@ -82,7 +80,7 @@ export default function DashboardPage() {
                       Entwurf
                     </dt>
                     <dd className="text-2xl font-semibold text-yellow-600">
-                      {stats?.byStatus?.draft || 0}
+                      {stats?.draft_parts || 0}
                     </dd>
                   </dl>
                 </div>
@@ -103,7 +101,7 @@ export default function DashboardPage() {
                       Kunden
                     </dt>
                     <dd className="text-2xl font-semibold text-blue-600">
-                      {stats?.totalCustomers || 0}
+                      {stats?.total_customers || 0}
                     </dd>
                   </dl>
                 </div>
@@ -185,6 +183,5 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </Layout>
-  );
+     );
 }

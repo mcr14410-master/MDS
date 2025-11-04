@@ -7,7 +7,7 @@ export default function LoginPage() {
   const { user, login, loading, error, clearError } = useAuthStore();
   
   const [credentials, setCredentials] = useState({
-    login: '',
+    username: '',
     password: '',
   });
 
@@ -70,15 +70,15 @@ export default function LoginPage() {
           <div className="space-y-4">
             {/* Username/Email */}
             <div>
-              <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
                 Benutzername oder E-Mail
               </label>
               <input
-                id="login"
-                name="login"
+                id="username"
+                name="username"
                 type="text"
                 required
-                value={credentials.login}
+                value={credentials.username}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="admin oder admin@example.com"

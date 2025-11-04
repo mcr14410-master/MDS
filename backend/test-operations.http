@@ -1,0 +1,628 @@
+# Operations API Testing
+# You can use these requests with VS Code REST Client extension
+
+### Variables
+@baseUrl = http://localhost:5000
+
+###############################################
+# 1. LOGIN FIRST (Required for Operations API)
+###############################################
+
+### Login as Admin
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Extract Token
+@token = {{login.response.body.token}}
+
+###############################################
+# OPERATIONS CRUD - BASIC
+###############################################
+
+### Get All Operations
+GET {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+
+### Get Operations filtered by Part ID
+GET {{baseUrl}}/api/operations?part_id=1
+Authorization: Bearer {{token}}
+
+### Get Single Operation by ID
+GET {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+
+### Create New Operation - OP10 (Drehen)
+# @name createOP10
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP40",
+  "op_name": "Drehen",
+  "setup_time_minutes": 30,
+  "cycle_time_seconds": 45.5,
+  "description": "Vorderseite drehen, Durchmesser 50mm",
+  "notes": "Achtung: Werkstück vorher entgraten"
+}
+
+### Extract Created Operation ID
+@opId = {{createOP10.response.body.data.id}}
+
+### Get Newly Created Operation
+GET {{baseUrl}}/api/operations/{{opId}}
+Authorization: Bearer {{token}}
+
+### Update Operation
+PUT {{baseUrl}}/api/operations/{{opId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_name": "Drehen (aktualisiert)",
+  "setup_time_minutes": 35,
+  "cycle_time_seconds": 50.0,
+  "description": "Vorderseite drehen, Durchmesser 50mm - optimiert"
+}
+
+### Delete Operation
+DELETE {{baseUrl}}/api/operations/{{opId}}
+Authorization: Bearer {{token}}
+
+###############################################
+# COMPLETE WORKFLOW - Part mit mehreren Operations
+###############################################
+
+### Step 1: Create a Test Part first
+# @name createTestPart
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_number": "TEST-OP-001",
+  "part_name": "Testteil mit Operations",
+  "material": "Aluminium 7075",
+  "description": "Bauteil zum Testen der Operations API",
+  "status": "draft"
+}
+
+#######
+@testPartId = {{createTestPart.response.body.part.id}}
+
+### Step 2: Create OP10 - Drehen
+# @name workflowOP10
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{testPartId}},
+  "op_number": "OP10",
+  "op_name": "Drehen",
+  "setup_time_minutes": 30,
+  "cycle_time_seconds": 45.5,
+  "description": "Außendurchmesser drehen",
+  "notes": "Spannmittel: Dreibackenfutter"
+}
+
+### Step 3: Create OP20 - Fräsen
+# @name workflowOP20
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{testPartId}},
+  "op_number": "OP20",
+  "op_name": "Fräsen",
+  "setup_time_minutes": 20,
+  "cycle_time_seconds": 120,
+  "description": "Nuten fräsen, 4x M6 Gewinde",
+  "notes": "Werkzeug: HSS Fräser 8mm"
+}
+
+### Step 4: Create OP30 - Entgraten
+# @name workflowOP30
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{testPartId}},
+  "op_number": "OP30",
+  "op_name": "Entgraten",
+  "setup_time_minutes": 10,
+  "cycle_time_seconds": 30,
+  "description": "Manuelles Entgraten aller Kanten",
+  "notes": "Entgratklinge verwenden"
+}
+
+### Step 5: Get All Operations for this Part
+GET {{baseUrl}}/api/operations?part_id={{testPartId}}
+Authorization: Bearer {{token}}
+
+### Step 6: Get the Part with its Operations
+GET {{baseUrl}}/api/parts/{{testPartId}}
+Authorization: Bearer {{token}}
+
+###############################################
+# OPERATIONS WITH MACHINE ASSIGNMENT
+###############################################
+
+### Create Operation with Machine (wenn machine_id=1 existiert)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP40",
+  "op_name": "CNC Fräsen",
+  "machine_id": 1,
+  "setup_time_minutes": 45,
+  "cycle_time_seconds": 180,
+  "description": "CNC Bearbeitung mit DMG Mori",
+  "notes": "Programm: P0001.NC"
+}
+
+###############################################
+# SEQUENCE MANAGEMENT
+###############################################
+
+### Create Operations with Custom Sequence
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP50",
+  "op_name": "Qualitätskontrolle",
+  "sequence": 100,
+  "setup_time_minutes": 5,
+  "cycle_time_seconds": 15,
+  "description": "Maßkontrolle mit Messschieber"
+}
+
+### Create Operation without Sequence (auto-generated)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP60",
+  "op_name": "Verpacken",
+  "setup_time_minutes": 2,
+  "cycle_time_seconds": 5,
+  "description": "Bauteil in Karton verpacken"
+}
+
+###############################################
+# VALIDATION TESTS
+###############################################
+
+### Test: Create Operation without Required Fields (should fail)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1
+}
+
+### Test: Create Operation with Missing part_id (should fail)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_number": "OP99",
+  "op_name": "Test Operation"
+}
+
+### Test: Create Operation with Missing op_number (should fail)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_name": "Test Operation"
+}
+
+### Test: Create Operation with Missing op_name (should fail)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP99"
+}
+
+### Test: Create Operation with Non-Existent Part (should fail - 404)
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 99999,
+  "op_number": "OP10",
+  "op_name": "Test Operation"
+}
+
+### Test: Create Duplicate OP Number for Same Part (should fail - 409)
+# First, create OP10 if not exists, then try again
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": 1,
+  "op_number": "OP10",
+  "op_name": "Duplicate Test"
+}
+
+### Test: Get Non-Existent Operation (should return 404)
+GET {{baseUrl}}/api/operations/99999
+Authorization: Bearer {{token}}
+
+### Test: Update Non-Existent Operation (should return 404)
+PUT {{baseUrl}}/api/operations/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_name": "This should fail"
+}
+
+### Test: Access Without Token (should return 401)
+GET {{baseUrl}}/api/operations
+
+### Test: Access With Invalid Token (should return 401)
+GET {{baseUrl}}/api/operations
+Authorization: Bearer invalid_token_here
+
+###############################################
+# UPDATE SCENARIOS
+###############################################
+
+### Update Only Operation Name
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_name": "Drehen - Optimiert"
+}
+
+### Update Times Only
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setup_time_minutes": 25,
+  "cycle_time_seconds": 40
+}
+
+### Update Everything
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_number": "OP10",
+  "op_name": "Drehen - Komplett neu",
+  "machine_id": 2,
+  "setup_time_minutes": 35,
+  "cycle_time_seconds": 50,
+  "description": "Komplett überarbeiteter Arbeitsgang",
+  "notes": "Neue Prozessparameter",
+  "sequence": 15
+}
+
+### Update: Change OP Number (test unique constraint)
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "op_number": "OP15"
+}
+
+### Update: Remove Machine Assignment (set to null)
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "machine_id": null
+}
+
+###############################################
+# REALISTIC MANUFACTURING SCENARIOS
+###############################################
+
+### Scenario 1: Simple Turned Part
+# @name scenario1Part
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_number": "DRH-2024-001",
+  "part_name": "Drehteil Welle",
+  "material": "C45 Stahl",
+  "dimensions": "Ø50 x 200",
+  "description": "Einfache Welle, 2-seitig bearbeitet"
+}
+
+######
+@s1PartId = {{scenario1Part.response.body.part.id}}
+
+### OP10 - Drehen Seite A
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s1PartId}},
+  "op_number": "OP10",
+  "op_name": "Drehen Seite A",
+  "setup_time_minutes": 20,
+  "cycle_time_seconds": 180,
+  "description": "Außendurchmesser Ø48h7, Länge 95mm, Plan auf Maß"
+}
+
+### OP20 - Umspannen & Drehen Seite B
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s1PartId}},
+  "op_number": "OP20",
+  "op_name": "Drehen Seite B",
+  "setup_time_minutes": 15,
+  "cycle_time_seconds": 120,
+  "description": "Außendurchmesser Ø45h7, Länge auf 195mm, Fase"
+}
+
+### OP30 - Entgraten
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s1PartId}},
+  "op_number": "OP30",
+  "op_name": "Entgraten",
+  "setup_time_minutes": 5,
+  "cycle_time_seconds": 30,
+  "description": "Alle scharfen Kanten brechen 0.3x45°"
+}
+
+### Get Complete Scenario 1
+GET {{baseUrl}}/api/operations?part_id={{s1PartId}}
+Authorization: Bearer {{token}}
+
+### Scenario 2: Complex Milled Part
+# @name scenario2Part
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_number": "FRÄ-2024-005",
+  "part_name": "Gehäusedeckel",
+  "material": "AlMg3",
+  "dimensions": "200 x 150 x 30",
+  "description": "CNC gefräster Deckel mit Dichtfläche"
+}
+
+#######
+@s2PartId = {{scenario2Part.response.body.part.id}}
+
+### OP10 - Sägen
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s2PartId}},
+  "op_number": "OP10",
+  "op_name": "Sägen Rohling",
+  "setup_time_minutes": 10,
+  "cycle_time_seconds": 45,
+  "description": "Rohling sägen 210 x 160 x 35"
+}
+
+### OP20 - CNC Fräsen Seite 1
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s2PartId}},
+  "op_number": "OP20",
+  "op_name": "CNC Fräsen Seite 1",
+  "setup_time_minutes": 45,
+  "cycle_time_seconds": 480,
+  "description": "Außenkontur, 4x Bohrungen M8, Tasche"
+}
+
+### OP30 - CNC Fräsen Seite 2
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s2PartId}},
+  "op_number": "OP30",
+  "op_name": "CNC Fräsen Seite 2",
+  "setup_time_minutes": 30,
+  "cycle_time_seconds": 360,
+  "description": "Dichtfläche planfräsen, 8x Bohrungen M6"
+}
+
+### OP40 - Entgraten
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s2PartId}},
+  "op_number": "OP40",
+  "op_name": "Entgraten",
+  "setup_time_minutes": 10,
+  "cycle_time_seconds": 120,
+  "description": "Alle Kanten entgraten, Bohrungen senken"
+}
+
+### OP50 - Qualität & Reinigen
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "part_id": {{s2PartId}},
+  "op_number": "OP50",
+  "op_name": "Qualitätskontrolle",
+  "setup_time_minutes": 5,
+  "cycle_time_seconds": 60,
+  "description": "Maßkontrolle, Sichtprüfung, Reinigen"
+}
+
+###############################################
+# STATISTICS & ANALYSIS
+###############################################
+
+### Get All Operations (Overview)
+GET {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+
+### Count Operations per Part
+# This would need a special endpoint, for now just filter by part_id
+
+### Get Operations sorted by Part and Sequence
+GET {{baseUrl}}/api/operations
+Authorization: Bearer {{token}}
+
+###############################################
+# CLEANUP
+###############################################
+
+### Delete Test Operations (use the IDs from above)
+# DELETE {{baseUrl}}/api/operations/{{opId}}
+# Authorization: Bearer {{token}}
+
+### Delete Test Parts (use the IDs from above)
+# DELETE {{baseUrl}}/api/parts/{{testPartId}}
+# Authorization: Bearer {{token}}
+
+###############################################
+# cURL Examples (for terminal/command line)
+###############################################
+
+# Login and get token (Bash/Linux/Mac)
+# TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"username":"admin","password":"admin123"}' \
+#   | jq -r '.token')
+
+# Get all operations
+# curl -X GET http://localhost:5000/api/operations \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Get operations for a specific part
+# curl -X GET "http://localhost:5000/api/operations?part_id=1" \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Create operation
+# curl -X POST http://localhost:5000/api/operations \
+#   -H "Authorization: Bearer $TOKEN" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "part_id": 1,
+#     "op_number": "OP10",
+#     "op_name": "Drehen",
+#     "setup_time_minutes": 30,
+#     "cycle_time_seconds": 45.5,
+#     "description": "Außendurchmesser drehen"
+#   }'
+
+# Get single operation
+# curl -X GET http://localhost:5000/api/operations/1 \
+#   -H "Authorization: Bearer $TOKEN"
+
+# Update operation
+# curl -X PUT http://localhost:5000/api/operations/1 \
+#   -H "Authorization: Bearer $TOKEN" \
+#   -H "Content-Type: application/json" \
+#   -d '{"setup_time_minutes": 35}'
+
+# Delete operation
+# curl -X DELETE http://localhost:5000/api/operations/1 \
+#   -H "Authorization: Bearer $TOKEN"
+
+###############################################
+# PowerShell Examples
+###############################################
+
+# Login and get token (PowerShell/Windows)
+# $response = Invoke-RestMethod -Uri "http://localhost:5000/api/auth/login" `
+#   -Method Post `
+#   -Body '{"username":"admin","password":"admin123"}' `
+#   -ContentType "application/json"
+# $token = $response.token
+
+# Get all operations
+# $headers = @{"Authorization"="Bearer $token"}
+# Invoke-RestMethod -Uri "http://localhost:5000/api/operations" `
+#   -Method Get `
+#   -Headers $headers
+
+# Get operations for specific part
+# Invoke-RestMethod -Uri "http://localhost:5000/api/operations?part_id=1" `
+#   -Method Get `
+#   -Headers $headers
+
+# Create operation
+# $body = @{
+#   part_id = 1
+#   op_number = "OP10"
+#   op_name = "Drehen"
+#   setup_time_minutes = 30
+#   cycle_time_seconds = 45.5
+#   description = "Außendurchmesser drehen"
+# } | ConvertTo-Json
+# Invoke-RestMethod -Uri "http://localhost:5000/api/operations" `
+#   -Method Post `
+#   -Headers $headers `
+#   -Body $body `
+#   -ContentType "application/json"
+
+# Update operation
+# $updateBody = @{
+#   setup_time_minutes = 35
+# } | ConvertTo-Json
+# Invoke-RestMethod -Uri "http://localhost:5000/api/operations/1" `
+#   -Method Put `
+#   -Headers $headers `
+#   -Body $updateBody `
+#   -ContentType "application/json"
+
+# Delete operation
+# Invoke-RestMethod -Uri "http://localhost:5000/api/operations/1" `
+#   -Method Delete `
+#   -Headers $headers

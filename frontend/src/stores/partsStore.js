@@ -32,14 +32,16 @@ export const usePartsStore = create((set, get) => ({
       const response = await axios.get(url);
       
       set({ 
-        parts: response.data.parts,
+        parts: response.data.parts || [],
         loading: false 
       });
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Fehler beim Laden der Bauteile';
+      console.error('fetchParts error:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Laden der Bauteile';
       set({ 
         loading: false, 
-        error: errorMessage 
+        error: errorMessage,
+        parts: []
       });
     }
   },
@@ -56,7 +58,8 @@ export const usePartsStore = create((set, get) => ({
         loading: false 
       });
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Fehler beim Laden des Bauteils';
+      console.error('fetchPart error:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Laden des Bauteils';
       set({ 
         loading: false, 
         error: errorMessage 
@@ -69,7 +72,9 @@ export const usePartsStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
+      console.log('Creating part with data:', partData);
       const response = await axios.post(API_ENDPOINTS.PARTS, partData);
+      console.log('Create response:', response.data);
       
       // Add to list
       set(state => ({ 
@@ -79,12 +84,17 @@ export const usePartsStore = create((set, get) => ({
       
       return { success: true, part: response.data.part };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Fehler beim Erstellen des Bauteils';
+      console.error('createPart error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Erstellen des Bauteils';
       set({ 
         loading: false, 
         error: errorMessage 
       });
-      return { success: false, error: errorMessage };
+      
+      // Throw error so form can catch it
+      throw new Error(errorMessage);
     }
   },
 
@@ -93,23 +103,30 @@ export const usePartsStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
+      console.log('Updating part', id, 'with data:', partData);
       const response = await axios.put(`${API_ENDPOINTS.PARTS}/${id}`, partData);
+      console.log('Update response:', response.data);
       
       // Update in list
       set(state => ({ 
-        parts: state.parts.map(p => p.id === id ? response.data.part : p),
-        currentPart: state.currentPart?.id === id ? response.data.part : state.currentPart,
+        parts: state.parts.map(p => p.id === parseInt(id) ? response.data.part : p),
+        currentPart: state.currentPart?.id === parseInt(id) ? response.data.part : state.currentPart,
         loading: false 
       }));
       
       return { success: true, part: response.data.part };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Fehler beim Aktualisieren des Bauteils';
+      console.error('updatePart error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Aktualisieren des Bauteils';
       set({ 
         loading: false, 
         error: errorMessage 
       });
-      return { success: false, error: errorMessage };
+      
+      // Throw error so form can catch it
+      throw new Error(errorMessage);
     }
   },
 
@@ -122,18 +139,21 @@ export const usePartsStore = create((set, get) => ({
       
       // Remove from list
       set(state => ({ 
-        parts: state.parts.filter(p => p.id !== id),
+        parts: state.parts.filter(p => p.id !== parseInt(id)),
         loading: false 
       }));
       
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Fehler beim Löschen des Bauteils';
+      console.error('deletePart error:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Löschen des Bauteils';
       set({ 
         loading: false, 
         error: errorMessage 
       });
-      return { success: false, error: errorMessage };
+      
+      // Throw error so caller can catch it
+      throw new Error(errorMessage);
     }
   },
 
@@ -141,7 +161,7 @@ export const usePartsStore = create((set, get) => ({
   fetchStats: async () => {
     try {
       const response = await axios.get(API_ENDPOINTS.PARTS_STATS);
-      set({ stats: response.data });
+      set({ stats: response.data.stats || response.data });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }

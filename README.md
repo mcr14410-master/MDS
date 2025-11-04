@@ -92,7 +92,7 @@ React 19          - UI Framework
 Vite              - Build Tool & Dev Server
 React Router v7   - Client-Side Routing
 Axios             - HTTP Client
-TailwindCSS v4    - Utility-First Styling
+TailwindCSS v3.4    - Utility-First Styling
 Zustand           - State Management
 ```
 

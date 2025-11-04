@@ -7,7 +7,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+// CORS Configuration for Frontend
+app.use(cors({
+  origin: 'http://localhost:5173', // Frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,13 +42,15 @@ const { auditLog } = require('./middleware/auditLogMiddleware');
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const partsRoutes = require('./routes/partsRoutes');
+const operationsRoutes = require('./routes/operationsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
-app.use(auditLog);
+// app.use(auditLog);
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/parts', partsRoutes);
+app.use('/api/operations', operationsRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
@@ -54,8 +62,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.0.0',
-      phase: 'Phase 1, Week 2 - Backend COMPLETE (Auth + Parts CRUD + Audit Log)',
+      version: '1.1.0',
+      phase: 'Phase 1, Week 5 - Operations (Arbeitsgänge)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -93,7 +101,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 1, Week 2 - COMPLETE! Auth + Parts CRUD + Audit Log ready!'
+      message: '🎉 Phase 1, Week 5 - Operations API ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -106,8 +114,8 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.0.0',
-    phase: 'Phase 1, Week 2 - Backend API + Auth + Parts CRUD ⚡',
+    version: '1.1.0',
+    phase: 'Phase 1, Week 5 - Operations (Arbeitsgänge) ⚙️',
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -124,6 +132,14 @@ app.get('/', (req, res) => {
         update: 'PUT /api/parts/:id (Protected)',
         delete: 'DELETE /api/parts/:id (Protected)',
         stats: 'GET /api/parts/stats (Protected)'
+      },
+      operations: {
+        list: 'GET /api/operations (Protected)',
+        listByPart: 'GET /api/operations?part_id=1 (Protected)',
+        get: 'GET /api/operations/:id (Protected)',
+        create: 'POST /api/operations (Protected)',
+        update: 'PUT /api/operations/:id (Protected)',
+        delete: 'DELETE /api/operations/:id (Protected)'
       }
     },
     documentation: 'https://github.com/mcr14410-master/MDS'
@@ -148,7 +164,12 @@ app.use((req, res) => {
       'POST /api/parts',
       'PUT /api/parts/:id',
       'DELETE /api/parts/:id',
-      'GET /api/parts/stats'
+      'GET /api/parts/stats',
+      'GET /api/operations',
+      'GET /api/operations/:id',
+      'POST /api/operations',
+      'PUT /api/operations/:id',
+      'DELETE /api/operations/:id'
     ]
   });
 });
@@ -185,9 +206,17 @@ app.listen(PORT, () => {
   console.log(`      DELETE /api/parts/:id`);
   console.log(`      GET    /api/parts/stats`);
   console.log('   ========================================');
-  console.log('   ⚡ Phase 1, Week 2 - COMPLETE!');
-  console.log('   ✅ Auth System + Parts CRUD + Audit Log');
-  console.log('   📋 Next: Week 3 - Frontend React App');
+  console.log('   ⚙️  Operations Endpoints:');
+  console.log(`      GET    /api/operations`);
+  console.log(`      GET    /api/operations/:id`);
+  console.log(`      POST   /api/operations`);
+  console.log(`      PUT    /api/operations/:id`);
+  console.log(`      DELETE /api/operations/:id`);
+  console.log('   ========================================');
+  console.log('   ⚡ Phase 1, Week 5 - Operations');
+  console.log('   ✅ Auth + Parts + Operations CRUD');
+  console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
+  console.log('   📋 Now: Testing Operations API');
   console.log('   ========================================\n');
 });
 

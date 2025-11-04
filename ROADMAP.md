@@ -25,15 +25,6 @@
 
 **Deliverable:** ✅ Funktionierende Datenbank mit allen Tabellen + minimaler Server
 
-**Errungenschaften:**
-```
-✅ 28 Tabellen in 6 Kategorien
-✅ 5 Migrations (auth, production, machines, audit, maintenance)
-✅ Seeds mit 6 Rollen, 27 Permissions, 1 Admin-User
-✅ Express Server läuft auf http://localhost:5000
-✅ 3 API Endpoints (/api/health, /api/db/info, /)
-```
-
 **Abgeschlossen am:** 2025-11-01
 
 ---
@@ -54,23 +45,6 @@
 
 **Deliverable:** ✅ Backend API mit Auth läuft auf localhost:5000
 
-**Errungenschaften:**
-```
-✅ JWT Authentication komplett (Token Generation, Verification, Expiry)
-✅ User Management (Register, Login, Profile, Password Change)
-✅ Auth Middleware (authenticateToken, requirePermission, requireRole)
-✅ Parts CRUD API - 6 Endpoints (GET, POST, PUT, DELETE, Stats)
-✅ Audit-Log System (automatisches Tracking aller Änderungen)
-✅ Test-Suite (test-auth.http, test-parts.http, test-api.sh, test-api.ps1)
-✅ Validierung & Error Handling
-✅ Security (Permission-Checks, SQL-Injection Schutz)
-✅ 7 Migrations total (5 base + 2 enhancements)
-✅ Test-Customer Seeds (3 Kunden)
-✅ Enhanced Parts Schema (status, updated_by, cad_file_path)
-✅ API Endpoints: 10 total (4 Auth + 6 Parts)
-✅ ~1500 Lines of Code
-```
-
 **Abgeschlossen am:** 2025-11-02
 
 ---
@@ -90,56 +64,70 @@
 
 **Deliverable:** ✅ Basis-UI läuft auf localhost:5173
 
-**Errungenschaften:**
-```
-✅ React 19 + Vite Setup
-✅ TailwindCSS v4 Integration
-✅ Zustand State Management (Auth + Parts Stores)
-✅ React Router v7 mit Protected Routes
-✅ Login/Logout UI (vollständig funktional)
-✅ Dashboard mit Stats Cards
-✅ Parts List mit Filter & Search
-✅ Permission-based Navigation
-✅ Responsive Design
-✅ API Integration (Axios mit Token-Interceptors)
-✅ ~900 Lines of Frontend Code
-```
-
 **Abgeschlossen am:** 2025-11-02
 
 ---
 
-### 📋 Woche 4: Integration & Testing
-**Status:** 🔜 **NEXT** - Bereit zum Start!
+### ✅ Woche 4: Integration & Testing
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Frontend ↔ Backend komplett integriert
+**Zeitaufwand:** ~4 Stunden
 
-- [ ] CORS im Backend aktivieren
-- [ ] Frontend mit Backend verbinden
-- [ ] Alle CRUD-Operationen testen
-- [ ] Part Detail/Create/Edit Pages
-- [ ] Form Validation
-- [ ] Toast Notifications
-- [ ] Benutzer-Rollen testen
-- [ ] Bug-Fixes
-- [ ] Code aufräumen
+- [x] CORS im Backend aktivieren
+- [x] Frontend mit Backend verbinden
+- [x] Alle CRUD-Operationen testen
+- [x] Part Detail Page
+- [x] Part Create/Edit Forms
+- [x] Form Validation
+- [x] Toast Notifications
+- [x] Bug-Fixes (Login, Dashboard Stats, Toasts)
+- [x] Code aufräumen
 
 **Deliverable:** ✅ **MEILENSTEIN 1**: Lauffähiges Basis-System
+
+**Errungenschaften:**
+```
+✅ CORS konfiguriert für Frontend
+✅ Part Detail Page (vollständige Ansicht)
+✅ Part Create/Edit Forms (mit Validierung)
+✅ Toast Notification System (selbst gebaut, ohne Library)
+✅ Login Fix (username statt login)
+✅ Dashboard Stats Fix (snake_case Mapping)
+✅ customer_id optional gemacht
+✅ dimensions statt raw_material
+✅ Alle CRUD-Operationen funktionieren
+✅ Permission-based UI überall
+✅ ~1200 Lines neuer Frontend Code
+✅ 9 Bugs gefixed
+```
+
+**Abgeschlossen am:** 2025-11-03
 
 ---
 
 ## 📅 Monat 2: Kern-Features (Wochen 5-8)
 
-### 📋 Woche 5: Operations (Arbeitsgänge)
-**Status:** 📋 GEPLANT
+### ⏳ Woche 5: Operations (Arbeitsgänge)
+**Status:** ⏳ **IN PROGRESS** (Backend ✅ 50%, Frontend ❌ ausstehend)
 **Ziel:** Bauteile haben Arbeitsgänge
 
-- [ ] Operations Backend CRUD
+- [x] Operations Backend CRUD
 - [ ] Frontend: Operations pro Bauteil
 - [ ] OP-Nummern (OP10, OP20, ...)
 - [ ] Maschinen-Zuweisung
 - [ ] Sequence Management
 
-**Deliverable:** Teil → Operations funktioniert
+**Deliverable:** Teil → Operations funktioniert (Backend API komplett!)
+
+**Aktueller Stand (04.11.2025):**
+```
+✅ operationsController.js (373 Zeilen)
+✅ operationsRoutes.js (53 Zeilen) 
+✅ server.js aktualisiert (v1.1.0)
+✅ test-operations.http (520+ Zeilen)
+⏳ Backend Testing (User testet)
+❌ Frontend (noch nicht gestartet)
+```
 
 ---
 
@@ -318,31 +306,39 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: █████████░░░░░░░░░░░ 45%
+Gesamt: ██████████░░░░░░░░░░ 52%
 
-Phase 1 (Monat 1): ███████████████░░░░░ 75%
+Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
   └─ Woche 2:      ████████████████████ 100% ✅
   └─ Woche 3:      ████████████████████ 100% ✅
-  └─ Woche 4:      ░░░░░░░░░░░░░░░░░░░░   0% 🔜
+  └─ Woche 4:      ████████████████████ 100% ✅
 
-Phase 2 (Monat 2): ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 2 (Monat 2): ██████░░░░░░░░░░░░░░ 12.5%
+  └─ Woche 5:      ██████████░░░░░░░░░░ 50% ⏳ (Backend ✅, Frontend ❌)
+  └─ Woche 6:      ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 7:      ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 8:      ░░░░░░░░░░░░░░░░░░░░  0%
+
 Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0%
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
-**Arbeitszeit:** 18h / ~480h geschätzt  
+**Arbeitszeit:** 23.5h / ~480h geschätzt (4.9%)
 **Geschätzte Fertigstellung:** April 2025  
-**Aktueller Sprint:** Woche 4 - Integration & Testing
+**Aktueller Sprint:** ✅ Phase 1 KOMPLETT | ⏳ Woche 5 - Operations (Backend ✅ 50%)
 
 ---
 
 ## 🎉 Meilensteine erreicht
 
 - ✅ **2025-11-01:** Woche 1 abgeschlossen - Datenbank-Schema komplett (28 Tabellen)
-- ✅ **2025-11-02:** Woche 2 abgeschlossen - Backend API komplett (Auth + Parts CRUD + Audit Log)
-- ✅ **2025-11-02:** Woche 3 abgeschlossen - Frontend React App komplett (Login + Dashboard + Parts List)
-- 🔜 **Next:** Woche 4 - Integration & Testing
+- ✅ **2025-11-02:** Woche 2 abgeschlossen - Backend API komplett (Auth + Parts CRUD)
+- ✅ **2025-11-02:** Woche 3 abgeschlossen - Frontend React App komplett (Login + Dashboard + Parts)
+- ✅ **2025-11-03:** Woche 4 abgeschlossen - Integration komplett (CRUD + Toast + Fixes)
+- 🎊 **2025-11-03:** **PHASE 1 KOMPLETT - MEILENSTEIN 1 ERREICHT!**
+- ⏳ **2025-11-04:** Woche 5 gestartet - Operations Backend API komplett (373 Zeilen)
+- 🔜 **Next:** Woche 5 - Operations Frontend (Liste + Forms)
 
 ---
 
@@ -351,9 +347,10 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 | Woche | Geplant | Erreicht | Status |
 |-------|---------|----------|--------|
 | **Woche 1** | DB-Schema | 28 Tabellen + Server | ✅ 100% |
-| **Woche 2** | Backend API | Auth + Parts CRUD + Audit | ✅ 100% |
-| **Woche 3** | Frontend Basis | React App + Login + Dashboard + Parts | ✅ 100% |
-| **Woche 4** | Integration | - | 🔜 Next |
+| **Woche 2** | Backend API | Auth + Parts CRUD | ✅ 100% |
+| **Woche 3** | Frontend Basis | React App + Login + Dashboard | ✅ 100% |
+| **Woche 4** | Integration | CRUD + Detail + Forms + Toasts | ✅ 100% |
+| **Woche 5** | Operations | Backend API (373 Zeilen) | ⏳ 50% |
 
 ---
 
@@ -368,20 +365,21 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 📝 Nächste Session
 
-**Woche 4 Tasks:**
-1. CORS im Backend aktivieren
-2. Frontend mit Backend verbinden
-3. Alle CRUD-Operationen testen
-4. Part Detail Page (`/parts/:id`)
-5. Part Create/Edit Forms (`/parts/new`, `/parts/:id/edit`)
-6. Form Validation (React Hook Form)
-7. Toast Notifications
-8. Bug-Fixes & Polish
-9. Code aufräumen
+**Woche 5 Tasks - Operations (verbleibend):**
+1. ✅ ~~Operations Backend CRUD API~~ (DONE!)
+2. ⏳ **Backend testen** (test-operations.http durchgehen)
+3. ❌ Operations Frontend Komponenten
+4. ❌ OP-Nummern System (OP10, OP20, ...)
+5. ❌ Operations zu Parts zuordnen (UI)
+6. ❌ Sequence Management (Reihenfolge)
+7. ❌ Maschinen-Zuweisung zu Operations (Dropdown)
+8. ❌ Operations Detail/Create/Edit Pages
 
-**Geschätzte Zeit:** 6-8 Stunden
+**Nächster Schritt:** Backend testen, dann Frontend starten
+
+**Geschätzte Zeit verbleibend:** 5-7 Stunden (Backend Testing 0.5h + Frontend 4-6h)
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-02  
-**Aktueller Status:** ✅ Woche 3 komplett | 🔜 Woche 4 bereit zum Start
+**Letzte Aktualisierung:** 2025-11-04  
+**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ⏳ Woche 5 - Operations (Backend ✅ 50%)

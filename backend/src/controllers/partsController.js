@@ -25,7 +25,7 @@ exports.getAllParts = async (req, res) => {
         (SELECT COUNT(*) FROM operations WHERE part_id = p.id) as operation_count
       FROM parts p
       LEFT JOIN customers c ON p.customer_id = c.id
-      WHERE 1=1
+      WHERE p.status != 'deleted'
     `;
     const params = [];
     let paramCount = 1;
@@ -84,7 +84,7 @@ exports.getPartById = async (req, res) => {
         c.phone as customer_phone
       FROM parts p
       LEFT JOIN customers c ON p.customer_id = c.id
-      WHERE p.id = $1
+      WHERE p.id = $1 AND p.status != 'deleted'
     `;
 
     const result = await pool.query(query, [id]);
@@ -141,61 +141,67 @@ exports.createPart = async (req, res) => {
       revision,
       description,
       material,
+      dimensions,
+      notes,
       weight,
       drawing_number,
       cad_file_path,
       status = 'draft'
     } = req.body;
 
-    // Validation
-    if (!customer_id || !part_number || !part_name) {
+    // Validation - only part_number and part_name are required
+    if (!part_number || !part_name) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        required: ['customer_id', 'part_number', 'part_name']
+        required: ['part_number', 'part_name']
       });
     }
 
-    // Check if part_number already exists for this customer
-    const checkQuery = 'SELECT id FROM parts WHERE customer_id = $1 AND part_number = $2';
-    const checkResult = await pool.query(checkQuery, [customer_id, part_number]);
+    // Check if part_number already exists
+    const checkQuery = 'SELECT id FROM parts WHERE part_number = $1 AND status != \'deleted\'';
+    const checkResult = await pool.query(checkQuery, [part_number]);
 
     if (checkResult.rows.length > 0) {
       return res.status(409).json({
         success: false,
-        error: 'Part number already exists for this customer'
+        error: 'Part number already exists'
       });
     }
 
-    // Check if customer exists
-    const customerCheck = await pool.query('SELECT id FROM customers WHERE id = $1', [customer_id]);
-    if (customerCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Customer not found'
-      });
+    // Check if customer exists (only if customer_id is provided)
+    if (customer_id) {
+      const customerCheck = await pool.query('SELECT id FROM customers WHERE id = $1', [customer_id]);
+      if (customerCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Customer not found'
+        });
+      }
     }
 
     const query = `
       INSERT INTO parts (
         customer_id, part_number, part_name, revision, description,
-        material, weight, drawing_number, cad_file_path, status,
-        created_by, updated_by
+        material, dimensions, notes, weight, drawing_number, 
+        cad_file_path, status, created_by, updated_by
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
       RETURNING *
     `;
 
     const values = [
-      customer_id,
+      customer_id || null,
       part_number,
       part_name,
       revision || 'A',
-      description,
-      material,
-      weight,
-      drawing_number,
-      cad_file_path,
+      description || null,
+      material || null,
+      dimensions || null,
+      notes || null,
+      weight || null,
+      drawing_number || null,
+      cad_file_path || null,
       status,
       req.user.id  // from auth middleware
     ];
@@ -231,6 +237,8 @@ exports.updatePart = async (req, res) => {
       revision,
       description,
       material,
+      dimensions,
+      notes,
       weight,
       drawing_number,
       cad_file_path,
@@ -238,7 +246,7 @@ exports.updatePart = async (req, res) => {
     } = req.body;
 
     // Check if part exists
-    const checkQuery = 'SELECT id FROM parts WHERE id = $1';
+    const checkQuery = 'SELECT id FROM parts WHERE id = $1 AND status != \'deleted\'';
     const checkResult = await pool.query(checkQuery, [id]);
 
     if (checkResult.rows.length === 0) {
@@ -249,16 +257,16 @@ exports.updatePart = async (req, res) => {
     }
 
     // Check if new part_number already exists for another part
-    if (part_number && customer_id) {
+    if (part_number) {
       const duplicateCheck = await pool.query(
-        'SELECT id FROM parts WHERE customer_id = $1 AND part_number = $2 AND id != $3',
-        [customer_id, part_number, id]
+        'SELECT id FROM parts WHERE part_number = $1 AND id != $2 AND status != \'deleted\'',
+        [part_number, id]
       );
 
       if (duplicateCheck.rows.length > 0) {
         return res.status(409).json({
           success: false,
-          error: 'Part number already exists for this customer'
+          error: 'Part number already exists'
         });
       }
     }
@@ -271,13 +279,15 @@ exports.updatePart = async (req, res) => {
         revision = COALESCE($4, revision),
         description = COALESCE($5, description),
         material = COALESCE($6, material),
-        weight = COALESCE($7, weight),
-        drawing_number = COALESCE($8, drawing_number),
-        cad_file_path = COALESCE($9, cad_file_path),
-        status = COALESCE($10, status),
-        updated_by = $11,
+        dimensions = COALESCE($7, dimensions),
+        notes = COALESCE($8, notes),
+        weight = COALESCE($9, weight),
+        drawing_number = COALESCE($10, drawing_number),
+        cad_file_path = COALESCE($11, cad_file_path),
+        status = COALESCE($12, status),
+        updated_by = $13,
         updated_at = NOW()
-      WHERE id = $12
+      WHERE id = $14
       RETURNING *
     `;
 
@@ -288,6 +298,8 @@ exports.updatePart = async (req, res) => {
       revision,
       description,
       material,
+      dimensions,
+      notes,
       weight,
       drawing_number,
       cad_file_path,
@@ -322,7 +334,7 @@ exports.deletePart = async (req, res) => {
     const { id } = req.params;
 
     // Check if part exists
-    const checkQuery = 'SELECT id FROM parts WHERE id = $1';
+    const checkQuery = 'SELECT id FROM parts WHERE id = $1 AND status != \'deleted\'';
     const checkResult = await pool.query(checkQuery, [id]);
 
     if (checkResult.rows.length === 0) {
@@ -383,7 +395,8 @@ exports.getPartStats = async (req, res) => {
         COUNT(*) as total_parts,
         COUNT(CASE WHEN status = 'active' THEN 1 END) as active_parts,
         COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft_parts,
-        COUNT(CASE WHEN status = 'archived' THEN 1 END) as archived_parts,
+        COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_parts,
+        COUNT(CASE WHEN status = 'obsolete' THEN 1 END) as obsolete_parts,
         COUNT(DISTINCT customer_id) as total_customers
       FROM parts
       WHERE status != 'deleted'
