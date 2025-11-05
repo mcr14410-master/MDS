@@ -15,6 +15,9 @@ export const API_ENDPOINTS = {
   // Operations
   OPERATIONS: `${API_BASE_URL}/api/operations`,
   
+  // Programs
+  PROGRAMS: `${API_BASE_URL}/api/programs`,
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

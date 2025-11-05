@@ -1,8 +1,29 @@
 # Roadmap - Fertigungsdaten Management System
 
 **Zeitbudget:** 30-35h/Woche
-**Geschätzte Dauer:** 3-4 Monate
+**Geschätzte Dauer:** 4-5 Monate (19 Wochen)
 **Start:** Januar 2025
+
+## 🎯 Kern-Features
+
+**Basis-System (Phase 1-2):**
+- ✅ Bauteilstammdaten & Operationen
+- ✅ NC-Programme (Upload, Versionierung, Download)
+- Maschinen-Verwaltung
+- Workflow-System (Entwurf → Freigabe)
+- QR-Codes & CAM-Integration
+
+**Erweitert (Phase 3-4):**
+- **Werkzeugverwaltung** (Lagerhaltung, Nachbestellung, Standzeit)
+- **Messmittelverwaltung** (Kalibrierung, ISO/Luftfahrt-ready)
+- Wartungssystem (Skill-Level, Roboter)
+- Shopfloor-UI (Tablet-optimiert)
+- Reports & Analytics (ISO-Audit-ready)
+
+**Optional (Phase 5):**
+- G-Code Parser (Werkzeug-Extraktion)
+- Machine Monitoring (MTConnect/OPC UA)
+- Mobile App & ERP-Integration
 
 ---
 
@@ -166,17 +187,75 @@
 
 ---
 
-### 📋 Woche 6: Programme & File Upload
-**Status:** 📋 GEPLANT
+### ✅ Woche 6: Programme & File Upload
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** NC-Programme hochladen
+**Zeitaufwand:** ~7 Stunden (Backend 3h + Frontend 4h + Bugfixes)
 
-- [ ] File Upload (Multer)
-- [ ] Backend: Program CRUD
-- [ ] Frontend: Program Upload
-- [ ] Programm-Download
-- [ ] File Validation
+- [x] File Upload (Multer)
+- [x] Backend: Program CRUD
+- [x] Backend Testing (test-programs.http)
+- [x] File Validation (15 Dateitypen)
+- [x] Program Download
+- [x] Frontend: Program Upload
+- [x] Frontend: Programs Liste
+- [x] Frontend: Program Card
+- [x] Frontend: Operation Detail Page (mit Programmen)
+- [x] Auto-Generierung program_number
+- [x] Response Format standardisiert
+- [x] Delete Button hinzugefügt
 
-**Deliverable:** Programme können hochgeladen werden
+**Deliverable:** ✅ **KOMPLETT** - Programme hochladen, anzeigen, bearbeiten, löschen funktioniert!
+
+**Bugs gefixt:**
+- program_number Auto-Generierung (OP10-001 Format)
+- Backend Response Format standardisiert (data statt program/programs)
+- Frontend Null-Checks & Array-Validierung
+- Delete Button in ProgramCard
+
+**UI-Entscheidung:** 
+- Aktuell: Variante 2 - Separate Operation Detail Page mit Programmen
+- 📝 **TODO:** UI später nochmal überdenken (ggf. expandierbare Cards oder Tabs)
+
+**Abgeschlossen am:** 2025-11-05
+
+**Aktueller Stand (05.11.2025):**
+```
+✅ uploadMiddleware.js (Multer Config, 100MB, 15 Dateitypen)
+✅ programsController.js (CRUD + Download + File-Hash)
+✅ programsRoutes.js (7 Endpoints)
+✅ test-programs.http (15 Tests)
+✅ test-file-upload.http (7 Tests)
+✅ server.js aktualisiert (v1.2.0)
+✅ Backend Testing KOMPLETT
+```
+
+**Backend Features:**
+```
+✅ POST /api/programs - Programm hochladen (Multipart)
+✅ GET /api/programs - Alle Programme (mit Filter)
+✅ GET /api/programs/:id - Details + Revisionen
+✅ GET /api/programs/:id/download - Download
+✅ PUT /api/programs/:id - Metadaten ändern
+✅ DELETE /api/programs/:id - Löschen (inkl. Files)
+✅ File-Hash (SHA-256)
+✅ Content in DB (für Syntax-Highlighting)
+✅ Automatische Versionierung (1.0.0)
+✅ Workflow-State (draft)
+✅ CASCADE Delete
+```
+
+**Frontend noch offen:**
+```
+❌ ProgramsList.jsx
+❌ ProgramCard.jsx
+❌ ProgramUploadForm.jsx
+❌ ProgramViewer.jsx (optional)
+❌ Integration in PartDetailPage
+```
+
+**Abgeschlossen:** Backend komplett (05.11.2025)
+**Nächster Schritt:** Frontend Components erstellen
 
 ---
 
@@ -207,7 +286,7 @@
 
 ---
 
-## 📅 Monat 3: Workflows & Wartung (Wochen 9-12)
+## 📅 Monat 3: Workflows & Werkzeuge (Wochen 9-12)
 
 ### 📋 Woche 9: Workflow-System
 **Status:** 📋 GEPLANT
@@ -223,22 +302,113 @@
 
 ---
 
-### 📋 Woche 10: QR-Codes & File Watcher
+### 📋 Woche 10: QR-Codes & CAM-Integration
 **Status:** 📋 GEPLANT
-**Ziel:** CAM-Integration
+**Ziel:** CAM-Integration mit Metadata-Extraktion
 
 - [ ] QR-Code Generierung
 - [ ] QR pro Operation
 - [ ] File Watcher (chokidar)
 - [ ] CAM-Ordner überwachen
-- [ ] G-Code Parser
+- [ ] G-Code Parser (Heidenhain DIN/ISO)
+- [ ] Metadata-Extraktion (Programm-Name, Werkzeuge, etc.)
 - [ ] Auto-Import Dialog
+- [ ] CAM-Postprozessor Anpassungen dokumentieren
 
-**Deliverable:** CAM → MDS funktioniert
+**Deliverable:** CAM → MDS funktioniert automatisch
+
+**Parser-Note:** 
+- Heidenhain DIN/ISO Format
+- CAM-Postprozessor wird angepasst für optimale Metadaten
+- Basis für spätere Werkzeug-Extraktion
 
 ---
 
-### 📋 Woche 11: Wartungssystem Basis
+### 📋 Woche 11-12: Werkzeugverwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Werkzeug-Management mit Lagerhaltung
+**Zeitaufwand:** ~12-14 Stunden (2 Wochen)
+
+**Woche 11 - Werkzeug-Stammdaten:**
+- [ ] Werkzeug-Datenbank (Tabellen)
+- [ ] Werkzeugtypen (Fräser, Bohrer, Drehmeißel, etc.)
+- [ ] Werkzeug-Stammdaten (Durchmesser, Länge, Hersteller)
+- [ ] Standzeit-Tracking
+- [ ] Backend CRUD API
+- [ ] Frontend: Werkzeug-Verwaltung UI
+
+**Woche 12 - Lagerhaltung & Verknüpfung:**
+- [ ] Lager-System (Standort-Tracking komplex)
+- [ ] Schränke, Fächer, Regale
+- [ ] Bestandsverwaltung (Min/Max/Aktuell)
+- [ ] Nachbestell-System (Vorschläge)
+- [ ] Werkzeuge → Operations verknüpfen
+- [ ] Lieferanten-Verwaltung
+- [ ] Verschleiß-Historie
+
+**Deliverable:** Werkzeugverwaltung Basic funktioniert
+
+**Für später (Phase 5):**
+- Automatische Werkzeug-Extraktion aus G-Code (Parser)
+- Erweiterte Nachbestell-Automatik
+- Werkzeug-Lebensdauer-Prognose
+
+---
+
+### 📋 Woche 13: Shopfloor-UI
+**Status:** 📋 GEPLANT
+**Ziel:** Tablet-Ansicht für Werker
+
+- [ ] Tablet-optimiertes UI
+- [ ] QR-Scanner Integration
+- [ ] Touch-freundliche Bedienung
+- [ ] Offline-Modus (Service Worker)
+- [ ] Große Buttons/Icons
+- [ ] Werkzeug-Entnahme UI
+
+**Deliverable:** Werker-Ansicht läuft
+
+---
+
+### 📋 Woche 14: Messmittelverwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Messmittel mit Kalibrierung (ISO-kritisch!)
+**Zeitaufwand:** ~6-8 Stunden
+
+**Messmittel-Stammdaten:**
+- [ ] Messmittel-Datenbank (Tabellen)
+- [ ] Messmitteltypen (Messschieber, Lehrdorn, Bügelmessschraube, etc.)
+- [ ] Stammdaten (Hersteller, Seriennummer, Messbereich)
+- [ ] Backend CRUD API
+- [ ] Frontend: Messmittel-Verwaltung UI
+
+**Kalibrierungs-Management (ISO/Luftfahrt):**
+- [ ] Kalibrierungs-Daten (Datum, Intervall, Zertifikat)
+- [ ] PDF-Upload (Kalibrierungs-Zertifikat)
+- [ ] Status-System (OK / Überfällig / Gesperrt)
+- [ ] Alarm-System (Email bei Ablauf)
+- [ ] Kalibrierungs-Historie (Audit-Trail)
+- [ ] Nächste Kalibrierung automatisch berechnen
+
+**Lagerhaltung & Entnahme:**
+- [ ] Lager-System komplex (Standort-Tracking)
+- [ ] Schränke, Fächer (wie Werkzeuge)
+- [ ] Entnahme-Verwaltung (Wer? Wann? Für welchen Auftrag?)
+- [ ] Rückgabe-System
+- [ ] Verfügbarkeits-Check
+- [ ] Messmittel → Programme/Operations zuweisen
+
+**Deliverable:** Messmittel-Verwaltung mit Kalibrierung funktioniert
+
+**ISO/Luftfahrt Features:**
+- Nur kalibrierte Messmittel verwendbar
+- Gesperrte Messmittel (überfällig) nicht entnehmbar
+- Vollständiger Audit-Trail
+- Export für Audits (PDF Reports)
+
+---
+
+### 📋 Woche 15: Einrichteblätter & Fotos
 **Status:** 📋 GEPLANT
 **Ziel:** Wartungspläne
 
@@ -263,11 +433,11 @@
 - [ ] Checklisten
 - [ ] Roboter-Wartung
 
-**Deliverable:** ✅ **MEILENSTEIN 3**: Produktiv einsetzbar!
+**Deliverable:** Wartungssystem komplett
 
 ---
 
-## 📅 Monat 4: Feinschliff (Wochen 13-16)
+## 📅 Monat 4: Messmittel & Reports (Wochen 13-16)
 
 ### 📋 Woche 13: Shopfloor-UI
 **Status:** 📋 GEPLANT
@@ -283,7 +453,23 @@
 
 ---
 
-### 📋 Woche 14: Einrichteblätter & Fotos
+### 📋 Woche 15: Einrichteblätter & Fotos
+**Status:** 📋 GEPLANT
+**Ziel:** Komplette Dokumentation
+
+- [ ] Setup Sheets Backend/Frontend
+- [ ] Setup Photos Upload
+- [ ] PDF-Generierung
+- [ ] Foto-Upload (Aufspannfotos)
+- [ ] Download-Funktion
+- [ ] Werkzeug-Zuordnung im Einrichteblatt
+- [ ] Messmittel-Zuordnung im Einrichteblatt
+
+**Deliverable:** Dokumentation komplett
+
+---
+
+### 📋 Woche 16: Reports & Analytics
 **Status:** 📋 GEPLANT
 **Ziel:** Komplette Dokumentation
 
@@ -297,7 +483,55 @@
 
 ---
 
-### 📋 Woche 15: Reports & Analytics
+### 📋 Woche 16: Reports & Analytics
+**Status:** 📋 GEPLANT
+**Ziel:** Dashboards & ISO-Reports
+
+- [ ] Dashboard für Meister
+- [ ] Statistiken (Teile, Programme, Werkzeuge, Messmittel)
+- [ ] Wartungs-Reports
+- [ ] Programm-Statistiken
+- [ ] Kalibrierungs-Report (ISO/Luftfahrt)
+- [ ] Werkzeug-Bestandsreport
+- [ ] Audit-Trail Export (PDF/Excel)
+- [ ] Export (PDF/Excel)
+
+**Deliverable:** ✅ **MEILENSTEIN 3**: ISO-ready! Werkzeuge, Messmittel & Reports komplett
+
+---
+
+## 📅 Monat 4-5: Wartung & Deployment (Wochen 17-19)
+
+### 📋 Woche 17: Wartungssystem Basis
+**Status:** 📋 GEPLANT
+**Ziel:** Wartungspläne
+
+- [ ] Maintenance Plans Backend
+- [ ] Wartungstypen (täglich, wöchentlich, ...)
+- [ ] Fälligkeitsberechnung
+- [ ] Wartungs-Historie
+- [ ] Benachrichtigungen
+
+**Deliverable:** Wartungspläne funktionieren
+
+---
+
+### 📋 Woche 18: Wartung Erweitert
+**Status:** 📋 GEPLANT
+**Ziel:** Skill-Level-System
+
+- [ ] Skill-Level (Helfer, Bediener, Meister)
+- [ ] Aufgaben-Zuweisung
+- [ ] Foto-Anleitungen
+- [ ] Eskalations-System
+- [ ] Checklisten
+- [ ] Roboter-Wartung
+
+**Deliverable:** Wartungssystem komplett
+
+---
+
+### 📋 Woche 19: Deployment & Optimierung
 **Status:** 📋 GEPLANT
 **Ziel:** Dashboards
 
@@ -311,7 +545,42 @@
 
 ---
 
-### 📋 Woche 16: Deployment & Optimierung
+### 📋 Woche 19: Deployment & Optimierung
+**Status:** 📋 GEPLANT
+**Ziel:** Production-Ready
+
+- [ ] Docker-Setup optimieren
+- [ ] Raspberry Pi Deployment
+- [ ] Backup-Strategie
+- [ ] Performance-Optimierung
+- [ ] Dokumentation vervollständigen
+- [ ] Schulungs-Material
+- [ ] ISO-Checkliste finalisieren
+
+**Deliverable:** ✅ **MEILENSTEIN 4**: System ist FERTIG + ISO-ready!
+
+---
+
+## 🎯 Phase 5: Advanced Features (Optional, nach Monat 5)
+
+### Erweiterte Werkzeug-Features
+- [ ] Automatische Werkzeug-Extraktion aus G-Code
+- [ ] Erweiterte Nachbestell-Automatik
+- [ ] Werkzeug-Lebensdauer-Prognose (KI)
+- [ ] Integration mit Werkzeugvoreinstellgerät
+
+### Erweiterte Messmittel-Features
+- [ ] 3D-Messmaschinen Integration
+- [ ] Automatische Messprotokolle
+- [ ] SPC (Statistical Process Control)
+
+### Weitere Features
+- [ ] Machine Monitoring (MTConnect/OPC UA)
+- [ ] DNC-Integration
+- [ ] 3D G-Code Viewer
+- [ ] Mobile App (React Native)
+- [ ] ERP-Integration
+- [ ] Erweiterte Analytics mit KI
 **Status:** 📋 GEPLANT
 **Ziel:** Production-Ready
 
@@ -324,17 +593,7 @@
 
 **Deliverable:** ✅ **MEILENSTEIN 4**: System ist FERTIG!
 
----
-
-## 🎯 Zukünftige Erweiterungen (Nach Monat 4)
-
-### Phase 5: Advanced Features
-- [ ] Machine Monitoring (MTConnect/OPC UA)
-- [ ] DNC-Integration
-- [ ] 3D G-Code Viewer
-- [ ] Mobile App (React Native)
-- [ ] ERP-Integration
-- [ ] Erweiterte Analytics mit KI
+## 🎯 Phase 5: Advanced Features (Optional, nach Monat 5)
 
 ### 🔧 Technical Debt / Refactoring-Kandidaten
 - [ ] **Operations Zeit-Einheiten vereinheitlichen:** 
@@ -343,12 +602,31 @@
   - Aufwand: ~2h (Migration + Backend + Frontend + Tests)
   - Priorität: Low (funktioniert aktuell mit Frontend-Konvertierung)
 
+- [ ] **Program Number Format überdenken:**
+  - Aktuell: Auto-generiert als "OP10-001", "OP10-002", etc.
+  - Überlegungen: Anderes Format? Manuell editierbar? Prefix/Suffix?
+  - Aufwand: ~1h (Backend Logik anpassen)
+  - Priorität: Low (funktioniert aktuell gut)
+
+- [ ] **Werkzeug-Extraktion aus G-Code:**
+  - Parser für Heidenhain DIN/ISO entwickeln
+  - Automatische Werkzeugliste aus NC-Programm
+  - TODO später: CAM-Postprozessor Dokumentation
+  - Aufwand: ~8h (Parser + Tests)
+  - Priorität: Medium (Phase 5 Feature)
+
+- [ ] **Messmittel-Entnahme Optimierung:**
+  - Barcode/RFID für schnelle Entnahme
+  - Mobile App für Entnahme
+  - Aufwand: ~12h
+  - Priorität: Low (Phase 5 Feature)
+
 ---
 
 ## 📊 Fortschritt
 
 ```
-Gesamt: █████████████░░░░░░░ 58%
+Gesamt: ████████░░░░░░░░░░░░ 32% (6 von 19 Wochen)
 
 Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
@@ -356,19 +634,31 @@ Phase 1 (Monat 1): ████████████████████ 
   └─ Woche 3:      ████████████████████ 100% ✅
   └─ Woche 4:      ████████████████████ 100% ✅
 
-Phase 2 (Monat 2): ██████░░░░░░░░░░░░░░ 25%
+Phase 2 (Monat 2): ████████░░░░░░░░░░░░ 50% (2 von 4 Wochen)
   └─ Woche 5:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
-  └─ Woche 6:      ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 6:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 7:      ░░░░░░░░░░░░░░░░░░░░  0%
   └─ Woche 8:      ░░░░░░░░░░░░░░░░░░░░  0%
 
-Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0%
-Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0%
+Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
+  └─ Woche 9:      ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 10:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 11-12:  ░░░░░░░░░░░░░░░░░░░░  0% (Werkzeuge)
+
+Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
+  └─ Woche 13:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 14:     ░░░░░░░░░░░░░░░░░░░░  0% (Messmittel)
+  └─ Woche 15:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 16:     ░░░░░░░░░░░░░░░░░░░░  0%
+
+Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 3 Wochen)
+  └─ Woche 17-18:  ░░░░░░░░░░░░░░░░░░░░  0% (Wartung)
+  └─ Woche 19:     ░░░░░░░░░░░░░░░░░░░░  0% (Deployment)
 ```
 
-**Arbeitszeit:** 32h / ~480h geschätzt (6.7%)
-**Geschätzte Fertigstellung:** April 2025  
-**Aktueller Sprint:** ✅ Phase 1 KOMPLETT | ✅ Woche 5 KOMPLETT (100%)
+**Arbeitszeit:** 42h / ~570h geschätzt (7.4%)
+**Geschätzte Fertigstellung:** Mai 2025  
+**Aktueller Sprint:** ✅ Phase 1 KOMPLETT | ✅ Woche 5 KOMPLETT | ✅ Woche 6 KOMPLETT
 
 ---
 
@@ -383,7 +673,11 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 - ✅ **2025-11-04:** Woche 5 Backend komplett - Operations API getestet & alle Tests erfolgreich!
 - ✅ **2025-11-04:** Woche 5 Frontend komplett - Operations UI fertig (4 Components, 970 Zeilen)
 - 🎊 **2025-11-04:** **WOCHE 5 KOMPLETT - Operations Frontend + Backend fertig!**
-- 📜 **Next:** Woche 6 - Programme & File Upload
+- ✅ **2025-11-05:** Woche 6 Backend gestartet - File Upload Middleware erstellt
+- ✅ **2025-11-05:** Woche 6 Backend komplett - Programs API fertig (CRUD + Download + 15 Tests)
+- ✅ **2025-11-05:** Woche 6 Frontend komplett - Programs UI fertig (5 Components, 1020 Zeilen)
+- 🎊 **2025-11-05:** **WOCHE 6 KOMPLETT - Programme hochladen, anzeigen, bearbeiten, löschen!**
+- 📜 **Next:** Woche 7 - Versionierung
 
 ---
 
@@ -396,6 +690,7 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 3** | Frontend Basis | React App + Login + Dashboard | ✅ 100% |
 | **Woche 4** | Integration | CRUD + Detail + Forms + Toasts | ✅ 100% |
 | **Woche 5** | Operations | Backend API + Frontend UI + Bug-Fixes | ✅ 100% |
+| **Woche 6** | Programme & Upload | Backend + Frontend + Bugfixes | ✅ 100% |
 
 ---
 
@@ -410,20 +705,18 @@ Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 6 Tasks - Programme & File Upload:**
-1. ❌ File Upload Backend (Multer)
-2. ❌ Programs CRUD API
-3. ❌ Programs Frontend Components
-4. ❌ File Validation (NC-Programme, G-Code)
-5. ❌ Program Download Funktion
-6. ❌ Programme zu Operations verknüpfen
-7. ❌ Program Viewer (Optional: Syntax Highlighting)
+**Woche 7 Tasks - Versionierung:**
+1. ❌ Revision-Logic (Major.Minor.Patch)
+2. ❌ Diff-Berechnung (Text)
+3. ❌ Versions-Historie anzeigen
+4. ❌ Rollback-Funktion
+5. ❌ Vergleich zwischen Versionen
 
-**Nächster Schritt:** Woche 6 Backend starten (File Upload + Programs API)
+**Nächster Schritt:** Woche 7 - Versionierung starten
 
-**Geschätzte Zeit:** 8-10 Stunden (Backend 4-5h, Frontend 4-5h)
+**Status:** Woche 6 KOMPLETT ✅
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-04  
-**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ✅ Woche 5 KOMPLETT (Backend + Frontend)! 🚀
+**Letzte Aktualisierung:** 2025-11-05  
+**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ✅ Woche 5 KOMPLETT! | ✅ Woche 6 KOMPLETT! 🚀

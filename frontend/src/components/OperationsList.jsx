@@ -123,6 +123,7 @@ export default function OperationsList({ partId }) {
             <OperationCard
               key={operation.id}
               operation={operation}
+              partId={partId}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

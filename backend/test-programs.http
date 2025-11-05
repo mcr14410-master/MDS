@@ -1,0 +1,258 @@
+### ==============================================
+### WOCHE 6 - PROGRAMS API TESTS
+### ==============================================
+### Programs CRUD + File Upload + Download
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjIyOTk1MjIsImV4cCI6MTc2MjM4NTkyMn0.bGcbbf-fyxzk6miOFrCDwd6gvYsSr8u6iB3vI2ho7U8
+
+### ==============================================
+### 1. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==============================================
+### 2. CREATE - Programm hochladen (mit Datei)
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O1234
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+FRÄSEN RECHTECK
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Test-Programm für Rechteck-Fräsen mit T1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="comment"
+
+Initiale Version von CAM
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-program.nc"
+Content-Type: text/plain
+
+< ./test-program.nc
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 3. CREATE - Zweites Programm (Siemens)
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+_N_BOHRUNG_MPF
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+BOHRUNG DURCHMESSER 10
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Siemens Bohrprogramm
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="BOHRUNG.mpf"
+Content-Type: text/plain
+
+%_N_BOHRUNG_MPF
+N10 G54
+N20 T1 M6
+N30 S2000 M3
+N40 G0 X0 Y0 Z100
+N50 G81 Z-10 R2 F100
+N60 M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 4. GET ALL - Alle Programme
+### ==============================================
+GET {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 5. GET BY OPERATION - Filter nach operation_id
+### ==============================================
+GET {{baseUrl}}/api/programs?operation_id=1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6. GET BY ID - Einzelnes Programm mit Revisionen
+### ==============================================
+GET {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 7. UPDATE - Metadaten ändern
+### ==============================================
+PUT {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "O1234_V2",
+  "program_name": "FRÄSEN RECHTECK OPTIMIERT",
+  "description": "Optimierte Version mit schnelleren Vorschüben"
+}
+
+### ==============================================
+### 8. DOWNLOAD - Programm herunterladen
+### ==============================================
+GET {{baseUrl}}/api/programs/2/download
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 9. CREATE - Ohne Datei (Error)
+### Erwartung: 400 - Keine Datei hochgeladen
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O9999
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+TEST OHNE DATEI
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 10. CREATE - Ohne Pflichtfelder (Error)
+### Erwartung: 400 - Pflichtfelder fehlen
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.nc"
+Content-Type: text/plain
+
+G90
+M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 11. CREATE - Operation existiert nicht (Error)
+### Erwartung: 404 - Operation nicht gefunden
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+99999
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O8888
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+INVALID OPERATION
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.nc"
+Content-Type: text/plain
+
+G90
+M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 12. GET BY ID - Nicht existierendes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/programs/99999
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 13. UPDATE - Nicht existierendes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+PUT {{baseUrl}}/api/programs/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "O9999",
+  "program_name": "DOES NOT EXIST"
+}
+
+### ==============================================
+### 14. DELETE - Programm löschen
+### ==============================================
+DELETE {{baseUrl}}/api/programs/2
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 15. DELETE - Bereits gelöschtes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+DELETE {{baseUrl}}/api/programs/2
+Authorization: Bearer {{token}}
+
+### ==============================================
+### NOTES:
+### ==============================================
+### API Endpoints:
+### - POST   /api/programs              - Programm hochladen (Multipart Form Data)
+### - GET    /api/programs              - Alle Programme
+### - GET    /api/programs?operation_id=1 - Filter nach Operation
+### - GET    /api/programs/:id          - Programm Details + Revisionen
+### - GET    /api/programs/:id/download - Programm herunterladen
+### - PUT    /api/programs/:id          - Metadaten ändern
+### - DELETE /api/programs/:id          - Programm löschen
+###
+### Required Fields:
+### - operation_id (muss existieren)
+### - program_number
+### - program_name
+### - file (NC-Programm)
+###
+### Optional Fields:
+### - description
+### - comment
+###
+### Features:
+### ✅ File Upload mit Validierung
+### ✅ Automatische Versionierung (1.0.0)
+### ✅ File-Hash Berechnung (SHA-256)
+### ✅ Content in DB speichern (für Syntax-Highlighting)
+### ✅ CASCADE Delete (Program → Revisions)
+### ✅ File Cleanup bei Fehler
+### ✅ JOIN mit Operations, Parts, Machines
+### ✅ Workflow-State (draft)
+### ==============================================

@@ -1,8 +1,24 @@
 // frontend/src/components/OperationCard.jsx
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 
-export default function OperationCard({ operation, onEdit, onDelete }) {
+export default function OperationCard({ operation, onEdit, onDelete, partId }) {
   const { hasPermission } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/parts/${partId}/operations/${operation.id}`);
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation(); // Prevent card click
+    onEdit(operation);
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation(); // Prevent card click
+    onDelete(operation);
+  };
 
   // Format time helpers
   const formatSetupTime = (minutes) => {
@@ -32,7 +48,10 @@ export default function OperationCard({ operation, onEdit, onDelete }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div 
+      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -93,7 +112,7 @@ export default function OperationCard({ operation, onEdit, onDelete }) {
       <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
         {hasPermission('part.update') && (
           <button
-            onClick={() => onEdit(operation)}
+            onClick={handleEdit}
             className="flex-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
           >
             Bearbeiten
@@ -101,7 +120,7 @@ export default function OperationCard({ operation, onEdit, onDelete }) {
         )}
         {hasPermission('part.delete') && (
           <button
-            onClick={() => onDelete(operation)}
+            onClick={handleDelete}
             className="px-3 py-1.5 bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors text-sm font-medium"
           >
             Löschen

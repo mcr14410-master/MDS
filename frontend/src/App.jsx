@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import PartsPage from './pages/PartsPage';
 import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
+import OperationDetailPage from './pages/OperationDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -82,6 +83,16 @@ function App() {
             element={
               <ProtectedRoute requiredPermission="part.update">
                 <PartFormPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Operation Detail Route */}
+          <Route 
+            path="/parts/:partId/operations/:operationId" 
+            element={
+              <ProtectedRoute requiredPermission="part.read">
+                <OperationDetailPage />
               </ProtectedRoute>
             } 
           />

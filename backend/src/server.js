@@ -38,11 +38,13 @@ pool.connect((err, client, release) => {
 
 // Import Middleware
 const { auditLog } = require('./middleware/auditLogMiddleware');
+const { upload, handleMulterError } = require('./middleware/uploadMiddleware');
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const partsRoutes = require('./routes/partsRoutes');
 const operationsRoutes = require('./routes/operationsRoutes');
+const programsRoutes = require('./routes/programsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -51,6 +53,30 @@ const operationsRoutes = require('./routes/operationsRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/parts', partsRoutes);
 app.use('/api/operations', operationsRoutes);
+app.use('/api/programs', programsRoutes);
+
+// TEST: File Upload Endpoint (Woche 6 - Testing)
+app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Datei erfolgreich hochgeladen!',
+      file: {
+        originalName: req.file.originalname,
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        path: req.file.path,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
@@ -62,8 +88,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.1.0',
-      phase: 'Phase 1, Week 5 - Operations (Arbeitsgänge)',
+      version: '1.2.0',
+      phase: 'Phase 2, Week 6 - Programs & File Upload (Backend)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -101,7 +127,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 1, Week 5 - Operations API ready!'
+      message: '🎉 Phase 2, Week 6 - Programs API ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -114,8 +140,8 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.1.0',
-    phase: 'Phase 1, Week 5 - Operations (Arbeitsgänge) ⚙️',
+    version: '1.2.0',
+    phase: 'Phase 2, Week 6 - Programs & File Upload 📦',
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -140,6 +166,15 @@ app.get('/', (req, res) => {
         create: 'POST /api/operations (Protected)',
         update: 'PUT /api/operations/:id (Protected)',
         delete: 'DELETE /api/operations/:id (Protected)'
+      },
+      programs: {
+        list: 'GET /api/programs (Protected)',
+        listByOperation: 'GET /api/programs?operation_id=1 (Protected)',
+        get: 'GET /api/programs/:id (Protected)',
+        create: 'POST /api/programs (Protected, Multipart)',
+        update: 'PUT /api/programs/:id (Protected)',
+        delete: 'DELETE /api/programs/:id (Protected)',
+        download: 'GET /api/programs/:id/download (Protected)'
       }
     },
     documentation: 'https://github.com/mcr14410-master/MDS'
@@ -169,7 +204,13 @@ app.use((req, res) => {
       'GET /api/operations/:id',
       'POST /api/operations',
       'PUT /api/operations/:id',
-      'DELETE /api/operations/:id'
+      'DELETE /api/operations/:id',
+      'GET /api/programs',
+      'GET /api/programs/:id',
+      'POST /api/programs',
+      'PUT /api/programs/:id',
+      'DELETE /api/programs/:id',
+      'GET /api/programs/:id/download'
     ]
   });
 });
@@ -213,10 +254,19 @@ app.listen(PORT, () => {
   console.log(`      PUT    /api/operations/:id`);
   console.log(`      DELETE /api/operations/:id`);
   console.log('   ========================================');
-  console.log('   ⚡ Phase 1, Week 5 - Operations');
-  console.log('   ✅ Auth + Parts + Operations CRUD');
+  console.log('   📦 Programs Endpoints:');
+  console.log(`      POST   /api/programs`);
+  console.log(`      GET    /api/programs`);
+  console.log(`      GET    /api/programs/:id`);
+  console.log(`      GET    /api/programs/:id/download`);
+  console.log(`      PUT    /api/programs/:id`);
+  console.log(`      DELETE /api/programs/:id`);
+  console.log('   ========================================');
+  console.log('   ⚡ Phase 2, Week 6 - Programs & File Upload');
+  console.log('   ✅ Auth + Parts + Operations + Programs CRUD');
+  console.log('   ✅ File Upload (Multer, 15 Dateitypen, 100MB)');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Now: Testing Operations API');
+  console.log('   📋 Backend KOMPLETT | Frontend offen');
   console.log('   ========================================\n');
 });
 
