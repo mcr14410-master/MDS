@@ -18,6 +18,9 @@ export const API_ENDPOINTS = {
   // Programs
   PROGRAMS: `${API_BASE_URL}/api/programs`,
   
+  // Machines
+  MACHINES: `${API_BASE_URL}/api/machines`,
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

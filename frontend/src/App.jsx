@@ -10,6 +10,7 @@ import PartsPage from './pages/PartsPage';
 import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
 import OperationDetailPage from './pages/OperationDetailPage';
+import MachinesPage from './pages/MachinesPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -93,6 +94,16 @@ function App() {
             element={
               <ProtectedRoute requiredPermission="part.read">
                 <OperationDetailPage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Machines Routes */}
+          <Route 
+            path="/machines" 
+            element={
+              <ProtectedRoute requiredPermission="machine.read">
+                <MachinesPage />
               </ProtectedRoute>
             } 
           />

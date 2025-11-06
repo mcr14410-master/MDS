@@ -345,16 +345,49 @@
 
 ---
 
-### 📋 Woche 8: Maschinen-Stammdaten
-**Status:** 📋 GEPLANT
+### ✅ Woche 8: Maschinen-Stammdaten
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Maschinenpark verwalten
+**Zeitaufwand:** ~4 Stunden
 
-- [ ] Maschinen CRUD (Backend + Frontend)
-- [ ] Steuerungstypen
-- [ ] Netzwerk-Pfade
-- [ ] Programme zu Maschinen zuordnen
+- [x] Maschinen CRUD (Backend + Frontend)
+- [x] Steuerungstypen
+- [x] Netzwerk-Pfade
+- [x] Programme zu Maschinen zuordnen
+- [x] Filter & Search (Typ, Steuerung, Aktiv/Inaktiv)
+- [x] Gruppierung nach Maschinentyp
+- [x] Statistiken (Betriebsstunden, Operations, Programme)
+- [x] Soft/Hard Delete
+- [x] 26 API Tests erfolgreich
 
-**Deliverable:** ✅ **MEILENSTEIN 2**: Kern-Features komplett
+**Backend:**
+```
+✅ machinesController.js (8 Endpoints, 500 Zeilen)
+✅ machinesRoutes.js (RESTful Routes)
+✅ server.js Integration (Version 1.4.0)
+✅ test-machines.http (26 Test-Cases)
+✅ Validierung & Error Handling
+✅ Numerische Felder-Sanitization
+```
+
+**Frontend:**
+```
+✅ machinesStore.js (Zustand Store)
+✅ MachinesPage.jsx (Haupt-Seite mit Filter)
+✅ MachineCard.jsx (Card Component)
+✅ MachineForm.jsx (Modal-Dialog)
+✅ Navigation erweitert
+✅ Permissions: machine.read/create/update/delete
+✅ Responsive Design
+```
+
+**Deliverable:** ✅ **MEILENSTEIN 2 ERREICHT**: Kern-Features komplett
+- ✅ Bauteile-Verwaltung
+- ✅ Operationen-Verwaltung
+- ✅ Programme-Verwaltung (inkl. Versionierung)
+- ✅ Maschinen-Verwaltung
+
+**Abgeschlossen am:** 2025-11-06
 
 ---
 
@@ -698,7 +731,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ████████░░░░░░░░░░░░ 37% (7 von 19 Wochen)
+Gesamt: █████████░░░░░░░░░░░ 42% (8 von 19 Wochen)
 
 Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
@@ -710,7 +743,7 @@ Phase 2 (Monat 2): ████████████████████ 
   └─ Woche 5:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 6:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 7:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
-  └─ Woche 8:      ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 8:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
 
 Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
   └─ Woche 9:      ░░░░░░░░░░░░░░░░░░░░  0%
@@ -728,9 +761,9 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
   └─ Woche 19:     ░░░░░░░░░░░░░░░░░░░░  0% (Deployment)
 ```
 
-**Arbeitszeit:** 55h / ~570h geschätzt (9.6%)
+**Arbeitszeit:** ~59h / ~570h geschätzt (10.4%)
 **Geschätzte Fertigstellung:** Mai 2025  
-**Aktueller Sprint:** 🎊 **PHASE 2 KOMPLETT!** | ✅ Wochen 5-7 KOMPLETT
+**Aktueller Sprint:** 🎊 **PHASE 2 KOMPLETT!** | ✅ Wochen 5-8 ALLE KOMPLETT | 🎉 **MEILENSTEIN 2 ERREICHT!**
 
 ---
 
@@ -754,7 +787,16 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 - ✅ **2025-11-05:** Woche 7 Frontend gestartet - RevisionsList + DiffViewer
 - ✅ **2025-11-05:** Woche 7 Frontend komplett - Versionierung UI fertig (2 Components, 16 Bug-Fixes)
 - 🎊 **2025-11-05:** **WOCHE 7 KOMPLETT - Vollständige Versionierung (Major/Minor/Patch + Diff + Rollback)!**
-- 🎉 **2025-11-05:** **PHASE 2 KOMPLETT - MEILENSTEIN 2 ERREICHT!**
+- ✅ **2025-11-06:** Woche 8 Backend gestartet - Maschinen-Verwaltung geplant
+- ✅ **2025-11-06:** Woche 8 Backend komplett - Machines API fertig (8 Endpoints + 26 Tests)
+- ✅ **2025-11-06:** Woche 8 Frontend komplett - Machines UI fertig (3 Components + Filter + Gruppierung)
+- 🐛 **2025-11-06:** 3 Bugs gefunden und behoben (Permissions, Filter, Numerische Felder)
+- 🎊 **2025-11-06:** **WOCHE 8 KOMPLETT - Maschinen-Verwaltung fertig!**
+- 🎉 **2025-11-06:** **PHASE 2 KOMPLETT - MEILENSTEIN 2 ERREICHT!**
+  - ✅ Bauteile-Verwaltung
+  - ✅ Operationen-Verwaltung
+  - ✅ Programme-Verwaltung (inkl. Versionierung)
+  - ✅ Maschinen-Verwaltung
 
 ---
 
@@ -769,6 +811,7 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 5** | Operations | Backend API + Frontend UI + Bug-Fixes | ✅ 100% |
 | **Woche 6** | Programme & Upload | Backend + Frontend + Bugfixes | ✅ 100% |
 | **Woche 7** | Versionierung | Backend (5 Endpoints) + Frontend (2 Components) | ✅ 100% |
+| **Woche 8** | Maschinen-Stammdaten | Backend (8 Endpoints) + Frontend (3 Components) + 3 Bugfixes | ✅ 100% |
 
 ---
 
@@ -783,18 +826,18 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 7 Frontend Tasks - Versionierung UI:**
-1. ❌ RevisionsList.jsx (Versions-Historie anzeigen)
-2. ❌ DiffViewer.jsx (Diff visuell darstellen - rot/grün)
-3. ❌ ProgramUploadForm erweitern (Version-Type Auswahl: Patch/Minor/Major)
-4. ❌ Rollback Button + Confirmation Dialog
-5. ❌ Version Badge (zeigt aktive Version an)
+**Woche 9 Tasks - Workflow-System:**
+1. ❌ Status-Übergänge (Entwurf → Freigabe → Archiv)
+2. ❌ Berechtigungs-Checks für Workflow-Aktionen
+3. ❌ Freigabe-Workflow implementieren
+4. ❌ Benachrichtigungen (optional)
+5. ❌ History-Tracking für Status-Änderungen
 
-**Nächster Schritt:** Woche 7 Frontend - Versions-UI Components
+**Nächster Schritt:** Woche 9 - Workflow-System Backend + Frontend
 
-**Status:** Woche 7 Backend KOMPLETT ✅ | Frontend OFFEN ❌
+**Status:** Phase 2 KOMPLETT ✅ | Woche 8 KOMPLETT ✅ | Nächster Sprint: Phase 3
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-05  
-**Aktueller Status:** ✅ Phase 1 KOMPLETT! 🎉 | ✅ Woche 5-6 KOMPLETT! | ✅ Woche 7 Backend KOMPLETT! 🚀
+**Letzte Aktualisierung:** 2025-11-06  
+**Aktueller Status:** 🎉 **Phase 1 & 2 KOMPLETT!** | ✅ Wochen 1-8 ALLE KOMPLETT! | 🎊 **MEILENSTEIN 2 ERREICHT!** 🚀

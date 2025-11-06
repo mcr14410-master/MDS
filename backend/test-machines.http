@@ -1,0 +1,363 @@
+### ==============================================
+### WOCHE 8 - MACHINES API TESTS
+### ==============================================
+### Machines CRUD + Stats + Operations
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjI0NDc3MTksImV4cCI6MTc2MjUzNDExOX0.1Pxvh4oUAEkvuRdCGpOjiQRlmd4uI4CG7X5O_5VVc04
+
+### ==============================================
+### 1. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==============================================
+### 2. CREATE - DMG DMU50 (5-Achs Fräse)
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "DMG-DMU50",
+  "manufacturer": "DMG Mori",
+  "model": "DMU 50",
+  "serial_number": "SN-12345-2020",
+  "machine_type": "milling",
+  "control_type": "Heidenhain",
+  "control_version": "TNC640",
+  "num_axes": 5,
+  "workspace_x": 500,
+  "workspace_y": 450,
+  "workspace_z": 400,
+  "spindle_power": 18.5,
+  "max_rpm": 18000,
+  "tool_capacity": 30,
+  "location": "Halle 1, Platz 3",
+  "network_path": "\\\\server\\cnc\\dmu50",
+  "postprocessor_name": "Heidenhain_5Axis_DMU50",
+  "notes": "Hauptmaschine für 5-Achs-Bearbeitung",
+  "is_active": true,
+  "operating_hours": 12453
+}
+
+### ==============================================
+### 3. CREATE - Mazak Drehmaschine
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "MAZAK-QT200",
+  "manufacturer": "Mazak",
+  "model": "Quick Turn 200",
+  "serial_number": "SN-MAZAK-2019",
+  "machine_type": "turning",
+  "control_type": "Mazatrol",
+  "control_version": "640M",
+  "num_axes": 2,
+  "workspace_x": 200,
+  "workspace_y": 0,
+  "workspace_z": 500,
+  "spindle_power": 15.0,
+  "max_rpm": 5000,
+  "tool_capacity": 12,
+  "location": "Halle 1, Platz 7",
+  "network_path": "\\\\server\\cnc\\mazak-qt200",
+  "postprocessor_name": "Mazatrol_Turning_QT200",
+  "notes": "Für Drehteile bis 200mm Durchmesser",
+  "is_active": true,
+  "operating_hours": 8234
+}
+
+### ==============================================
+### 4. CREATE - Hermle C30 (5-Achs)
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "HERMLE-C30",
+  "manufacturer": "Hermle",
+  "model": "C30 U",
+  "serial_number": "HRM-C30-2021",
+  "machine_type": "milling",
+  "control_type": "Heidenhain",
+  "control_version": "TNC640",
+  "num_axes": 5,
+  "workspace_x": 800,
+  "workspace_y": 600,
+  "workspace_z": 550,
+  "spindle_power": 22.0,
+  "max_rpm": 20000,
+  "tool_capacity": 42,
+  "location": "Halle 2, Platz 1",
+  "network_path": "\\\\server\\cnc\\hermle-c30",
+  "postprocessor_name": "Heidenhain_5Axis_Hermle_C30",
+  "notes": "Präzisionsmaschine für komplexe 5-Achs-Teile",
+  "is_active": true,
+  "operating_hours": 3456
+}
+
+### ==============================================
+### 5. CREATE - DMG CTX Beta 800 (Dreh-Fräs)
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "DMG-CTX800",
+  "manufacturer": "DMG Mori",
+  "model": "CTX Beta 800",
+  "serial_number": "CTX-800-2022",
+  "machine_type": "mill-turn",
+  "control_type": "Siemens",
+  "control_version": "840D sl",
+  "num_axes": 4,
+  "workspace_x": 800,
+  "workspace_y": 0,
+  "workspace_z": 1000,
+  "spindle_power": 30.0,
+  "max_rpm": 6000,
+  "tool_capacity": 24,
+  "location": "Halle 2, Platz 5",
+  "network_path": "\\\\server\\cnc\\dmg-ctx800",
+  "postprocessor_name": "Siemens_840D_CTX800",
+  "notes": "Dreh-Fräs-Zentrum für komplexe Bauteile",
+  "is_active": true,
+  "operating_hours": 1234
+}
+
+### ==============================================
+### 6. CREATE - Haas VF-2 (Alte Maschine, inaktiv)
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "HAAS-VF2-OLD",
+  "manufacturer": "Haas",
+  "model": "VF-2",
+  "serial_number": "HAAS-VF2-2005",
+  "machine_type": "milling",
+  "control_type": "Fanuc",
+  "control_version": "0i-MC",
+  "num_axes": 3,
+  "workspace_x": 660,
+  "workspace_y": 410,
+  "workspace_z": 510,
+  "spindle_power": 11.0,
+  "max_rpm": 8100,
+  "tool_capacity": 20,
+  "location": "Halle 3, Lager",
+  "network_path": null,
+  "postprocessor_name": "Fanuc_0i_VF2",
+  "notes": "Alte Maschine, wird nicht mehr verwendet",
+  "is_active": false,
+  "operating_hours": 45678
+}
+
+### ==============================================
+### 7. GET ALL - Alle Maschinen
+### ==============================================
+GET {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 8. GET ALL - Nur aktive Maschinen
+### ==============================================
+GET {{baseUrl}}/api/machines?is_active=true
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 9. GET ALL - Nur Fräsmaschinen
+### ==============================================
+GET {{baseUrl}}/api/machines?machine_type=milling
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 10. GET ALL - Nur Heidenhain Steuerungen
+### ==============================================
+GET {{baseUrl}}/api/machines?control_type=Heidenhain
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 11. GET ALL - Search nach "DMG"
+### ==============================================
+GET {{baseUrl}}/api/machines?search=DMG
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 12. GET ALL - Aktive Fräsmaschinen
+### ==============================================
+GET {{baseUrl}}/api/machines?machine_type=milling&is_active=true
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 13. GET BY ID - DMG DMU50 (ID: 1)
+### ==============================================
+GET {{baseUrl}}/api/machines/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 14. GET BY ID - Mazak (ID: 2)
+### ==============================================
+GET {{baseUrl}}/api/machines/2
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 15. GET STATS - DMG DMU50 Statistiken
+### ==============================================
+GET {{baseUrl}}/api/machines/1/stats
+Authorization: Bearer {{token}}
+
+
+### ==============================================
+### Operation zuweisen
+### ==============================================
+PUT {{baseUrl}}/api/operations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "machine_id": 1
+}
+
+
+### ==============================================
+### 16. GET OPERATIONS - Alle Operations von DMG DMU50
+### ==============================================
+
+GET {{baseUrl}}/api/machines/1/operations
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 17. UPDATE - Betriebsstunden aktualisieren
+### ==============================================
+PUT {{baseUrl}}/api/machines/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operating_hours": 12500,
+  "last_maintenance": "2025-11-01",
+  "next_maintenance": "2026-01-01"
+}
+
+### ==============================================
+### 18. UPDATE - Maschine Standort ändern
+### ==============================================
+PUT {{baseUrl}}/api/machines/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location": "Halle 1, Platz 8 (umgestellt)",
+  "notes": "Standort geändert wegen Umstrukturierung"
+}
+
+### ==============================================
+### 19. UPDATE - Netzwerkpfad aktualisieren
+### ==============================================
+PUT {{baseUrl}}/api/machines/3
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "network_path": "\\\\server-new\\cnc\\hermle-c30-updated"
+}
+
+### ==============================================
+### 20. UPDATE - Maschine deaktivieren (is_active)
+### ==============================================
+PUT {{baseUrl}}/api/machines/5
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_active": false,
+  "notes": "Maschine außer Betrieb genommen wegen Reparatur"
+}
+
+### ==============================================
+### 21. DELETE - Soft-Delete (Standard)
+### ==============================================
+# Setzt is_active = false
+DELETE {{baseUrl}}/api/machines/5
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 22. DELETE - Hard-Delete (nur ohne Operations)
+### ==============================================
+# Löscht permanent aus DB (nur wenn keine Operations verknüpft)
+DELETE {{baseUrl}}/api/machines/5?hard_delete=true
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 23. CREATE - Fehler: Name bereits vergeben
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "DMG-DMU50",
+  "manufacturer": "Test",
+  "model": "Test"
+}
+
+### ==============================================
+### 24. CREATE - Fehler: Name fehlt
+### ==============================================
+POST {{baseUrl}}/api/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "manufacturer": "Test",
+  "model": "Test"
+}
+
+### ==============================================
+### 25. UPDATE - Fehler: Neuer Name existiert bereits
+### ==============================================
+PUT {{baseUrl}}/api/machines/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "DMG-DMU50"
+}
+
+### ==============================================
+### 26. GET BY ID - Fehler: Maschine nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/machines/999
+Authorization: Bearer {{token}}
+
+### ==============================================
+### ERFOLGREICH wenn:
+### ==============================================
+# ✅ 5 Maschinen erstellt (4 aktiv, 1 inaktiv)
+# ✅ GET ALL zeigt alle Maschinen
+# ✅ Filter funktionieren (machine_type, control_type, is_active)
+# ✅ Search funktioniert
+# ✅ GET BY ID zeigt Details mit program_count
+# ✅ GET STATS zeigt Statistiken
+# ✅ GET OPERATIONS zeigt verknüpfte Arbeitsgänge
+# ✅ UPDATE ändert nur übergebene Felder
+# ✅ DELETE soft-delete setzt is_active = false
+# ✅ DELETE hard-delete löscht (nur ohne Operations)
+# ✅ Validierung: Name required & unique
+# ✅ Error Handling funktioniert

@@ -45,6 +45,7 @@ const authRoutes = require('./routes/authRoutes');
 const partsRoutes = require('./routes/partsRoutes');
 const operationsRoutes = require('./routes/operationsRoutes');
 const programsRoutes = require('./routes/programsRoutes');
+const machinesRoutes = require('./routes/machinesRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -54,6 +55,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/parts', partsRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/programs', programsRoutes);
+app.use('/api/machines', machinesRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
@@ -88,8 +90,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.3.0',
-      phase: 'Phase 2, Week 7 - Versionierung (Backend)',
+      version: '1.4.0',
+      phase: 'Phase 2, Week 8 - Maschinen-Stammdaten (Backend)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -127,7 +129,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 2, Week 7 - Versionierung Backend ready!'
+      message: '🎉 Phase 2, Week 8 - Maschinen-Stammdaten Backend ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -140,8 +142,8 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.3.0',
-    phase: 'Phase 2, Week 7 - Versionierung 🔄',
+    version: '1.4.0',
+    phase: 'Phase 2, Week 8 - Maschinen-Stammdaten 🏭',
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -181,6 +183,15 @@ app.get('/', (req, res) => {
         compareByVersion: 'GET /api/programs/:id/compare?from=1.0.0&to=1.0.1 (Protected)',
         compareByIds: 'GET /api/programs/:id/revisions/:r1/compare/:r2 (Protected)',
         rollback: 'POST /api/programs/:id/rollback?to=1.0.1 (Protected)'
+      },
+      machines: {
+        list: 'GET /api/machines (Protected)',
+        get: 'GET /api/machines/:id (Protected)',
+        create: 'POST /api/machines (Protected)',
+        update: 'PUT /api/machines/:id (Protected)',
+        delete: 'DELETE /api/machines/:id (Protected)',
+        stats: 'GET /api/machines/:id/stats (Protected)',
+        operations: 'GET /api/machines/:id/operations (Protected)'
       }
     },
     documentation: 'https://github.com/mcr14410-master/MDS'
@@ -221,7 +232,15 @@ app.use((req, res) => {
       'POST /api/programs/:id/revisions',
       'GET /api/programs/:id/revisions',
       'GET /api/programs/:id/compare',
-      'POST /api/programs/:id/rollback'
+      'POST /api/programs/:id/rollback',
+      // NEW - Week 8: Machines
+      'GET /api/machines',
+      'GET /api/machines/:id',
+      'POST /api/machines',
+      'PUT /api/machines/:id',
+      'DELETE /api/machines/:id',
+      'GET /api/machines/:id/stats',
+      'GET /api/machines/:id/operations'
     ]
   });
 });
@@ -279,13 +298,23 @@ app.listen(PORT, () => {
   console.log(`      GET    /api/programs/:id/compare`);
   console.log(`      POST   /api/programs/:id/rollback`);
   console.log('   ========================================');
-  console.log('   ⚡ Phase 2, Week 7 - Versionierung (Backend)');
+  console.log('   🏭 Machines Endpoints (NEW Week 8):');
+  console.log(`      GET    /api/machines`);
+  console.log(`      GET    /api/machines/:id`);
+  console.log(`      POST   /api/machines`);
+  console.log(`      PUT    /api/machines/:id`);
+  console.log(`      DELETE /api/machines/:id`);
+  console.log(`      GET    /api/machines/:id/stats`);
+  console.log(`      GET    /api/machines/:id/operations`);
+  console.log('   ========================================');
+  console.log('   ⚡ Phase 2, Week 8 - Maschinen-Stammdaten');
   console.log('   ✅ Auth + Parts + Operations + Programs CRUD');
   console.log('   ✅ File Upload (Multer, 15 Dateitypen, 100MB)');
   console.log('   ✅ Major/Minor/Patch Versionierung');
   console.log('   ✅ Diff-Berechnung & Rollback');
+  console.log('   ✅ Maschinen CRUD + Stats');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Backend KOMPLETT | Frontend offen');
+  console.log('   📋 Backend Week 8 KOMPLETT | Frontend offen');
   console.log('   ========================================\n');
 });
 
