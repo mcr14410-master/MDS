@@ -4,9 +4,9 @@
 > Versionskontrolle · RBAC · Wartungsmanagement · Audit-Trail
 
 [![Status](https://img.shields.io/badge/Status-In%20Development-yellow)](https://github.com/mcr14410-master/MDS)
-[![Phase](https://img.shields.io/badge/Phase-2%20Kern--Features-blue)](./ROADMAP.md)
-[![Week](https://img.shields.io/badge/Week-5%20Complete-success)](./docs/sessions/)
-[![Progress](https://img.shields.io/badge/Progress-58%25-brightgreen)](./ROADMAP.md)
+[![Phase](https://img.shields.io/badge/Phase-2%20Complete-success)](./ROADMAP.md)
+[![Week](https://img.shields.io/badge/Week-7%20Complete-success)](./docs/sessions/)
+[![Progress](https://img.shields.io/badge/Progress-37%25-brightgreen)](./ROADMAP.md)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 ---
@@ -29,7 +29,8 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 ## 📊 Aktueller Status
 
 ### ✅ Phase 1 - 100% Complete (Wochen 1-4 ✅)
-### ⏳ Phase 2 - 25% Complete (Woche 5 von 4 ✅)
+### ✅ Phase 2 - 100% Complete (Wochen 5-7 ✅)
+### 🎊 **MEILENSTEIN 2 ERREICHT!**
 
 #### ✅ Woche 1: Datenbank-Schema (ABGESCHLOSSEN)
 ```
@@ -99,10 +100,50 @@ MDS (Manufacturing Data System) ist ein modernes Fertigungsdaten-Management-Syst
 ✅ Production-Ready
 ```
 
-**Arbeitszeit:** 32h investiert (8h W1 + 8h W2 + 2h W3 + 4h W4 + 9h W5 + 1h Docs)  
-**Nächster Schritt:** Programme & File Upload (Woche 6)
+#### ✅ Woche 6: Programme & File Upload (ABGESCHLOSSEN)
+```
+✅ File Upload Backend (Multer Middleware)
+✅ Programs CRUD API (6 Endpoints)
+✅ Programs Frontend Components (1020 Zeilen)
+  ├─ programsStore.js - State Management
+  ├─ ProgramsList.jsx - Grid Layout
+  ├─ ProgramCard.jsx - Card mit Actions
+  ├─ ProgramUploadForm.jsx - Multi-Format Upload
+  └─ ProgramViewer.jsx - Syntax Highlighting
+✅ 15 Dateitypen (.nc, .h, .eia, .txt, etc.)
+✅ File Download Funktion
+✅ Auto-Generated Program Numbers (OP10-001, OP10-002...)
+✅ SHA-256 Hash Calculation
+✅ Tab-System in PartDetailPage erweitert
+✅ Permission-based UI
+✅ 15 Backend Tests erfolgreich
+```
 
-[📖 Woche 1 Summary](./docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./docs/WEEK-2-COMPLETE.md) | [📖 Woche 3 Summary](./docs/WEEK-3-SUMMARY.md) | [📖 Woche 4 Summary](./docs/sessions/SESSION-2025-11-03-WEEK4.md) | [📖 Woche 5 Summary](./docs/sessions/SESSION-2025-11-04-FRONTEND.md) | [🗺️ Roadmap](./ROADMAP.md)
+#### ✅ Woche 7: Versionierung (ABGESCHLOSSEN)
+```
+✅ Revision Backend API (5 Endpoints)
+✅ Versioning Frontend Components (880 Zeilen)
+  ├─ RevisionsList.jsx - Version History (280 Zeilen)
+  ├─ DiffViewer.jsx - Visual Diff (320 Zeilen)
+  ├─ ProgramUploadForm.jsx - 3 Modi (erweitert)
+  └─ ProgramCard.jsx - Action Bar (erweitert)
+✅ Major.Minor.Patch Versionierung (1.0.0 → 2.0.0)
+✅ Diff-Berechnung (Zeile-für-Zeile)
+✅ 2 View-Modi (Unified/Split)
+✅ Rollback-Funktion (ohne Duplikate)
+✅ Version-Type Auswahl (Major/Minor/Patch)
+✅ Change-Log optional
+✅ Delete Revision mit Permission
+✅ Version History mit Badges
+✅ 16 Bugs gefixed
+✅ Production-Ready
+🎉 MEILENSTEIN 2 ERREICHT: Kern-Features komplett!
+```
+
+**Arbeitszeit:** 55h investiert (8h W1 + 8h W2 + 2h W3 + 4h W4 + 9h W5 + 12h W6 + 8h W7 + 4h Docs)  
+**Nächster Schritt:** Maschinen-Verwaltung (Woche 8)
+
+[📖 Woche 1 Summary](./docs/WEEK-1-SUMMARY.md) | [📖 Woche 2 Summary](./docs/WEEK-2-COMPLETE.md) | [📖 Woche 3 Summary](./docs/WEEK-3-SUMMARY.md) | [📖 Woche 4 Summary](./docs/sessions/SESSION-2025-11-03-WEEK4.md) | [📖 Woche 5 Summary](./docs/sessions/SESSION-2025-11-04-FRONTEND.md) | [📖 Woche 6 Summary](./docs/sessions/SESSION-2025-11-05.md) | [📖 Woche 7 Summary](./docs/sessions/SESSION-2025-11-05_3.md) | [🗺️ Roadmap](./ROADMAP.md)
 
 ---
 

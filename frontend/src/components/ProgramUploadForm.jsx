@@ -3,29 +3,36 @@ import { useState, useEffect } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
 
-export default function ProgramUploadForm({ operationId, program, onClose, onSuccess }) {
-  const { uploadProgram, updateProgram, loading } = useProgramsStore();
+export default function ProgramUploadForm({ operationId, program, isNewRevision, onClose, onSuccess }) {
+  const { uploadProgram, uploadRevision, updateProgram, loading } = useProgramsStore();
   
   const [formData, setFormData] = useState({
     program_name: '',
     description: '',
+    version_type: 'patch', // NEU: Woche 7
+    change_log: '',        // NEU: Woche 7
   });
   
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
 
-  // Load existing program data for edit mode
+  // Determine mode
+  const isEditMode = program && !isNewRevision;
+  const isNewRevisionMode = program && isNewRevision;
+  const isNewProgramMode = !program && !isNewRevision;
+
+  // Load existing program data for edit/revision mode
   useEffect(() => {
     if (program) {
       setFormData({
         program_name: program.program_name || '',
         description: program.description || '',
+        version_type: 'patch',
+        change_log: '',
       });
     }
   }, [program]);
-
-  const isEditMode = !!program;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,11 +67,13 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.program_name?.trim()) {
+    // Program name nur bei neuem Programm erforderlich (nicht bei Revision oder Edit)
+    if (isNewProgramMode && !formData.program_name?.trim()) {
       newErrors.program_name = 'Programm-Name ist erforderlich';
     }
 
-    if (!isEditMode && !selectedFile) {
+    // File erforderlich bei neuem Programm oder neuer Revision
+    if ((isNewProgramMode || isNewRevisionMode) && !selectedFile) {
       newErrors.file = 'Bitte wählen Sie eine Datei aus';
     }
 
@@ -85,8 +94,21 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
         // Edit mode - only update metadata
         await updateProgram(program.id, formData);
         toast.success('Programm erfolgreich aktualisiert');
+      } else if (isNewRevisionMode) {
+        // New Revision mode - upload new version
+        const data = new FormData();
+        data.append('file', selectedFile);
+        if (formData.version_type) {
+          data.append('version_type', formData.version_type);
+        }
+        if (formData.change_log?.trim()) {
+          data.append('comment', formData.change_log.trim());
+        }
+
+        await uploadRevision(program.id, data, setUploadProgress);
+        toast.success(`Neue Version erfolgreich hochgeladen`);
       } else {
-        // Create mode - upload file with metadata
+        // New Program mode - upload file with metadata
         const data = new FormData();
         data.append('file', selectedFile);
         data.append('operation_id', operationId);
@@ -118,7 +140,9 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? 'Programm bearbeiten' : 'Programm hochladen'}
+            {isEditMode ? 'Programm bearbeiten' : 
+             isNewRevisionMode ? 'Neue Version hochladen' : 
+             'Programm hochladen'}
           </h2>
           <button
             onClick={onClose}
@@ -198,7 +222,7 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
           {/* Program Name */}
           <div>
             <label htmlFor="program_name" className="block text-sm font-medium text-gray-700 mb-2">
-              Programm-Name <span className="text-red-500">*</span>
+              Programm-Name {isNewProgramMode && <span className="text-red-500">*</span>}
             </label>
             <input
               type="text"
@@ -206,8 +230,12 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
               name="program_name"
               value={formData.program_name}
               onChange={handleChange}
+              readOnly={isNewRevisionMode}
+              disabled={isNewRevisionMode}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.program_name ? 'border-red-500' : 'border-gray-300'
+                errors.program_name ? 'border-red-500' : 
+                isNewRevisionMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : 
+                'border-gray-300'
               }`}
               placeholder="z.B. KONTUR_V1"
             />
@@ -226,11 +254,56 @@ export default function ProgramUploadForm({ operationId, program, onClose, onSuc
               name="description"
               value={formData.description}
               onChange={handleChange}
+              readOnly={isNewRevisionMode}
+              disabled={isNewRevisionMode}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                isNewRevisionMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300' : 'border-gray-300'
+              }`}
               placeholder="Optionale Beschreibung des Programms..."
             />
           </div>
+
+          {/* Version Type (nur bei neuer Revision) */}
+          {isNewRevisionMode && (
+            <div>
+              <label htmlFor="version_type" className="block text-sm font-medium text-gray-700 mb-2">
+                Versions-Typ
+              </label>
+              <select
+                id="version_type"
+                name="version_type"
+                value={formData.version_type}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="patch">Patch (1.0.0 → 1.0.1) - Kleine Optimierung</option>
+                <option value="minor">Minor (1.0.0 → 1.1.0) - Werkzeugwechsel</option>
+                <option value="major">Major (1.0.0 → 2.0.0) - Neue Strategie</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Wähle den Typ der Änderung für die Versionsnummer
+              </p>
+            </div>
+          )}
+
+          {/* Change Log (nur bei neuer Revision) */}
+          {isNewRevisionMode && (
+            <div>
+              <label htmlFor="change_log" className="block text-sm font-medium text-gray-700 mb-2">
+                Änderungsprotokoll
+              </label>
+              <textarea
+                id="change_log"
+                name="change_log"
+                value={formData.change_log}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Was wurde in dieser Version geändert? (z.B. Werkzeug T03 durch T05 ersetzt)"
+              />
+            </div>
+          )}
 
           {/* Upload Progress Bar */}
           {loading && uploadProgress > 0 && (

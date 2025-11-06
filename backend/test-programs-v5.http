@@ -1,0 +1,426 @@
+### ==============================================
+### WOCHE 6 - PROGRAMS API TESTS
+### ==============================================
+### Programs CRUD + File Upload + Download
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjIyOTk1MjIsImV4cCI6MTc2MjM4NTkyMn0.bGcbbf-fyxzk6miOFrCDwd6gvYsSr8u6iB3vI2ho7U8
+
+### ==============================================
+### 1. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==============================================
+### 2. CREATE - Programm hochladen (mit Datei)
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O1234
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+FRÄSEN RECHTECK
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Test-Programm für Rechteck-Fräsen mit T1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="comment"
+
+Initiale Version von CAM
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-program.nc"
+Content-Type: text/plain
+
+< ./test-program.nc
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 3. CREATE - Zweites Programm (Siemens)
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+_N_BOHRUNG_MPF
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+BOHRUNG DURCHMESSER 10
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Siemens Bohrprogramm
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="BOHRUNG.mpf"
+Content-Type: text/plain
+
+%_N_BOHRUNG_MPF
+N10 G54
+N20 T1 M6
+N30 S2000 M3
+N40 G0 X0 Y0 Z100
+N50 G81 Z-10 R2 F100
+N60 M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 4. GET ALL - Alle Programme
+### ==============================================
+GET {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 5. GET BY OPERATION - Filter nach operation_id
+### ==============================================
+GET {{baseUrl}}/api/programs?operation_id=1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6. GET BY ID - Einzelnes Programm mit Revisionen
+### ==============================================
+GET {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6b. GET REVISIONS - Versions-Historie (NEU Woche 7!)
+### Erwartung: Alle Revisionen eines Programms mit Details
+### ==============================================
+GET {{baseUrl}}/api/programs/1/revisions
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6c. UPLOAD NEW REVISION - Patch (1.0.0 → 1.0.1)
+### Erwartung: Neue Revision mit Auto-Increment Patch
+### ==============================================
+POST {{baseUrl}}/api/programs/1/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="version_type"
+
+patch
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="comment"
+
+Vorschub optimiert von F800 auf F600
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="is_cam_original"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-program-v2.nc"
+Content-Type: text/plain
+
+%
+O1234 (RECHTECK OPTIMIERT)
+N10 G90 G54
+N20 T1 M6
+N30 S10000 M3
+N40 G0 X0 Y0 Z5
+N50 G1 Z-5 F600
+N60 G1 X100 F600
+N70 G0 Z5
+N80 M30
+%
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 6d. UPLOAD NEW REVISION - Minor (1.0.1 → 1.1.0)
+### Erwartung: Neue Revision mit Minor-Increment (Werkzeug gewechselt)
+### ==============================================
+POST {{baseUrl}}/api/programs/1/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="version_type"
+
+minor
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="comment"
+
+Werkzeug gewechselt: T2 statt T1 (längere Standzeit)
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-program-v3.nc"
+Content-Type: text/plain
+
+%
+O1234 (RECHTECK T2)
+N10 G90 G54
+N20 T2 M6
+N30 S10000 M3
+N40 G0 X0 Y0 Z5
+N50 G1 Z-5 F600
+N60 G1 X100 F600
+N70 G0 Z5
+N80 M30
+%
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 6e. UPLOAD NEW REVISION - Major (1.1.0 → 2.0.0)
+### Erwartung: Neue Revision mit Major-Increment (neue Strategie)
+### ==============================================
+POST {{baseUrl}}/api/programs/1/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="version_type"
+
+major
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="comment"
+
+Komplett neue Bearbeitungsstrategie - andere Aufspannung
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-program-v4.nc"
+Content-Type: text/plain
+
+%
+O1234 (RECHTECK NEUE STRATEGIE)
+N10 G90 G55
+N20 T3 M6
+N30 S12000 M3
+N40 G0 X50 Y50 Z10
+N50 G1 Z-10 F800
+N60 G2 X100 Y100 I25 J25 F1000
+N70 G0 Z10
+N80 M30
+%
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 6f. GET REVISIONS - Nach Uploads prüfen
+### Erwartung: 4 Revisionen (1.0.0, 1.0.1, 1.1.0, 2.0.0)
+### ==============================================
+GET {{baseUrl}}/api/programs/1/revisions
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6g. COMPARE (BY VERSION) - Version 1.0.0 mit 1.0.1 vergleichen (PATCH)
+### Erwartung: Diff zeigt Vorschub-Änderung F800 → F600
+### EINFACH: Benutzt Versions-Strings statt IDs!
+### ==============================================
+GET {{baseUrl}}/api/programs/1/compare?from=1.0.0&to=1.0.1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6h. COMPARE (BY VERSION) - Version 1.0.1 mit 1.1.0 vergleichen (MINOR)
+### Erwartung: Diff zeigt Werkzeug-Wechsel T1 → T2
+### ==============================================
+GET {{baseUrl}}/api/programs/1/compare?from=1.0.1&to=1.1.0
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6i. COMPARE (BY VERSION) - Version 1.1.0 mit 2.0.0 vergleichen (MAJOR)
+### Erwartung: Diff zeigt komplette Strategie-Änderung
+### ==============================================
+GET {{baseUrl}}/api/programs/1/compare?from=1.1.0&to=2.0.0
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6j. COMPARE (BY ID) - Alternative: Mit IDs vergleichen
+### Erwartung: Gleicher Diff wie 6g, aber mit IDs
+### HINWEIS: IDs müssen aus GET /revisions genommen werden!
+### ==============================================
+GET {{baseUrl}}/api/programs/1/revisions/1/compare/12
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 7. UPDATE - Metadaten ändern
+### ==============================================
+PUT {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "O1234_V2",
+  "program_name": "FRÄSEN RECHTECK OPTIMIERT",
+  "description": "Optimierte Version mit schnelleren Vorschüben"
+}
+
+### ==============================================
+### 8. DOWNLOAD - Programm herunterladen
+### ==============================================
+GET {{baseUrl}}/api/programs/2/download
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 9. CREATE - Ohne Datei (Error)
+### Erwartung: 400 - Keine Datei hochgeladen
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O9999
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+TEST OHNE DATEI
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 10. CREATE - Ohne Pflichtfelder (Error)
+### Erwartung: 400 - Pflichtfelder fehlen
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.nc"
+Content-Type: text/plain
+
+G90
+M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 11. CREATE - Operation existiert nicht (Error)
+### Erwartung: 404 - Operation nicht gefunden
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+99999
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_number"
+
+O8888
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+INVALID OPERATION
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.nc"
+Content-Type: text/plain
+
+G90
+M30
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 12. GET BY ID - Nicht existierendes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/programs/99999
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 13. UPDATE - Nicht existierendes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+PUT {{baseUrl}}/api/programs/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "O9999",
+  "program_name": "DOES NOT EXIST"
+}
+
+### ==============================================
+### 14. DELETE - Programm löschen
+### ==============================================
+DELETE {{baseUrl}}/api/programs/2
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 15. DELETE - Bereits gelöschtes Programm (Error)
+### Erwartung: 404 - Programm nicht gefunden
+### ==============================================
+DELETE {{baseUrl}}/api/programs/2
+Authorization: Bearer {{token}}
+
+### ==============================================
+### NOTES:
+### ==============================================
+### API Endpoints:
+### - POST   /api/programs                  - Programm hochladen (Multipart Form Data)
+### - POST   /api/programs/:id/revisions    - Neue Revision hochladen (NEU Woche 7!)
+### - GET    /api/programs                  - Alle Programme
+### - GET    /api/programs?operation_id=1   - Filter nach Operation
+### - GET    /api/programs/:id              - Programm Details + Revisionen
+### - GET    /api/programs/:id/revisions    - Versions-Historie (NEU Woche 7!)
+### - GET    /api/programs/:id/compare?from=1.0.0&to=1.0.1 - Versionen vergleichen (NEU Woche 7! EINFACH!)
+### - GET    /api/programs/:id/revisions/:r1/compare/:r2 - Versionen vergleichen (ID-basiert)
+### - GET    /api/programs/:id/download     - Programm herunterladen
+### - PUT    /api/programs/:id              - Metadaten ändern
+### - DELETE /api/programs/:id              - Programm löschen
+###
+### Required Fields (Neues Programm):
+### - operation_id (muss existieren)
+### - program_number
+### - program_name
+### - file (NC-Programm)
+###
+### Optional Fields (Neues Programm):
+### - description
+### - comment
+###
+### Required Fields (Neue Revision):
+### - file (NC-Programm)
+###
+### Optional Fields (Neue Revision):
+### - version_type: "patch" | "minor" | "major" (default: "patch")
+### - comment: Beschreibung der Änderung
+### - is_cam_original: true | false (default: false)
+###
+### Version Logic:
+### - patch: 1.0.0 → 1.0.1 (kleine Optimierung)
+### - minor: 1.0.0 → 1.1.0 (Werkzeug gewechselt)
+### - major: 1.0.0 → 2.0.0 (neue Strategie)
+###
+### Features:
+### ✅ File Upload mit Validierung
+### ✅ Automatische Versionierung (1.0.0)
+### ✅ Major/Minor/Patch Versionierung (NEU Woche 7!)
+### ✅ Neue Revisionen hochladen (NEU Woche 7!)
+### ✅ Versions-Historie abrufen (NEU Woche 7!)
+### ✅ Diff-Berechnung zwischen Versionen (NEU Woche 7!)
+### ✅ File-Hash Berechnung (SHA-256)
+### ✅ Content in DB speichern (für Syntax-Highlighting)
+### ✅ CASCADE Delete (Program → Revisions)
+### ✅ File Cleanup bei Fehler
+### ✅ JOIN mit Operations, Parts, Machines
+### ✅ Workflow-State (draft)
+### ==============================================
