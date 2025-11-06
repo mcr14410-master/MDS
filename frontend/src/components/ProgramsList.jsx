@@ -5,12 +5,16 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import ProgramCard from './ProgramCard';
 import ProgramUploadForm from './ProgramUploadForm';
+import RevisionsList from './RevisionsList'; // NEU: Woche 7
 
 export default function ProgramsList({ operationId }) {
   const { programs, loading, error, fetchPrograms, deleteProgram } = useProgramsStore();
   const { hasPermission } = useAuthStore();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
+  const [isNewRevision, setIsNewRevision] = useState(false);         // NEU: Woche 7
+  const [showRevisions, setShowRevisions] = useState(false);         // NEU: Woche 7
+  const [selectedProgram, setSelectedProgram] = useState(null);      // NEU: Woche 7
 
   useEffect(() => {
     if (operationId) {
@@ -21,6 +25,14 @@ export default function ProgramsList({ operationId }) {
 
   const handleEdit = (program) => {
     setEditingProgram(program);
+    setIsNewRevision(false);
+    setShowUploadForm(true);
+  };
+
+  // NEU: Woche 7 - Neue Version hochladen
+  const handleNewRevision = (program) => {
+    setEditingProgram(program);
+    setIsNewRevision(true);
     setShowUploadForm(true);
   };
 
@@ -40,11 +52,25 @@ export default function ProgramsList({ operationId }) {
   const handleFormClose = () => {
     setShowUploadForm(false);
     setEditingProgram(null);
+    setIsNewRevision(false);
   };
 
   const handleFormSuccess = () => {
     fetchPrograms(operationId);
     handleFormClose();
+  };
+
+  // NEU: Woche 7 - Versionen anzeigen
+  const handleViewVersions = (program) => {
+    setSelectedProgram(program);
+    setShowRevisions(true);
+  };
+
+  const handleRevisionsClose = () => {
+    setShowRevisions(false);
+    setSelectedProgram(null);
+    // Refresh programs nach Rollback
+    fetchPrograms(operationId);
   };
 
   if (loading && programs.length === 0) {
@@ -124,6 +150,8 @@ export default function ProgramsList({ operationId }) {
                 program={program}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onViewVersions={handleViewVersions}
+                onNewRevision={handleNewRevision}
               />
             ))}
         </div>
@@ -134,8 +162,17 @@ export default function ProgramsList({ operationId }) {
         <ProgramUploadForm
           operationId={operationId}
           program={editingProgram}
+          isNewRevision={isNewRevision}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {/* Revisions List Modal (NEU: Woche 7) */}
+      {showRevisions && selectedProgram && (
+        <RevisionsList
+          program={selectedProgram}
+          onClose={handleRevisionsClose}
         />
       )}
     </div>

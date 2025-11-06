@@ -88,8 +88,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.2.0',
-      phase: 'Phase 2, Week 6 - Programs & File Upload (Backend)',
+      version: '1.3.0',
+      phase: 'Phase 2, Week 7 - Versionierung (Backend)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -127,7 +127,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 2, Week 6 - Programs API ready!'
+      message: '🎉 Phase 2, Week 7 - Versionierung Backend ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -140,8 +140,8 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.2.0',
-    phase: 'Phase 2, Week 6 - Programs & File Upload 📦',
+    version: '1.3.0',
+    phase: 'Phase 2, Week 7 - Versionierung 🔄',
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -174,7 +174,13 @@ app.get('/', (req, res) => {
         create: 'POST /api/programs (Protected, Multipart)',
         update: 'PUT /api/programs/:id (Protected)',
         delete: 'DELETE /api/programs/:id (Protected)',
-        download: 'GET /api/programs/:id/download (Protected)'
+        download: 'GET /api/programs/:id/download (Protected)',
+        // NEW - Week 7: Versionierung
+        uploadRevision: 'POST /api/programs/:id/revisions (Protected, Multipart)',
+        getRevisions: 'GET /api/programs/:id/revisions (Protected)',
+        compareByVersion: 'GET /api/programs/:id/compare?from=1.0.0&to=1.0.1 (Protected)',
+        compareByIds: 'GET /api/programs/:id/revisions/:r1/compare/:r2 (Protected)',
+        rollback: 'POST /api/programs/:id/rollback?to=1.0.1 (Protected)'
       }
     },
     documentation: 'https://github.com/mcr14410-master/MDS'
@@ -210,7 +216,12 @@ app.use((req, res) => {
       'POST /api/programs',
       'PUT /api/programs/:id',
       'DELETE /api/programs/:id',
-      'GET /api/programs/:id/download'
+      'GET /api/programs/:id/download',
+      // NEW - Week 7: Versionierung
+      'POST /api/programs/:id/revisions',
+      'GET /api/programs/:id/revisions',
+      'GET /api/programs/:id/compare',
+      'POST /api/programs/:id/rollback'
     ]
   });
 });
@@ -261,10 +272,18 @@ app.listen(PORT, () => {
   console.log(`      GET    /api/programs/:id/download`);
   console.log(`      PUT    /api/programs/:id`);
   console.log(`      DELETE /api/programs/:id`);
+  console.log('   ----------------------------------------');
+  console.log('   🔄 Versionierung (NEW Week 7):');
+  console.log(`      POST   /api/programs/:id/revisions`);
+  console.log(`      GET    /api/programs/:id/revisions`);
+  console.log(`      GET    /api/programs/:id/compare`);
+  console.log(`      POST   /api/programs/:id/rollback`);
   console.log('   ========================================');
-  console.log('   ⚡ Phase 2, Week 6 - Programs & File Upload');
+  console.log('   ⚡ Phase 2, Week 7 - Versionierung (Backend)');
   console.log('   ✅ Auth + Parts + Operations + Programs CRUD');
   console.log('   ✅ File Upload (Multer, 15 Dateitypen, 100MB)');
+  console.log('   ✅ Major/Minor/Patch Versionierung');
+  console.log('   ✅ Diff-Berechnung & Rollback');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
   console.log('   📋 Backend KOMPLETT | Frontend offen');
   console.log('   ========================================\n');
