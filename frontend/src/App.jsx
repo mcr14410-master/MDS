@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+import { useThemeStore } from './stores/themeStore';
 import { Toaster } from './components/Toaster';
 
 // Pages
@@ -18,17 +19,19 @@ import Layout from './components/Layout';
 
 function App() {
   const { initialize, loading } = useAuthStore();
+  const { initializeTheme } = useThemeStore();
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    initializeTheme();
+  }, [initialize, initializeTheme]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600 font-medium">MDS wird geladen...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">MDS wird geladen...</p>
         </div>
       </div>
     );

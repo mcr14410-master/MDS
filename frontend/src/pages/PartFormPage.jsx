@@ -149,7 +149,7 @@ export default function PartFormPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Lade Bauteil...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Lade Bauteil...</p>
         </div>
       </div>
     );
@@ -161,7 +161,7 @@ export default function PartFormPage() {
       <div className="mb-6">
         <Link
           to={isEditMode ? `/parts/${id}` : '/parts'}
-          className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2 mb-4"
+          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-2 mb-4"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -169,25 +169,25 @@ export default function PartFormPage() {
           Zurück
         </Link>
         
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           {isEditMode ? 'Bauteil bearbeiten' : 'Neues Bauteil erstellen'}
         </h1>
         {isEditMode && currentPart && (
-          <p className="mt-1 text-gray-600">{currentPart.part_number}</p>
+          <p className="mt-1 text-gray-600 dark:text-gray-400">{currentPart.part_number}</p>
         )}
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="space-y-6">
           {/* Basic Info Section */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Grunddaten</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Grunddaten</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Part Number */}
               <div>
-                <label htmlFor="part_number" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="part_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Bauteilnummer <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -196,20 +196,20 @@ export default function PartFormPage() {
                   name="part_number"
                   value={formData.part_number}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.part_number ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white ${
+                    errors.part_number ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="z.B. P-12345"
                   maxLength={50}
                 />
                 {errors.part_number && (
-                  <p className="mt-1 text-sm text-red-600">{errors.part_number}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.part_number}</p>
                 )}
               </div>
 
               {/* Part Name */}
               <div>
-                <label htmlFor="part_name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="part_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Bezeichnung <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -218,20 +218,20 @@ export default function PartFormPage() {
                   name="part_name"
                   value={formData.part_name}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.part_name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white ${
+                    errors.part_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="z.B. Gehäuse Deckel"
                   maxLength={200}
                 />
                 {errors.part_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.part_name}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.part_name}</p>
                 )}
               </div>
 
               {/* Customer ID */}
               <div>
-                <label htmlFor="customer_id" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="customer_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Kunden-ID (optional)
                 </label>
                 <input
@@ -240,18 +240,18 @@ export default function PartFormPage() {
                   name="customer_id"
                   value={formData.customer_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="Leer lassen oder z.B. 1"
                   min="1"
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Verfügbare IDs: 1 (Airbus), 2 (BMW), 3 (Siemens)
                 </p>
               </div>
 
               {/* Revision */}
               <div>
-                <label htmlFor="revision" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="revision" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Revision
                 </label>
                 <input
@@ -260,7 +260,7 @@ export default function PartFormPage() {
                   name="revision"
                   value={formData.revision}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="z.B. A, B, C"
                   maxLength={10}
                 />
@@ -268,7 +268,7 @@ export default function PartFormPage() {
 
               {/* Material */}
               <div>
-                <label htmlFor="material" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="material" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Material
                 </label>
                 <input
@@ -277,7 +277,7 @@ export default function PartFormPage() {
                   name="material"
                   value={formData.material}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="z.B. Aluminium 6061"
                   maxLength={100}
                 />
@@ -285,7 +285,7 @@ export default function PartFormPage() {
 
               {/* Raw Material */}
               <div>
-                <label htmlFor="dimensions" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="dimensions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Abmessungen
                 </label>
                 <input
@@ -294,7 +294,7 @@ export default function PartFormPage() {
                   name="dimensions"
                   value={formData.dimensions}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="z.B. Rund Ø50 x 100"
                   maxLength={100}
                 />
@@ -303,13 +303,13 @@ export default function PartFormPage() {
           </div>
 
           {/* Additional Info Section */}
-          <div className="pt-6 border-t border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Zusatzinformationen</h2>
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Zusatzinformationen</h2>
             
             <div className="space-y-4">
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Beschreibung
                 </label>
                 <textarea
@@ -318,14 +318,14 @@ export default function PartFormPage() {
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="Beschreibung des Bauteils..."
                 />
               </div>
 
               {/* Notes */}
               <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Notizen
                 </label>
                 <textarea
@@ -334,14 +334,14 @@ export default function PartFormPage() {
                   value={formData.notes}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="Interne Notizen..."
                 />
               </div>
 
               {/* CAD File Path */}
               <div>
-                <label htmlFor="cad_file_path" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="cad_file_path" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   CAD-Dateipfad
                 </label>
                 <input
@@ -350,18 +350,18 @@ export default function PartFormPage() {
                   name="cad_file_path"
                   value={formData.cad_file_path}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   placeholder="z.B. /cad/gehaeuse-001.stp"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Pfad zur CAD-Datei - File Upload kommt in Woche 6
                 </p>
               </div>
 
               {/* Status */}
               <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Status
                 </label>
                 <select
@@ -369,7 +369,7 @@ export default function PartFormPage() {
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                 >
                   <option value="draft">Entwurf</option>
                   <option value="active">Aktiv</option>
@@ -381,10 +381,10 @@ export default function PartFormPage() {
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
             <Link
               to={isEditMode ? `/parts/${id}` : '/parts'}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Abbrechen
             </Link>

@@ -49,17 +49,17 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow p-4">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div className="text-3xl flex-shrink-0">
           {getFileIcon(program.filename)}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900" title={program.filename}>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white" title={program.filename}>
             {program.filename}
           </h3>
-          <p className="text-sm text-gray-600 truncate" title={program.program_name}>
+          <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={program.program_name}>
             {program.program_name}
           </p>
         </div>
@@ -69,20 +69,20 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
       <div className="space-y-2 text-sm">
         {/* Version & Size */}
         <div className="flex items-center justify-between">
-          <span className="text-gray-600">Version:</span>
-          <span className="font-medium text-gray-900">{program.version || 'N/A'}</span>
+          <span className="text-gray-600 dark:text-gray-400">Version:</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-gray-600">Größe:</span>
-          <span className="font-medium text-gray-900">{formatFileSize(program.file_size)}</span>
+          <span className="text-gray-600 dark:text-gray-400">Größe:</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{formatFileSize(program.file_size)}</span>
         </div>
 
         {/* File Hash (truncated) */}
         {program.file_hash && (
           <div className="flex items-center justify-between">
-            <span className="text-gray-600">Hash:</span>
-            <span className="font-mono text-xs text-gray-500" title={program.file_hash}>
+            <span className="text-gray-600 dark:text-gray-400">Hash:</span>
+            <span className="font-mono text-xs text-gray-500 dark:text-gray-400" title={program.file_hash}>
               {program.file_hash.substring(0, 8)}...
             </span>
           </div>
@@ -90,16 +90,16 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
 
         {/* Description */}
         {program.description && (
-          <div className="pt-2 border-t border-gray-100">
-            <p className="text-gray-600 text-sm line-clamp-2">
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
               {program.description}
             </p>
           </div>
         )}
 
         {/* Status Badge */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <span className="text-gray-600">Status:</span>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+          <span className="text-gray-600 dark:text-gray-400">Status:</span>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
             program.workflow_state === 'approved' 
               ? 'bg-green-100 text-green-800' 
@@ -115,17 +115,17 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
 
         {/* Timestamps */}
         {program.created_at && (
-          <div className="text-xs text-gray-500 pt-2">
+          <div className="text-xs text-gray-500 dark:text-gray-400 pt-2">
             Erstellt: {new Date(program.created_at).toLocaleDateString('de-DE')}
           </div>
         )}
       </div>
 
       {/* Actions Bar */}
-      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200">
+      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleDownload}
-          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
           title="Herunterladen"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -136,7 +136,7 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {onViewVersions && (
           <button
             onClick={() => onViewVersions(program)}
-            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
             title="Versionen anzeigen"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -148,7 +148,7 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {onNewRevision && hasPermission('part.update') && (
           <button
             onClick={() => onNewRevision(program)}
-            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
             title="Neue Version hochladen"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,7 +160,7 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {hasPermission('part.update') && (
           <button
             onClick={() => onEdit(program)}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             title="Bearbeiten"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,7 +172,7 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {hasPermission('part.delete') && (
           <button
             onClick={handleDelete}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
             title="Löschen"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
