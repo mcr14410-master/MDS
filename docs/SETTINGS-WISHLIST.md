@@ -103,6 +103,97 @@
 
 ### **2. Workflow & Freigabe**
 
+#### **Workflow-States Konfiguration:**
+```javascript
+{
+  category: 'workflow',
+  key: 'workflowStates',
+  options: 'customizable',
+  default: [
+    { name: 'draft', description: 'Entwurf', color: '#06b6d4', sequence: 1 },
+    { name: 'review', description: 'In Prüfung', color: '#f59e0b', sequence: 2 },
+    { name: 'approved', description: 'Geprüft', color: '#10b981', sequence: 3 },
+    { name: 'released', description: 'Freigegeben', color: '#10b981', sequence: 4, is_final: true },
+    { name: 'rejected', description: 'Abgelehnt', color: '#ef4444', sequence: 5, is_final: true },
+    { name: 'archived', description: 'Archiviert', color: '#6b7280', sequence: 6, is_final: true }
+  ],
+  description: 'Workflow-Status definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Workflow-Status verwalten           │
+├─────────────────────────────────────┤
+│ ✎ draft      - Entwurf       [cyan] │
+│ ✎ review     - In Prüfung  [orange] │
+│ ✎ approved   - Geprüft      [green] │
+│ ✎ released   - Freigegeben  [green] │
+│ ✎ rejected   - Abgelehnt      [red] │
+│ ✎ archived   - Archiviert    [gray] │
+│                                      │
+│ [+ Neuer Status]                     │
+└─────────────────────────────────────┘
+```
+
+#### **Workflow-Transitions Konfiguration:**
+```javascript
+{
+  category: 'workflow',
+  key: 'workflowTransitions',
+  options: 'customizable',
+  default: [
+    { from: 'draft', to: 'review', requiresReason: false },
+    { from: 'draft', to: 'archived', requiresReason: true },
+    { from: 'review', to: 'approved', requiresReason: false },
+    { from: 'review', to: 'rejected', requiresReason: true },
+    { from: 'review', to: 'draft', requiresReason: false },
+    { from: 'approved', to: 'released', requiresReason: false },
+    { from: 'approved', to: 'draft', requiresReason: false },
+    { from: 'rejected', to: 'draft', requiresReason: false },
+    { from: 'rejected', to: 'archived', requiresReason: true },
+    { from: 'released', to: 'archived', requiresReason: true }
+  ],
+  description: 'Erlaubte Status-Übergänge definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Workflow-Übergänge verwalten        │
+├─────────────────────────────────────┤
+│ draft → review        ☐ Grund nötig │
+│ draft → archived      ☑ Grund nötig │
+│ review → approved     ☐ Grund nötig │
+│ review → rejected     ☑ Grund nötig │
+│ review → draft        ☐ Grund nötig │
+│ approved → released   ☐ Grund nötig │
+│ ...                                  │
+│                                      │
+│ [+ Neue Transition]                  │
+└─────────────────────────────────────┘
+```
+
+#### **Standard-Nachrichten für Übergänge:**
+```javascript
+{
+  category: 'workflow',
+  key: 'defaultTransitionReasons',
+  options: 'customizable',
+  default: {
+    'draft_review': 'Zur Prüfung freigegeben',
+    'review_approved': 'Prüfung erfolgreich abgeschlossen',
+    'review_draft': 'Zurück in Bearbeitung',
+    'approved_released': 'Freigegeben für Produktion',
+    'approved_draft': 'Zurück zur Überarbeitung',
+    'rejected_draft': 'Zur erneuten Bearbeitung'
+  },
+  description: 'Standard-Begründungen für automatische Übergänge'
+}
+```
+
 #### **Freigabe-Prozess:**
 ```javascript
 {

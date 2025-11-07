@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useOperationsStore } from '../stores/operationsStore';
 import { usePartsStore } from '../stores/partsStore';
 import ProgramsList from '../components/ProgramsList';
+import ProgramsHistoryList from '../components/ProgramsHistoryList';
 
 export default function OperationDetailPage() {
   const { partId, operationId } = useParams();
@@ -197,6 +198,17 @@ export default function OperationDetailPage() {
             >
               Einrichteblatt <span className="text-xs text-gray-400">(Bald)</span>
             </button>
+            {/* Historie Tab - rechtsbündig */}
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`ml-auto px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'history'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              Historie
+            </button>
           </nav>
         </div>
 
@@ -204,6 +216,47 @@ export default function OperationDetailPage() {
         <div className="p-6">
           {activeTab === 'programmes' && (
             <ProgramsList operationId={operationId} />
+          )}
+          {activeTab === 'history' && (
+            <div className="space-y-8">
+              {/* Operations-Historie - Platzhalter */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Arbeitsgang-Historie
+                </h3>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Arbeitsgang-Workflow kommt später...
+                  </p>
+                </div>
+              </div>
+
+              {/* Programme-Historie */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Programme-Historie
+                </h3>
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-200 dark:border-blue-800 mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    📋 Zeigt alle Status-Änderungen der Programme dieses Arbeitsgangs
+                  </p>
+                </div>
+                {/* Programme-Liste mit Historie wird hier angezeigt */}
+                <ProgramsHistoryList operationId={operationId} />
+              </div>
+
+              {/* Setup-Sheets-Historie - Platzhalter */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Einrichteblatt-Historie
+                </h3>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Einrichteblatt-Workflow kommt später...
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
           {activeTab === 'tools' && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">

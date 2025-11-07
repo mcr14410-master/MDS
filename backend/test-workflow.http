@@ -1,0 +1,301 @@
+### =============================================================================
+### WORKFLOW API TESTS
+### =============================================================================
+### Requirements:
+### - Backend läuft auf http://localhost:5000
+### - PostgreSQL DB mit Migrations durchgeführt
+### - Admin-User existiert (admin/admin123)
+### - Mindestens 1 Programm existiert
+### =============================================================================
+
+@baseUrl = http://localhost:5000/api
+@token = {{login.response.body.token}}
+
+### =============================================================================
+### 1. LOGIN (Admin)
+### =============================================================================
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### =============================================================================
+### 2. WORKFLOW STATES - Alle Status abrufen
+### =============================================================================
+
+# @name getStates
+GET {{baseUrl}}/workflow/states
+Authorization: Bearer {{token}}
+
+### =============================================================================
+### 3. PROGRAM ERSTELLEN (zum Testen)
+### =============================================================================
+
+
+# Erst Programm abrufen
+GET {{baseUrl}}/programs?operation_id=1
+Authorization: Bearer {{token}}
+# Dann ID vom ersten Programm nehmen und für Workflow nutzen
+# Anstatt neues Programm zu erstellen
+
+### =============================================================================
+### 4. STATUS ÄNDERN - draft → review
+### =============================================================================
+
+# @name changeToReview
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 2,
+  "changeReason": "Bereit für Prüfung"
+}
+
+### =============================================================================
+### 5. STATUS ÄNDERN - review → approved
+### =============================================================================
+
+# @name changeToApproved
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 3,
+  "changeReason": "Prüfung erfolgreich"
+}
+
+### =============================================================================
+### 6. STATUS ÄNDERN - approved → released
+### =============================================================================
+
+# @name changeToReleased
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 4,
+  "changeReason": "Freigegeben für Produktion"
+}
+
+### =============================================================================
+### 7. STATUS ÄNDERN - released → archived
+### =============================================================================
+
+# @name changeToArchived
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 6,
+  "changeReason": "Programm nicht mehr benötigt"
+}
+
+### =============================================================================
+### 8. STATUS ÄNDERN - zurück zu draft (sollte NICHT erlaubt sein)
+### =============================================================================
+
+# @name changeBackToDraft
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 1,
+  "changeReason": "Zurück zu Entwurf"
+}
+
+### =============================================================================
+### 9. WORKFLOW HISTORIE - Alle Änderungen abrufen
+### =============================================================================
+
+# @name getHistory
+GET {{baseUrl}}/workflow/program/1/history
+Authorization: Bearer {{token}}
+
+### =============================================================================
+### 10. VERFÜGBARE ÜBERGÄNGE - Welche Status sind erlaubt?
+### =============================================================================
+
+# @name getTransitions
+GET {{baseUrl}}/workflow/program/1/transitions
+Authorization: Bearer {{token}}
+
+### =============================================================================
+### 11. STATUS ÄNDERN - rejected (review → rejected)
+### =============================================================================
+### Vorher Programm wieder auf "review" setzen!
+
+# @name changeToRejected
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 5,
+  "changeReason": "NC-Code hat Fehler, bitte überarbeiten"
+}
+
+### =============================================================================
+### 12. STATUS ÄNDERN - rejected → draft (erlaubt!)
+### =============================================================================
+
+# @name changeFromRejectedToDraft
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 1,
+  "changeReason": "Fehler wird korrigiert"
+}
+
+### =============================================================================
+### 13. FEHLERFALL - Ungültiger Status
+### =============================================================================
+
+# @name invalidStatus
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 1,
+  "toStateId": 999,
+  "changeReason": "Test"
+}
+
+### =============================================================================
+### 14. FEHLERFALL - Programm nicht gefunden
+### =============================================================================
+
+# @name programNotFound
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 99999,
+  "toStateId": 2
+}
+
+### =============================================================================
+### 15. FEHLERFALL - Ungültiger Entity-Type
+### =============================================================================
+
+# @name invalidEntityType
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "invalid_type",
+  "entityId": 1,
+  "toStateId": 2
+}
+
+### =============================================================================
+### 16. KOMPLETTER WORKFLOW-DURCHLAUF (Neues Programm)
+### =============================================================================
+
+### Schritt 1: Neues Programm erstellen (startet als "draft")
+# @name createTestProgram
+POST {{baseUrl}}/programs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 1,
+  "program_name": "WORKFLOW_TEST_123.h",
+  "description": "Kompletter Workflow-Test"
+}
+
+### Schritt 2: draft → review
+# @name step1
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 2,
+  "toStateId": 2,
+  "changeReason": "Programm fertig, bitte prüfen"
+}
+
+### Schritt 3: review → approved
+# @name step2
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 2,
+  "toStateId": 3,
+  "changeReason": "Programm geprüft, alles OK"
+}
+
+### Schritt 4: approved → released
+# @name step3
+POST {{baseUrl}}/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entityType": "program",
+  "entityId": 2,
+  "toStateId": 4,
+  "changeReason": "Freigegeben für Fertigung"
+}
+
+### Schritt 5: Historie ansehen
+# @name step4
+GET {{baseUrl}}/workflow/program/2/history
+Authorization: Bearer {{token}}
+
+### =============================================================================
+### NOTES:
+### =============================================================================
+### 
+### Workflow-Status:
+### 1 = draft
+### 2 = review
+### 3 = approved
+### 4 = released (final)
+### 5 = rejected (final)
+### 6 = archived (final)
+###
+### Erlaubte Übergänge:
+### draft      → review, archived
+### review     → approved, rejected, draft
+### approved   → released, draft
+### released   → archived
+### rejected   → draft, archived
+### archived   → (keine weiteren Änderungen)
+###
+### =============================================================================

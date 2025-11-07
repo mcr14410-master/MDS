@@ -2,8 +2,10 @@
 import { useAuthStore } from '../stores/authStore';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
+import WorkflowStatusBadge from './WorkflowStatusBadge';
+import WorkflowActions from './WorkflowActions';
 
-export default function ProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision }) {
+export default function ProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision, onStatusChange }) {
   const { hasPermission } = useAuthStore();
   const { downloadProgram } = useProgramsStore();
 
@@ -100,17 +102,7 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {/* Status Badge */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
           <span className="text-gray-600 dark:text-gray-400">Status:</span>
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            program.workflow_state === 'approved' 
-              ? 'bg-green-100 text-green-800' 
-              : program.workflow_state === 'review'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {program.workflow_state === 'approved' ? 'Freigegeben' :
-             program.workflow_state === 'review' ? 'In Prüfung' :
-             'Entwurf'}
-          </span>
+          <WorkflowStatusBadge status={program.workflow_state} size="md" />
         </div>
 
         {/* Timestamps */}
@@ -181,6 +173,24 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
           </button>
         )}
       </div>
+
+      {/* Workflow Actions */}
+      {hasPermission('part.update') && (
+        <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+          <WorkflowActions 
+            entityType="program"
+            entityId={program.id}
+            currentState={program.workflow_state}
+            onStatusChange={(newState) => {
+              toast.success('Status geändert!');
+              // Callback to parent if provided
+              if (onStatusChange) {
+                onStatusChange(program.id, newState);
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

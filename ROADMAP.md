@@ -393,17 +393,82 @@
 
 ## 📅 Monat 3: Workflows & Werkzeuge (Wochen 9-12)
 
-### 📋 Woche 9: Workflow-System
-**Status:** 📋 GEPLANT
-**Ziel:** Status-Übergänge
+### ✅ Woche 9: Workflow-System
+**Status:** ✅ KOMPLETT
+**Ziel:** Status-Übergänge (Backend + Frontend)
+**Zeitaufwand:** ~3h (Backend) + ~3.5h (Frontend) = 6.5h
 
-- [ ] Status-Übergänge (Entwurf → Freigabe)
-- [ ] Berechtigungs-Checks
-- [ ] Freigabe-Workflow
-- [ ] Benachrichtigungen
-- [ ] History-Tracking
+**Backend:**
+- [x] Status-Übergänge (Entwurf → Freigabe → Archiv)
+- [x] Berechtigungs-Checks (programmer/admin)
+- [x] Freigabe-Workflow
+- [x] History-Tracking
+- [x] 4 API Endpoints
+- [x] 16 Tests erfolgreich
 
-**Deliverable:** Workflow funktioniert
+**Frontend:**
+- [x] workflowStore.js (135 Zeilen)
+- [x] WorkflowStatusBadge.jsx (156 Zeilen)
+- [x] WorkflowActions.jsx (211 Zeilen)
+- [x] WorkflowHistory.jsx (135 Zeilen)
+- [x] ProgramCard erweitern (Status-Badge integriert)
+- [x] OperationDetailPage erweitern (Historie-Tab mit Programme-Historie)
+- [x] ProgramsHistoryList.jsx (NEU - 175 Zeilen)
+- [x] Standard-Nachrichten für Workflow-Übergänge
+
+**Deliverable:** ✅ Komplettes Workflow-System für Programme
+
+**Backend Features:**
+```
+✅ POST /api/workflow/change           - Status ändern
+✅ GET  /api/workflow/states            - Alle Status
+✅ GET  /api/workflow/:type/:id/history - Historie
+✅ GET  /api/workflow/:type/:id/transitions - Verfügbare Übergänge
+✅ 6 Workflow-Status (draft, review, approved, released, rejected, archived)
+✅ Erlaubte Übergänge definiert
+✅ Automatisches History-Tracking
+✅ Transaction-Safety
+✅ Nur programmer + admin dürfen Status ändern
+✅ Standard-Nachrichten für automatische Übergänge
+```
+
+**Frontend Features:**
+```
+✅ Workflow-Store mit State Management
+✅ Status-Badges (6 Farben, Dark Mode, 3 Größen)
+✅ Action-Buttons mit Permission-Checks
+✅ Modal für manuelle Gründe (reject/archive)
+✅ Timeline-Historie-Ansicht
+✅ Programme-Historie pro Operation
+✅ Dark Mode Support überall
+✅ Toast-Notifications
+✅ Empty & Loading States
+```
+
+**Bugs gefixt:**
+- Database Import
+- Auth Middleware Import
+- Test-Workflow angepasst (File-Upload Requirement)
+- Permission-Check (Rollen aus DB laden)
+- SQL Query (first_name/last_name statt full_name)
+- operationId als Integer parsen (ProgramsHistoryList)
+- Datum-Formatierung robuster (null-checks)
+- Backend-Feldnamen korrigiert (created_at, change_reason)
+
+**Für später (Phase 4+):**
+- Granulare Permissions: workflow.release, workflow.reject, workflow.archive
+- Benachrichtigungen bei Status-Änderungen
+- Eskalation (z.B. review > 3 Tage alt)
+- **Umfangreiche Historie-Übersicht (eigene Page)**
+  - Alle Workflow-Änderungen systemweit
+  - Filtern nach: Entity-Type, Status, Benutzer, Datum
+  - Suchen nach: Programm-Name, Grund
+  - Export als CSV/PDF
+  - Statistiken & Charts
+- Workflow für Operations & Setup-Sheets
+- Bulk-Status-Änderungen
+
+**Abgeschlossen am:** 2025-11-07
 
 ---
 
@@ -731,7 +796,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: █████████░░░░░░░░░░░ 42% (8 von 19 Wochen)
+Gesamt: ██████████░░░░░░░░░░ 47% (9 von 19 Wochen)
 
 Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
@@ -743,6 +808,13 @@ Phase 2 (Monat 2): ████████████████████ 
   └─ Woche 5:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 6:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 7:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
+  └─ Woche 8:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
+
+Phase 3 (Monat 3): █████░░░░░░░░░░░░░░░ 25% (1 von 4 Wochen)
+  └─ Woche 9:      ████████████████████ 100% ✅ (Workflow-System komplett!)
+  └─ Woche 10:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 11:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 12:     ░░░░░░░░░░░░░░░░░░░░  0%
   └─ Woche 8:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
 
 Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
@@ -797,6 +869,13 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
   - ✅ Operationen-Verwaltung
   - ✅ Programme-Verwaltung (inkl. Versionierung)
   - ✅ Maschinen-Verwaltung
+- ✅ **2025-11-07:** Woche 9 Backend gestartet - Workflow-System geplant
+- ✅ **2025-11-07:** Woche 9 Backend komplett - Workflow API fertig (4 Endpoints + 16 Tests)
+- ✅ **2025-11-07:** Woche 9 Frontend gestartet - Workflow Components erstellt
+- ✅ **2025-11-07:** Woche 9 Frontend komplett - Workflow UI fertig (5 Components + 812 Zeilen)
+- ✅ **2025-11-07:** Operations Historie-Tab erstellt - Programme-Historie pro Operation
+- 🐛 **2025-11-07:** 4 Bugs gefunden und behoben (operationId parsing, date formatting, field names)
+- 🎊 **2025-11-07:** **WOCHE 9 KOMPLETT - Workflow-System mit Historie fertig!**
 
 ---
 
@@ -812,6 +891,7 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 6** | Programme & Upload | Backend + Frontend + Bugfixes | ✅ 100% |
 | **Woche 7** | Versionierung | Backend (5 Endpoints) + Frontend (2 Components) | ✅ 100% |
 | **Woche 8** | Maschinen-Stammdaten | Backend (8 Endpoints) + Frontend (3 Components) + 3 Bugfixes | ✅ 100% |
+| **Woche 9** | Workflow-System | Backend (4 Endpoints) + Frontend (5 Components) + Historie-Tab | ✅ 100% |
 
 ---
 
@@ -826,14 +906,14 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 9 Tasks - Workflow-System:**
-1. ❌ Status-Übergänge (Entwurf → Freigabe → Archiv)
-2. ❌ Berechtigungs-Checks für Workflow-Aktionen
-3. ❌ Freigabe-Workflow implementieren
-4. ❌ Benachrichtigungen (optional)
-5. ❌ History-Tracking für Status-Änderungen
+**Woche 10 Tasks - QR-Codes & CAM-Integration:**
+1. ❌ QR-Code Generierung pro Operation
+2. ❌ File Watcher (chokidar) für CAM-Ordner
+3. ❌ G-Code Parser (Heidenhain DIN/ISO)
+4. ❌ Metadata-Extraktion aus NC-Programmen
+5. ❌ Auto-Import Dialog
 
-**Nächster Schritt:** Woche 9 - Workflow-System Backend + Frontend
+**Nächster Schritt:** Woche 10 - QR-Codes & CAM-Integration
 
 **Status:** Phase 2 KOMPLETT ✅ | Woche 8 KOMPLETT ✅ | Nächster Sprint: Phase 3
 
