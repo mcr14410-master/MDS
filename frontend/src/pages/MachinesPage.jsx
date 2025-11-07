@@ -97,8 +97,8 @@ export default function MachinesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Maschinen</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Maschinen</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Verwalten Sie Ihren Maschinenpark
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function MachinesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-4">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <input
@@ -124,7 +124,7 @@ export default function MachinesPage() {
               placeholder="Suche nach Name, Hersteller, Modell..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -132,7 +132,7 @@ export default function MachinesPage() {
             <select
               value={filters.machine_type}
               onChange={(e) => setFilters({ ...filters, machine_type: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Alle Typen</option>
               <option value="milling">Fräsen</option>
@@ -147,7 +147,7 @@ export default function MachinesPage() {
             <select
               value={filters.control_type}
               onChange={(e) => setFilters({ ...filters, control_type: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Alle Steuerungen</option>
               <option value="Heidenhain">Heidenhain</option>
@@ -168,7 +168,7 @@ export default function MachinesPage() {
               onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
               className="w-4 h-4 text-blue-600"
             />
-            <span className="text-sm text-gray-700">Nur aktive</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Nur aktive</span>
           </label>
 
           <label className="flex items-center gap-2 cursor-pointer">
@@ -180,7 +180,7 @@ export default function MachinesPage() {
               onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
               className="w-4 h-4 text-blue-600"
             />
-            <span className="text-sm text-gray-700">Alle anzeigen</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Alle anzeigen</span>
           </label>
 
           <button
@@ -194,7 +194,7 @@ export default function MachinesPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded-lg p-4">
           <p className="text-sm">{error}</p>
         </div>
       )}
@@ -203,18 +203,18 @@ export default function MachinesPage() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Lade Maschinen...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Lade Maschinen...</p>
         </div>
       )}
 
       {/* Machines List */}
       {!loading && machines.length === 0 && (
-        <div className="bg-white shadow rounded-lg p-12 text-center">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Keine Maschinen</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Keine Maschinen</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {filters.search || filters.machine_type || filters.control_type
               ? 'Keine Maschinen mit diesen Filtern gefunden.'
               : 'Erstellen Sie Ihre erste Maschine.'}
@@ -226,9 +226,9 @@ export default function MachinesPage() {
         <div className="space-y-6">
           {Object.entries(groupedMachines).map(([type, machinesInType]) => (
             <div key={type}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 {getMachineTypeText(type)}
-                <span className="text-sm font-normal text-gray-500">
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                   ({machinesInType.length})
                 </span>
               </h2>

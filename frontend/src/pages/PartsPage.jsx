@@ -70,8 +70,8 @@ export default function PartsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bauteile</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bauteile</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Verwalten Sie alle Bauteile im System
           </p>
         </div>
@@ -89,7 +89,7 @@ export default function PartsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-4">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
         <form onSubmit={handleSearch} className="flex gap-4">
           <div className="flex-1">
             <input
@@ -97,14 +97,14 @@ export default function PartsPage() {
               placeholder="Suche nach Bauteilnummer, Bezeichnung..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Alle Status</option>
               <option value="draft">Entwurf</option>
@@ -124,30 +124,30 @@ export default function PartsPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex">
             <svg className="w-5 h-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-red-800">{error}</p>
+            <p className="text-red-800 dark:text-red-200">{error}</p>
           </div>
         </div>
       )}
 
       {/* Loading State */}
       {loading ? (
-        <div className="bg-white shadow rounded-lg p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8 text-center">
           <div className="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Lade Bauteile...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Lade Bauteile...</p>
         </div>
       ) : parts.length === 0 ? (
         /* Empty State */
-        <div className="bg-white shadow rounded-lg p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8 text-center">
           <div className="text-5xl mb-4">📦</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             Keine Bauteile gefunden
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filters.search || filters.status
               ? 'Versuchen Sie andere Filter-Einstellungen.'
               : 'Erstellen Sie Ihr erstes Bauteil.'}
@@ -166,47 +166,47 @@ export default function PartsPage() {
         </div>
       ) : (
         /* Parts Table */
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Bauteilnummer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Bezeichnung
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Revision
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Material
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Aktionen
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {parts.map((part) => (
-                  <tr key={part.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={part.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link 
                         to={`/parts/${part.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                       >
                         {part.part_number}
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{part.part_name}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{part.part_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-mono">{part.revision || 'A'}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100 font-mono">{part.revision || 'A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -217,14 +217,14 @@ export default function PartsPage() {
                         {getStatusText(part.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {part.material || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-3">
                         <Link
                           to={`/parts/${part.id}`}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                           title="Ansehen"
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +235,7 @@ export default function PartsPage() {
                         {hasPermission('part.update') && (
                           <Link
                             to={`/parts/${part.id}/edit`}
-                            className="text-green-600 hover:text-green-800 transition-colors"
+                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors"
                             title="Bearbeiten"
                           >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -246,7 +246,7 @@ export default function PartsPage() {
                         {hasPermission('part.delete') && (
                           <button
                             onClick={() => handleDelete(part.id, part.part_number)}
-                            className="text-red-600 hover:text-red-800 transition-colors"
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                             title="Löschen"
                           >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -266,7 +266,7 @@ export default function PartsPage() {
 
       {/* Parts Count */}
       {!loading && parts.length > 0 && (
-        <div className="text-sm text-gray-600 text-center">
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
           {parts.length} {parts.length === 1 ? 'Bauteil' : 'Bauteile'} gefunden
         </div>
       )}

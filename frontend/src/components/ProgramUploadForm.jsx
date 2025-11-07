@@ -136,17 +136,17 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isEditMode ? 'Programm bearbeiten' : 
              isNewRevisionMode ? 'Neue Version hochladen' : 
              'Programm hochladen'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,16 +159,16 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
           {/* File Upload (only in create mode) */}
           {!isEditMode && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Datei <span className="text-red-500">*</span>
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                 <div className="space-y-1 text-center">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <div className="flex text-sm text-gray-600">
-                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
                       <span>Datei auswählen</span>
                       <input
                         id="file-upload"
@@ -181,7 +181,7 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
                     </label>
                     <p className="pl-1">oder per Drag & Drop</p>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     NC, MPF, ISO, G-Code (max. 100MB)
                   </p>
                 </div>
@@ -189,21 +189,21 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
               
               {/* Selected File Info */}
               {selectedFile && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
-                        <p className="text-xs text-gray-600">{formatFileSize(selectedFile.size)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{formatFileSize(selectedFile.size)}</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedFile(null)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -214,14 +214,14 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
               )}
               
               {errors.file && (
-                <p className="mt-2 text-sm text-red-600">{errors.file}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.file}</p>
               )}
             </div>
           )}
 
           {/* Program Name */}
           <div>
-            <label htmlFor="program_name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="program_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Programm-Name {isNewProgramMode && <span className="text-red-500">*</span>}
             </label>
             <input
@@ -232,21 +232,21 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
               onChange={handleChange}
               readOnly={isNewRevisionMode}
               disabled={isNewRevisionMode}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white ${
                 errors.program_name ? 'border-red-500' : 
-                isNewRevisionMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : 
-                'border-gray-300'
+                isNewRevisionMode ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed' : 
+                'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
               }`}
               placeholder="z.B. KONTUR_V1"
             />
             {errors.program_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.program_name}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.program_name}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Beschreibung
             </label>
             <textarea
@@ -257,8 +257,8 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
               readOnly={isNewRevisionMode}
               disabled={isNewRevisionMode}
               rows={3}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                isNewRevisionMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300' : 'border-gray-300'
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white ${
+                isNewRevisionMode ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed border-gray-300 dark:border-gray-600' : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Optionale Beschreibung des Programms..."
             />
@@ -267,7 +267,7 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
           {/* Version Type (nur bei neuer Revision) */}
           {isNewRevisionMode && (
             <div>
-              <label htmlFor="version_type" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="version_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Versions-Typ
               </label>
               <select
@@ -275,13 +275,13 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
                 name="version_type"
                 value={formData.version_type}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
               >
                 <option value="patch">Patch (1.0.0 → 1.0.1) - Kleine Optimierung</option>
                 <option value="minor">Minor (1.0.0 → 1.1.0) - Werkzeugwechsel</option>
                 <option value="major">Major (1.0.0 → 2.0.0) - Neue Strategie</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Wähle den Typ der Änderung für die Versionsnummer
               </p>
             </div>
@@ -290,7 +290,7 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
           {/* Change Log (nur bei neuer Revision) */}
           {isNewRevisionMode && (
             <div>
-              <label htmlFor="change_log" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="change_log" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Änderungsprotokoll
               </label>
               <textarea
@@ -299,7 +299,7 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
                 value={formData.change_log}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                 placeholder="Was wurde in dieser Version geändert? (z.B. Werkzeug T03 durch T05 ersetzt)"
               />
             </div>
@@ -309,12 +309,12 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
           {loading && uploadProgress > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Uploading...</span>
-                <span className="text-sm font-medium text-blue-600">{uploadProgress}%</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uploading...</span>
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div 
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
@@ -322,11 +322,11 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               disabled={loading}
             >
               Abbrechen
