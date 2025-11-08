@@ -5,6 +5,7 @@ import { useOperationsStore } from '../stores/operationsStore';
 import { usePartsStore } from '../stores/partsStore';
 import ProgramsList from '../components/ProgramsList';
 import ProgramsHistoryList from '../components/ProgramsHistoryList';
+import SetupSheetsList from '../components/SetupSheetsList';
 
 export default function OperationDetailPage() {
   const { partId, operationId } = useParams();
@@ -194,9 +195,8 @@ export default function OperationDetailPage() {
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              disabled
             >
-              Einrichteblatt <span className="text-xs text-gray-400">(Bald)</span>
+              Einrichteblatt
             </button>
             {/* Historie Tab - rechtsbündig */}
             <button
@@ -264,9 +264,7 @@ export default function OperationDetailPage() {
             </div>
           )}
           {activeTab === 'setup' && (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Einrichteblatt kommt bald...
-            </div>
+            <SetupSheetsList operationId={operationId} />
           )}
         </div>
       </div>

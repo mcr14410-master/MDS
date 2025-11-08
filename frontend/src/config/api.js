@@ -21,6 +21,9 @@ export const API_ENDPOINTS = {
   // Machines
   MACHINES: `${API_BASE_URL}/api/machines`,
   
+  // Setup Sheets
+  SETUP_SHEETS: `${API_BASE_URL}/api/setup-sheets`,
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

@@ -413,7 +413,130 @@
 
 ---
 
-### **9. Audit & Compliance** (ISO/Luftfahrt)
+### **9. Maschinensteuerung & Nullpunkte** (Woche 10)
+
+#### **Steuerungsspezifische Nullpunkt-Konfiguration:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'zeroPointFormat',
+  options: 'per_control_type',
+  default: {
+    heidenhain: {
+      type: 'preset',
+      range: { min: 1, max: 99 },
+      label: 'Preset-Nummer',
+      example: '1-99'
+    },
+    siemens: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    fanuc: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    haas: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    mazatrol: {
+      type: 'custom',
+      label: 'Work Offset',
+      example: 'Mazatrol-spezifisch'
+    }
+  },
+  description: 'Nullpunkt-Formate pro Steuerungstyp definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Maschinensteuerung - Einstellungen  │
+├─────────────────────────────────────┤
+│ Heidenhain:                         │
+│   Format: ● Preset-Nummer           │
+│   Bereich: [1] bis [99]             │
+│                                      │
+│ Siemens:                            │
+│   Format: ● WCS (G54-G59)           │
+│   Verfügbare WCS:                   │
+│   ☑ G54  ☑ G55  ☑ G56              │
+│   ☑ G57  ☑ G58  ☑ G59              │
+│                                      │
+│ Fanuc:                              │
+│   Format: ● WCS (G54-G59)           │
+│   ...                                │
+│                                      │
+│ [Speichern] [Zurücksetzen]          │
+└─────────────────────────────────────┘
+```
+
+#### **Nullpunkt-Validierung:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'enforceZeroPointValidation',
+  options: [true, false],
+  default: true,
+  description: 'Nullpunkt-Eingabe validieren (z.B. Preset 1-99 für Heidenhain)?'
+}
+
+{
+  category: 'machine_controls',
+  key: 'requireZeroPointCoordinates',
+  options: ['never', 'optional', 'always'],
+  default: 'optional',
+  description: 'Sind X/Y/Z Koordinaten Pflicht?'
+}
+```
+
+#### **Standard-Nullpunkte pro Maschine:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'machineDefaultZeroPoints',
+  options: 'per_machine',
+  default: {
+    machine_id: 1,
+    default_preset: 1,        // für Heidenhain
+    default_wcs: 'G54',       // für Siemens/Fanuc
+    default_coordinates: {
+      x: 0,
+      y: 0,
+      z: 0
+    }
+  },
+  description: 'Standard-Nullpunkte pro Maschine vorkonfigurieren'
+}
+```
+
+**Aktueller Stand (Woche 10):**
+- ✅ Steuerungsspezifische Nullpunkte in Setup Sheets implementiert
+- ✅ Heidenhain: Preset 1-99
+- ✅ Siemens/Fanuc/Haas: WCS G54-G59
+- ✅ Mazatrol: Custom Format
+- ✅ Automatische Übernahme des control_type von Maschine
+- ✅ WCS Koordinaten (X, Y, Z)
+- ✅ Referenzpunkt-Beschreibung
+
+**Später konfigurierbar:**
+- 📋 Preset-Bereich anpassen (z.B. 1-299)
+- 📋 Zusätzliche WCS definieren (G59.1, G59.2, ...)
+- 📋 Custom Formate für weitere Steuerungen
+- 📋 Validierungsregeln pro Steuerung
+- 📋 Standard-Nullpunkte pro Maschine
+
+---
+
+### **10. Audit & Compliance** (ISO/Luftfahrt)
 
 #### **Audit-Log Level:**
 ```javascript
@@ -544,7 +667,7 @@ INSERT INTO user_settings (user_id, category, key, value) VALUES
 
 ---
 
-## 🔧 Aktueller Stand (Woche 7)
+## 🔧 Aktueller Stand (Woche 10)
 
 ### **Hard-coded Defaults:**
 ```javascript
@@ -567,6 +690,17 @@ module.exports = {
     APPROVAL_LEVELS: 1,
     AUTO_ARCHIVE_AFTER_DAYS: null
   },
+  MACHINE_CONTROLS: {
+    ZERO_POINT_VALIDATION: true,
+    REQUIRE_COORDINATES: 'optional',
+    CONTROL_TYPES: {
+      heidenhain: { type: 'preset', min: 1, max: 99 },
+      siemens: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      fanuc: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      haas: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      mazatrol: { type: 'custom' }
+    }
+  }
   // ... später erweitern
 };
 ```
@@ -593,16 +727,18 @@ if (settings.commentRequired && !comment) {
 
 ## ✅ Zusammenfassung
 
-**Jetzt (Woche 7):**
+**Jetzt (Woche 10):**
 - ✅ Hard-coded Defaults verwenden
 - ✅ Sinnvolle Werte einbauen
 - ✅ Kommentare im Code: `// TODO: Settings - later configurable`
+- ✅ Steuerungsspezifische Nullpunkte in Setup Sheets implementiert
 
 **Später (Phase 5):**
 - 📋 DB-Tabellen erstellen
 - 📋 Settings Service bauen
 - 📋 Admin-UI bauen
 - 📋 Existing Code anpassen
+- 📋 Steuerungsspezifische Nullpunkte konfigurierbar machen
 
 **Priorität:** Low (funktioniert super ohne Settings-UI!)
 
@@ -629,4 +765,4 @@ if (settings.commentRequired && !comment) {
 ---
 
 **Status:** 📋 Geplant für später  
-**Letzte Aktualisierung:** 2025-11-05 (Woche 7)
+**Letzte Aktualisierung:** 2025-11-08 (Woche 10 - Steuerungsspezifische Nullpunkte hinzugefügt)

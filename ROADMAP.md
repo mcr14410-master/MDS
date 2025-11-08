@@ -485,9 +485,9 @@
 ---
 
 ### ✅ Woche 10: Setup Sheets (Einrichteblätter)
-**Status:** ✅ Backend KOMPLETT | ⏳ Frontend OFFEN
+**Status:** ✅ **KOMPLETT**
 **Ziel:** Setup Sheets Backend + Frontend
-**Zeitaufwand:** 4 Stunden (Backend 2h + Debugging 2h)
+**Zeitaufwand:** 8 Stunden (Backend 4h + Frontend 4h)
 
 **Backend:** ✅ KOMPLETT
 - [x] Datenbank-Tabellen (setup_sheets + setup_sheet_photos)
@@ -500,12 +500,16 @@
 - [x] JOIN mit customers (Kundenname)
 - [x] Alle Spaltennamen korrigiert
 
-**Frontend:** ⏳ OFFEN
-- [ ] Setup Sheet Form
-- [ ] Foto-Upload Galerie (Drag & Drop)
-- [ ] Setup Sheet Detail-Ansicht
-- [ ] Liste/Übersicht
-- [ ] Integration in Operation Detail Page
+**Frontend:** ✅ KOMPLETT
+- [x] Setup Sheet Form (481 Zeilen)
+- [x] Foto-Upload Galerie (Drag & Drop, 356 Zeilen)
+- [x] Setup Sheet Detail-Ansicht (488 Zeilen)
+- [x] Liste/Übersicht mit Filter (151 Zeilen Card)
+- [x] Integration in Operation Detail Page
+- [x] Status Actions (208 Zeilen)
+- [x] Zustand Store (264 Zeilen)
+- [x] Responsive Design (Desktop/Tablet/Mobile)
+- [x] Dark Theme Support
 
 **Inhalte Setup Sheet:**
 - Basis: Maschine, Teil, Operation, Programm (mit Version)
@@ -516,17 +520,19 @@
 - Fotos: 1-6 Fotos (CAM Screenshots, Realfotos, Fixture, Clamping, Tool Setup)
 - Spannmittel/Vorrichtungen: Freitext (später DB-Verknüpfung)
 
-**Deliverable:** ✅ Backend Setup Sheets funktioniert komplett (08.11.2025)
+**Deliverable:** ✅ Setup Sheets Backend + Frontend komplett (08.11.2025)
 
-**Bugs gefixt während Entwicklung:**
-- Migration: programs statt nc_programs
-- Controller: module.exports hinzugefügt
-- Auth: authenticateToken statt authenticate
-- SQL: 8 Spaltennamen korrigiert (operations, machines, programs, parts)
-- JOINs: program_revisions + customers hinzugefügt
-- JOIN-Reihenfolge korrigiert
+**Frontend Features:**
+- Zustand Store mit allen CRUD Operations
+- Setup Sheet Form mit steuerungsspezifischen Nullpunkten
+- Foto-Upload Galerie mit Drag & Drop
+- Status-Workflow Buttons
+- Filter & Sortierung
+- Responsive Design (Mobile/Tablet/Desktop)
+- Dark Theme Support
+- ~1946 Zeilen Frontend-Code
 
-**Abgeschlossen am:** 08.11.2025 (Backend)
+**Abgeschlossen am:** 08.11.2025 (Backend + Frontend komplett)
 
 ---
 
@@ -1055,6 +1061,7 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 7** | Versionierung | Backend (5 Endpoints) + Frontend (2 Components) | ✅ 100% |
 | **Woche 8** | Maschinen-Stammdaten | Backend (8 Endpoints) + Frontend (3 Components) + 3 Bugfixes | ✅ 100% |
 | **Woche 9** | Workflow-System | Backend (4 Endpoints) + Frontend (5 Components) + Historie-Tab | ✅ 100% |
+| **Woche 10** | Setup Sheets | Backend (8 Endpoints) + Frontend (6 Components) | ✅ 100% |
 
 ---
 
@@ -1069,18 +1076,19 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 10 Tasks - QR-Codes & CAM-Integration:**
-1. ❌ QR-Code Generierung pro Operation
-2. ❌ File Watcher (chokidar) für CAM-Ordner
-3. ❌ G-Code Parser (Heidenhain DIN/ISO)
-4. ❌ Metadata-Extraktion aus NC-Programmen
-5. ❌ Auto-Import Dialog
+**Woche 11 Tasks - Tool Lists & Inspection Plans:**
+1. ❌ Tool Lists Datenbank-Tabellen (tool_lists + tool_list_items)
+2. ❌ Tool Lists Backend CRUD API
+3. ❌ Tool Lists Frontend Form
+4. ❌ Inspection Plans Datenbank-Tabellen (inspection_plans + inspection_plan_items)
+5. ❌ Inspection Plans Backend CRUD API
+6. ❌ Inspection Plans Frontend Form
 
-**Nächster Schritt:** Woche 10 - QR-Codes & CAM-Integration
+**Nächster Schritt:** Woche 11 - Tool Lists & Inspection Plans
 
-**Status:** Phase 2 KOMPLETT ✅ | Woche 8 KOMPLETT ✅ | Nächster Sprint: Phase 3
+**Status:** Phase 1 KOMPLETT ✅ | Woche 10 KOMPLETT ✅ | Nächster Sprint: Woche 11
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-06  
-**Aktueller Status:** 🎉 **Phase 1 & 2 KOMPLETT!** | ✅ Wochen 1-8 ALLE KOMPLETT! | 🎊 **MEILENSTEIN 2 ERREICHT!** 🚀
+**Letzte Aktualisierung:** 2025-11-08  
+**Aktueller Status:** 🎉 **Phase 1 KOMPLETT!** | ✅ Wochen 1-10 ALLE KOMPLETT! | 🎊 **Setup Sheets fertig!** 🚀
