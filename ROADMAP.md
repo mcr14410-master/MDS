@@ -472,34 +472,171 @@
 
 ---
 
-### 📋 Woche 10: QR-Codes & CAM-Integration
-**Status:** 📋 GEPLANT
-**Ziel:** CAM-Integration mit Metadata-Extraktion
+## 📅 Monat 3: Work Instructions (Wochen 10-15)
 
-- [ ] QR-Code Generierung
-- [ ] QR pro Operation
-- [ ] File Watcher (chokidar)
-- [ ] CAM-Ordner überwachen
-- [ ] G-Code Parser (Heidenhain DIN/ISO)
-- [ ] Metadata-Extraktion (Programm-Name, Werkzeuge, etc.)
-- [ ] Auto-Import Dialog
-- [ ] CAM-Postprozessor Anpassungen dokumentieren
+### 🎯 Phase 2: Arbeitsanweisungen für Werker
 
-**Deliverable:** CAM → MDS funktioniert automatisch
-
-**Parser-Note:** 
-- Heidenhain DIN/ISO Format
-- CAM-Postprozessor wird angepasst für optimale Metadaten
-- Basis für spätere Werkzeug-Extraktion
+**Vision:** Komplettes Dokumentations-Paket pro Operation
+- ✅ Setup Sheet (Einrichteblatt)
+- ✅ Tool List (Werkzeugliste) 
+- ✅ Inspection Plan (Messanweisung)
+- ✅ Generator für automatische Vorbefüllung
 
 ---
 
-### 📋 Woche 11-12: Werkzeugverwaltung
+### ✅ Woche 10: Setup Sheets (Einrichteblätter)
+**Status:** ✅ Backend KOMPLETT | ⏳ Frontend OFFEN
+**Ziel:** Setup Sheets Backend + Frontend
+**Zeitaufwand:** 4 Stunden (Backend 2h + Debugging 2h)
+
+**Backend:** ✅ KOMPLETT
+- [x] Datenbank-Tabellen (setup_sheets + setup_sheet_photos)
+- [x] CRUD API für Setup Sheets (8 Endpoints)
+- [x] Foto-Upload (JPG, PNG, WebP bis 20MB)
+- [x] Steuerungsspezifische Nullpunkte (Heidenhain/Siemens/Fanuc)
+- [x] Workflow-Status (draft → review → approved → active)
+- [x] API Tests (23 Tests - alle erfolgreich)
+- [x] JOIN mit program_revisions (Versionen)
+- [x] JOIN mit customers (Kundenname)
+- [x] Alle Spaltennamen korrigiert
+
+**Frontend:** ⏳ OFFEN
+- [ ] Setup Sheet Form
+- [ ] Foto-Upload Galerie (Drag & Drop)
+- [ ] Setup Sheet Detail-Ansicht
+- [ ] Liste/Übersicht
+- [ ] Integration in Operation Detail Page
+
+**Inhalte Setup Sheet:**
+- Basis: Maschine, Teil, Operation, Programm (mit Version)
+- Nullpunkt: WCS (steuerungsspezifisch), Koordinaten, Referenzpunkt
+- Material: Rohmaß, Spezifikation
+- Anweisungen: Schritt-für-Schritt
+- Warnungen: Kritische Hinweise
+- Fotos: 1-6 Fotos (CAM Screenshots, Realfotos, Fixture, Clamping, Tool Setup)
+- Spannmittel/Vorrichtungen: Freitext (später DB-Verknüpfung)
+
+**Deliverable:** ✅ Backend Setup Sheets funktioniert komplett (08.11.2025)
+
+**Bugs gefixt während Entwicklung:**
+- Migration: programs statt nc_programs
+- Controller: module.exports hinzugefügt
+- Auth: authenticateToken statt authenticate
+- SQL: 8 Spaltennamen korrigiert (operations, machines, programs, parts)
+- JOINs: program_revisions + customers hinzugefügt
+- JOIN-Reihenfolge korrigiert
+
+**Abgeschlossen am:** 08.11.2025 (Backend)
+
+---
+
+### 📋 Woche 11: Tool Lists & Inspection Plans
+**Status:** 📋 GEPLANT
+**Ziel:** Werkzeugliste + Messanweisung Backend + Frontend
+**Zeitaufwand:** ~6-8 Stunden
+
+**Tool Lists (Werkzeugliste):**
+- [ ] Datenbank-Tabellen (tool_lists + tool_list_items)
+- [ ] Backend CRUD API
+- [ ] Frontend: Tool List Form
+- [ ] Spalten: T-Nr | Beschreibung | Hersteller | Bestellnr | Zusatzinfo
+- [ ] Als separates Dokument pro Operation
+- [ ] Später: Auto-Extraktion aus NC-Programm
+
+**Inspection Plans (Messanweisung):**
+- [ ] Datenbank-Tabellen (inspection_plans + inspection_plan_items)
+- [ ] Backend CRUD API
+- [ ] Frontend: Inspection Plan Form (Tabelle)
+- [ ] Spalten: Prüfmaß | Toleranz | Min | Max | Messmittel | Anweisung
+- [ ] Manuelles Ausfüllen
+- [ ] Später: Verknüpfung mit Messmittel-DB
+
+**Deliverable:** Tool Lists + Inspection Plans funktionieren
+
+---
+
+### 📋 Woche 12: Work Instructions Generator
+**Status:** 📋 GEPLANT
+**Ziel:** Smart Templates & Auto-Fill
+**Zeitaufwand:** ~4-6 Stunden
+
+**Generator Features:**
+- [ ] Generator API Endpoint
+- [ ] Smart Templates (Vorbefüllung aus vorhandenen Daten)
+- [ ] User wählt Operation → alle 3 Dokumente vorbefüllt
+- [ ] Auto-Fill: Maschine, Teil, Programm, Material
+- [ ] Frontend: "Neue Arbeitsanweisung erstellen" Button
+- [ ] Wizard-UI (Step-by-Step)
+- [ ] Später: PDF-Export aller 3 Dokumente
+
+**Deliverable:** Generator erstellt komplettes Arbeitsanweisungs-Paket
+
+---
+
+## 📅 Monat 4: Asset Management (Wochen 13-15)
+
+### 📋 Woche 13: Spannmittel-Verwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Spannmittel-Stammdaten
+**Zeitaufwand:** ~6 Stunden
+
+- [ ] Datenbank-Tabelle (clamping_devices)
+- [ ] Spannmitteltypen (3-Backen, Schraubstock, Spanneisen, etc.)
+- [ ] Stammdaten (Bezeichnung, Hersteller, Größe, Spannbereich)
+- [ ] Backend CRUD API
+- [ ] Frontend: Spannmittel-Verwaltung UI
+- [ ] Foto-Upload
+- [ ] Lagerhaltung (Standort)
+- [ ] Integration in Setup Sheets
+
+**Deliverable:** Spannmittel-Verwaltung funktioniert
+
+---
+
+### 📋 Woche 14: Vorrichtungs-Verwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Vorrichtungen mit Excel-Import
+**Zeitaufwand:** ~6 Stunden
+
+- [ ] Datenbank-Tabelle (fixtures)
+- [ ] Vorrichtungs-Nummer (VORR-YYYY-NNN)
+- [ ] Stammdaten (Bezeichnung, Bauteile, Zeichnung)
+- [ ] Excel-Import (aus bestehender Liste)
+- [ ] Backend CRUD API
+- [ ] Frontend: Vorrichtungs-Verwaltung UI
+- [ ] Foto-Upload (Vorrichtung, Zeichnung)
+- [ ] Lagerhaltung (Standort)
+- [ ] Verknüpfung: Vorrichtung → Bauteile (n:m)
+- [ ] Integration in Setup Sheets
+
+**Deliverable:** Vorrichtungs-Verwaltung funktioniert + Excel-Import
+
+---
+
+### 📋 Woche 15: Integration & Testing
+**Status:** 📋 GEPLANT
+**Ziel:** Setup Sheets mit Asset-Verknüpfungen
+**Zeitaufwand:** ~4-6 Stunden
+
+- [ ] Setup Sheets: Spannmittel-Dropdown (statt Freitext)
+- [ ] Setup Sheets: Vorrichtungs-Dropdown (statt Freitext)
+- [ ] Generator erweitern (Auto-Suggest aus Historie)
+- [ ] Testing aller Work Instructions
+- [ ] Bug-Fixes
+- [ ] Dokumentation aktualisieren
+
+**Deliverable:** Komplettes Work Instructions System produktionsreif
+
+---
+
+## 📅 Monat 5: Advanced Asset Management (Wochen 16-19)
+
+### 📋 Woche 16-17: Werkzeugverwaltung
 **Status:** 📋 GEPLANT
 **Ziel:** Werkzeug-Management mit Lagerhaltung
 **Zeitaufwand:** ~12-14 Stunden (2 Wochen)
 
-**Woche 11 - Werkzeug-Stammdaten:**
+**Woche 16 - Werkzeug-Stammdaten:**
 - [ ] Werkzeug-Datenbank (Tabellen)
 - [ ] Werkzeugtypen (Fräser, Bohrer, Drehmeißel, etc.)
 - [ ] Werkzeug-Stammdaten (Durchmesser, Länge, Hersteller)
@@ -507,40 +644,20 @@
 - [ ] Backend CRUD API
 - [ ] Frontend: Werkzeug-Verwaltung UI
 
-**Woche 12 - Lagerhaltung & Verknüpfung:**
+**Woche 17 - Lagerhaltung & Verknüpfung:**
 - [ ] Lager-System (Standort-Tracking komplex)
 - [ ] Schränke, Fächer, Regale
 - [ ] Bestandsverwaltung (Min/Max/Aktuell)
 - [ ] Nachbestell-System (Vorschläge)
-- [ ] Werkzeuge → Operations verknüpfen
 - [ ] Lieferanten-Verwaltung
 - [ ] Verschleiß-Historie
+- [ ] Integration in Tool Lists
 
-**Deliverable:** Werkzeugverwaltung Basic funktioniert
-
-**Für später (Phase 5):**
-- Automatische Werkzeug-Extraktion aus G-Code (Parser)
-- Erweiterte Nachbestell-Automatik
-- Werkzeug-Lebensdauer-Prognose
+**Deliverable:** Werkzeugverwaltung funktioniert
 
 ---
 
-### 📋 Woche 13: Shopfloor-UI
-**Status:** 📋 GEPLANT
-**Ziel:** Tablet-Ansicht für Werker
-
-- [ ] Tablet-optimiertes UI
-- [ ] QR-Scanner Integration
-- [ ] Touch-freundliche Bedienung
-- [ ] Offline-Modus (Service Worker)
-- [ ] Große Buttons/Icons
-- [ ] Werkzeug-Entnahme UI
-
-**Deliverable:** Werker-Ansicht läuft
-
----
-
-### 📋 Woche 14: Messmittelverwaltung
+### 📋 Woche 18: Messmittelverwaltung
 **Status:** 📋 GEPLANT
 **Ziel:** Messmittel mit Kalibrierung (ISO-kritisch!)
 **Zeitaufwand:** ~6-8 Stunden
@@ -566,7 +683,7 @@
 - [ ] Entnahme-Verwaltung (Wer? Wann? Für welchen Auftrag?)
 - [ ] Rückgabe-System
 - [ ] Verfügbarkeits-Check
-- [ ] Messmittel → Programme/Operations zuweisen
+- [ ] Integration in Inspection Plans
 
 **Deliverable:** Messmittel-Verwaltung mit Kalibrierung funktioniert
 
@@ -578,17 +695,63 @@
 
 ---
 
-### 📋 Woche 15: Einrichteblätter & Fotos
+### 📋 Woche 19: Parser & Automation
 **Status:** 📋 GEPLANT
-**Ziel:** Wartungspläne
+**Ziel:** NC-Programm Parser & Auto-Extraktion
+**Zeitaufwand:** ~6-8 Stunden
+
+**NC-Programm Parser:**
+- [ ] Heidenhain DIN/ISO Format Parser
+- [ ] Siemens Format Parser
+- [ ] Werkzeug-Extraktion (T-Nummern, Beschreibung)
+- [ ] Nullpunkt-Extraktion (G54, Preset)
+- [ ] Spindeldrehzahl/Vorschub
+- [ ] Tool List Auto-Fill
+- [ ] Setup Sheet Auto-Fill
+
+**Generator erweitern:**
+- [ ] Auto-Fill aus geparsten NC-Programmen
+- [ ] Werkzeuge automatisch in Tool List
+- [ ] Nullpunkt automatisch in Setup Sheet
+- [ ] User kann Vorschläge prüfen & ändern
+
+**Deliverable:** Parser funktioniert, Generator nutzt Parser-Daten
+
+---
+
+## 📅 Phase 4: Shopfloor & Advanced (ab Woche 20)
+
+### 📋 Woche 20+: QR-Codes & CAM-Integration
+**Status:** 📋 GEPLANT (später)
+
+- [ ] QR-Code Generierung pro Operation
+- [ ] File Watcher (chokidar)
+- [ ] CAM-Ordner überwachen
+- [ ] Auto-Import Dialog
+- [ ] CAM-Postprozessor Anpassungen
+
+---
+
+### 📋 Woche 20+: Shopfloor-UI
+**Status:** 📋 GEPLANT (später)
+
+- [ ] Tablet-optimiertes UI
+- [ ] QR-Scanner Integration
+- [ ] Touch-freundliche Bedienung
+- [ ] Offline-Modus (Service Worker)
+- [ ] Große Buttons/Icons
+
+---
+
+### 📋 Woche 20+: Wartungssystem
+**Status:** 📋 GEPLANT (später)
 
 - [ ] Maintenance Plans Backend
 - [ ] Wartungstypen (täglich, wöchentlich, ...)
 - [ ] Fälligkeitsberechnung
 - [ ] Wartungs-Historie
 - [ ] Benachrichtigungen
-
-**Deliverable:** Wartungspläne funktionieren
+- [ ] Skill-Level-System
 
 ---
 
