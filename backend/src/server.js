@@ -51,6 +51,7 @@ const programsRoutes = require('./routes/programsRoutes');
 const machinesRoutes = require('./routes/machinesRoutes');
 const workflowRoutes = require('./routes/workflowRoutes');
 const setupSheetsRoutes = require('./routes/setupSheetsRoutes');
+const toolListsRoutes = require('./routes/toolListsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -63,6 +64,7 @@ app.use('/api/programs', programsRoutes);
 app.use('/api/machines', machinesRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/setup-sheets', setupSheetsRoutes);
+app.use('/api', toolListsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

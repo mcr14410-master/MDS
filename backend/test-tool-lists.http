@@ -1,0 +1,297 @@
+###############################################################################
+# Tool Lists API Tests
+# 
+# Tests for managing tool lists for NC programs
+# Each program has one tool list with multiple tool items
+#
+# Prerequisites:
+# - Backend running on http://localhost:5000
+# - Valid JWT token (use test-auth.http to get one)
+# - Existing program_id for testing
+###############################################################################
+
+@baseUrl = http://localhost:5000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjI2ODE4ODksImV4cCI6MTc2Mjc2ODI4OX0.W8dd0MP2DXfHfJqLOqu3rpXk66UhFc13BA7852GnV0k
+@programId = 1
+@itemId = 1
+
+###############################################################################
+# 1. GET Tool List for Program
+###############################################################################
+
+### Get tool list (creates empty list if doesn't exist)
+GET {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 2. CREATE Tool List Items
+###############################################################################
+
+### Create tool #1 - Fräser
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T01",
+  "description": "Planfräser D80",
+  "tool_type": "Fräser",
+  "manufacturer": "Walter",
+  "order_number": "F2334.B.080.Z04.05",
+  "tool_holder": "HSK63A",
+  "tool_life_info": "Standzeit: 2000min bei Stahl, 4000min bei Alu",
+  "notes": "Immer mit Kühlschmiermittel",
+  "sequence": 10
+}
+
+### Create tool #2 - Bohrer
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T02",
+  "description": "Bohrer D8.5",
+  "tool_type": "Bohrer",
+  "manufacturer": "Gühring",
+  "order_number": "5512-8.5",
+  "tool_holder": "ER32",
+  "tool_life_info": "Standmenge: 150 Bohrungen",
+  "sequence": 20
+}
+
+### Create tool #3 - Gewindebohrer
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T03",
+  "description": "Gewindebohrer M10",
+  "tool_type": "Gewinde",
+  "manufacturer": "Emuge",
+  "order_number": "H331-M10",
+  "tool_holder": "ER32",
+  "tool_life_info": "Standmenge: 80 Gewinde",
+  "notes": "Mit Gewindeschneidöl",
+  "sequence": 30
+}
+
+### Create tool #4 - Reibahle
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T04",
+  "description": "Reibahle D10 H7",
+  "tool_type": "Reibahle",
+  "manufacturer": "Dormer",
+  "order_number": "A100-10.0",
+  "tool_holder": "ER32",
+  "tool_life_info": "Standmenge: 200 Bohrungen",
+  "notes": "Langsame Drehzahl, hoher Vorschub",
+  "sequence": 40
+}
+
+### Create tool #5 - Schaftfräser
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T05",
+  "description": "Schaftfräser D10 Z4",
+  "tool_type": "Fräser",
+  "manufacturer": "Sandvik",
+  "order_number": "R216.42-10050-AC26P",
+  "tool_holder": "ER32",
+  "tool_life_info": "Standzeit: 120min",
+  "sequence": 50
+}
+
+### Create tool with minimal data
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T06",
+  "description": "Test Tool"
+}
+
+### Create tool without tool_number (should fail)
+POST {{baseUrl}}/programs/{{programId}}/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Tool ohne Nummer"
+}
+
+###############################################################################
+# 3. UPDATE Tool List Item
+###############################################################################
+
+### Update tool description
+PUT {{baseUrl}}/tools/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Planfräser D80 Z6 (updated)",
+  "notes": "UPDATED: Mit KSS verwenden"
+}
+
+### Update tool manufacturer and order number
+PUT {{baseUrl}}/tools/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "manufacturer": "Kennametal",
+  "order_number": "KC8050-D80-Z06"
+}
+
+### Update tool sequence
+PUT {{baseUrl}}/tools/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sequence": 5
+}
+
+###############################################################################
+# 4. DELETE Tool List Item
+###############################################################################
+
+### Delete tool item
+DELETE {{baseUrl}}/tools/{{itemId}}
+Authorization: Bearer {{token}}
+
+### Delete non-existent item (should return 404)
+DELETE {{baseUrl}}/tools/99999
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 5. REORDER Tool List Items
+###############################################################################
+
+### Reorder tools (drag & drop simulation)
+POST {{baseUrl}}/programs/{{programId}}/tools/reorder
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "id": 1, "sequence": 10 },
+    { "id": 2, "sequence": 20 },
+    { "id": 3, "sequence": 30 },
+    { "id": 4, "sequence": 40 },
+    { "id": 5, "sequence": 50 }
+  ]
+}
+
+### Reorder - change positions
+POST {{baseUrl}}/programs/{{programId}}/tools/reorder
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "id": 5, "sequence": 10 },
+    { "id": 1, "sequence": 20 },
+    { "id": 3, "sequence": 30 },
+    { "id": 2, "sequence": 40 },
+    { "id": 4, "sequence": 50 }
+  ]
+}
+
+###############################################################################
+# 6. Error Cases
+###############################################################################
+
+### Get tool list for non-existent program
+GET {{baseUrl}}/programs/99999/tools
+Authorization: Bearer {{token}}
+
+### Create tool without authentication (should fail)
+POST {{baseUrl}}/programs/{{programId}}/tools
+Content-Type: application/json
+
+{
+  "tool_number": "T99",
+  "description": "Unauthorized tool"
+}
+
+### Update non-existent tool
+PUT {{baseUrl}}/tools/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+###############################################################################
+# 7. Complete Workflow Test
+###############################################################################
+
+### Step 1: Get empty tool list for new program
+GET {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
+
+### Step 2: Add 3 tools
+POST {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T1",
+  "description": "First tool",
+  "tool_type": "Fräser"
+}
+
+###
+POST {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T2",
+  "description": "Second tool",
+  "tool_type": "Bohrer"
+}
+
+###
+POST {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "T3",
+  "description": "Third tool",
+  "tool_type": "Gewinde"
+}
+
+### Step 3: Verify all tools are there
+GET {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
+
+### Step 4: Update one tool
+PUT {{baseUrl}}/tools/7
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "First tool - UPDATED"
+}
+
+### Step 5: Delete one tool
+DELETE {{baseUrl}}/tools/8
+Authorization: Bearer {{token}}
+
+### Step 6: Verify changes
+GET {{baseUrl}}/programs/2/tools
+Authorization: Bearer {{token}}
