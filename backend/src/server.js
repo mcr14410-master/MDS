@@ -52,6 +52,7 @@ const machinesRoutes = require('./routes/machinesRoutes');
 const workflowRoutes = require('./routes/workflowRoutes');
 const setupSheetsRoutes = require('./routes/setupSheetsRoutes');
 const toolListsRoutes = require('./routes/toolListsRoutes');
+const inspectionPlansRoutes = require('./routes/inspectionPlansRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -65,6 +66,7 @@ app.use('/api/machines', machinesRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/setup-sheets', setupSheetsRoutes);
 app.use('/api', toolListsRoutes);
+app.use('/api', inspectionPlansRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
@@ -336,13 +338,21 @@ app.listen(PORT, () => {
   console.log(`      DELETE /api/tools/:itemId`);
   console.log(`      POST   /api/programs/:programId/tools/reorder`);
   console.log('   ========================================');
-  console.log('   🔄 Phase 3, Week 11 - Tool Lists Backend');
+  console.log('   📊 Inspection Plans Endpoints (NEW Week 12):');
+  console.log(`      GET    /api/operations/:operationId/inspection-plan`);
+  console.log(`      PUT    /api/operations/:operationId/inspection-plan`);
+  console.log(`      POST   /api/operations/:operationId/inspection-plan/items`);
+  console.log(`      PUT    /api/inspection-plan-items/:itemId`);
+  console.log(`      DELETE /api/inspection-plan-items/:itemId`);
+  console.log(`      POST   /api/operations/:operationId/inspection-plan/reorder`);
+  console.log('   ========================================');
+  console.log('   🔄 Phase 3, Week 12 - Inspection Plans Backend');
   console.log('   ✅ Auth + Parts + Operations + Programs + Machines');
   console.log('   ✅ File Upload + Versionierung + Rollback');
   console.log('   ✅ Workflow-Status + Setup Sheets + Tool Lists');
-  console.log('   ✅ Werkzeuglisten für NC-Programme (CRUD komplett)');
+  console.log('   ✅ Prüfpläne/Messanweisungen (CRUD komplett)');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Backend Week 11 50% | Frontend folgt');
+  console.log('   📋 Backend Week 12 Backend ✅ | Frontend folgt');
   console.log('   ========================================\n');
 });
 
