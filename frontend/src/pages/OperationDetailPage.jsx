@@ -8,6 +8,7 @@ import ProgramsHistoryList from '../components/ProgramsHistoryList';
 import SetupSheetsList from '../components/SetupSheetsList';
 import ToolListTable from '../components/ToolListTable';
 import ToolListsOverview from '../components/ToolListsOverview';
+import InspectionPlanTab from '../components/InspectionPlanTab';
 
 export default function OperationDetailPage() {
   const { partId, operationId } = useParams();
@@ -199,6 +200,16 @@ export default function OperationDetailPage() {
             >
               Einrichteblatt
             </button>
+            <button
+              onClick={() => setActiveTab('inspection')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'inspection'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              Prüfplan
+            </button>
             {/* Historie Tab - rechtsbündig */}
             <button
               onClick={() => setActiveTab('history')}
@@ -223,6 +234,9 @@ export default function OperationDetailPage() {
           )}
           {activeTab === 'setup' && (
             <SetupSheetsList operationId={operationId} />
+          )}
+          {activeTab === 'inspection' && (
+            <InspectionPlanTab operationId={operationId} />
           )}
           {activeTab === 'history' && (
             <div className="space-y-8">

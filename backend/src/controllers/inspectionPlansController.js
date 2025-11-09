@@ -2,7 +2,7 @@
  * Inspection Plans Controller
  * 
  * Manages inspection plans (Messanweisungen/Prüfpläne) for operations
- * Week 12 - Phase 3
+ * Week 12 - Phase 3 + Tolerance Calculation Enhancement
  */
 
 const pool = require('../config/db');
@@ -169,6 +169,7 @@ const addInspectionItem = async (req, res) => {
       min_value,
       max_value,
       nominal_value,
+      mean_value,
       measuring_tool,
       instruction
     } = req.body;
@@ -213,14 +214,14 @@ const addInspectionItem = async (req, res) => {
       `INSERT INTO inspection_plan_items (
         inspection_plan_id, sequence_number,
         measurement_description, tolerance,
-        min_value, max_value, nominal_value,
+        min_value, max_value, nominal_value, mean_value,
         measuring_tool, instruction
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
         planId, nextSequence,
         measurement_description, tolerance,
-        min_value, max_value, nominal_value,
+        min_value, max_value, nominal_value, mean_value,
         measuring_tool, instruction
       ]
     );
@@ -250,6 +251,7 @@ const updateInspectionItem = async (req, res) => {
       min_value,
       max_value,
       nominal_value,
+      mean_value,
       measuring_tool,
       instruction
     } = req.body;
@@ -266,14 +268,15 @@ const updateInspectionItem = async (req, res) => {
            min_value = $3,
            max_value = $4,
            nominal_value = $5,
-           measuring_tool = $6,
-           instruction = $7,
+           mean_value = $6,
+           measuring_tool = $7,
+           instruction = $8,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8
+       WHERE id = $9
        RETURNING *`,
       [
         measurement_description, tolerance,
-        min_value, max_value, nominal_value,
+        min_value, max_value, nominal_value, mean_value,
         measuring_tool, instruction,
         itemId
       ]
