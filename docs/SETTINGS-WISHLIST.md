@@ -258,6 +258,71 @@
 }
 ```
 
+#### **Werkzeugtypen Verwaltung:**
+```javascript
+{
+  category: 'tools',
+  key: 'toolTypes',
+  options: 'customizable',
+  default: [
+    { name: 'Bohrer', icon: '🔩', color: 'blue' },
+    { name: 'Fräser', icon: '⚙️', color: 'green' },
+    { name: 'Gewinde', icon: '🔧', color: 'purple' },
+    { name: 'Reibahle', icon: '📐', color: 'orange' },
+    { name: 'Drehmeißel', icon: '🔪', color: 'red' },
+    { name: 'Sonstige', icon: '🔨', color: 'gray' }
+  ],
+  description: 'Werkzeugtypen definieren (Name, Icon, Farbe)'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Werkzeugtypen verwalten             │
+├─────────────────────────────────────┤
+│ 🔩 Bohrer        [Blau]      [✏️] │
+│ ⚙️ Fräser        [Grün]      [✏️] │
+│ 🔧 Gewinde       [Lila]      [✏️] │
+│ 📐 Reibahle      [Orange]    [✏️] │
+│ 🔪 Drehmeißel    [Rot]       [✏️] │
+│ 🔨 Sonstige      [Grau]      [✏️] │
+│                                      │
+│ [+ Neuer Werkzeugtyp]               │
+└─────────────────────────────────────┘
+
+Werkzeugtyp bearbeiten:
+┌─────────────────────────────────────┐
+│ Name:  [Senker____________]         │
+│ Icon:  [💎] (Emoji-Picker)          │
+│ Farbe: [🎨] Teal                    │
+│                                      │
+│ [Speichern] [Abbrechen]             │
+└─────────────────────────────────────┘
+```
+
+**Aktueller Stand (Woche 11):**
+- ✅ 6 Standard-Werkzeugtypen in ToolListForm hard-coded
+- ✅ Tool Type Icons in ToolListReadOnly und ToolListTable
+- ✅ Farbige Badges im UI (blue, green, purple, orange, red, gray)
+
+**Später konfigurierbar:**
+- 📋 Werkzeugtypen hinzufügen/bearbeiten/löschen
+- 📋 Custom Icons per Emoji
+- 📋 Custom Farben per Color Picker
+- 📋 Reihenfolge in Dropdown anpassen
+- 📋 Inaktive Typen ausblenden (statt löschen)
+
+**Verwendung:**
+```javascript
+// Aktuell (hard-coded):
+const TOOL_TYPES = ['Bohrer', 'Fräser', 'Gewinde', 'Reibahle', 'Drehmeißel', 'Sonstige'];
+
+// Später (aus DB):
+const toolTypes = await getSettings('tools', 'toolTypes');
+// => [{ name: 'Bohrer', icon: '🔩', color: 'blue', active: true }, ...]
+```
+
 ---
 
 ### **4. Messmittelverwaltung** (Woche 14)
@@ -765,4 +830,4 @@ if (settings.commentRequired && !comment) {
 ---
 
 **Status:** 📋 Geplant für später  
-**Letzte Aktualisierung:** 2025-11-08 (Woche 10 - Steuerungsspezifische Nullpunkte hinzugefügt)
+**Letzte Aktualisierung:** 2025-11-09 (Woche 11 - Werkzeugtypen hinzugefügt)

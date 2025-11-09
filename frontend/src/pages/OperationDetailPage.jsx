@@ -6,6 +6,8 @@ import { usePartsStore } from '../stores/partsStore';
 import ProgramsList from '../components/ProgramsList';
 import ProgramsHistoryList from '../components/ProgramsHistoryList';
 import SetupSheetsList from '../components/SetupSheetsList';
+import ToolListTable from '../components/ToolListTable';
+import ToolListsOverview from '../components/ToolListsOverview';
 
 export default function OperationDetailPage() {
   const { partId, operationId } = useParams();
@@ -176,7 +178,7 @@ export default function OperationDetailPage() {
             >
               Programme
             </button>
-            {/* Placeholder for future tabs */}
+            {/* Werkzeuge Tab */}
             <button
               onClick={() => setActiveTab('tools')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
@@ -184,9 +186,8 @@ export default function OperationDetailPage() {
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              disabled
             >
-              Werkzeuge <span className="text-xs text-gray-400">(Bald)</span>
+              Werkzeuge
             </button>
             <button
               onClick={() => setActiveTab('setup')}
@@ -216,6 +217,12 @@ export default function OperationDetailPage() {
         <div className="p-6">
           {activeTab === 'programmes' && (
             <ProgramsList operationId={operationId} />
+          )}
+          {activeTab === 'tools' && (
+            <ToolListsOverview operationId={operationId} />
+          )}
+          {activeTab === 'setup' && (
+            <SetupSheetsList operationId={operationId} />
           )}
           {activeTab === 'history' && (
             <div className="space-y-8">
@@ -257,14 +264,6 @@ export default function OperationDetailPage() {
                 </div>
               </div>
             </div>
-          )}
-          {activeTab === 'tools' && (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Werkzeugverwaltung kommt bald...
-            </div>
-          )}
-          {activeTab === 'setup' && (
-            <SetupSheetsList operationId={operationId} />
           )}
         </div>
       </div>

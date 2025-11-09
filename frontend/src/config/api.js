@@ -24,6 +24,10 @@ export const API_ENDPOINTS = {
   // Setup Sheets
   SETUP_SHEETS: `${API_BASE_URL}/api/setup-sheets`,
   
+  // Tool Lists
+  TOOL_LISTS: `${API_BASE_URL}/api/programs`, // Base for /programs/:id/tools
+  TOOLS: `${API_BASE_URL}/api/tools`,         // Base for /tools/:id
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

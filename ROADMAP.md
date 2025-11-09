@@ -536,32 +536,59 @@
 
 ---
 
-### 📋 Woche 11: Tool Lists & Inspection Plans
-**Status:** 📋 GEPLANT
-**Ziel:** Werkzeugliste + Messanweisung Backend + Frontend
-**Zeitaufwand:** ~6-8 Stunden
+### ✅ Woche 11: Tool Lists
+**Status:** ✅ **KOMPLETT**
+**Ziel:** Werkzeugliste Backend + Frontend
+**Zeitaufwand:** ~5 Stunden (2h Backend + 3h Frontend)
 
 **Tool Lists (Werkzeugliste):**
-- [ ] Datenbank-Tabellen (tool_lists + tool_list_items)
-- [ ] Backend CRUD API
-- [ ] Frontend: Tool List Form
-- [ ] Spalten: T-Nr | Beschreibung | Hersteller | Bestellnr | Zusatzinfo
-- [ ] Als separates Dokument pro Operation
-- [ ] Später: Auto-Extraktion aus NC-Programm
+- [x] Datenbank-Tabellen (tool_lists + tool_list_items)
+- [x] Backend CRUD API (5 Endpoints + 30 Tests)
+- [x] Frontend: Tool Lists Store (Zustand)
+- [x] Frontend: Tool List Form (Add/Edit Modal)
+- [x] Frontend: Tool List Table (Vollständige Tabelle)
+- [x] Frontend: Tool Lists Overview (Übersicht aller Programme)
+- [x] Frontend: Tool List Read-Only (Kompakte Ansicht für ProgramCard)
+- [x] Integration in Operation Detail Page (Werkzeuge Tab)
+- [x] Integration in ProgramCard (🔧 Icon)
+- [x] Tool Type Badges mit Icons (🔩⚙️🔧📐🔪🔨)
+- [x] Move Up/Down für Sortierung
+- [x] Permission Check Fix
+- [x] Dark Theme Support
+- [x] Responsive Design
+- [x] SETTINGS-WISHLIST Update (Werkzeugtypen)
+- [x] Spalten: T-Nr | Typ | Beschreibung | Hersteller | Bestellnr | Halter | Standzeit
+- [x] Als separates Dokument pro NC-Programm
+- [ ] Später: Auto-Extraktion aus NC-Programm (Phase 4)
+
+**Deliverable:** ✅ Tool Lists komplett funktionsfähig (Backend + Frontend)
+
+**Abgeschlossen am:** 2025-11-09
+
+---
+
+### 📋 Woche 12: Inspection Plans
+**Status:** 📋 GEPLANT
+**Ziel:** Messanweisung Backend + Frontend
+**Zeitaufwand:** ~6-8 Stunden
 
 **Inspection Plans (Messanweisung):**
 - [ ] Datenbank-Tabellen (inspection_plans + inspection_plan_items)
 - [ ] Backend CRUD API
+- [ ] Frontend: Inspection Plans Store
 - [ ] Frontend: Inspection Plan Form (Tabelle)
+- [ ] Frontend: Inspection Plan Table
+- [ ] Frontend: Inspection Plans Overview
+- [ ] Integration in Operation Detail Page
 - [ ] Spalten: Prüfmaß | Toleranz | Min | Max | Messmittel | Anweisung
 - [ ] Manuelles Ausfüllen
-- [ ] Später: Verknüpfung mit Messmittel-DB
+- [ ] Später: Verknüpfung mit Messmittel-DB (Phase 4)
 
-**Deliverable:** Tool Lists + Inspection Plans funktionieren
+**Deliverable:** Inspection Plans funktionieren
 
 ---
 
-### 📋 Woche 12: Work Instructions Generator
+### 📋 Woche 13: Work Instructions Generator (Optional)
 **Status:** 📋 GEPLANT
 **Ziel:** Smart Templates & Auto-Fill
 **Zeitaufwand:** ~4-6 Stunden
@@ -979,10 +1006,10 @@ Phase 2 (Monat 2): ████████████████████ 
   └─ Woche 7:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 8:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
 
-Phase 3 (Monat 3): ███████░░░░░░░░░░░░░ 62.5% (2.5 von 4 Wochen)
+Phase 3 (Monat 3): █████████████░░░░░░░ 75% (3 von 4 Wochen)
   └─ Woche 9:      ████████████████████ 100% ✅ (Workflow-System komplett!)
   └─ Woche 10:     ████████████████████ 100% ✅ (Setup Sheets komplett!)
-  └─ Woche 11:     ██████████░░░░░░░░░░  50% 🟡 (Backend komplett, Frontend folgt)
+  └─ Woche 11:     ████████████████████ 100% ✅ (Tool Lists komplett!)
   └─ Woche 12:     ░░░░░░░░░░░░░░░░░░░░   0%
 
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
@@ -994,9 +1021,9 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
   └─ Woche 19:     ░░░░░░░░░░░░░░░░░░░░  0% (Deployment)
 ```
 
-**Arbeitszeit:** ~61h / ~570h geschätzt (10.7%)
+**Arbeitszeit:** ~64h / ~570h geschätzt (11.2%)
 **Geschätzte Fertigstellung:** Mai 2025  
-**Aktueller Sprint:** 🟡 **Woche 11 läuft** | ✅ Backend fertig | 🎯 Frontend als nächstes
+**Aktueller Sprint:** ⬜ **Woche 12 als nächstes** | ✅ Tool Lists komplett | 🎯 Inspection Plans geplant
 
 ---
 
@@ -1045,6 +1072,13 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 - ✅ **2025-11-09:** Woche 11 Backend komplett - Tool Lists API fertig (5 Endpoints + 30 Tests)
 - 🐛 **2025-11-09:** 1 Bug gefunden und behoben (authenticateToken Import)
 - 🎊 **2025-11-09:** **WOCHE 11 BACKEND KOMPLETT - Tool Lists API fertig!**
+- ✅ **2025-11-09:** Woche 11 Frontend gestartet - Tool Lists Components geplant
+- ✅ **2025-11-09:** Woche 11 Frontend komplett - 5 Components fertig (Store + Form + Table + Overview + ReadOnly)
+- ✅ **2025-11-09:** 3 Integrationspunkte erstellt - Werkzeuge Tab + ProgramCard + Read-only Ansicht
+- 🐛 **2025-11-09:** 1 Bug gefunden und behoben (Permission Check in ToolListTable)
+- ✅ **2025-11-09:** SETTINGS-WISHLIST erweitert - Werkzeugtypen Verwaltung hinzugefügt
+- 🎊 **2025-11-09:** **WOCHE 11 FRONTEND KOMPLETT - Tool Lists UI fertig!**
+- 🎉 **2025-11-09:** **WOCHE 11 KOMPLETT - Tool Lists Backend + Frontend fertig! (~1.600 Zeilen Code)**
 
 ---
 
@@ -1062,7 +1096,7 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 8** | Maschinen-Stammdaten | Backend (8 Endpoints) + Frontend (3 Components) + 3 Bugfixes | ✅ 100% |
 | **Woche 9** | Workflow-System | Backend (4 Endpoints) + Frontend (5 Components) + Historie-Tab | ✅ 100% |
 | **Woche 10** | Setup Sheets | Backend (8 Endpoints) + Frontend (6 Components) | ✅ 100% |
-| **Woche 11** | Tool Lists | Backend (5 Endpoints) + 30 Tests + 1 Bugfix | 🟡 50% (Backend fertig) |
+| **Woche 11** | Tool Lists | Backend (5 Endpoints) + Frontend (5 Components) + 30 Tests + 2 Bugfixes | ✅ 100% |
 
 ---
 
@@ -1077,18 +1111,27 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 11 Tasks - Tool Lists:**
+**Woche 11 Tasks - Tool Lists:** ✅ KOMPLETT
 1. ✅ Tool Lists Datenbank-Tabellen (tool_lists + tool_list_items)
-2. ✅ Tool Lists Backend CRUD API
-3. ❌ Tool Lists Frontend Store
-4. ❌ Tool Lists Frontend Components (Form, Card, List)
-5. ❌ Tool Lists Integration in Program Detail Page
+2. ✅ Tool Lists Backend CRUD API (5 Endpoints + 30 Tests)
+3. ✅ Tool Lists Frontend Store (Zustand State Management)
+4. ✅ Tool Lists Frontend Components (Form, Table, Overview, ReadOnly)
+5. ✅ Tool Lists Integration in Operation Detail Page + ProgramCard
+6. ✅ Permission Fix (hasPermission('part.update'))
+7. ✅ SETTINGS-WISHLIST Update (Werkzeugtypen Verwaltung)
 
-**Nächster Schritt:** Woche 11 - Tool Lists Frontend
+**Woche 12 Tasks - Inspection Plans:**
+1. ⬜ Inspection Plans Datenbank-Tabellen (inspection_plans + inspection_plan_items)
+2. ⬜ Inspection Plans Backend CRUD API
+3. ⬜ Inspection Plans Frontend Store
+4. ⬜ Inspection Plans Frontend Components (Form, Table, Overview)
+5. ⬜ Inspection Plans Integration in Operation Detail Page
 
-**Status:** Phase 3 läuft | Woche 10 KOMPLETT ✅ | Woche 11 Backend ✅ | Nächster Sprint: Woche 11 Frontend
+**Nächster Schritt:** Woche 12 - Inspection Plans Backend
+
+**Status:** Phase 3 läuft | Woche 11 KOMPLETT ✅ | Nächster Sprint: Woche 12 - Inspection Plans
 
 ---
 
 **Letzte Aktualisierung:** 2025-11-09  
-**Aktueller Status:** 🎉 **Phase 3 läuft!** | ✅ Wochen 1-10 ALLE KOMPLETT! | 🟡 **Woche 11 Backend fertig!** 🚀
+**Aktueller Status:** 🎉 **Phase 3 läuft!** | ✅ Wochen 1-11 ALLE KOMPLETT! | ⬜ **Woche 12 als nächstes!** 🚀
