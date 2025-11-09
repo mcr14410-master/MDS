@@ -1,0 +1,351 @@
+###
+### Setup Sheets API Tests
+### Week 10 - Setup Sheets Backend
+###
+
+@baseUrl = http://localhost:5000/api
+@token = {{login.response.body.token}}
+
+### ============================================================================
+### 1. Login (Token holen)
+### ============================================================================
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ============================================================================
+### 2. GET - Liste aller Setup Sheets
+### ============================================================================
+GET {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 3. GET - Setup Sheets filtern (by operation_id)
+### ============================================================================
+GET {{baseUrl}}/setup-sheets?operation_id=1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 4. GET - Setup Sheets filtern (by machine_id)
+### ============================================================================
+GET {{baseUrl}}/setup-sheets?machine_id=1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 5. GET - Setup Sheets filtern (by status)
+### ============================================================================
+GET {{baseUrl}}/setup-sheets?status=draft
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 6. POST - Neues Setup Sheet erstellen (Minimal)
+### ============================================================================
+# @name createSetupSheet
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 1,
+  "machine_id": 1
+}
+
+### ============================================================================
+### 7. POST - Neues Setup Sheet erstellen (Komplett - Heidenhain)
+### ============================================================================
+# @name createHeidenhain
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 1,
+  "machine_id": 1,
+  "program_id": 1,
+  "fixture_description": "VORR-2024-015: Flansch-Aufnahme mit Zentrierstiften",
+  "clamping_description": "3-Backen-Futter 250mm",
+  "control_type": "heidenhain",
+  "preset_number": 1,
+  "wcs_x": 0,
+  "wcs_y": 0,
+  "wcs_z": 50.0,
+  "reference_point": "Oberkante Rohteil, Mitte Bohrung Ø20",
+  "raw_material_dimensions": "Ø100 x 50",
+  "material_specification": "AlMgSi1 F22",
+  "setup_instructions": "1. Rohteil auf Planlage legen\n2. Zentrierstifte in Bohrungen einsetzen\n3. 3-Backen gleichmäßig anziehen (50 Nm)\n4. Nullpunkt mit 3D-Taster setzen\n5. Werkzeuge laden (siehe Werkzeugliste)\n6. Programm-Vorlauf im Einzelsatz",
+  "special_notes": "⚠️ ACHTUNG: Rohteile sind einseitig eloxiert!\n⚠️ Nur von uneloxierter Seite spannen!\n⚠️ Max. Spindeldrehzahl 8000 U/min wegen Unwucht",
+  "status": "draft"
+}
+
+### ============================================================================
+### 8. POST - Setup Sheet erstellen (Siemens)
+### ============================================================================
+# @name createSiemens
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 2,
+  "machine_id": 2,
+  "program_id": 3,
+  "fixture_description": "Schraubstock 150mm",
+  "clamping_description": "Parallelunterlagen 10mm",
+  "control_type": "siemens",
+  "wcs_number": "G54",
+  "wcs_x": 150.0,
+  "wcs_y": 75.0,
+  "wcs_z": 0,
+  "reference_point": "Oberkante Teil, linke vordere Ecke",
+  "raw_material_dimensions": "150x75x30",
+  "material_specification": "S235JR",
+  "setup_instructions": "1. Parallelunterlagen auf 10mm prüfen\n2. Teil ausrichten (Winkelmesser)\n3. Schraubstock zudrehen\n4. Nullpunkt setzen (G54)",
+  "special_notes": "Material sehr weich - langsame Zustellung!",
+  "status": "draft"
+}
+
+### ============================================================================
+### 9. GET - Setup Sheet Details (mit ID aus Test 7)
+### ============================================================================
+@setupSheetId = {{createHeidenhain.response.body.data.id}}
+
+GET {{baseUrl}}/setup-sheets/{{setupSheetId}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 10. PUT - Setup Sheet aktualisieren
+### ============================================================================
+PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setup_instructions": "1. Rohteil auf Planlage legen\n2. Zentrierstifte in Bohrungen einsetzen\n3. 3-Backen gleichmäßig anziehen (50 Nm)\n4. Nullpunkt mit 3D-Taster setzen\n5. Werkzeuge laden (siehe Werkzeugliste)\n6. Programm-Vorlauf im Einzelsatz\n7. GEÄNDERT: Erste 3 Teile mit reduzierter Geschwindigkeit fahren",
+  "status": "review"
+}
+
+### ============================================================================
+### 11. POST - Foto hochladen (CAM Screenshot)
+### ============================================================================
+# Hinweis: Multipart Upload - in VS Code REST Client mit < datei.jpg
+# @name uploadPhoto
+POST {{baseUrl}}/setup-sheets/{{setupSheetId}}/photos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="photo"; filename="cam-screenshot.jpg"
+Content-Type: image/jpeg
+
+< C:/Users/Master/Pictures/edelstahl.PNG
+------Boundary
+Content-Disposition: form-data; name="caption"
+
+CAM-Screenshot: Einrichtung mit Werkzeugwegen
+------Boundary
+Content-Disposition: form-data; name="photo_type"
+
+cam_screenshot
+------Boundary
+Content-Disposition: form-data; name="sort_order"
+
+1
+------Boundary--
+
+### ============================================================================
+### 12. POST - Zweites Foto hochladen (Real Photo)
+### ============================================================================
+POST {{baseUrl}}/setup-sheets/{{setupSheetId}}/photos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="photo"; filename="real-setup.jpg"
+Content-Type: image/jpeg
+
+< C:/Users/Master/Pictures/edelstahl2.PNG
+------Boundary
+Content-Disposition: form-data; name="caption"
+
+Reale Einrichtung an Maschine
+------Boundary
+Content-Disposition: form-data; name="photo_type"
+
+real_photo
+------Boundary
+Content-Disposition: form-data; name="sort_order"
+
+2
+------Boundary--
+
+### ============================================================================
+### 13. PUT - Foto-Metadaten aktualisieren
+### ============================================================================
+@photoId = {{uploadPhoto.response.body.data.id}}
+
+PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}/photos/{{photoId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "caption": "CAM-Screenshot: 3D-Ansicht der Einrichtung (aktualisiert)",
+  "sort_order": 0
+}
+
+### ============================================================================
+### 14. DELETE - Foto löschen
+### ============================================================================
+DELETE {{baseUrl}}/setup-sheets/{{setupSheetId}}/photos/{{photoId}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 15. PUT - Status ändern (approved)
+### ============================================================================
+PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved"
+}
+
+### ============================================================================
+### 16. PUT - Status ändern (active)
+### ============================================================================
+PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### ============================================================================
+### 17. DELETE - Setup Sheet löschen
+### ============================================================================
+DELETE {{baseUrl}}/setup-sheets/{{setupSheetId}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### FEHLER-TESTS
+### ============================================================================
+
+### 18. POST - Setup Sheet ohne operation_id (sollte 400 sein)
+### ============================================================================
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "machine_id": 1
+}
+
+### 19. POST - Setup Sheet ohne machine_id (sollte 400 sein)
+### ============================================================================
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 1
+}
+
+### 20. GET - Nicht existierendes Setup Sheet (sollte 404 sein)
+### ============================================================================
+GET {{baseUrl}}/setup-sheets/99999
+Authorization: Bearer {{token}}
+
+### 21. PUT - Nicht existierendes Setup Sheet (sollte 404 sein)
+### ============================================================================
+PUT {{baseUrl}}/setup-sheets/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved"
+}
+
+### 22. DELETE - Nicht existierendes Setup Sheet (sollte 404 sein)
+### ============================================================================
+DELETE {{baseUrl}}/setup-sheets/99999
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### REALISTISCHE TEST-SZENARIEN
+### ============================================================================
+
+### 23. Workflow: Draft → Review → Approved → Active
+### ============================================================================
+# @name workflowTest
+POST {{baseUrl}}/setup-sheets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operation_id": 1,
+  "machine_id": 1,
+  "program_id": 1,
+  "control_type": "heidenhain",
+  "preset_number": 5,
+  "setup_instructions": "Test Workflow",
+  "status": "draft"
+}
+
+### Draft → Review
+PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "review"
+}
+
+### Review → Approved
+PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved"
+}
+
+### Approved → Active
+PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### ============================================================================
+### TEST ZUSAMMENFASSUNG
+### ============================================================================
+###
+### ✅ 23 Tests
+### 
+### CRUD Tests:
+### - GET Liste (alle, gefiltert nach operation/machine/status)
+### - GET Details (mit Fotos)
+### - POST Erstellen (minimal, komplett, verschiedene Steuerungen)
+### - PUT Aktualisieren (Felder, Status)
+### - DELETE Löschen
+###
+### Foto-Tests:
+### - POST Foto hochladen (Multipart)
+### - PUT Foto-Metadaten aktualisieren
+### - DELETE Foto löschen
+###
+### Fehler-Tests:
+### - Fehlende Pflichtfelder (400)
+### - Nicht existierende IDs (404)
+###
+### Workflow-Test:
+### - Status-Übergänge (draft → review → approved → active)
+###
+### ============================================================================

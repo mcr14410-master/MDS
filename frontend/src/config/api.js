@@ -21,6 +21,17 @@ export const API_ENDPOINTS = {
   // Machines
   MACHINES: `${API_BASE_URL}/api/machines`,
   
+  // Setup Sheets
+  SETUP_SHEETS: `${API_BASE_URL}/api/setup-sheets`,
+  
+  // Tool Lists
+  TOOL_LISTS: `${API_BASE_URL}/api/programs`, // Base for /programs/:id/tools
+  TOOLS: `${API_BASE_URL}/api/tools`,         // Base for /tools/:id
+  
+  // Inspection Plans
+  INSPECTION_PLANS: `${API_BASE_URL}/api/operations`,           // Base for /operations/:id/inspection-plan
+  INSPECTION_PLAN_ITEMS: `${API_BASE_URL}/api/inspection-plan-items`, // Base for /inspection-plan-items/:id
+  
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

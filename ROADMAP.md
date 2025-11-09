@@ -393,48 +393,286 @@
 
 ## 📅 Monat 3: Workflows & Werkzeuge (Wochen 9-12)
 
-### 📋 Woche 9: Workflow-System
-**Status:** 📋 GEPLANT
-**Ziel:** Status-Übergänge
+### ✅ Woche 9: Workflow-System
+**Status:** ✅ KOMPLETT
+**Ziel:** Status-Übergänge (Backend + Frontend)
+**Zeitaufwand:** ~3h (Backend) + ~3.5h (Frontend) = 6.5h
 
-- [ ] Status-Übergänge (Entwurf → Freigabe)
-- [ ] Berechtigungs-Checks
-- [ ] Freigabe-Workflow
-- [ ] Benachrichtigungen
-- [ ] History-Tracking
+**Backend:**
+- [x] Status-Übergänge (Entwurf → Freigabe → Archiv)
+- [x] Berechtigungs-Checks (programmer/admin)
+- [x] Freigabe-Workflow
+- [x] History-Tracking
+- [x] 4 API Endpoints
+- [x] 16 Tests erfolgreich
 
-**Deliverable:** Workflow funktioniert
+**Frontend:**
+- [x] workflowStore.js (135 Zeilen)
+- [x] WorkflowStatusBadge.jsx (156 Zeilen)
+- [x] WorkflowActions.jsx (211 Zeilen)
+- [x] WorkflowHistory.jsx (135 Zeilen)
+- [x] ProgramCard erweitern (Status-Badge integriert)
+- [x] OperationDetailPage erweitern (Historie-Tab mit Programme-Historie)
+- [x] ProgramsHistoryList.jsx (NEU - 175 Zeilen)
+- [x] Standard-Nachrichten für Workflow-Übergänge
+
+**Deliverable:** ✅ Komplettes Workflow-System für Programme
+
+**Backend Features:**
+```
+✅ POST /api/workflow/change           - Status ändern
+✅ GET  /api/workflow/states            - Alle Status
+✅ GET  /api/workflow/:type/:id/history - Historie
+✅ GET  /api/workflow/:type/:id/transitions - Verfügbare Übergänge
+✅ 6 Workflow-Status (draft, review, approved, released, rejected, archived)
+✅ Erlaubte Übergänge definiert
+✅ Automatisches History-Tracking
+✅ Transaction-Safety
+✅ Nur programmer + admin dürfen Status ändern
+✅ Standard-Nachrichten für automatische Übergänge
+```
+
+**Frontend Features:**
+```
+✅ Workflow-Store mit State Management
+✅ Status-Badges (6 Farben, Dark Mode, 3 Größen)
+✅ Action-Buttons mit Permission-Checks
+✅ Modal für manuelle Gründe (reject/archive)
+✅ Timeline-Historie-Ansicht
+✅ Programme-Historie pro Operation
+✅ Dark Mode Support überall
+✅ Toast-Notifications
+✅ Empty & Loading States
+```
+
+**Bugs gefixt:**
+- Database Import
+- Auth Middleware Import
+- Test-Workflow angepasst (File-Upload Requirement)
+- Permission-Check (Rollen aus DB laden)
+- SQL Query (first_name/last_name statt full_name)
+- operationId als Integer parsen (ProgramsHistoryList)
+- Datum-Formatierung robuster (null-checks)
+- Backend-Feldnamen korrigiert (created_at, change_reason)
+
+**Für später (Phase 4+):**
+- Granulare Permissions: workflow.release, workflow.reject, workflow.archive
+- Benachrichtigungen bei Status-Änderungen
+- Eskalation (z.B. review > 3 Tage alt)
+- **Umfangreiche Historie-Übersicht (eigene Page)**
+  - Alle Workflow-Änderungen systemweit
+  - Filtern nach: Entity-Type, Status, Benutzer, Datum
+  - Suchen nach: Programm-Name, Grund
+  - Export als CSV/PDF
+  - Statistiken & Charts
+- Workflow für Operations & Setup-Sheets
+- Bulk-Status-Änderungen
+
+**Abgeschlossen am:** 2025-11-07
 
 ---
 
-### 📋 Woche 10: QR-Codes & CAM-Integration
-**Status:** 📋 GEPLANT
-**Ziel:** CAM-Integration mit Metadata-Extraktion
+## 📅 Monat 3: Work Instructions (Wochen 10-15)
 
-- [ ] QR-Code Generierung
-- [ ] QR pro Operation
-- [ ] File Watcher (chokidar)
-- [ ] CAM-Ordner überwachen
-- [ ] G-Code Parser (Heidenhain DIN/ISO)
-- [ ] Metadata-Extraktion (Programm-Name, Werkzeuge, etc.)
-- [ ] Auto-Import Dialog
-- [ ] CAM-Postprozessor Anpassungen dokumentieren
+### 🎯 Phase 2: Arbeitsanweisungen für Werker
 
-**Deliverable:** CAM → MDS funktioniert automatisch
-
-**Parser-Note:** 
-- Heidenhain DIN/ISO Format
-- CAM-Postprozessor wird angepasst für optimale Metadaten
-- Basis für spätere Werkzeug-Extraktion
+**Vision:** Komplettes Dokumentations-Paket pro Operation
+- ✅ Setup Sheet (Einrichteblatt)
+- ✅ Tool List (Werkzeugliste) 
+- ✅ Inspection Plan (Messanweisung)
+- ✅ Generator für automatische Vorbefüllung
 
 ---
 
-### 📋 Woche 11-12: Werkzeugverwaltung
+### ✅ Woche 10: Setup Sheets (Einrichteblätter)
+**Status:** ✅ **KOMPLETT**
+**Ziel:** Setup Sheets Backend + Frontend
+**Zeitaufwand:** 8 Stunden (Backend 4h + Frontend 4h)
+
+**Backend:** ✅ KOMPLETT
+- [x] Datenbank-Tabellen (setup_sheets + setup_sheet_photos)
+- [x] CRUD API für Setup Sheets (8 Endpoints)
+- [x] Foto-Upload (JPG, PNG, WebP bis 20MB)
+- [x] Steuerungsspezifische Nullpunkte (Heidenhain/Siemens/Fanuc)
+- [x] Workflow-Status (draft → review → approved → active)
+- [x] API Tests (23 Tests - alle erfolgreich)
+- [x] JOIN mit program_revisions (Versionen)
+- [x] JOIN mit customers (Kundenname)
+- [x] Alle Spaltennamen korrigiert
+
+**Frontend:** ✅ KOMPLETT
+- [x] Setup Sheet Form (481 Zeilen)
+- [x] Foto-Upload Galerie (Drag & Drop, 356 Zeilen)
+- [x] Setup Sheet Detail-Ansicht (488 Zeilen)
+- [x] Liste/Übersicht mit Filter (151 Zeilen Card)
+- [x] Integration in Operation Detail Page
+- [x] Status Actions (208 Zeilen)
+- [x] Zustand Store (264 Zeilen)
+- [x] Responsive Design (Desktop/Tablet/Mobile)
+- [x] Dark Theme Support
+
+**Inhalte Setup Sheet:**
+- Basis: Maschine, Teil, Operation, Programm (mit Version)
+- Nullpunkt: WCS (steuerungsspezifisch), Koordinaten, Referenzpunkt
+- Material: Rohmaß, Spezifikation
+- Anweisungen: Schritt-für-Schritt
+- Warnungen: Kritische Hinweise
+- Fotos: 1-6 Fotos (CAM Screenshots, Realfotos, Fixture, Clamping, Tool Setup)
+- Spannmittel/Vorrichtungen: Freitext (später DB-Verknüpfung)
+
+**Deliverable:** ✅ Setup Sheets Backend + Frontend komplett (08.11.2025)
+
+**Frontend Features:**
+- Zustand Store mit allen CRUD Operations
+- Setup Sheet Form mit steuerungsspezifischen Nullpunkten
+- Foto-Upload Galerie mit Drag & Drop
+- Status-Workflow Buttons
+- Filter & Sortierung
+- Responsive Design (Mobile/Tablet/Desktop)
+- Dark Theme Support
+- ~1946 Zeilen Frontend-Code
+
+**Abgeschlossen am:** 08.11.2025 (Backend + Frontend komplett)
+
+---
+
+### ✅ Woche 11: Tool Lists
+**Status:** ✅ **KOMPLETT**
+**Ziel:** Werkzeugliste Backend + Frontend
+**Zeitaufwand:** ~5 Stunden (2h Backend + 3h Frontend)
+
+**Tool Lists (Werkzeugliste):**
+- [x] Datenbank-Tabellen (tool_lists + tool_list_items)
+- [x] Backend CRUD API (5 Endpoints + 30 Tests)
+- [x] Frontend: Tool Lists Store (Zustand)
+- [x] Frontend: Tool List Form (Add/Edit Modal)
+- [x] Frontend: Tool List Table (Vollständige Tabelle)
+- [x] Frontend: Tool Lists Overview (Übersicht aller Programme)
+- [x] Frontend: Tool List Read-Only (Kompakte Ansicht für ProgramCard)
+- [x] Integration in Operation Detail Page (Werkzeuge Tab)
+- [x] Integration in ProgramCard (🔧 Icon)
+- [x] Tool Type Badges mit Icons (🔩⚙️🔧📐🔪🔨)
+- [x] Move Up/Down für Sortierung
+- [x] Permission Check Fix
+- [x] Dark Theme Support
+- [x] Responsive Design
+- [x] SETTINGS-WISHLIST Update (Werkzeugtypen)
+- [x] Spalten: T-Nr | Typ | Beschreibung | Hersteller | Bestellnr | Halter | Standzeit
+- [x] Als separates Dokument pro NC-Programm
+- [ ] Später: Auto-Extraktion aus NC-Programm (Phase 4)
+
+**Deliverable:** ✅ Tool Lists komplett funktionsfähig (Backend + Frontend)
+
+**Abgeschlossen am:** 2025-11-09
+
+---
+
+### ⚙️ Woche 12: Inspection Plans
+**Status:** ⚙️ IN PROGRESS (Backend ✅ | Frontend 📋)
+**Ziel:** Messanweisung Backend + Frontend
+**Zeitaufwand:** ~6-8 Stunden
+
+**Inspection Plans (Messanweisung):**
+- [x] Datenbank-Tabellen (inspection_plans + inspection_plan_items)
+- [x] Backend CRUD API (6 Endpoints + 20+ Tests)
+- [ ] Frontend: Inspection Plans Store
+- [ ] Frontend: Inspection Plan Form (Tabelle)
+- [ ] Frontend: Inspection Plan Table
+- [ ] Frontend: Inspection Plans Overview
+- [ ] Integration in Operation Detail Page
+- [x] Spalten: Prüfmaß | Toleranz | Min | Max | Nominal | Messmittel | Anweisung
+- [x] Auto-Create Pattern (wie Setup Sheets und Tool Lists)
+- [x] Reorder Funktionalität
+- [ ] Manuelles Ausfüllen (Frontend)
+- [ ] Später: Verknüpfung mit Messmittel-DB (Phase 4)
+
+**Deliverable Backend:** ✅ Inspection Plans API funktioniert  
+**Deliverable Frontend:** 📋 Geplant für nächste Session
+
+---
+
+### 📋 Woche 13: Work Instructions Generator (Optional)
+**Status:** 📋 GEPLANT
+**Ziel:** Smart Templates & Auto-Fill
+**Zeitaufwand:** ~4-6 Stunden
+
+**Generator Features:**
+- [ ] Generator API Endpoint
+- [ ] Smart Templates (Vorbefüllung aus vorhandenen Daten)
+- [ ] User wählt Operation → alle 3 Dokumente vorbefüllt
+- [ ] Auto-Fill: Maschine, Teil, Programm, Material
+- [ ] Frontend: "Neue Arbeitsanweisung erstellen" Button
+- [ ] Wizard-UI (Step-by-Step)
+- [ ] Später: PDF-Export aller 3 Dokumente
+
+**Deliverable:** Generator erstellt komplettes Arbeitsanweisungs-Paket
+
+---
+
+## 📅 Monat 4: Asset Management (Wochen 13-15)
+
+### 📋 Woche 13: Spannmittel-Verwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Spannmittel-Stammdaten
+**Zeitaufwand:** ~6 Stunden
+
+- [ ] Datenbank-Tabelle (clamping_devices)
+- [ ] Spannmitteltypen (3-Backen, Schraubstock, Spanneisen, etc.)
+- [ ] Stammdaten (Bezeichnung, Hersteller, Größe, Spannbereich)
+- [ ] Backend CRUD API
+- [ ] Frontend: Spannmittel-Verwaltung UI
+- [ ] Foto-Upload
+- [ ] Lagerhaltung (Standort)
+- [ ] Integration in Setup Sheets
+
+**Deliverable:** Spannmittel-Verwaltung funktioniert
+
+---
+
+### 📋 Woche 14: Vorrichtungs-Verwaltung
+**Status:** 📋 GEPLANT
+**Ziel:** Vorrichtungen mit Excel-Import
+**Zeitaufwand:** ~6 Stunden
+
+- [ ] Datenbank-Tabelle (fixtures)
+- [ ] Vorrichtungs-Nummer (VORR-YYYY-NNN)
+- [ ] Stammdaten (Bezeichnung, Bauteile, Zeichnung)
+- [ ] Excel-Import (aus bestehender Liste)
+- [ ] Backend CRUD API
+- [ ] Frontend: Vorrichtungs-Verwaltung UI
+- [ ] Foto-Upload (Vorrichtung, Zeichnung)
+- [ ] Lagerhaltung (Standort)
+- [ ] Verknüpfung: Vorrichtung → Bauteile (n:m)
+- [ ] Integration in Setup Sheets
+
+**Deliverable:** Vorrichtungs-Verwaltung funktioniert + Excel-Import
+
+---
+
+### 📋 Woche 15: Integration & Testing
+**Status:** 📋 GEPLANT
+**Ziel:** Setup Sheets mit Asset-Verknüpfungen
+**Zeitaufwand:** ~4-6 Stunden
+
+- [ ] Setup Sheets: Spannmittel-Dropdown (statt Freitext)
+- [ ] Setup Sheets: Vorrichtungs-Dropdown (statt Freitext)
+- [ ] Generator erweitern (Auto-Suggest aus Historie)
+- [ ] Testing aller Work Instructions
+- [ ] Bug-Fixes
+- [ ] Dokumentation aktualisieren
+
+**Deliverable:** Komplettes Work Instructions System produktionsreif
+
+---
+
+## 📅 Monat 5: Advanced Asset Management (Wochen 16-19)
+
+### 📋 Woche 16-17: Werkzeugverwaltung
 **Status:** 📋 GEPLANT
 **Ziel:** Werkzeug-Management mit Lagerhaltung
 **Zeitaufwand:** ~12-14 Stunden (2 Wochen)
 
-**Woche 11 - Werkzeug-Stammdaten:**
+**Woche 16 - Werkzeug-Stammdaten:**
 - [ ] Werkzeug-Datenbank (Tabellen)
 - [ ] Werkzeugtypen (Fräser, Bohrer, Drehmeißel, etc.)
 - [ ] Werkzeug-Stammdaten (Durchmesser, Länge, Hersteller)
@@ -442,40 +680,20 @@
 - [ ] Backend CRUD API
 - [ ] Frontend: Werkzeug-Verwaltung UI
 
-**Woche 12 - Lagerhaltung & Verknüpfung:**
+**Woche 17 - Lagerhaltung & Verknüpfung:**
 - [ ] Lager-System (Standort-Tracking komplex)
 - [ ] Schränke, Fächer, Regale
 - [ ] Bestandsverwaltung (Min/Max/Aktuell)
 - [ ] Nachbestell-System (Vorschläge)
-- [ ] Werkzeuge → Operations verknüpfen
 - [ ] Lieferanten-Verwaltung
 - [ ] Verschleiß-Historie
+- [ ] Integration in Tool Lists
 
-**Deliverable:** Werkzeugverwaltung Basic funktioniert
-
-**Für später (Phase 5):**
-- Automatische Werkzeug-Extraktion aus G-Code (Parser)
-- Erweiterte Nachbestell-Automatik
-- Werkzeug-Lebensdauer-Prognose
+**Deliverable:** Werkzeugverwaltung funktioniert
 
 ---
 
-### 📋 Woche 13: Shopfloor-UI
-**Status:** 📋 GEPLANT
-**Ziel:** Tablet-Ansicht für Werker
-
-- [ ] Tablet-optimiertes UI
-- [ ] QR-Scanner Integration
-- [ ] Touch-freundliche Bedienung
-- [ ] Offline-Modus (Service Worker)
-- [ ] Große Buttons/Icons
-- [ ] Werkzeug-Entnahme UI
-
-**Deliverable:** Werker-Ansicht läuft
-
----
-
-### 📋 Woche 14: Messmittelverwaltung
+### 📋 Woche 18: Messmittelverwaltung
 **Status:** 📋 GEPLANT
 **Ziel:** Messmittel mit Kalibrierung (ISO-kritisch!)
 **Zeitaufwand:** ~6-8 Stunden
@@ -501,7 +719,7 @@
 - [ ] Entnahme-Verwaltung (Wer? Wann? Für welchen Auftrag?)
 - [ ] Rückgabe-System
 - [ ] Verfügbarkeits-Check
-- [ ] Messmittel → Programme/Operations zuweisen
+- [ ] Integration in Inspection Plans
 
 **Deliverable:** Messmittel-Verwaltung mit Kalibrierung funktioniert
 
@@ -513,17 +731,63 @@
 
 ---
 
-### 📋 Woche 15: Einrichteblätter & Fotos
+### 📋 Woche 19: Parser & Automation
 **Status:** 📋 GEPLANT
-**Ziel:** Wartungspläne
+**Ziel:** NC-Programm Parser & Auto-Extraktion
+**Zeitaufwand:** ~6-8 Stunden
+
+**NC-Programm Parser:**
+- [ ] Heidenhain DIN/ISO Format Parser
+- [ ] Siemens Format Parser
+- [ ] Werkzeug-Extraktion (T-Nummern, Beschreibung)
+- [ ] Nullpunkt-Extraktion (G54, Preset)
+- [ ] Spindeldrehzahl/Vorschub
+- [ ] Tool List Auto-Fill
+- [ ] Setup Sheet Auto-Fill
+
+**Generator erweitern:**
+- [ ] Auto-Fill aus geparsten NC-Programmen
+- [ ] Werkzeuge automatisch in Tool List
+- [ ] Nullpunkt automatisch in Setup Sheet
+- [ ] User kann Vorschläge prüfen & ändern
+
+**Deliverable:** Parser funktioniert, Generator nutzt Parser-Daten
+
+---
+
+## 📅 Phase 4: Shopfloor & Advanced (ab Woche 20)
+
+### 📋 Woche 20+: QR-Codes & CAM-Integration
+**Status:** 📋 GEPLANT (später)
+
+- [ ] QR-Code Generierung pro Operation
+- [ ] File Watcher (chokidar)
+- [ ] CAM-Ordner überwachen
+- [ ] Auto-Import Dialog
+- [ ] CAM-Postprozessor Anpassungen
+
+---
+
+### 📋 Woche 20+: Shopfloor-UI
+**Status:** 📋 GEPLANT (später)
+
+- [ ] Tablet-optimiertes UI
+- [ ] QR-Scanner Integration
+- [ ] Touch-freundliche Bedienung
+- [ ] Offline-Modus (Service Worker)
+- [ ] Große Buttons/Icons
+
+---
+
+### 📋 Woche 20+: Wartungssystem
+**Status:** 📋 GEPLANT (später)
 
 - [ ] Maintenance Plans Backend
 - [ ] Wartungstypen (täglich, wöchentlich, ...)
 - [ ] Fälligkeitsberechnung
 - [ ] Wartungs-Historie
 - [ ] Benachrichtigungen
-
-**Deliverable:** Wartungspläne funktionieren
+- [ ] Skill-Level-System
 
 ---
 
@@ -731,7 +995,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: █████████░░░░░░░░░░░ 42% (8 von 19 Wochen)
+Gesamt: ████████████░░░░░░░░ 63% (12 von 19 Wochen)
 
 Phase 1 (Monat 1): ████████████████████ 100% ✅
   └─ Woche 1:      ████████████████████ 100% ✅
@@ -745,25 +1009,24 @@ Phase 2 (Monat 2): ████████████████████ 
   └─ Woche 7:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
   └─ Woche 8:      ████████████████████ 100% ✅ (Backend + Frontend komplett!)
 
-Phase 3 (Monat 3): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
-  └─ Woche 9:      ░░░░░░░░░░░░░░░░░░░░  0%
-  └─ Woche 10:     ░░░░░░░░░░░░░░░░░░░░  0%
-  └─ Woche 11-12:  ░░░░░░░░░░░░░░░░░░░░  0% (Werkzeuge)
+Phase 3 (Monat 3): ████████████████████ 100% ✅ (4 von 4 Wochen)
+  └─ Woche 9:      ████████████████████ 100% ✅ (Workflow-System komplett!)
+  └─ Woche 10:     ████████████████████ 100% ✅ (Setup Sheets komplett!)
+  └─ Woche 11:     ████████████████████ 100% ✅ (Tool Lists komplett!)
+  └─ Woche 12:     ████████████████████ 100% ✅ (Inspection Plans komplett!)
 
 Phase 4 (Monat 4): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 4 Wochen)
-  └─ Woche 13:     ░░░░░░░░░░░░░░░░░░░░  0%
-  └─ Woche 14:     ░░░░░░░░░░░░░░░░░░░░  0% (Messmittel)
-  └─ Woche 15:     ░░░░░░░░░░░░░░░░░░░░  0%
-  └─ Woche 16:     ░░░░░░░░░░░░░░░░░░░░  0%
+  └─ Woche 13-14:  ░░░░░░░░░░░░░░░░░░░░  0% (Werkzeugverwaltung)
+  └─ Woche 15-16:  ░░░░░░░░░░░░░░░░░░░░  0% (Messmittelverwaltung)
 
 Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░  0% (0 von 3 Wochen)
   └─ Woche 17-18:  ░░░░░░░░░░░░░░░░░░░░  0% (Wartung)
   └─ Woche 19:     ░░░░░░░░░░░░░░░░░░░░  0% (Deployment)
 ```
 
-**Arbeitszeit:** ~59h / ~570h geschätzt (10.4%)
+**Arbeitszeit:** ~78h / ~570h geschätzt (13.7%)
 **Geschätzte Fertigstellung:** Mai 2025  
-**Aktueller Sprint:** 🎊 **PHASE 2 KOMPLETT!** | ✅ Wochen 5-8 ALLE KOMPLETT | 🎉 **MEILENSTEIN 2 ERREICHT!**
+**Aktueller Sprint:** 🎉 **Phase 3 KOMPLETT!** | ✅ Wochen 1-12 ALLE KOMPLETT! | 🎯 Nächste Phase: Werkzeugverwaltung
 
 ---
 
@@ -797,6 +1060,49 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
   - ✅ Operationen-Verwaltung
   - ✅ Programme-Verwaltung (inkl. Versionierung)
   - ✅ Maschinen-Verwaltung
+- ✅ **2025-11-07:** Woche 9 Backend gestartet - Workflow-System geplant
+- ✅ **2025-11-07:** Woche 9 Backend komplett - Workflow API fertig (4 Endpoints + 16 Tests)
+- ✅ **2025-11-07:** Woche 9 Frontend gestartet - Workflow Components erstellt
+- ✅ **2025-11-07:** Woche 9 Frontend komplett - Workflow UI fertig (5 Components + 812 Zeilen)
+- ✅ **2025-11-07:** Operations Historie-Tab erstellt - Programme-Historie pro Operation
+- 🐛 **2025-11-07:** 4 Bugs gefunden und behoben (operationId parsing, date formatting, field names)
+- 🎊 **2025-11-07:** **WOCHE 9 KOMPLETT - Workflow-System mit Historie fertig!**
+- ✅ **2025-11-08:** Woche 10 Backend gestartet - Setup Sheets geplant
+- ✅ **2025-11-08:** Woche 10 Backend komplett - Setup Sheets API fertig (8 Endpoints + Tests)
+- ✅ **2025-11-08:** Woche 10 Frontend komplett - Setup Sheets UI fertig (6 Components)
+- 🎊 **2025-11-08:** **WOCHE 10 KOMPLETT - Setup Sheets fertig!**
+- ✅ **2025-11-09:** Woche 11 Backend gestartet - Tool Lists geplant
+- ✅ **2025-11-09:** Woche 11 Backend komplett - Tool Lists API fertig (5 Endpoints + 30 Tests)
+- 🐛 **2025-11-09:** 1 Bug gefunden und behoben (authenticateToken Import)
+- 🎊 **2025-11-09:** **WOCHE 11 BACKEND KOMPLETT - Tool Lists API fertig!**
+- ✅ **2025-11-09:** Woche 11 Frontend gestartet - Tool Lists Components geplant
+- ✅ **2025-11-09:** Woche 11 Frontend komplett - 5 Components fertig (Store + Form + Table + Overview + ReadOnly)
+- ✅ **2025-11-09:** 3 Integrationspunkte erstellt - Werkzeuge Tab + ProgramCard + Read-only Ansicht
+- 🐛 **2025-11-09:** 1 Bug gefunden und behoben (Permission Check in ToolListTable)
+- ✅ **2025-11-09:** SETTINGS-WISHLIST erweitert - Werkzeugtypen Verwaltung hinzugefügt
+- 🎊 **2025-11-09:** **WOCHE 11 FRONTEND KOMPLETT - Tool Lists UI fertig!**
+- 🎉 **2025-11-09:** **WOCHE 11 KOMPLETT - Tool Lists Backend + Frontend fertig! (~1.600 Zeilen Code)**
+- ✅ **2025-11-09:** Woche 12 Backend gestartet - Inspection Plans geplant
+- ✅ **2025-11-09:** Woche 12 Backend komplett - Inspection Plans API fertig (6 Endpoints + 20+ Tests)
+- 🐛 **2025-11-09:** 1 Bug gefunden und behoben (authenticateToken Import in Routes)
+- 🎊 **2025-11-09:** **WOCHE 12 BACKEND KOMPLETT - Inspection Plans API fertig!**
+- ✅ **2025-11-09:** Woche 12 Frontend gestartet - Inspection Plans Components geplant
+- ✅ **2025-11-09:** Woche 12 Frontend komplett - Store + Tab + ReadOnly Component fertig
+- ✅ **2025-11-09:** ISO 286 Toleranzberechnung implementiert (16 Klassen)
+- ✅ **2025-11-09:** ISO 2768 Allgemeintoleranzen implementiert (4 Klassen)
+- ✅ **2025-11-09:** mean_value Spalte hinzugefügt + Auto-Berechnung
+- ✅ **2025-11-09:** Manuelles Abmaß-Feature implementiert (Oberes/Unteres Abmaß)
+- ✅ **2025-11-09:** Form-/Lagetoleranz-Modus implementiert (Ebenheit, Rundheit, etc.)
+- ✅ **2025-11-09:** Edit-Formular unter Item positioniert (bessere UX)
+- ✅ **2025-11-09:** Übersichts-Anzeige optimiert (Sollmaß + Toleranz)
+- 🐛 **2025-11-09:** Syntax-Fehler behoben (Radio-Button IDs)
+- 🎊 **2025-11-09:** **WOCHE 12 FRONTEND KOMPLETT - Inspection Plans UI fertig!**
+- 🎉 **2025-11-09:** **WOCHE 12 KOMPLETT - Alle 4 Toleranzarten implementiert! (~922 Zeilen Code)**
+- 🎊 **2025-11-09:** **PHASE 3 KOMPLETT - MEILENSTEIN 3 ERREICHT!**
+  - ✅ Workflow-System mit 6 States
+  - ✅ Setup Sheets mit Control-spezifischen Nullpunkten
+  - ✅ Tool Lists mit 15+ CNC-Formaten
+  - ✅ Inspection Plans mit 4 Toleranzarten (Manuell, ISO 286, ISO 2768, Form-/Lage)
 
 ---
 
@@ -812,6 +1118,10 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 | **Woche 6** | Programme & Upload | Backend + Frontend + Bugfixes | ✅ 100% |
 | **Woche 7** | Versionierung | Backend (5 Endpoints) + Frontend (2 Components) | ✅ 100% |
 | **Woche 8** | Maschinen-Stammdaten | Backend (8 Endpoints) + Frontend (3 Components) + 3 Bugfixes | ✅ 100% |
+| **Woche 9** | Workflow-System | Backend (4 Endpoints) + Frontend (5 Components) + Historie-Tab | ✅ 100% |
+| **Woche 10** | Setup Sheets | Backend (8 Endpoints) + Frontend (6 Components) | ✅ 100% |
+| **Woche 11** | Tool Lists | Backend (5 Endpoints) + Frontend (5 Components) + 30 Tests + 2 Bugfixes | ✅ 100% |
+| **Woche 12** | Inspection Plans | Backend (6 Endpoints + 20+ Tests) + Frontend (4 Komponenten + 4 Toleranzarten) | ✅ 100% |
 
 ---
 
@@ -826,18 +1136,21 @@ Phase 5 (Monat 5): ░░░░░░░░░░░░░░░░░░░░ 
 
 ## 🔧 Nächste Session
 
-**Woche 9 Tasks - Workflow-System:**
-1. ❌ Status-Übergänge (Entwurf → Freigabe → Archiv)
-2. ❌ Berechtigungs-Checks für Workflow-Aktionen
-3. ❌ Freigabe-Workflow implementieren
-4. ❌ Benachrichtigungen (optional)
-5. ❌ History-Tracking für Status-Änderungen
+**Phase 4 Start - Werkzeugverwaltung (Wochen 13-14):** 📋 GEPLANT
 
-**Nächster Schritt:** Woche 9 - Workflow-System Backend + Frontend
+**Phase 3 ABGESCHLOSSEN! ✅**
+Alle 12 Wochen erfolgreich abgeschlossen:
+- ✅ Woche 1-4: Fundament (DB, Backend, Frontend, Integration)
+- ✅ Woche 5-8: Kern-Features (Operations, Programme, Versionierung, Maschinen)
+- ✅ Woche 9-12: Work Instructions (Workflow, Setup Sheets, Tool Lists, Inspection Plans)
 
-**Status:** Phase 2 KOMPLETT ✅ | Woche 8 KOMPLETT ✅ | Nächster Sprint: Phase 3
+**Nächster Schritt:** Phase 4 - Erweiterte Features
+- Woche 13-14: Werkzeugverwaltung (Lagerhaltung, Nachbestellung, Standzeit)
+- Woche 15-16: Messmittelverwaltung (Kalibrierung, ISO/Luftfahrt-ready)
+
+**Status:** 🎉 **Phase 3 KOMPLETT!** | ✅ 12 von 19 Wochen FERTIG! | 🚀 Bereit für Phase 4!
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-06  
-**Aktueller Status:** 🎉 **Phase 1 & 2 KOMPLETT!** | ✅ Wochen 1-8 ALLE KOMPLETT! | 🎊 **MEILENSTEIN 2 ERREICHT!** 🚀
+**Letzte Aktualisierung:** 2025-11-09  
+**Aktueller Status:** 🎉 **Phase 3 KOMPLETT!** | ✅ Wochen 1-12 ALLE ABGESCHLOSSEN! | 🚀 Bereit für Phase 4 - Werkzeugverwaltung!

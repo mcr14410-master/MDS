@@ -15,6 +15,7 @@ export default function ProgramsList({ operationId }) {
   const [isNewRevision, setIsNewRevision] = useState(false);         // NEU: Woche 7
   const [showRevisions, setShowRevisions] = useState(false);         // NEU: Woche 7
   const [selectedProgram, setSelectedProgram] = useState(null);      // NEU: Woche 7
+  const [statusFilter, setStatusFilter] = useState('all');           // NEU: Woche 9
 
   useEffect(() => {
     if (operationId) {
@@ -73,6 +74,12 @@ export default function ProgramsList({ operationId }) {
     fetchPrograms(operationId);
   };
 
+  // NEU: Woche 9 - Status-Änderung
+  const handleStatusChange = (programId, newState) => {
+    // Programme neu laden nach Status-Änderung
+    fetchPrograms(operationId);
+  };
+
   if (loading && programs.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -116,6 +123,71 @@ export default function ProgramsList({ operationId }) {
         )}
       </div>
 
+      {/* Status Filter (NEU: Woche 9) */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Alle
+        </button>
+        <button
+          onClick={() => setStatusFilter('draft')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'draft'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Entwurf
+        </button>
+        <button
+          onClick={() => setStatusFilter('review')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'review'
+              ? 'bg-orange-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          In Prüfung
+        </button>
+        <button
+          onClick={() => setStatusFilter('approved')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'approved'
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Geprüft
+        </button>
+        <button
+          onClick={() => setStatusFilter('released')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'released'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Freigegeben
+        </button>
+        <button
+          onClick={() => setStatusFilter('archived')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'archived'
+              ? 'bg-gray-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Archiviert
+        </button>
+      </div>
+
       {/* Programs Grid */}
       {programs.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
@@ -144,6 +216,7 @@ export default function ProgramsList({ operationId }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {programs
             .filter(program => program && program.id) // Nur gültige Programme
+            .filter(program => statusFilter === 'all' || program.workflow_state === statusFilter) // NEU: Status-Filter
             .map((program) => (
               <ProgramCard
                 key={program.id}
@@ -152,6 +225,7 @@ export default function ProgramsList({ operationId }) {
                 onDelete={handleDelete}
                 onViewVersions={handleViewVersions}
                 onNewRevision={handleNewRevision}
+                onStatusChange={handleStatusChange}
               />
             ))}
         </div>

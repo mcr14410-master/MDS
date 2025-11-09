@@ -1,0 +1,359 @@
+### ====================================
+### INSPECTION PLANS API TESTS
+### Week 12 - Phase 3
+### ====================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@token = {{login.response.body.token}}
+@operationId = 1
+@itemId = 1
+
+### ====================================
+### SETUP: Login
+### ====================================
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ====================================
+### INSPECTION PLANS - Operation Level
+### ====================================
+
+### 1. GET Inspection Plan (Auto-creates if not exists)
+GET {{baseUrl}}/operations/{{operationId}}/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### 2. GET Inspection Plan (Second call - should return existing)
+GET {{baseUrl}}/operations/{{operationId}}/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### 3. UPDATE Inspection Plan Notes
+PUT {{baseUrl}}/operations/{{operationId}}/inspection-plan
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Wichtig: Alle Maße im eingebauten Zustand prüfen. Messmittel vor Gebrauch kalibrieren."
+}
+
+###
+
+### ====================================
+### INSPECTION ITEMS - Add/Update/Delete
+### ====================================
+
+### 4. ADD Inspection Item #1 - Bohrung
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Bohrung Ø10 H7",
+  "tolerance": "H7 (+0.015/0)",
+  "nominal_value": 10.0000,
+  "min_value": 10.0000,
+  "max_value": 10.0150,
+  "measuring_tool": "Innenmessschraube 8-10mm",
+  "instruction": "Mindestens 3 Messungen an verschiedenen Stellen"
+}
+
+###
+
+### 5. ADD Inspection Item #2 - Längenmaß
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Gesamtlänge",
+  "tolerance": "±0.1",
+  "nominal_value": 100.0,
+  "min_value": 99.9,
+  "max_value": 100.1,
+  "measuring_tool": "Messschieber 0-150mm",
+  "instruction": ""
+}
+
+###
+
+### 6. ADD Inspection Item #3 - Gewinde
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Gewinde M8x1.25",
+  "tolerance": "6g",
+  "measuring_tool": "Gewindelehrdorn M8x1.25",
+  "instruction": "Lehrdorn muss über gesamte Länge durchgehen"
+}
+
+###
+
+### 7. ADD Inspection Item #4 - Planheit
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Planheit Auflagefläche",
+  "tolerance": "0.02",
+  "max_value": 0.02,
+  "measuring_tool": "Haarlineal + Fühlerlehre",
+  "instruction": "Auf Grundplatte auflegen, Spalt prüfen"
+}
+
+###
+
+### 8. ADD Inspection Item #5 - Winkel
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Winkel 90°",
+  "tolerance": "±0.5°",
+  "nominal_value": 90.0,
+  "min_value": 89.5,
+  "max_value": 90.5,
+  "measuring_tool": "Anschlagwinkel",
+  "instruction": "Gegen Haarlineal prüfen"
+}
+
+###
+
+### 9. UPDATE Inspection Item (add more details)
+PUT {{baseUrl}}/inspection-plan-items/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Bohrung Ø10 H7 (Tiefe 25mm)",
+  "tolerance": "H7 (+0.015/0)",
+  "nominal_value": 10.0000,
+  "min_value": 10.0000,
+  "max_value": 10.0150,
+  "measuring_tool": "Innenmessschraube 8-10mm (ID: M-345)",
+  "instruction": "Mindestens 3 Messungen an verschiedenen Stellen. Bei Abweichung Teamleiter informieren."
+}
+
+###
+
+### 10. DELETE Inspection Item
+DELETE {{baseUrl}}/inspection-plan-items/3
+Authorization: Bearer {{token}}
+
+###
+
+### ====================================
+### REORDER ITEMS
+### ====================================
+
+### 11. REORDER Inspection Items (change sequence)
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/reorder
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "item_ids": [5, 1, 2, 4]
+}
+
+###
+
+### 12. GET Updated Plan (verify reorder)
+GET {{baseUrl}}/operations/{{operationId}}/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### ====================================
+### VALIDATION TESTS
+### ====================================
+
+### 13. ADD Item - Missing measurement_description (should fail)
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tolerance": "±0.1",
+  "measuring_tool": "Messschieber"
+}
+
+###
+
+### 14. ADD Item - Empty measurement_description (should fail)
+POST {{baseUrl}}/operations/{{operationId}}/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "   ",
+  "tolerance": "±0.1"
+}
+
+###
+
+### 15. UPDATE Non-existent Item (should fail)
+PUT {{baseUrl}}/inspection-plan-items/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Test",
+  "tolerance": "±0.1"
+}
+
+###
+
+### 16. DELETE Non-existent Item (should fail)
+DELETE {{baseUrl}}/inspection-plan-items/99999
+Authorization: Bearer {{token}}
+
+###
+
+### 17. GET Plan for Non-existent Operation (should fail)
+GET {{baseUrl}}/operations/99999/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### ====================================
+### DIFFERENT OPERATIONS
+### ====================================
+
+### 18. ADD Items to Operation 2
+POST {{baseUrl}}/operations/2/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Außendurchmesser Ø50 h6",
+  "tolerance": "h6 (-0.016/0)",
+  "nominal_value": 50.0000,
+  "min_value": 49.9840,
+  "max_value": 50.0000,
+  "measuring_tool": "Bügelmessschraube 25-50mm",
+  "instruction": "3 Messungen um 120° versetzt"
+}
+
+###
+
+### 19. GET Plan for Operation 2
+GET {{baseUrl}}/operations/2/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### ====================================
+### COMPLETE WORKFLOW TEST
+### ====================================
+
+### 20. Create Complete Inspection Plan
+# Step 1: Get/Create Plan
+GET {{baseUrl}}/operations/3/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+# Step 2: Update Notes
+PUT {{baseUrl}}/operations/3/inspection-plan
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Erstmuster komplett dokumentieren. Fotos von kritischen Bereichen anfertigen."
+}
+
+###
+
+# Step 3: Add Multiple Items
+POST {{baseUrl}}/operations/3/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Maß A: 25.00",
+  "tolerance": "±0.05",
+  "nominal_value": 25.0,
+  "min_value": 24.95,
+  "max_value": 25.05,
+  "measuring_tool": "Messschieber"
+}
+
+###
+
+POST {{baseUrl}}/operations/3/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Maß B: 50.00",
+  "tolerance": "±0.1",
+  "nominal_value": 50.0,
+  "min_value": 49.9,
+  "max_value": 50.1,
+  "measuring_tool": "Messschieber"
+}
+
+###
+
+POST {{baseUrl}}/operations/3/inspection-plan/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "measurement_description": "Maß C: 100.00",
+  "tolerance": "±0.2",
+  "nominal_value": 100.0,
+  "min_value": 99.8,
+  "max_value": 100.2,
+  "measuring_tool": "Messschieber 0-150mm"
+}
+
+###
+
+# Step 4: Verify Complete Plan
+GET {{baseUrl}}/operations/3/inspection-plan
+Authorization: Bearer {{token}}
+
+###
+
+### ====================================
+### SUMMARY
+### ====================================
+# 
+# Total Tests: 20+
+# 
+# ENDPOINTS:
+# - GET    /api/operations/:operationId/inspection-plan
+# - PUT    /api/operations/:operationId/inspection-plan  
+# - POST   /api/operations/:operationId/inspection-plan/items
+# - PUT    /api/inspection-plan-items/:itemId
+# - DELETE /api/inspection-plan-items/:itemId
+# - POST   /api/operations/:operationId/inspection-plan/reorder
+#
+# FEATURES TESTED:
+# ✓ Auto-create inspection plan on first GET
+# ✓ Update plan notes
+# ✓ Add inspection items (5 different types)
+# ✓ Update items
+# ✓ Delete items
+# ✓ Reorder items
+# ✓ Validation (missing fields, empty values)
+# ✓ Error handling (non-existent IDs)
+# ✓ Multiple operations support
+# ✓ Complete workflow
+#
+### ====================================

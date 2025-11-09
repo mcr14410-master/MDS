@@ -17,6 +17,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (uploads)
+app.use('/uploads', express.static('uploads'));
+
 // Database Pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -46,6 +49,10 @@ const partsRoutes = require('./routes/partsRoutes');
 const operationsRoutes = require('./routes/operationsRoutes');
 const programsRoutes = require('./routes/programsRoutes');
 const machinesRoutes = require('./routes/machinesRoutes');
+const workflowRoutes = require('./routes/workflowRoutes');
+const setupSheetsRoutes = require('./routes/setupSheetsRoutes');
+const toolListsRoutes = require('./routes/toolListsRoutes');
+const inspectionPlansRoutes = require('./routes/inspectionPlansRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -56,6 +63,10 @@ app.use('/api/parts', partsRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/programs', programsRoutes);
 app.use('/api/machines', machinesRoutes);
+app.use('/api/workflow', workflowRoutes);
+app.use('/api/setup-sheets', setupSheetsRoutes);
+app.use('/api', toolListsRoutes);
+app.use('/api', inspectionPlansRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
@@ -90,8 +101,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.4.0',
-      phase: 'Phase 2, Week 8 - Maschinen-Stammdaten (Backend)',
+      version: '1.7.0',
+      phase: 'Phase 3, Week 11 - Tool Lists (Backend)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -129,7 +140,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🎉 Phase 2, Week 8 - Maschinen-Stammdaten Backend ready!'
+      message: '🔄 Phase 3, Week 9 - Workflow-System Backend ready!'
     });
   } catch (error) {
     res.status(500).json({
@@ -142,8 +153,8 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.4.0',
-    phase: 'Phase 2, Week 8 - Maschinen-Stammdaten 🏭',
+    version: '1.5.0',
+    phase: 'Phase 3, Week 9 - Workflow-System 🔄',
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -298,7 +309,7 @@ app.listen(PORT, () => {
   console.log(`      GET    /api/programs/:id/compare`);
   console.log(`      POST   /api/programs/:id/rollback`);
   console.log('   ========================================');
-  console.log('   🏭 Machines Endpoints (NEW Week 8):');
+  console.log('   🏭 Machines Endpoints (Week 8):');
   console.log(`      GET    /api/machines`);
   console.log(`      GET    /api/machines/:id`);
   console.log(`      POST   /api/machines`);
@@ -307,14 +318,41 @@ app.listen(PORT, () => {
   console.log(`      GET    /api/machines/:id/stats`);
   console.log(`      GET    /api/machines/:id/operations`);
   console.log('   ========================================');
-  console.log('   ⚡ Phase 2, Week 8 - Maschinen-Stammdaten');
-  console.log('   ✅ Auth + Parts + Operations + Programs CRUD');
-  console.log('   ✅ File Upload (Multer, 15 Dateitypen, 100MB)');
-  console.log('   ✅ Major/Minor/Patch Versionierung');
-  console.log('   ✅ Diff-Berechnung & Rollback');
-  console.log('   ✅ Maschinen CRUD + Stats');
+  console.log('   🔄 Workflow Endpoints (NEW Week 9):');
+  console.log(`      GET    /api/workflow/states`);
+  console.log(`      POST   /api/workflow/change`);
+  console.log(`      GET    /api/workflow/:type/:id/history`);
+  console.log(`      GET    /api/workflow/:type/:id/transitions`);
+  console.log('   ========================================');
+  console.log('   📋 Setup Sheets Endpoints (NEW Week 10):');
+  console.log(`      GET    /api/setup-sheets/:programId`);
+  console.log(`      POST   /api/setup-sheets`);
+  console.log(`      PUT    /api/setup-sheets/:id`);
+  console.log(`      DELETE /api/setup-sheets/:id`);
+  console.log(`      POST   /api/setup-sheets/:id/photos`);
+  console.log('   ========================================');
+  console.log('   🔧 Tool Lists Endpoints (NEW Week 11):');
+  console.log(`      GET    /api/programs/:programId/tools`);
+  console.log(`      POST   /api/programs/:programId/tools`);
+  console.log(`      PUT    /api/tools/:itemId`);
+  console.log(`      DELETE /api/tools/:itemId`);
+  console.log(`      POST   /api/programs/:programId/tools/reorder`);
+  console.log('   ========================================');
+  console.log('   📊 Inspection Plans Endpoints (NEW Week 12):');
+  console.log(`      GET    /api/operations/:operationId/inspection-plan`);
+  console.log(`      PUT    /api/operations/:operationId/inspection-plan`);
+  console.log(`      POST   /api/operations/:operationId/inspection-plan/items`);
+  console.log(`      PUT    /api/inspection-plan-items/:itemId`);
+  console.log(`      DELETE /api/inspection-plan-items/:itemId`);
+  console.log(`      POST   /api/operations/:operationId/inspection-plan/reorder`);
+  console.log('   ========================================');
+  console.log('   🔄 Phase 3, Week 12 - Inspection Plans Backend');
+  console.log('   ✅ Auth + Parts + Operations + Programs + Machines');
+  console.log('   ✅ File Upload + Versionierung + Rollback');
+  console.log('   ✅ Workflow-Status + Setup Sheets + Tool Lists');
+  console.log('   ✅ Prüfpläne/Messanweisungen (CRUD komplett)');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Backend Week 8 KOMPLETT | Frontend offen');
+  console.log('   📋 Backend Week 12 Backend ✅ | Frontend folgt');
   console.log('   ========================================\n');
 });
 

@@ -103,6 +103,97 @@
 
 ### **2. Workflow & Freigabe**
 
+#### **Workflow-States Konfiguration:**
+```javascript
+{
+  category: 'workflow',
+  key: 'workflowStates',
+  options: 'customizable',
+  default: [
+    { name: 'draft', description: 'Entwurf', color: '#06b6d4', sequence: 1 },
+    { name: 'review', description: 'In Prüfung', color: '#f59e0b', sequence: 2 },
+    { name: 'approved', description: 'Geprüft', color: '#10b981', sequence: 3 },
+    { name: 'released', description: 'Freigegeben', color: '#10b981', sequence: 4, is_final: true },
+    { name: 'rejected', description: 'Abgelehnt', color: '#ef4444', sequence: 5, is_final: true },
+    { name: 'archived', description: 'Archiviert', color: '#6b7280', sequence: 6, is_final: true }
+  ],
+  description: 'Workflow-Status definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Workflow-Status verwalten           │
+├─────────────────────────────────────┤
+│ ✎ draft      - Entwurf       [cyan] │
+│ ✎ review     - In Prüfung  [orange] │
+│ ✎ approved   - Geprüft      [green] │
+│ ✎ released   - Freigegeben  [green] │
+│ ✎ rejected   - Abgelehnt      [red] │
+│ ✎ archived   - Archiviert    [gray] │
+│                                      │
+│ [+ Neuer Status]                     │
+└─────────────────────────────────────┘
+```
+
+#### **Workflow-Transitions Konfiguration:**
+```javascript
+{
+  category: 'workflow',
+  key: 'workflowTransitions',
+  options: 'customizable',
+  default: [
+    { from: 'draft', to: 'review', requiresReason: false },
+    { from: 'draft', to: 'archived', requiresReason: true },
+    { from: 'review', to: 'approved', requiresReason: false },
+    { from: 'review', to: 'rejected', requiresReason: true },
+    { from: 'review', to: 'draft', requiresReason: false },
+    { from: 'approved', to: 'released', requiresReason: false },
+    { from: 'approved', to: 'draft', requiresReason: false },
+    { from: 'rejected', to: 'draft', requiresReason: false },
+    { from: 'rejected', to: 'archived', requiresReason: true },
+    { from: 'released', to: 'archived', requiresReason: true }
+  ],
+  description: 'Erlaubte Status-Übergänge definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Workflow-Übergänge verwalten        │
+├─────────────────────────────────────┤
+│ draft → review        ☐ Grund nötig │
+│ draft → archived      ☑ Grund nötig │
+│ review → approved     ☐ Grund nötig │
+│ review → rejected     ☑ Grund nötig │
+│ review → draft        ☐ Grund nötig │
+│ approved → released   ☐ Grund nötig │
+│ ...                                  │
+│                                      │
+│ [+ Neue Transition]                  │
+└─────────────────────────────────────┘
+```
+
+#### **Standard-Nachrichten für Übergänge:**
+```javascript
+{
+  category: 'workflow',
+  key: 'defaultTransitionReasons',
+  options: 'customizable',
+  default: {
+    'draft_review': 'Zur Prüfung freigegeben',
+    'review_approved': 'Prüfung erfolgreich abgeschlossen',
+    'review_draft': 'Zurück in Bearbeitung',
+    'approved_released': 'Freigegeben für Produktion',
+    'approved_draft': 'Zurück zur Überarbeitung',
+    'rejected_draft': 'Zur erneuten Bearbeitung'
+  },
+  description: 'Standard-Begründungen für automatische Übergänge'
+}
+```
+
 #### **Freigabe-Prozess:**
 ```javascript
 {
@@ -165,6 +256,71 @@
   default: 80,
   description: 'Warnung bei X% Verschleiß'
 }
+```
+
+#### **Werkzeugtypen Verwaltung:**
+```javascript
+{
+  category: 'tools',
+  key: 'toolTypes',
+  options: 'customizable',
+  default: [
+    { name: 'Bohrer', icon: '🔩', color: 'blue' },
+    { name: 'Fräser', icon: '⚙️', color: 'green' },
+    { name: 'Gewinde', icon: '🔧', color: 'purple' },
+    { name: 'Reibahle', icon: '📐', color: 'orange' },
+    { name: 'Drehmeißel', icon: '🔪', color: 'red' },
+    { name: 'Sonstige', icon: '🔨', color: 'gray' }
+  ],
+  description: 'Werkzeugtypen definieren (Name, Icon, Farbe)'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Werkzeugtypen verwalten             │
+├─────────────────────────────────────┤
+│ 🔩 Bohrer        [Blau]      [✏️] │
+│ ⚙️ Fräser        [Grün]      [✏️] │
+│ 🔧 Gewinde       [Lila]      [✏️] │
+│ 📐 Reibahle      [Orange]    [✏️] │
+│ 🔪 Drehmeißel    [Rot]       [✏️] │
+│ 🔨 Sonstige      [Grau]      [✏️] │
+│                                      │
+│ [+ Neuer Werkzeugtyp]               │
+└─────────────────────────────────────┘
+
+Werkzeugtyp bearbeiten:
+┌─────────────────────────────────────┐
+│ Name:  [Senker____________]         │
+│ Icon:  [💎] (Emoji-Picker)          │
+│ Farbe: [🎨] Teal                    │
+│                                      │
+│ [Speichern] [Abbrechen]             │
+└─────────────────────────────────────┘
+```
+
+**Aktueller Stand (Woche 11):**
+- ✅ 6 Standard-Werkzeugtypen in ToolListForm hard-coded
+- ✅ Tool Type Icons in ToolListReadOnly und ToolListTable
+- ✅ Farbige Badges im UI (blue, green, purple, orange, red, gray)
+
+**Später konfigurierbar:**
+- 📋 Werkzeugtypen hinzufügen/bearbeiten/löschen
+- 📋 Custom Icons per Emoji
+- 📋 Custom Farben per Color Picker
+- 📋 Reihenfolge in Dropdown anpassen
+- 📋 Inaktive Typen ausblenden (statt löschen)
+
+**Verwendung:**
+```javascript
+// Aktuell (hard-coded):
+const TOOL_TYPES = ['Bohrer', 'Fräser', 'Gewinde', 'Reibahle', 'Drehmeißel', 'Sonstige'];
+
+// Später (aus DB):
+const toolTypes = await getSettings('tools', 'toolTypes');
+// => [{ name: 'Bohrer', icon: '🔩', color: 'blue', active: true }, ...]
 ```
 
 ---
@@ -322,7 +478,130 @@
 
 ---
 
-### **9. Audit & Compliance** (ISO/Luftfahrt)
+### **9. Maschinensteuerung & Nullpunkte** (Woche 10)
+
+#### **Steuerungsspezifische Nullpunkt-Konfiguration:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'zeroPointFormat',
+  options: 'per_control_type',
+  default: {
+    heidenhain: {
+      type: 'preset',
+      range: { min: 1, max: 99 },
+      label: 'Preset-Nummer',
+      example: '1-99'
+    },
+    siemens: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    fanuc: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    haas: {
+      type: 'wcs',
+      options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'],
+      label: 'WCS',
+      example: 'G54-G59'
+    },
+    mazatrol: {
+      type: 'custom',
+      label: 'Work Offset',
+      example: 'Mazatrol-spezifisch'
+    }
+  },
+  description: 'Nullpunkt-Formate pro Steuerungstyp definieren'
+}
+```
+
+**UI (später):**
+```
+┌─────────────────────────────────────┐
+│ Maschinensteuerung - Einstellungen  │
+├─────────────────────────────────────┤
+│ Heidenhain:                         │
+│   Format: ● Preset-Nummer           │
+│   Bereich: [1] bis [99]             │
+│                                      │
+│ Siemens:                            │
+│   Format: ● WCS (G54-G59)           │
+│   Verfügbare WCS:                   │
+│   ☑ G54  ☑ G55  ☑ G56              │
+│   ☑ G57  ☑ G58  ☑ G59              │
+│                                      │
+│ Fanuc:                              │
+│   Format: ● WCS (G54-G59)           │
+│   ...                                │
+│                                      │
+│ [Speichern] [Zurücksetzen]          │
+└─────────────────────────────────────┘
+```
+
+#### **Nullpunkt-Validierung:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'enforceZeroPointValidation',
+  options: [true, false],
+  default: true,
+  description: 'Nullpunkt-Eingabe validieren (z.B. Preset 1-99 für Heidenhain)?'
+}
+
+{
+  category: 'machine_controls',
+  key: 'requireZeroPointCoordinates',
+  options: ['never', 'optional', 'always'],
+  default: 'optional',
+  description: 'Sind X/Y/Z Koordinaten Pflicht?'
+}
+```
+
+#### **Standard-Nullpunkte pro Maschine:**
+```javascript
+{
+  category: 'machine_controls',
+  key: 'machineDefaultZeroPoints',
+  options: 'per_machine',
+  default: {
+    machine_id: 1,
+    default_preset: 1,        // für Heidenhain
+    default_wcs: 'G54',       // für Siemens/Fanuc
+    default_coordinates: {
+      x: 0,
+      y: 0,
+      z: 0
+    }
+  },
+  description: 'Standard-Nullpunkte pro Maschine vorkonfigurieren'
+}
+```
+
+**Aktueller Stand (Woche 10):**
+- ✅ Steuerungsspezifische Nullpunkte in Setup Sheets implementiert
+- ✅ Heidenhain: Preset 1-99
+- ✅ Siemens/Fanuc/Haas: WCS G54-G59
+- ✅ Mazatrol: Custom Format
+- ✅ Automatische Übernahme des control_type von Maschine
+- ✅ WCS Koordinaten (X, Y, Z)
+- ✅ Referenzpunkt-Beschreibung
+
+**Später konfigurierbar:**
+- 📋 Preset-Bereich anpassen (z.B. 1-299)
+- 📋 Zusätzliche WCS definieren (G59.1, G59.2, ...)
+- 📋 Custom Formate für weitere Steuerungen
+- 📋 Validierungsregeln pro Steuerung
+- 📋 Standard-Nullpunkte pro Maschine
+
+---
+
+### **10. Audit & Compliance** (ISO/Luftfahrt)
 
 #### **Audit-Log Level:**
 ```javascript
@@ -453,7 +732,7 @@ INSERT INTO user_settings (user_id, category, key, value) VALUES
 
 ---
 
-## 🔧 Aktueller Stand (Woche 7)
+## 🔧 Aktueller Stand (Woche 10)
 
 ### **Hard-coded Defaults:**
 ```javascript
@@ -476,6 +755,17 @@ module.exports = {
     APPROVAL_LEVELS: 1,
     AUTO_ARCHIVE_AFTER_DAYS: null
   },
+  MACHINE_CONTROLS: {
+    ZERO_POINT_VALIDATION: true,
+    REQUIRE_COORDINATES: 'optional',
+    CONTROL_TYPES: {
+      heidenhain: { type: 'preset', min: 1, max: 99 },
+      siemens: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      fanuc: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      haas: { type: 'wcs', options: ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'] },
+      mazatrol: { type: 'custom' }
+    }
+  }
   // ... später erweitern
 };
 ```
@@ -502,16 +792,18 @@ if (settings.commentRequired && !comment) {
 
 ## ✅ Zusammenfassung
 
-**Jetzt (Woche 7):**
+**Jetzt (Woche 10):**
 - ✅ Hard-coded Defaults verwenden
 - ✅ Sinnvolle Werte einbauen
 - ✅ Kommentare im Code: `// TODO: Settings - later configurable`
+- ✅ Steuerungsspezifische Nullpunkte in Setup Sheets implementiert
 
 **Später (Phase 5):**
 - 📋 DB-Tabellen erstellen
 - 📋 Settings Service bauen
 - 📋 Admin-UI bauen
 - 📋 Existing Code anpassen
+- 📋 Steuerungsspezifische Nullpunkte konfigurierbar machen
 
 **Priorität:** Low (funktioniert super ohne Settings-UI!)
 
@@ -538,4 +830,4 @@ if (settings.commentRequired && !comment) {
 ---
 
 **Status:** 📋 Geplant für später  
-**Letzte Aktualisierung:** 2025-11-05 (Woche 7)
+**Letzte Aktualisierung:** 2025-11-09 (Woche 11 - Werkzeugtypen hinzugefügt)

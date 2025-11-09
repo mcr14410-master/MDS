@@ -1,6 +1,7 @@
 // frontend/src/components/OperationCard.jsx
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import WorkflowStatusBadge from './WorkflowStatusBadge';
 
 export default function OperationCard({ operation, onEdit, onDelete, partId }) {
   const { hasPermission } = useAuthStore();
@@ -98,6 +99,16 @@ export default function OperationCard({ operation, onEdit, onDelete, partId }) {
           </p>
         </div>
       </div>
+
+      {/* Workflow Status */}
+      {operation.workflow_state && (
+        <div className="mb-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Status:</span>
+            <WorkflowStatusBadge status={operation.workflow_state} size="sm" />
+          </div>
+        </div>
+      )}
 
       {/* Description */}
       {operation.description && (
