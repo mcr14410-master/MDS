@@ -99,8 +99,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      version: '1.5.0',
-      phase: 'Phase 3, Week 9 - Workflow-System (Backend)',
+      version: '1.7.0',
+      phase: 'Phase 3, Week 11 - Tool Lists (Backend)',
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -322,13 +322,27 @@ app.listen(PORT, () => {
   console.log(`      GET    /api/workflow/:type/:id/history`);
   console.log(`      GET    /api/workflow/:type/:id/transitions`);
   console.log('   ========================================');
-  console.log('   🔄 Phase 3, Week 9 - Workflow-System');
+  console.log('   📋 Setup Sheets Endpoints (NEW Week 10):');
+  console.log(`      GET    /api/setup-sheets/:programId`);
+  console.log(`      POST   /api/setup-sheets`);
+  console.log(`      PUT    /api/setup-sheets/:id`);
+  console.log(`      DELETE /api/setup-sheets/:id`);
+  console.log(`      POST   /api/setup-sheets/:id/photos`);
+  console.log('   ========================================');
+  console.log('   🔧 Tool Lists Endpoints (NEW Week 11):');
+  console.log(`      GET    /api/programs/:programId/tools`);
+  console.log(`      POST   /api/programs/:programId/tools`);
+  console.log(`      PUT    /api/tools/:itemId`);
+  console.log(`      DELETE /api/tools/:itemId`);
+  console.log(`      POST   /api/programs/:programId/tools/reorder`);
+  console.log('   ========================================');
+  console.log('   🔄 Phase 3, Week 11 - Tool Lists Backend');
   console.log('   ✅ Auth + Parts + Operations + Programs + Machines');
   console.log('   ✅ File Upload + Versionierung + Rollback');
-  console.log('   ✅ Workflow-Status (6 Status, History-Tracking)');
-  console.log('   ✅ Status-Übergänge (draft→review→approved→released)');
+  console.log('   ✅ Workflow-Status + Setup Sheets + Tool Lists');
+  console.log('   ✅ Werkzeuglisten für NC-Programme (CRUD komplett)');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Backend Week 9 KOMPLETT | Frontend offen');
+  console.log('   📋 Backend Week 11 50% | Frontend folgt');
   console.log('   ========================================\n');
 });
 
