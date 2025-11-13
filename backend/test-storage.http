@@ -1,0 +1,531 @@
+### ==============================================
+### PHASE 1 - STORAGE SYSTEM API TESTS
+### ==============================================
+### Lagerorte (Locations) & Fächer (Compartments)
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMwNzE1NDcsImV4cCI6MTc2MzE1Nzk0N30.XCtowMkCwsuDZujYpXXLJIW5LvkP3XhAiVVQ2QcHJWw
+
+### ==============================================
+### 1. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==============================================
+### 2. STORAGE LOCATIONS - CREATE
+### ==============================================
+
+### CREATE - Werkzeugschrank WZ-01
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Werkzeugschrank WZ-01",
+  "code": "WZ-01",
+  "description": "Hauptschrank für Standardwerkzeuge (Fräser, Bohrer)",
+  "location_type": "cabinet",
+  "item_category": "tools",
+  "building": "Halle A",
+  "floor": "EG",
+  "room": "Fertigung",
+  "position_notes": "Links neben der DMG Mori DMU50",
+  "capacity_info": "8 Schubladen, je 60x40cm",
+  "access_restrictions": "Nur Schichtleiter und Werkzeugverantwortliche",
+  "responsible_user_id": 1,
+  "is_active": true,
+  "notes": "Regelmäßige Inventur jeden Monat"
+}
+
+### CREATE - Werkzeugschrank WZ-02
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Werkzeugschrank WZ-02",
+  "code": "WZ-02",
+  "description": "Schrank für Sonderwerkzeuge und Formeinsätze",
+  "location_type": "cabinet",
+  "item_category": "tools",
+  "building": "Halle A",
+  "floor": "EG",
+  "room": "Fertigung",
+  "capacity_info": "6 Schubladen",
+  "is_active": true
+}
+
+### CREATE - Vorrichtungsregal V-12
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Vorrichtungsregal V-12",
+  "code": "V-12",
+  "description": "Regal für Spannvorrichtungen und Aufnahmen",
+  "location_type": "shelf_unit",
+  "item_category": "fixtures",
+  "building": "Halle A",
+  "floor": "EG",
+  "room": "Fertigung",
+  "position_notes": "Südwand, gegenüber von Mazak",
+  "capacity_info": "5 Fachböden, H 200cm x B 180cm",
+  "is_active": true,
+  "notes": "Schwere Vorrichtungen unten lagern"
+}
+
+### CREATE - Messmittelraum QS
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Messmittelraum QS",
+  "code": "MM-QS",
+  "description": "Klimatisierter Raum für Messgeräte und Prüfmittel",
+  "location_type": "room",
+  "item_category": "measuring_equipment",
+  "building": "Halle A",
+  "floor": "1. OG",
+  "room": "Qualitätssicherung",
+  "access_restrictions": "Nur QS-Personal",
+  "capacity_info": "Klimatisiert auf 20°C ±1°C",
+  "responsible_user_id": 1,
+  "is_active": true,
+  "notes": "Messgeräte nach Kalibrierung hier lagern"
+}
+
+### CREATE - Verbrauchsmaterial Lager
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Verbrauchsmaterial Lager",
+  "code": "VM-01",
+  "description": "Regal für Kühlschmierstoffe, Reiniger, Schleifmittel",
+  "location_type": "shelf_unit",
+  "item_category": "consumables",
+  "building": "Halle A",
+  "floor": "EG",
+  "room": "Lager",
+  "is_active": true
+}
+
+### ==============================================
+### 3. STORAGE LOCATIONS - READ
+### ==============================================
+
+### GET All Locations
+GET {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+
+### GET Locations - Filter by Type (cabinet)
+GET {{baseUrl}}/api/storage/locations?location_type=cabinet
+Authorization: Bearer {{token}}
+
+### GET Locations - Filter by Category (tools)
+GET {{baseUrl}}/api/storage/locations?item_category=tools
+Authorization: Bearer {{token}}
+
+### GET Locations - Filter by Active
+GET {{baseUrl}}/api/storage/locations?is_active=true
+Authorization: Bearer {{token}}
+
+### GET Locations - Search by Name
+GET {{baseUrl}}/api/storage/locations?search=Werkzeug
+Authorization: Bearer {{token}}
+
+### GET Locations - Filter by Building
+GET {{baseUrl}}/api/storage/locations?building=Halle A
+Authorization: Bearer {{token}}
+
+### GET Single Location by ID (ID 1)
+GET {{baseUrl}}/api/storage/locations/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 4. STORAGE LOCATIONS - UPDATE
+### ==============================================
+
+### UPDATE Location - Change Description
+PUT {{baseUrl}}/api/storage/locations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Hauptschrank für Standardwerkzeuge (Fräser, Bohrer, Gewindebohrer) - UPDATED",
+  "notes": "Inventur durchgeführt am 15.11.2024"
+}
+
+### UPDATE Location - Set Inactive
+PUT {{baseUrl}}/api/storage/locations/5
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### ==============================================
+### 5. STORAGE COMPARTMENTS - CREATE
+### ==============================================
+
+### CREATE Compartments for WZ-01 (ID 1)
+### Schublade 1
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 1,
+  "name": "Schublade 1",
+  "code": "S1",
+  "description": "Fräser Ø3-10mm",
+  "compartment_type": "drawer",
+  "row_number": 1,
+  "sequence": 10,
+  "dimensions": "60x40x10cm",
+  "is_active": true
+}
+
+### Schublade 2
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 1,
+  "name": "Schublade 2",
+  "code": "S2",
+  "description": "Fräser Ø12-20mm",
+  "compartment_type": "drawer",
+  "row_number": 2,
+  "sequence": 20,
+  "dimensions": "60x40x10cm",
+  "is_active": true
+}
+
+### Schublade 3
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 1,
+  "name": "Schublade 3",
+  "code": "S3",
+  "description": "Bohrer Ø1-13mm",
+  "compartment_type": "drawer",
+  "row_number": 3,
+  "sequence": 30,
+  "dimensions": "60x40x10cm",
+  "is_active": true
+}
+
+### Schublade 4
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 1,
+  "name": "Schublade 4",
+  "code": "S4",
+  "description": "Gewindebohrer M3-M16",
+  "compartment_type": "drawer",
+  "row_number": 4,
+  "sequence": 40,
+  "dimensions": "60x40x10cm",
+  "is_active": true
+}
+
+### CREATE Compartments for V-12 (Vorrichtungsregal, ID 3)
+### Fach A1
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 3,
+  "name": "Fach A1",
+  "code": "A1",
+  "description": "Schwere Schraubstöcke und Vorrichtungen",
+  "compartment_type": "compartment",
+  "row_number": 1,
+  "column_number": 1,
+  "sequence": 10,
+  "dimensions": "180x60x40cm",
+  "capacity_info": "Max. 100kg",
+  "is_active": true
+}
+
+### Fach A2
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 3,
+  "name": "Fach A2",
+  "code": "A2",
+  "description": "Nullpunktspannsystem Aufnahmen",
+  "compartment_type": "compartment",
+  "row_number": 2,
+  "column_number": 1,
+  "sequence": 20,
+  "dimensions": "180x60x40cm",
+  "is_active": true
+}
+
+### Fach B1
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 3,
+  "name": "Fach B1",
+  "code": "B1",
+  "description": "Drehmomentverlängerungen und Adapter",
+  "compartment_type": "compartment",
+  "row_number": 3,
+  "column_number": 1,
+  "sequence": 30,
+  "dimensions": "180x60x40cm",
+  "is_active": true
+}
+
+### CREATE Compartments for Messmittelraum QS (ID 4)
+### Bereich Lehren
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 4,
+  "name": "Bereich Lehren",
+  "code": "LEHREN",
+  "description": "Messlehren, Grenzlehren, Gewindelehren",
+  "compartment_type": "section",
+  "sequence": 10,
+  "is_active": true
+}
+
+### Bereich Messgeräte
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 4,
+  "name": "Bereich Messgeräte",
+  "code": "MESSGER",
+  "description": "Messschieber, Mikrometerschrauben, Messuhren",
+  "compartment_type": "section",
+  "sequence": 20,
+  "is_active": true
+}
+
+### ==============================================
+### 6. STORAGE COMPARTMENTS - READ
+### ==============================================
+
+### GET All Compartments
+GET {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+
+### GET Compartments for Location 1 (WZ-01)
+GET {{baseUrl}}/api/storage/locations/1/compartments
+Authorization: Bearer {{token}}
+
+### GET Compartments for Location 3 (V-12)
+GET {{baseUrl}}/api/storage/locations/3/compartments
+Authorization: Bearer {{token}}
+
+### GET Compartments - Filter by Type (drawer)
+GET {{baseUrl}}/api/storage/compartments?compartment_type=drawer
+Authorization: Bearer {{token}}
+
+### GET Single Compartment by ID
+GET {{baseUrl}}/api/storage/compartments/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 7. STORAGE COMPARTMENTS - UPDATE
+### ==============================================
+
+### UPDATE Compartment - Change Description
+PUT {{baseUrl}}/api/storage/compartments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Fräser Ø3-10mm - VHM und HSS",
+  "notes": "Nachgeschliffene Fräser separat lagern"
+}
+
+### UPDATE Compartment - Change Sequence
+PUT {{baseUrl}}/api/storage/compartments/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sequence": 25
+}
+
+### ==============================================
+### 8. EDGE CASES & ERROR HANDLING
+### ==============================================
+
+### ERROR - Create Location with Invalid Type
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Invalid Type",
+  "location_type": "invalid_type",
+  "item_category": "tools"
+}
+
+### ERROR - Create Location with Invalid Category
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Invalid Category",
+  "location_type": "cabinet",
+  "item_category": "invalid_category"
+}
+
+### ERROR - Create Location with Duplicate Name
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Werkzeugschrank WZ-01",
+  "location_type": "cabinet",
+  "item_category": "tools"
+}
+
+### ERROR - Create Compartment with Non-Existing Location
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 999,
+  "name": "Test Compartment",
+  "compartment_type": "drawer"
+}
+
+### ERROR - Create Compartment with Duplicate Name in Same Location
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 1,
+  "name": "Schublade 1",
+  "compartment_type": "drawer"
+}
+
+### ERROR - Get Non-Existing Location
+GET {{baseUrl}}/api/storage/locations/999
+Authorization: Bearer {{token}}
+
+### ERROR - Get Non-Existing Compartment
+GET {{baseUrl}}/api/storage/compartments/999
+Authorization: Bearer {{token}}
+
+### ERROR - Update Non-Existing Location
+PUT {{baseUrl}}/api/storage/locations/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### ERROR - Update Non-Existing Compartment
+PUT {{baseUrl}}/api/storage/compartments/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### ==============================================
+### 9. STORAGE LOCATIONS - DELETE
+### ==============================================
+
+### DELETE Compartment (ID 10 - if exists)
+DELETE {{baseUrl}}/api/storage/compartments/10
+Authorization: Bearer {{token}}
+
+### DELETE Location (will CASCADE delete compartments)
+### ⚠️ VORSICHT: Löscht auch alle Compartments!
+# DELETE {{baseUrl}}/api/storage/locations/5
+# Authorization: Bearer {{token}}
+
+### ERROR - Delete Non-Existing Location
+DELETE {{baseUrl}}/api/storage/locations/999
+Authorization: Bearer {{token}}
+
+### ERROR - Delete Non-Existing Compartment
+DELETE {{baseUrl}}/api/storage/compartments/999
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 10. COMBINED SCENARIOS
+### ==============================================
+
+### SCENARIO 1: Create Location with Immediate Compartments
+### Step 1: Create Location
+POST {{baseUrl}}/api/storage/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Werkzeugschrank WZ-03",
+  "code": "WZ-03",
+  "location_type": "cabinet",
+  "item_category": "tools",
+  "building": "Halle B",
+  "floor": "EG",
+  "room": "Montage",
+  "is_active": true
+}
+
+### Step 2: Add Compartments to WZ-03 (use ID from response above)
+### Replace location_id with actual ID
+POST {{baseUrl}}/api/storage/compartments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "location_id": 7,
+  "name": "Schublade 1",
+  "compartment_type": "drawer",
+  "sequence": 10
+}
+
+### SCENARIO 2: Get Location with all Compartments
+GET {{baseUrl}}/api/storage/locations/1/compartments
+Authorization: Bearer {{token}}
+
+### ==============================================
+### END OF TESTS
+### ==============================================

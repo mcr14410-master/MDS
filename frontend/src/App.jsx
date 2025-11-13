@@ -12,6 +12,7 @@ import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
 import OperationDetailPage from './pages/OperationDetailPage';
 import MachinesPage from './pages/MachinesPage';
+import StorageLocationsPage from './pages/StorageLocationsPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -102,13 +103,23 @@ function App() {
           />
 
           {/* Machines Routes */}
-          <Route 
-            path="/machines" 
+          <Route
+            path="/machines"
             element={
               <ProtectedRoute requiredPermission="machine.read">
                 <MachinesPage />
               </ProtectedRoute>
-            } 
+            }
+          />
+
+          {/* Storage Routes */}
+          <Route
+            path="/storage"
+            element={
+              <ProtectedRoute requiredPermission="storage.view">
+                <StorageLocationsPage />
+              </ProtectedRoute>
+            }
           />
         </Route>
 
