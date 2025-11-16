@@ -1,0 +1,392 @@
+###############################################################################
+# Tool Documents API Tests
+# Tests document upload, download, and management for tools
+###############################################################################
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMyNTI3NzEsImV4cCI6MTc2MzMzOTE3MX0.PCi-2SkWnmfyjNpmSFHqpeGnpTl5R5G2tnQjSyoZPUI
+@toolId = 1
+@documentId = 1
+
+###############################################################################
+# AUTHENTICATION
+###############################################################################
+
+### Login as Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###############################################################################
+# DOCUMENT OPERATIONS - FOR SPECIFIC TOOL
+###############################################################################
+
+### Get all documents for a tool
+GET {{baseUrl}}/tools/{{toolId}}/documents
+Authorization: Bearer {{token}}
+
+### Upload a document (datasheet)
+# Note: Replace with actual file path
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+datasheet
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Technical datasheet for tool specifications
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-datasheet.pdf"
+Content-Type: application/pdf
+
+< C:\Users\Master\Downloads\RA_Auftragsbestätigung.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload a drawing
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+drawing
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Technical drawing with dimensions
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="tool-drawing.dxf"
+Content-Type: application/dxf
+
+< ./test-files/tool-drawing.dxf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload a certificate
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+certificate
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Quality certificate from manufacturer
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="certificate.pdf"
+Content-Type: application/pdf
+
+< C:\Users\Master\Downloads\RA_Auftragsbestätigung.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload a manual
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+manual
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Operating manual
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="manual.pdf"
+Content-Type: application/pdf
+
+< C:\Users\Master\Downloads\RA_Auftragsbestätigung.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload a photo
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+photo
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Photo of tool
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="tool-photo.jpg"
+Content-Type: image/jpeg
+
+< C:\Users\Master\Downloads\RA_Auftragsbestätigung.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload other document
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+other
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Additional notes and specifications
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="notes.txt"
+Content-Type: text/plain
+
+< ./test-files/notes.txt
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Get document statistics for a tool
+GET {{baseUrl}}/tools/{{toolId}}/documents/stats
+Authorization: Bearer {{token}}
+
+###############################################################################
+# DOCUMENT OPERATIONS - SPECIFIC DOCUMENT
+###############################################################################
+
+### Get single document by ID
+GET {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+### Download document
+GET {{baseUrl}}/tool-documents/{{documentId}}/download
+Authorization: Bearer {{token}}
+
+### Update document metadata
+PUT {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "document_type": "datasheet",
+  "description": "Updated description - Technical specifications v2"
+}
+
+### Delete document
+DELETE {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+### Set document as primary (main document)
+PUT {{baseUrl}}/tool-documents/{{documentId}}/set-primary
+Authorization: Bearer {{token}}
+
+###############################################################################
+# PRIMARY DOCUMENT TESTS
+###############################################################################
+
+### Scenario: Mark first document as primary
+# 1. Upload multiple documents for a tool
+# 2. Set document 1 as primary
+PUT {{baseUrl}}/tool-documents/1/set-primary
+Authorization: Bearer {{token}}
+
+### Verify: Get all documents - primary should be first
+GET {{baseUrl}}/tools/{{toolId}}/documents
+Authorization: Bearer {{token}}
+
+### Scenario: Change primary document
+# Set a different document as primary (should automatically unset the old one)
+PUT {{baseUrl}}/tool-documents/2/set-primary
+Authorization: Bearer {{token}}
+
+### Verify: Get all documents - document 2 should now be primary
+GET {{baseUrl}}/tools/{{toolId}}/documents
+Authorization: Bearer {{token}}
+
+### Error case: Set non-existent document as primary
+PUT {{baseUrl}}/tool-documents/99999/set-primary
+Authorization: Bearer {{token}}
+
+### Error case: Set primary without permission
+# Login as user without tools.documents.upload permission first
+PUT {{baseUrl}}/tool-documents/{{documentId}}/set-primary
+Authorization: Bearer {{token}}
+
+###############################################################################
+# ERROR CASES
+###############################################################################
+
+### Upload without authentication
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Content-Type: multipart/form-data
+
+### Upload without file
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+datasheet
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload with invalid document_type
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+invalid_type
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test-files/test.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload for non-existent tool
+POST {{baseUrl}}/tools/99999/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="document_type"
+
+datasheet
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test-files/test.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Get non-existent document
+GET {{baseUrl}}/tool-documents/99999
+Authorization: Bearer {{token}}
+
+### Download non-existent document
+GET {{baseUrl}}/tool-documents/99999/download
+Authorization: Bearer {{token}}
+
+### Update non-existent document
+PUT {{baseUrl}}/tool-documents/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+### Delete non-existent document
+DELETE {{baseUrl}}/tool-documents/99999
+Authorization: Bearer {{token}}
+
+###############################################################################
+# VALIDATION TESTS
+###############################################################################
+
+### Update with invalid document_type
+PUT {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "document_type": "invalid_type"
+}
+
+### Update with no fields
+PUT {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+###############################################################################
+# PERMISSION TESTS
+###############################################################################
+
+### Upload without upload permission (requires tools.documents.upload)
+# Login as user without permission first
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+### Delete without delete permission (requires tools.documents.delete)
+DELETE {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# FILE TYPE TESTS
+###############################################################################
+
+### Upload PDF
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+### Upload Image (JPG)
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+### Upload CAD file (DXF)
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+### Upload Archive (ZIP)
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+### Upload invalid file type (should fail)
+POST {{baseUrl}}/tools/{{toolId}}/documents/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+###############################################################################
+# COMPREHENSIVE WORKFLOW TEST
+###############################################################################
+
+### 1. Create test tool (use tool-master API)
+# POST /api/tool-master
+
+### 2. Upload multiple documents
+# Multiple POST requests to upload different document types
+
+### 3. Get all documents for tool
+GET {{baseUrl}}/tools/{{toolId}}/documents
+Authorization: Bearer {{token}}
+
+### 4. Get statistics
+GET {{baseUrl}}/tools/{{toolId}}/documents/stats
+Authorization: Bearer {{token}}
+
+### 5. Download a document
+GET {{baseUrl}}/tool-documents/{{documentId}}/download
+Authorization: Bearer {{token}}
+
+### 6. Update document metadata
+PUT {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Updated description"
+}
+
+### 7. Delete a document
+DELETE {{baseUrl}}/tool-documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+### 8. Verify deletion - should return empty or reduced list
+GET {{baseUrl}}/tools/{{toolId}}/documents
+Authorization: Bearer {{token}}

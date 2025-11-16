@@ -194,75 +194,6 @@ exports.up = (pgm) => {
     }
   });
 
-  // Einrichteblätter-Tabelle
-  pgm.createTable('setup_sheets', {
-    id: 'id',
-    operation_id: {
-      type: 'integer',
-      notNull: true,
-      references: 'operations',
-      onDelete: 'CASCADE'
-    },
-    title: { type: 'varchar(255)', notNull: true },
-    fixture_description: { type: 'text' },
-    zero_point: { type: 'varchar(100)' },
-    tool_list: { type: 'text' },
-    special_notes: { type: 'text' },
-    setup_instructions: { type: 'text' },
-    safety_notes: { type: 'text' },
-    estimated_setup_time: { type: 'integer' },
-    workflow_state_id: {
-      type: 'integer',
-      notNull: true,
-      references: 'workflow_states',
-      onDelete: 'RESTRICT'
-    },
-    created_by: {
-      type: 'integer',
-      references: 'users',
-      onDelete: 'SET NULL'
-    },
-    created_at: {
-      type: 'timestamp',
-      notNull: true,
-      default: pgm.func('current_timestamp')
-    },
-    updated_at: {
-      type: 'timestamp',
-      notNull: true,
-      default: pgm.func('current_timestamp')
-    }
-  });
-
-  // Aufspannfotos-Tabelle
-  pgm.createTable('setup_photos', {
-    id: 'id',
-    operation_id: {
-      type: 'integer',
-      notNull: true,
-      references: 'operations',
-      onDelete: 'CASCADE'
-    },
-    filename: { type: 'varchar(255)', notNull: true },
-    filepath: { type: 'varchar(500)', notNull: true },
-    filesize: { type: 'integer' },
-    mime_type: { type: 'varchar(100)' },
-    title: { type: 'varchar(255)' },
-    description: { type: 'text' },
-    view_angle: { type: 'varchar(50)' },
-    sequence: { type: 'integer', default: 0 },
-    uploaded_by: {
-      type: 'integer',
-      references: 'users',
-      onDelete: 'SET NULL'
-    },
-    created_at: {
-      type: 'timestamp',
-      notNull: true,
-      default: pgm.func('current_timestamp')
-    }
-  });
-
   // Indizes
   pgm.createIndex('machines', 'name');
   pgm.createIndex('machines', 'machine_type');
@@ -274,9 +205,6 @@ exports.up = (pgm) => {
   pgm.createIndex('program_revisions', ['program_id', 'version_major', 'version_minor', 'version_patch']);
   pgm.createIndex('tools', 'tool_number');
   pgm.createIndex('tools', 'tool_type');
-  pgm.createIndex('setup_sheets', 'operation_id');
-  pgm.createIndex('setup_photos', 'operation_id');
-  pgm.createIndex('setup_photos', ['operation_id', 'sequence']);
 
   // Standard Workflow-Status einfügen
   pgm.sql(`
@@ -291,8 +219,6 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable('setup_photos');
-  pgm.dropTable('setup_sheets');
   pgm.dropTable('tools');
   
   // Foreign Key zuerst entfernen

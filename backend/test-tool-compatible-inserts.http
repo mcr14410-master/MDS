@@ -1,0 +1,465 @@
+###############################################################################
+# Tool Compatible Inserts API Tests
+# Tests compatibility mapping between tools and inserts (Wendeschneidplatten)
+###############################################################################
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMxNjU2NTMsImV4cCI6MTc2MzI1MjA1M30.Am0ytKmefvzFlYBu64Xa465rDXMkpuSJCSQ5fDTEZfQ
+@toolId = 1
+@insertId = 2
+@compatibilityId = 1
+
+###############################################################################
+# AUTHENTICATION
+###############################################################################
+
+### Login as Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###############################################################################
+# COMPATIBLE INSERTS - FOR SPECIFIC TOOL
+###############################################################################
+
+### Get all compatible inserts for a tool
+GET {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+
+### Add a preferred compatible insert
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "is_preferred": true,
+  "quantity_per_tool": 4,
+  "notes": "Main insert for this tool - requires 4 pieces"
+}
+
+### Add an alternative compatible insert
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 3,
+  "is_preferred": false,
+  "quantity_per_tool": 4,
+  "notes": "Alternative insert - same geometry, different coating"
+}
+
+### Add another alternative insert
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 4,
+  "is_preferred": false,
+  "quantity_per_tool": 2,
+  "notes": "For roughing operations"
+}
+
+### Add insert with minimal data
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 5
+}
+
+### Get available inserts (not yet linked to this tool)
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts
+Authorization: Bearer {{token}}
+
+### Get available inserts with search
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts?search=WNMG
+Authorization: Bearer {{token}}
+
+### Get available active inserts only
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts?is_active=true
+Authorization: Bearer {{token}}
+
+### Get available inserts with combined filters
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts?search=WNMG&is_active=true
+Authorization: Bearer {{token}}
+
+###############################################################################
+# COMPATIBLE TOOLS - FOR SPECIFIC INSERT
+###############################################################################
+
+### Get all tools that use a specific insert
+GET {{baseUrl}}/inserts/{{insertId}}/compatible-tools
+Authorization: Bearer {{token}}
+
+###############################################################################
+# COMPATIBILITY RECORD OPERATIONS
+###############################################################################
+
+### Get single compatibility record by ID
+GET {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+
+### Update compatibility record (mark as preferred)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": true,
+  "quantity_per_tool": 6,
+  "notes": "Updated to preferred - requires 6 pieces now"
+}
+
+### Update compatibility record (change quantity)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity_per_tool": 8
+}
+
+### Update compatibility record (change notes)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Special setup required for this insert"
+}
+
+### Update compatibility record (mark as non-preferred)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": false
+}
+
+### Delete compatibility record
+DELETE {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# ERROR CASES
+###############################################################################
+
+### Add compatible insert without authentication
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2
+}
+
+### Add compatible insert without insert_tool_master_id
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": true
+}
+
+### Add self-reference (tool as its own insert)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": {{toolId}}
+}
+
+### Add non-existent insert
+POST {{baseUrl}}/tools/99999/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 99999
+}
+
+### Add duplicate compatible insert (should fail or restore)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "is_preferred": true
+}
+
+### Add non-insert item type (should fail)
+# First create a tool with item_type = 'tool', then try to add it
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 1,
+  "notes": "This should fail - item_type must be 'insert'"
+}
+
+### Get non-existent compatibility record
+GET {{baseUrl}}/tool-compatible-inserts/99999
+Authorization: Bearer {{token}}
+
+### Update non-existent compatibility record
+PUT {{baseUrl}}/tool-compatible-inserts/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": true
+}
+
+### Delete non-existent compatibility record
+DELETE {{baseUrl}}/tool-compatible-inserts/99999
+Authorization: Bearer {{token}}
+
+### Get compatible inserts for non-existent tool
+GET {{baseUrl}}/tools/99999/compatible-inserts
+Authorization: Bearer {{token}}
+
+### Get compatible tools for non-existent insert
+GET {{baseUrl}}/inserts/99999/compatible-tools
+Authorization: Bearer {{token}}
+
+###############################################################################
+# VALIDATION TESTS
+###############################################################################
+
+### Add insert with invalid quantity (0)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "quantity_per_tool": 0
+}
+
+### Add insert with invalid quantity (negative)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "quantity_per_tool": -5
+}
+
+### Add insert with excessive quantity (over 1000)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "quantity_per_tool": 1001
+}
+
+### Update with no fields
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Update with invalid quantity
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity_per_tool": -1
+}
+
+###############################################################################
+# PERMISSION TESTS
+###############################################################################
+
+### Add insert without edit permission (requires tools.edit)
+# Login as user without permission first
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2
+}
+
+### Update without edit permission
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": true
+}
+
+### Delete without delete permission (requires tools.delete)
+DELETE {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# COMPREHENSIVE WORKFLOW TEST
+###############################################################################
+
+### 1. Create test tool (item_type = 'tool')
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "TEST-TOOL-001",
+  "tool_name": "Test Milling Cutter",
+  "item_type": "tool",
+  "tool_category": "standard",
+  "uses_inserts": true,
+  "is_active": true
+}
+
+### 2. Create test inserts (item_type = 'insert')
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tool_number": "WNMG080408-PM",
+  "tool_name": "WNMG Insert Carbide",
+  "item_type": "insert",
+  "tool_category": "standard",
+  "manufacturer": "Sandvik",
+  "is_active": true
+}
+
+### 3. Get available inserts before linking
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts
+Authorization: Bearer {{token}}
+
+### 4. Add preferred insert
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "is_preferred": true,
+  "quantity_per_tool": 4,
+  "notes": "Preferred insert for general machining"
+}
+
+### 5. Add alternative inserts
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 3,
+  "is_preferred": false,
+  "quantity_per_tool": 4,
+  "notes": "Alternative for harder materials"
+}
+
+### 6. Get all compatible inserts (should show preferred first)
+GET {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+
+### 7. Get tools using specific insert
+GET {{baseUrl}}/inserts/2/compatible-tools
+Authorization: Bearer {{token}}
+
+### 8. Get available inserts (should exclude already linked ones)
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts
+Authorization: Bearer {{token}}
+
+### 9. Update compatibility (change quantity)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity_per_tool": 6,
+  "notes": "Changed to 6 pieces after testing"
+}
+
+### 10. Update compatibility (swap preferred)
+PUT {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_preferred": false
+}
+
+### 11. Delete a compatibility
+DELETE {{baseUrl}}/tool-compatible-inserts/{{compatibilityId}}
+Authorization: Bearer {{token}}
+
+### 12. Verify deletion
+GET {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+
+### 13. Re-add deleted insert (should restore or create new)
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "is_preferred": true,
+  "quantity_per_tool": 4
+}
+
+###############################################################################
+# COMPLEX SCENARIOS
+###############################################################################
+
+### Multiple preferred inserts (allowed for different positions)
+# Add first preferred
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 2,
+  "is_preferred": true,
+  "quantity_per_tool": 2,
+  "notes": "Position 1 & 2"
+}
+
+# Add second preferred
+POST {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "insert_tool_master_id": 3,
+  "is_preferred": true,
+  "quantity_per_tool": 2,
+  "notes": "Position 3 & 4"
+}
+
+### Get inserts with stock information
+# The API should return stock quantities for each insert
+GET {{baseUrl}}/tools/{{toolId}}/compatible-inserts
+Authorization: Bearer {{token}}
+
+### Search available inserts by manufacturer
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts?search=Sandvik
+Authorization: Bearer {{token}}
+
+### Get inactive inserts
+GET {{baseUrl}}/tools/{{toolId}}/available-inserts?is_active=false
+Authorization: Bearer {{token}}

@@ -1,0 +1,395 @@
+###############################################################################
+# MDS - Tool Master API Tests
+# Batch 2.2 - Tool Master Basis
+###############################################################################
+
+### SETUP: Variables
+@baseUrl = http://localhost:5000/api
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMxNTA5MTksImV4cCI6MTc2MzIzNzMxOX0.y4WKfKNfFdfvJmqOoIWRtXUuavzyhvvdLSmDrHsZ7U8
+
+### AUTH: Login to get token
+# Run this first to get a valid token
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###############################################################################
+# 1. GET ALL TOOLS
+###############################################################################
+
+### 1.1 Get all tools (no filters)
+GET {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+
+### 1.2 Get all tools with pagination
+GET {{baseUrl}}/tool-master?limit=10&offset=0
+Authorization: Bearer {{authToken}}
+
+### 1.3 Get all tools - filter by category (Milling)
+GET {{baseUrl}}/tool-master?category_id=1
+Authorization: Bearer {{authToken}}
+
+### 1.4 Get all tools - filter by item_type (insert)
+GET {{baseUrl}}/tool-master?item_type=insert
+Authorization: Bearer {{authToken}}
+
+### 1.5 Get all tools - filter by tool_category (special)
+GET {{baseUrl}}/tool-master?tool_category=special
+Authorization: Bearer {{authToken}}
+
+### 1.6 Get all tools - search by name (Fräser)
+GET {{baseUrl}}/tool-master?search=Fräser
+Authorization: Bearer {{authToken}}
+
+### 1.7 Get all tools - search by tool_number (T001)
+GET {{baseUrl}}/tool-master?search=T001
+Authorization: Bearer {{authToken}}
+
+### 1.8 Get all tools - filter by manufacturer (Sandvik)
+GET {{baseUrl}}/tool-master?manufacturer=Sandvik
+Authorization: Bearer {{authToken}}
+
+### 1.9 Get all tools - active only
+GET {{baseUrl}}/tool-master?is_active=true
+Authorization: Bearer {{authToken}}
+
+### 1.10 Get all tools - sorted by cost descending
+GET {{baseUrl}}/tool-master?sort_by=cost&sort_order=DESC
+Authorization: Bearer {{authToken}}
+
+### 1.11 Get all tools - multiple filters combined
+GET {{baseUrl}}/tool-master?category_id=1&item_type=tool&tool_category=standard&is_active=true
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# 2. GET SINGLE TOOL
+###############################################################################
+
+### 2.1 Get tool by ID (replace 1 with actual ID)
+GET {{baseUrl}}/tool-master/1
+Authorization: Bearer {{authToken}}
+
+### 2.2 Get tool by ID (non-existent - should return 404)
+GET {{baseUrl}}/tool-master/9999
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# 3. GET TOOLS BY CATEGORY
+###############################################################################
+
+### 3.1 Get tools by category (Milling - category_id=1)
+GET {{baseUrl}}/tool-master/category/1
+Authorization: Bearer {{authToken}}
+
+### 3.2 Get tools by category (Drilling - category_id=2)
+GET {{baseUrl}}/tool-master/category/2
+Authorization: Bearer {{authToken}}
+
+### 3.3 Get tools by category (Inserts - category_id=7)
+GET {{baseUrl}}/tool-master/category/7
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# 4. CREATE TOOL - Standard Milling Tool
+###############################################################################
+
+### 4.1 Create standard milling tool (HSS-E End Mill)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T010",
+  "tool_name": "Schaftfräser D12 Z4 HSS-E TiN",
+  "category_id": 1,
+  "subcategory_id": 1,
+  "item_type": "tool",
+  "tool_category": "standard",
+  "diameter": 12.0,
+  "length": 110.0,
+  "flutes": 4,
+  "material": "HSS-E",
+  "coating": "TiN",
+  "manufacturer": "Garant",
+  "manufacturer_part_number": "GAR-12-HSS-TiN",
+  "cost": 52.80,
+  "uses_inserts": false,
+  "is_active": true,
+  "notes": "Standard Schaftfräser für Stahl und Aluminium"
+}
+
+###############################################################################
+# 5. CREATE TOOL - Carbide End Mill with Custom Fields
+###############################################################################
+
+### 5.1 Create carbide end mill with custom fields
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T020",
+  "tool_name": "VHM-Fräser D8 Z3 AlTiN Hochvorschub",
+  "category_id": 1,
+  "subcategory_id": 1,
+  "item_type": "tool",
+  "tool_category": "standard",
+  "diameter": 8.0,
+  "length": 75.0,
+  "flutes": 3,
+  "material": "Carbide",
+  "coating": "AlTiN",
+  "manufacturer": "Kennametal",
+  "manufacturer_part_number": "KENN-HF-8-3",
+  "shop_url": "https://www.kennametal.com/example",
+  "cost": 89.50,
+  "uses_inserts": false,
+  "custom_fields": {
+    "corner_radius": 0.3,
+    "helix_angle": 38,
+    "high_feed": true,
+    "max_ap": 1.5,
+    "max_ae": 8.0
+  },
+  "is_active": true
+}
+
+###############################################################################
+# 6. CREATE TOOL - Insert (Wendeschneidplatte)
+###############################################################################
+
+### 6.1 Create insert (CNMG)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "I010",
+  "tool_name": "CNMG 120408 TiN für Stahl",
+  "category_id": 7,
+  "subcategory_id": 18,
+  "item_type": "insert",
+  "tool_category": "standard",
+  "diameter": 12.7,
+  "material": "Carbide",
+  "coating": "TiN",
+  "substrate_grade": "P25",
+  "manufacturer": "Sandvik",
+  "manufacturer_part_number": "CNMG120408-TN",
+  "cost": 6.90,
+  "custom_fields": {
+    "insert_shape": "CNMG",
+    "insert_size": "120408",
+    "nose_radius": 0.8,
+    "cutting_edges": 4,
+    "application": "Turning Steel"
+  },
+  "is_active": true
+}
+
+###############################################################################
+# 7. CREATE TOOL - Special Tool
+###############################################################################
+
+### 7.1 Create special custom form cutter
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T200",
+  "tool_name": "Spezial-Nutenfräser Profil A-2024",
+  "category_id": 1,
+  "subcategory_id": 5,
+  "item_type": "tool",
+  "tool_category": "special",
+  "diameter": 18.0,
+  "length": 140.0,
+  "flutes": 6,
+  "material": "Carbide",
+  "coating": "TiAlN",
+  "manufacturer": "Sonderanfertigung",
+  "manufacturer_part_number": "CUSTOM-SLOT-A2024",
+  "cost": 680.00,
+  "uses_inserts": false,
+  "custom_fields": {
+    "special_profile": "T-Nut DIN 650",
+    "drawing_number": "ZN-2024-008",
+    "project": "Projekt Alpha"
+  },
+  "notes": "Sonderwerkzeug für Projekt Alpha, siehe Zeichnung ZN-2024-008",
+  "is_active": true
+}
+
+###############################################################################
+# 8. CREATE TOOL - Drilling Tool
+###############################################################################
+
+### 8.1 Create twist drill
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T030",
+  "tool_name": "Spiralbohrer D6.8 HSS-Co DIN338",
+  "category_id": 2,
+  "subcategory_id": 7,
+  "item_type": "tool",
+  "tool_category": "standard",
+  "diameter": 6.8,
+  "length": 109.0,
+  "material": "HSS-Co",
+  "coating": "TiN",
+  "manufacturer": "Dormer",
+  "manufacturer_part_number": "DOR-680-HSS-Co",
+  "cost": 8.90,
+  "uses_inserts": false,
+  "is_active": true
+}
+
+###############################################################################
+# 9. UPDATE TOOL
+###############################################################################
+
+### 9.1 Update tool (change cost and add notes)
+PUT {{baseUrl}}/tool-master/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "cost": 48.90,
+  "notes": "Preis aktualisiert nach Verhandlung mit Lieferant"
+}
+
+### 9.2 Update tool (change category and subcategory)
+PUT {{baseUrl}}/tool-master/2
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "category_id": 2,
+  "subcategory_id": 7,
+  "tool_name": "Spiralbohrer D8.5 HSS-Co DIN338 (überarbeitet)"
+}
+
+### 9.3 Update tool (deactivate)
+PUT {{baseUrl}}/tool-master/3
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "is_active": false,
+  "notes": "Werkzeug abgekündigt - Nachfolger ist T030"
+}
+
+###############################################################################
+# 10. DELETE TOOL (Soft Delete)
+###############################################################################
+
+### 10.1 Delete tool (soft delete - sets is_active=false)
+DELETE {{baseUrl}}/tool-master/5
+Authorization: Bearer {{authToken}}
+
+### 10.2 Delete non-existent tool (should return 404)
+DELETE {{baseUrl}}/tool-master/9999
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# 11. ERROR CASES
+###############################################################################
+
+### 11.1 Create tool with duplicate tool_number (should return 409)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T001",
+  "tool_name": "Duplicate Tool Number Test",
+  "category_id": 1,
+  "item_type": "tool",
+  "tool_category": "standard"
+}
+
+### 11.2 Create tool without required fields (should return 400)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T999"
+}
+
+### 11.3 Create tool with invalid category_id (should return 400)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T888",
+  "tool_name": "Invalid Category Test",
+  "category_id": 9999,
+  "item_type": "tool",
+  "tool_category": "standard"
+}
+
+### 11.4 Create tool with invalid item_type (should return 400)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T777",
+  "tool_name": "Invalid Item Type Test",
+  "item_type": "invalid_type",
+  "tool_category": "standard"
+}
+
+### 11.5 Create tool with negative diameter (should return 400)
+POST {{baseUrl}}/tool-master
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_number": "T666",
+  "tool_name": "Negative Diameter Test",
+  "diameter": -10.0,
+  "item_type": "tool",
+  "tool_category": "standard"
+}
+
+### 11.6 Update non-existent tool (should return 404)
+PUT {{baseUrl}}/tool-master/9999
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "tool_name": "Non-existent Tool Update"
+}
+
+###############################################################################
+# 12. PERMISSION TESTS (without authentication)
+###############################################################################
+
+### 12.1 Get tools without auth token (should return 401)
+GET {{baseUrl}}/tool-master
+
+### 12.2 Create tool without auth token (should return 401)
+POST {{baseUrl}}/tool-master
+Content-Type: application/json
+
+{
+  "tool_number": "T555",
+  "tool_name": "Unauthorized Test",
+  "item_type": "tool",
+  "tool_category": "standard"
+}
+
+###############################################################################
+# END OF TESTS
+###############################################################################

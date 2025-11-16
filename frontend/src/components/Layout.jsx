@@ -42,12 +42,30 @@ export default function Layout({ children }) {
                   </Link>
                 )}
 
+                {user?.permissions?.includes('tools.view') && (
+                  <Link
+                    to="/tools"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+                  >
+                    Werkzeuge
+                  </Link>
+                )}
+
                 {user?.permissions?.includes('machine.read') && (
                   <Link
                     to="/machines"
                     className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
                   >
                     Maschinen
+                  </Link>
+                )}
+
+                {user?.permissions?.includes('storage.view') && (
+                  <Link
+                    to="/storage"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+                  >
+                    Lagerorte
                   </Link>
                 )}
               </div>

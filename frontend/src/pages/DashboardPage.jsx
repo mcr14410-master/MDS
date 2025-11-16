@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { usePartsStore } from '../stores/partsStore';
+import { useDashboardStore } from '../stores/dashboardStore';
+import LowStockWidget from '../components/dashboard/LowStockWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const { stats, fetchStats } = usePartsStore();
+  const { stats, fetchStats } = useDashboardStore();
 
   useEffect(() => {
     fetchStats();
@@ -38,7 +39,7 @@ export default function DashboardPage() {
                       Bauteile Gesamt
                     </dt>
                     <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {stats?.total_parts || 0}
+                      {stats?.parts?.total_parts || 0}
                     </dd>
                   </dl>
                 </div>
@@ -56,10 +57,10 @@ export default function DashboardPage() {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                      Aktiv
+                      Aktive Bauteile
                     </dt>
                     <dd className="text-2xl font-semibold text-green-600 dark:text-green-400">
-                      {stats?.active_parts || 0}
+                      {stats?.parts?.active_parts || 0}
                     </dd>
                   </dl>
                 </div>
@@ -67,20 +68,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Draft Parts */}
+          {/* Total Tools */}
           <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="text-3xl">📝</div>
+                  <div className="text-3xl">🔧</div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                      Entwurf
+                      Werkzeuge
                     </dt>
-                    <dd className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
-                      {stats?.draft_parts || 0}
+                    <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {stats?.tools?.total_tools || 0}
                     </dd>
                   </dl>
                 </div>
@@ -88,20 +89,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Customers */}
+          {/* Low Stock Alert */}
           <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="text-3xl">👥</div>
+                  <div className="text-3xl">🔔</div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                      Kunden
+                      Niedriger Bestand
                     </dt>
-                    <dd className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                      {stats?.total_customers || 0}
+                    <dd className={`text-2xl font-semibold ${
+                      (stats?.tools?.low_stock_tools || 0) > 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {stats?.tools?.low_stock_tools || 0}
                     </dd>
                   </dl>
                 </div>
@@ -140,15 +145,25 @@ export default function DashboardPage() {
               </Link>
             )}
 
-            <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl mr-3">🚧</div>
-              <div>
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Weitere Features</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Coming soon...</div>
-              </div>
-            </div>
+            {user?.permissions?.includes('tools.view') && (
+              <Link
+                to="/tools"
+                className="flex items-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition"
+              >
+                <div className="text-2xl mr-3">🔧</div>
+                <div>
+                  <div className="text-sm font-medium text-purple-900 dark:text-purple-300">Werkzeuge</div>
+                  <div className="text-xs text-purple-600 dark:text-purple-400">Werkzeugverwaltung</div>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
+
+        {/* Low Stock Widget */}
+        {user?.permissions?.includes('tools.view') && (
+          <LowStockWidget />
+        )}
 
         {/* User Info */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
