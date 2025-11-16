@@ -124,7 +124,7 @@ export default function LocationCard({
       <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
         {/* View Details Link */}
         <Link
-          to={`/storage/locations/${location.id}`}
+          to={`/storage/${location.id}`}
           className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
         >
           Details

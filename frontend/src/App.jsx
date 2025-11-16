@@ -13,6 +13,11 @@ import PartFormPage from './pages/PartFormPage';
 import OperationDetailPage from './pages/OperationDetailPage';
 import MachinesPage from './pages/MachinesPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
+import StorageLocationDetailPage from './pages/StorageLocationDetailPage';
+import ToolCategoriesPage from './pages/ToolCategoriesPage';
+import ToolsPage from './pages/ToolsPage';
+import ToolDetailPage from './pages/ToolDetailPage';
+import QRScanPage from './pages/QRScanPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -121,8 +126,50 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/storage/:id"
+            element={
+              <ProtectedRoute requiredPermission="storage.view">
+                <StorageLocationDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Tool Categories Routes */}
+          <Route
+            path="/tools/categories"
+            element={
+              <ProtectedRoute requiredPermission="tools.view">
+                <ToolCategoriesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Tools Master Routes */}
+          <Route
+            path="/tools"
+            element={
+              <ProtectedRoute requiredPermission="tools.view">
+                <ToolsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/:id"
+            element={
+              <ProtectedRoute requiredPermission="tools.view">
+                <ToolDetailPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
+			<Route 
+			  path="/qr/:code" 
+			  element={
+				<QRScanPage />} />	
+		
+		
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

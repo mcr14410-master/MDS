@@ -54,6 +54,14 @@ const setupSheetsRoutes = require('./routes/setupSheetsRoutes');
 const toolListsRoutes = require('./routes/toolListsRoutes');
 const inspectionPlansRoutes = require('./routes/inspectionPlansRoutes');
 const storageRoutes = require('./routes/storageRoutes');
+const toolCategoriesRoutes = require('./routes/toolCategoriesRoutes');
+const toolMasterRoutes = require('./routes/toolMasterRoutes');
+const storageItemsRoutes = require('./routes/storageItemsRoutes');
+const stockMovementsRoutes = require('./routes/stockMovementsRoutes');
+const toolDocumentsRoutes = require('./routes/toolDocumentsRoutes');
+const toolCompatibleInsertsRoutes = require('./routes/toolCompatibleInsertsRoutes');
+const qrCodesRoutes = require('./routes/qrCodes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -69,6 +77,14 @@ app.use('/api/setup-sheets', setupSheetsRoutes);
 app.use('/api', toolListsRoutes);
 app.use('/api', inspectionPlansRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/tool', toolCategoriesRoutes);
+app.use('/api/tool-master', toolMasterRoutes);
+app.use('/api/storage/items', storageItemsRoutes);
+app.use('/api/stock-movements', stockMovementsRoutes);
+app.use('/api', toolDocumentsRoutes);
+app.use('/api', toolCompatibleInsertsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api', qrCodesRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

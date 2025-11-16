@@ -1,0 +1,333 @@
+### ==============================================
+### BATCH 2.1 - TOOL CATEGORIES API TESTS
+### ==============================================
+### Tool Categories & Subcategories CRUD
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMxNDc1NTUsImV4cCI6MTc2MzIzMzk1NX0.ZXGD1nWBfOgevOsCYNWkc0zhs3QTVcf0L1T-sbJKCr4
+
+### ==============================================
+### 1. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==============================================
+### 2. TOOL CATEGORIES - READ (Seed Data)
+### ==============================================
+
+### GET All Categories
+GET {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+
+### GET Categories - Filter Active Only
+GET {{baseUrl}}/api/tool/categories?is_active=true
+Authorization: Bearer {{token}}
+
+### GET Categories - Search
+GET {{baseUrl}}/api/tool/categories?search=Mill
+Authorization: Bearer {{token}}
+
+### GET Single Category by ID
+GET {{baseUrl}}/api/tool/categories/1
+Authorization: Bearer {{token}}
+
+### GET Subcategories for Category (Milling)
+GET {{baseUrl}}/api/tool/categories/1/subcategories
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 3. TOOL CATEGORIES - CREATE
+### ==============================================
+
+### CREATE Category - Grinding
+POST {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Grinding",
+  "description": "Schleifwerkzeuge",
+  "icon": "grind",
+  "sequence": 80,
+  "is_active": true
+}
+
+### CREATE Category - EDM
+POST {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "EDM",
+  "description": "Erodierwerkzeuge",
+  "icon": "spark",
+  "sequence": 90,
+  "is_active": true
+}
+
+### ==============================================
+### 4. TOOL CATEGORIES - UPDATE
+### ==============================================
+
+### UPDATE Category - Change Description
+PUT {{baseUrl}}/api/tool/categories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Fräswerkzeuge (Schaftfräser, Planfräser, etc.)"
+}
+
+### UPDATE Category - Change Sequence
+PUT {{baseUrl}}/api/tool/categories/8
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sequence": 85
+}
+
+### UPDATE Category - Set Inactive
+PUT {{baseUrl}}/api/tool/categories/9
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### ==============================================
+### 5. TOOL SUBCATEGORIES - READ
+### ==============================================
+
+### GET All Subcategories
+GET {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+
+### GET Subcategories - Filter by Category
+GET {{baseUrl}}/api/tool/subcategories?category_id=2
+Authorization: Bearer {{token}}
+
+### GET Subcategories - Filter Active Only
+GET {{baseUrl}}/api/tool/subcategories?is_active=true
+Authorization: Bearer {{token}}
+
+### GET Subcategories - Search
+GET {{baseUrl}}/api/tool/subcategories?search=Drill
+Authorization: Bearer {{token}}
+
+### GET Single Subcategory by ID
+GET {{baseUrl}}/api/tool/subcategories/1
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 6. TOOL SUBCATEGORIES - CREATE
+### ==============================================
+
+### CREATE Subcategory for Milling
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 1,
+  "name": "Chamfer Mill",
+  "description": "Anfasfräser",
+  "sequence": 70,
+  "is_active": true
+}
+
+### CREATE Subcategory for Drilling
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 2,
+  "name": "Step Drill",
+  "description": "Stufenbohrer",
+  "sequence": 60,
+  "is_active": true
+}
+
+### CREATE Subcategory for new Grinding Category
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 8,
+  "name": "Surface Grinding",
+  "description": "Flachschleifscheiben",
+  "sequence": 10,
+  "is_active": true
+}
+
+### ==============================================
+### 7. TOOL SUBCATEGORIES - UPDATE
+### ==============================================
+
+### UPDATE Subcategory - Change Description
+PUT {{baseUrl}}/api/tool/subcategories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Schaftfräser (End Mill) - VHM und HSS"
+}
+
+### UPDATE Subcategory - Change Sequence
+PUT {{baseUrl}}/api/tool/subcategories/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sequence": 25
+}
+
+### UPDATE Subcategory - Set Inactive
+PUT {{baseUrl}}/api/tool/subcategories/25
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### ==============================================
+### 8. ERROR HANDLING & EDGE CASES
+### ==============================================
+
+### ERROR - Create Category with Duplicate Name
+POST {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Milling",
+  "description": "Duplicate Test"
+}
+
+### ERROR - Create Category without Name
+POST {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "No Name Test"
+}
+
+### ERROR - Create Subcategory with Non-Existing Category
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 999,
+  "name": "Test Subcategory"
+}
+
+### ERROR - Create Subcategory with Duplicate Name in Same Category
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 1,
+  "name": "End Mill"
+}
+
+### ERROR - Get Non-Existing Category
+GET {{baseUrl}}/api/tool/categories/999
+Authorization: Bearer {{token}}
+
+### ERROR - Get Non-Existing Subcategory
+GET {{baseUrl}}/api/tool/subcategories/999
+Authorization: Bearer {{token}}
+
+### ERROR - Update Non-Existing Category
+PUT {{baseUrl}}/api/tool/categories/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### ERROR - Update Non-Existing Subcategory
+PUT {{baseUrl}}/api/tool/subcategories/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+
+### ==============================================
+### 9. DELETE OPERATIONS
+### ==============================================
+
+### DELETE Subcategory
+DELETE {{baseUrl}}/api/tool/subcategories/25
+Authorization: Bearer {{token}}
+
+### DELETE Category (will CASCADE delete subcategories)
+### ⚠️ VORSICHT: Löscht auch alle Subcategories!
+# DELETE {{baseUrl}}/api/tool/categories/9
+# Authorization: Bearer {{token}}
+
+### ERROR - Delete Non-Existing Category
+DELETE {{baseUrl}}/api/tool/categories/999
+Authorization: Bearer {{token}}
+
+### ERROR - Delete Non-Existing Subcategory
+DELETE {{baseUrl}}/api/tool/subcategories/999
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 10. COMBINED SCENARIOS
+### ==============================================
+
+### SCENARIO 1: Create Category with Subcategories
+### Step 1: Create Category
+POST {{baseUrl}}/api/tool/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Sawing",
+  "description": "Sägewerkzeuge",
+  "icon": "saw",
+  "sequence": 100,
+  "is_active": true
+}
+
+### Step 2: Create Subcategory for new Category (use ID from response)
+POST {{baseUrl}}/api/tool/subcategories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "category_id": 10,
+  "name": "Band Saw",
+  "description": "Bandsäge",
+  "sequence": 10
+}
+
+### SCENARIO 2: Get Category with all Subcategories
+GET {{baseUrl}}/api/tool/categories/1/subcategories
+Authorization: Bearer {{token}}
+
+### SCENARIO 3: Count Tools by Category (for later - when tool_master exists)
+### This will be used in Phase 2.2
+
+### ==============================================
+### END OF TESTS
+### ==============================================

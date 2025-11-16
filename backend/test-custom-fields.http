@@ -1,0 +1,226 @@
+### =====================================
+### CUSTOM FIELD DEFINITIONS - Testing
+### =====================================
+
+### Prerequisites: Run migration first
+### node-pg-migrate up -m backend/migrations 1737000028000
+
+@apiUrl = http://localhost:5000/api
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMyNDA1MjQsImV4cCI6MTc2MzMyNjkyNH0.5aD9oen2jD0uG5J1UwABVHpHk9dPCtOGU01aB4synVQ
+
+### =====================================
+### 1. GET Categories with Custom Field Definitions
+### =====================================
+
+### Get all categories (should now have custom_field_definitions)
+GET {{apiUrl}}/tool/categories
+Authorization: Bearer {{authToken}}
+
+### Get Milling category with custom fields
+GET {{apiUrl}}/tool/categories/1
+Authorization: Bearer {{authToken}}
+
+### Get Drilling category with custom fields
+GET {{apiUrl}}/tool/categories/2
+Authorization: Bearer {{authToken}}
+
+### Get Inserts category with custom fields
+GET {{apiUrl}}/tool/categories/7
+Authorization: Bearer {{authToken}}
+
+### =====================================
+### 2. CREATE Tool with Custom Fields (Milling)
+### =====================================
+
+### Create End Mill with custom fields
+POST {{apiUrl}}/tool-master
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tool_number": "EM-001",
+  "tool_name": "VHM Schaftfräser D10 Z4",
+  "category_id": 1,
+  "subcategory_id": 1,
+  "item_type": "tool",
+  "tool_category": "standard",
+  
+  "diameter": 10.0,
+  "length": 72.0,
+  "flutes": 4,
+  "material": "Carbide",
+  "coating": "TiAlN",
+  
+  "manufacturer": "Garant",
+  "manufacturer_part_number": "201010",
+  "cost": 45.50,
+  
+  "custom_fields": {
+    "corner_radius": 0.2,
+    "helix_angle": 30,
+    "center_cutting": true,
+    "cutting_edge_length": 22.0,
+    "shank_diameter": 10.0
+  }
+}
+
+### =====================================
+### 3. CREATE Tool with Custom Fields (Drilling)
+### =====================================
+
+### Create Twist Drill with custom fields
+POST {{apiUrl}}/tool-master
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tool_number": "TD-001",
+  "tool_name": "VHM Spiralbohrer D8.5",
+  "category_id": 2,
+  "subcategory_id": 8,
+  "item_type": "tool",
+  "tool_category": "standard",
+  
+  "diameter": 8.5,
+  "length": 117.0,
+  "flutes": 2,
+  "material": "Carbide",
+  "coating": "TiAlN",
+  
+  "manufacturer": "Gühring",
+  "manufacturer_part_number": "5512",
+  "cost": 38.90,
+  
+  "custom_fields": {
+    "point_angle": 118,
+    "point_type": "split_point",
+    "coolant_through": true,
+    "flute_length": 75.0,
+    "shank_type": "cylindrical"
+  }
+}
+
+### =====================================
+### 4. CREATE Insert with Custom Fields
+### =====================================
+
+### Create CNMG Insert with custom fields
+POST {{apiUrl}}/tool-master
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tool_number": "I-CNMG-001",
+  "tool_name": "CNMG 120408 TiAlN",
+  "category_id": 7,
+  "subcategory_id": 40,
+  "item_type": "insert",
+  "tool_category": "standard",
+  
+  "diameter": 12.7,
+  "material": "Carbide",
+  "coating": "TiAlN",
+  "substrate_grade": "K20",
+  
+  "manufacturer": "Sandvik",
+  "manufacturer_part_number": "CNMG120408-TN",
+  "cost": 8.50,
+  
+  "custom_fields": {
+    "insert_shape": "C",
+    "clearance_angle": "N",
+    "inscribed_circle": 12.7,
+    "thickness": 4.76,
+    "nose_radius": 0.8,
+    "cutting_edges": 4,
+    "chip_breaker": "MF"
+  }
+}
+
+### =====================================
+### 5. CREATE Threading Tool with Custom Fields
+### =====================================
+
+### Create Thread Tap with custom fields
+POST {{apiUrl}}/tool-master
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "tool_number": "TAP-M8",
+  "tool_name": "Gewindebohrer M8x1.25",
+  "category_id": 4,
+  "subcategory_id": 22,
+  "item_type": "tool",
+  "tool_category": "standard",
+  
+  "diameter": 8.0,
+  "length": 80.0,
+  "material": "HSS-E",
+  "coating": "TiN",
+  
+  "manufacturer": "OSG",
+  "manufacturer_part_number": "EX-SFT-M8",
+  "cost": 12.80,
+  
+  "custom_fields": {
+    "thread_size": "M8",
+    "thread_pitch": 1.25,
+    "thread_type": "metric",
+    "tap_type": "spiral",
+    "through_hole": true
+  }
+}
+
+### =====================================
+### 6. UPDATE Tool with Custom Fields
+### =====================================
+
+### Update custom fields on existing tool
+PUT {{apiUrl}}/tool-master/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "custom_fields": {
+    "corner_radius": 0.3,
+    "helix_angle": 35,
+    "center_cutting": true,
+    "cutting_edge_length": 25.0,
+    "shank_diameter": 10.0
+  }
+}
+
+### =====================================
+### 7. GET Tool with Custom Fields
+### =====================================
+
+### Get tool and verify custom_fields are returned
+GET {{apiUrl}}/tool-master/1
+Authorization: Bearer {{authToken}}
+
+### =====================================
+### 8. SEARCH Tools by Custom Fields (Advanced - Phase 4)
+### =====================================
+
+### This would require JSONB query support in the future
+### Example: Find all milling tools with corner_radius > 0
+# GET {{apiUrl}}/tool-master?custom_field=corner_radius&operator=gt&value=0
+# Authorization: Bearer {{authToken}}
+
+### =====================================
+### VERIFICATION QUERIES
+### =====================================
+
+### Direct DB query to check custom_field_definitions
+# SELECT id, name, 
+#        jsonb_pretty(custom_field_definitions) as definitions 
+# FROM tool_categories 
+# WHERE custom_field_definitions IS NOT NULL;
+
+### Direct DB query to check tools with custom_fields
+# SELECT id, tool_number, tool_name, 
+#        category_id,
+#        jsonb_pretty(custom_fields) as fields 
+# FROM tool_master 
+# WHERE custom_fields IS NOT NULL;
