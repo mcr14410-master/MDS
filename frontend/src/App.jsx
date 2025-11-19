@@ -18,6 +18,8 @@ import ToolCategoriesPage from './pages/ToolCategoriesPage';
 import ToolsPage from './pages/ToolsPage';
 import ToolDetailPage from './pages/ToolDetailPage';
 import QRScanPage from './pages/QRScanPage';
+import SuppliersPage from './pages/SuppliersPage';
+import SupplierDetailPage from './pages/SupplierDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -162,13 +164,28 @@ function App() {
               </ProtectedRoute>
             }
           />
+		  <Route 
+		    path="/qr/:code" 
+		    element={
+		  	<QRScanPage />
+			} 
+		  />	
+		  <Route 
+		    path="/suppliers" 
+		    element={
+		  	<SuppliersPage />
+			} 
+		   />
+		  <Route 
+		    path="/suppliers/:id" 
+		    element={
+		  	<SupplierDetailPage />
+			} 
+		   />
+		  
+		  
         </Route>
 
-			<Route 
-			  path="/qr/:code" 
-			  element={
-				<QRScanPage />} />	
-		
 		
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

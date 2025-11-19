@@ -90,4 +90,16 @@ router.post('/:id/adjust', requirePermission('stock.adjust'), storageItemsContro
  */
 router.post('/:id/scrap', requirePermission('stock.scrap'), storageItemsController.scrapStock);
 
+// ============================================================================
+// SUPPLIER RELATIONSHIPS
+// ============================================================================
+
+/**
+ * @route   GET /api/storage/items/:id/suppliers
+ * @desc    Get all suppliers for this storage item
+ * @access  Private (requires permission: storage.view)
+ */
+const supplierItemsController = require('../controllers/supplierItemsController');
+router.get('/:id/suppliers', requirePermission('storage.view'), supplierItemsController.getItemSuppliers);
+
 module.exports = router;

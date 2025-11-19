@@ -62,6 +62,8 @@ const toolDocumentsRoutes = require('./routes/toolDocumentsRoutes');
 const toolCompatibleInsertsRoutes = require('./routes/toolCompatibleInsertsRoutes');
 const qrCodesRoutes = require('./routes/qrCodes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const suppliersRoutes = require('./routes/suppliersRoutes');
+const supplierItemsRoutes = require('./routes/supplierItemsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -85,6 +87,8 @@ app.use('/api', toolDocumentsRoutes);
 app.use('/api', toolCompatibleInsertsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', qrCodesRoutes);
+app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/supplier-items', supplierItemsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

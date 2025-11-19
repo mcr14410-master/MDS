@@ -32,6 +32,10 @@ export const API_ENDPOINTS = {
   INSPECTION_PLANS: `${API_BASE_URL}/api/operations`,           // Base for /operations/:id/inspection-plan
   INSPECTION_PLAN_ITEMS: `${API_BASE_URL}/api/inspection-plan-items`, // Base for /inspection-plan-items/:id
   
+  // Suppliers
+  SUPPLIERS: `${API_BASE_URL}/api/suppliers`,
+  SUPPLIER_ITEMS: `${API_BASE_URL}/api/supplier-items`,
+
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };
