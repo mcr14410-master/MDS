@@ -334,6 +334,7 @@ Effektiver Bestand:
 **Beschreibung:** Zentrale Werkzeug-Stammdaten mit Custom Fields für typ-spezifische Eigenschaften
 
 **WICHTIG:** `tool_number` wird zu `article_number` umbenannt, da T-Nummern (z.B. T113) separat über Tool Number Lists verwaltet werden (Phase 5).
+# Siehe: ROADMAP-UPDATE-NOTE.md
 
 ```sql
 CREATE TABLE tool_master (
@@ -2354,7 +2355,7 @@ GET http://localhost:5000/api/stock-movements/item/1
 ---
 
 ## Phase 5: Tool Number Lists & Integration (Tag 10-12)
-
+# Siehe: ROADMAP-UPDATE-NOTE.md
 **Ziel:** T-Nummern-Verwaltung + Verknüpfung mit Tool Lists + Reports + Dashboard
 
 **Zeitaufwand:** ~12-15 Stunden (erweitert von 4-5h)
@@ -3015,6 +3016,144 @@ CREATE TABLE scrapped_tools (
 
 ---
 
+### Supplier Items List Component (Enhanced)
+
+**Ziel:** Erweiterte Verwaltung von Items pro Lieferant mit Power-User Features
+
+**Features:**
+
+**1. Quick Edit / Inline Editing:**
+- Direkte Bearbeitung in der Tabelle (ohne Modal)
+- Click-to-Edit für Preis, Artikelnummer, Lieferzeit
+- Instant Save mit visueller Bestätigung
+- Undo-Funktion für letzte Änderung
+
+**2. Bulk Operations:**
+```
+Bulk Edit:
+- Mehrere Items auswählen (Checkbox)
+- Preis ändern: +10%, -5%, oder fixer Wert
+- Lieferzeit anpassen: alle auf X Tage
+- Currency wechseln: alle EUR → USD
+- Status ändern: Aktiv/Inaktiv toggle
+
+Bulk Actions:
+- Bulk Delete mit Bestätigung
+- Bulk Set Preferred
+- Bulk Export (Excel/CSV)
+```
+
+**3. Erweiterte Filter & Sortierung:**
+- Live-Suche über alle Felder
+- Filter: Bevorzugt, Mit/Ohne Preis, Aktiv/Inaktiv
+- Multi-Sortierung (z.B. erst Kategorie, dann Preis)
+- Gruppierung nach Kategorie/Preis-Range
+- Saved Filter Sets
+
+**4. Preis-Management:**
+```
+Preis-Historie:
+- Tracking aller Preisänderungen
+- Visualisierung (Chart)
+- Vergleich: Aktuell vs. Vor 6 Monaten
+- Preis-Alarm bei Änderung >X%
+
+Preis-Vergleich:
+- Zeige günstigsten Lieferanten pro Tool
+- Zeige Preis-Spread (Min/Max/Avg)
+- Empfehlungen bei besseren Alternativen
+```
+
+**5. Export & Reports:**
+```
+Export-Formate:
+- Excel (mit Formeln & Formatierung)
+- CSV (für Import in andere Systeme)
+- PDF Preisliste (druckbar)
+
+Reports:
+- Gesamt-Einkaufswert nach Lieferant
+- Top 10 teuerste Tools
+- Durchschnittliche Lieferzeit
+- Items ohne Preis/Artikelnummer
+```
+
+**6. Stock-Integration:**
+- Zeige aktuellen Bestand direkt in Liste
+- Low-Stock Indicator
+- Quick-Order Button (erstellt Bestellung)
+- Empfohlene Nachbestell-Menge berechnen
+
+**7. Smart Features:**
+```
+Auto-Complete:
+- Artikelnummern von anderen Tools vorschlagen
+- Preis-Vorschlag basierend auf ähnlichen Tools
+- Copy-Paste aus Excel/CSV
+
+Validierung:
+- Warnungen bei ungewöhnlichen Preisen
+- Duplikat-Erkennung (gleicher Artikel, gleicher Lieferant)
+- Vollständigkeits-Check (fehlende Pflichtfelder)
+```
+
+**UI Component Struktur:**
+```
+SupplierItemsList.jsx
+├── SupplierItemsTable.jsx (Haupt-Tabelle)
+│   ├── InlineEditCell.jsx (Editierbare Zelle)
+│   ├── BulkSelectHeader.jsx (Select All Checkbox)
+│   └── ItemRow.jsx (Einzelne Zeile)
+├── SupplierItemsFilters.jsx (Filter-Bar)
+├── BulkActionsToolbar.jsx (Bulk-Operations)
+├── PriceHistoryModal.jsx (Preis-Historie)
+├── ExportModal.jsx (Export-Optionen)
+└── QuickOrderModal.jsx (Schnell-Bestellung)
+```
+
+**Use Cases:**
+1. **Preisliste Update:** Lieferant schickt neue Preise → Bulk Edit alle Items
+2. **Lieferanten-Vergleich:** Welcher Lieferant ist günstigster für Drehteile?
+3. **Nachbestellung:** Low-Stock Items filtern → Bestellung erstellen
+4. **Excel Export:** Preisliste für Buchhaltung exportieren
+5. **Audit:** Items ohne Preis/Artikelnummer finden und ergänzen
+
+**Technische Details:**
+```javascript
+// API Erweiterungen
+GET /api/suppliers/:id/items?include_stock=true&include_history=true
+PUT /api/supplier-items/bulk-update
+POST /api/supplier-items/bulk-delete
+GET /api/supplier-items/export?format=excel
+
+// State Management
+- React Query für Caching & Optimistic Updates
+- Undo/Redo Stack für Bulk-Operationen
+- Debounced Auto-Save bei Inline-Edit
+```
+
+**Aufwand:** ~16-20h
+- Basic Inline Edit & Bulk Select: ~4h
+- Filter & Sortierung: ~3h
+- Preis-Historie & Charts: ~4h
+- Export-Funktionen: ~3h
+- Stock-Integration: ~3h
+- Testing & Polish: ~3h
+
+**Priorität:** Medium
+- **Low** wenn <50 Items pro Lieferant
+- **Medium** wenn >50 Items pro Lieferant
+- **High** wenn häufige Preis-Updates oder Bulk-Operationen nötig
+
+**Voraussetzungen:**
+- Phase 3 Supplier Management abgeschlossen ✓
+- Tool Suppliers Tab implementiert ✓
+
+**Alternative:** 
+Statt eigenem Component könnte man auch ein bestehendes Data-Grid Library nutzen (z.B. AG-Grid, TanStack Table) für schnellere Implementierung mit weniger Custom-Code.
+
+---
+
 ### Barcode/RFID Integration
 
 **Ziel:** Schnelle Entnahme/Einlagerung per Scanner
@@ -3160,16 +3299,17 @@ Button: "Ganzes Set entnehmen"
 | Custom Fields Level 2 | 8h | Medium | Flexibles Datenmodell |
 | Custom Fields Level 3 | 16h | Low | Advanced Features |
 | Verschleiß-Tracking | 6-8h | Low | Kosten-Analyse |
+| Supplier Items List | 16-20h | Medium | Power-User Features, Bulk-Ops |
 | Barcode/RFID | 12-16h | Medium | Schnelle Transaktionen |
 | Tool Life Analytics | 16-20h | Medium | Optimierung |
 | Multi-Location | 8-10h | Low | Mehrere Standorte |
 | Tool Sets | 10-12h | Medium | Zeitersparnis |
 | Regrinding Service | 6-8h | Low | Externes Tracking |
 
-**Gesamtaufwand:** 82-112h (weitere ~3-4 Wochen)
+**Gesamtaufwand:** 98-132h (weitere ~4-5 Wochen)
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-12  
-**Status:** 📋 ROADMAP KOMPLETT  
-**Nächster Schritt:** Phase 1 - Lagerorte-System starten
+**Letzte Aktualisierung:** 2024-11-16  
+**Status:** 📋 ROADMAP KOMPLETT + Phase 3 (Supplier Management) FERTIG  
+**Nächster Schritt:** Phase 4 aus Haupt-Roadmap oder weitere Tool Management Features

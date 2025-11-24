@@ -19,6 +19,7 @@ import CreateStorageItemModal from '../components/tools/CreateStorageItemModal';
 import EditStorageItemModal from '../components/tools/EditStorageItemModal';
 import CustomFieldsDisplay from '../components/tools/CustomFieldsDisplay';
 import QRCodeDisplay from '../components/tools/QRCodeDisplay';
+import ToolSuppliersTab from '../components/tools/ToolSuppliersTab';
 
 export default function ToolDetailPage() {
   const { id } = useParams();
@@ -394,14 +395,8 @@ export default function ToolDetailPage() {
 
           {/* Kosten & Sonstiges */}
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Kosten & Sonstiges</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Sonstiges</h2>
             <div className="space-y-3">
-              {currentTool.cost && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Preis:</span>
-                  <span className="text-green-400 font-semibold">€{Number(currentTool.cost).toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-gray-400">Verwendet Wendeplatten:</span>
                 <span className="text-white font-medium">{currentTool.uses_inserts ? 'Ja' : 'Nein'}</span>
@@ -617,14 +612,50 @@ export default function ToolDetailPage() {
 
         {/* Tab Content: Suppliers (Placeholder - Phase 3) */}
         {activeTab === 'suppliers' && (
-          <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
-            <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Lieferanten-Verwaltung</h3>
-            <p className="text-gray-400 mb-4">Dieses Feature wird in Phase 3 implementiert.</p>
-            <p className="text-sm text-gray-500">
-              Hier können später Lieferanten mit Preisen, Lieferzeiten und Bestelllinks verwaltet werden.
-            </p>
-          </div>
+          <>
+            {storageItems && storageItems.length > 0 ? (
+              <>
+                {storageItems.length === 1 ? (
+                  // Single storage item - show directly
+                  <ToolSuppliersTab 
+                    storageItemId={storageItems[0].id}
+                    toolName={currentTool?.tool_name || currentTool?.tool_article_number || 'Werkzeug'}
+                  />
+                ) : (
+                  // Multiple storage items - show selection or tabs
+                  <div className="space-y-6">
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                      <p className="text-sm text-gray-400 mb-3">
+                        Dieses Werkzeug ist an mehreren Lagerorten vorhanden. Lieferanten werden pro Lagerort verwaltet.
+                      </p>
+                      <div className="text-xs text-gray-500">
+                        Zeige Lieferanten für: {storageItems[0].location_name} / {storageItems[0].compartment_name}
+                      </div>
+                    </div>
+                    <ToolSuppliersTab 
+                      storageItemId={storageItems[0].id}
+                      toolName={currentTool?.tool_name || currentTool?.tool_article_number || 'Werkzeug'}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              // No storage items yet
+              <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
+                <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Kein Lagerort zugewiesen</h3>
+                <p className="text-gray-400 mb-6">
+                  Bitte erstellen Sie zuerst einen Lagereintrag für dieses Werkzeug im Tab "Lagerorte".
+                </p>
+                <button
+                  onClick={() => setActiveTab('storage')}
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Zu Lagerorte wechseln
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Edit Form Modal */}

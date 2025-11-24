@@ -243,14 +243,6 @@ export default function ToolCard({ tool, onEdit, onDelete }) {
             <span className="text-gray-200 truncate">{tool.manufacturer}</span>
           </div>
         )}
-
-        {/* Cost */}
-        {tool.cost && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-400">Preis:</span>
-            <span className="text-green-400 font-semibold">€{Number(tool.cost).toFixed(2)}</span>
-          </div>
-        )}
       </div>
 
       {/* Storage & Stock Section */}

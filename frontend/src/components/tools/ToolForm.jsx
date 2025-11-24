@@ -27,7 +27,6 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
     manufacturer: '',
     manufacturer_part_number: '',
     shop_url: '',
-    cost: '',
     uses_inserts: false,
     is_active: true,
     notes: '',
@@ -68,7 +67,6 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
         manufacturer: tool.manufacturer || '',
         manufacturer_part_number: tool.manufacturer_part_number || '',
         shop_url: tool.shop_url || '',
-        cost: tool.cost || '',
         uses_inserts: tool.uses_inserts || false,
         is_active: tool.is_active !== undefined ? tool.is_active : true,
         notes: tool.notes || '',
@@ -97,7 +95,6 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
     if (dataToSave.diameter) dataToSave.diameter = parseFloat(dataToSave.diameter);
     if (dataToSave.length) dataToSave.length = parseFloat(dataToSave.length);
     if (dataToSave.flutes) dataToSave.flutes = parseInt(dataToSave.flutes);
-    if (dataToSave.cost) dataToSave.cost = parseFloat(dataToSave.cost);
 
     // Convert empty strings to null for optional text fields (but not custom_fields)
     Object.keys(dataToSave).forEach(key => {
@@ -492,22 +489,6 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                     onChange={handleChange}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="https://..."
-                  />
-                </div>
-
-                {/* Cost */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Preis (EUR)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="cost"
-                    value={formData.cost}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="z.B. 45.50"
                   />
                 </div>
 

@@ -68,6 +68,24 @@ export default function Layout({ children }) {
                     Lagerorte
                   </Link>
                 )}
+
+                {user?.permissions?.includes('storage.view') && (
+                  <Link
+                    to="/suppliers"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+                  >
+                    Lieferanten
+                  </Link>
+                )}
+
+                {user?.permissions?.includes('storage.view') && (
+                  <Link
+                    to="/purchase-orders"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+                  >
+                    Bestellungen
+                  </Link>
+                )}
               </div>
             </div>
 
