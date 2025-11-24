@@ -1,0 +1,452 @@
+### ================================================================================
+### PURCHASE ORDERS API TESTS
+### ================================================================================
+### Phase 4 - Bestellwesen
+### 
+### Features:
+### - Bestellungen erstellen (draft)
+### - Mehrere Items pro Bestellung
+### - Status-Workflow (draft → sent → received)
+### - Wareneingang buchen (Full + Partial)
+### - Automatic Stock Update
+### - Stock Movement Tracking
+###
+### Prerequisites:
+### - Suppliers existieren (ID 1, 2)
+### - Storage Items existieren (ID 1, 2, 3)
+### - User ist eingeloggt
+### ================================================================================
+
+@baseUrl = http://localhost:5000
+@authToken = {{login.response.body.token}}
+
+### ================================================================================
+### AUTHENTICATION
+### ================================================================================
+
+### LOGIN
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ================================================================================
+### PURCHASE ORDERS - CRUD
+### ================================================================================
+
+### GET All Purchase Orders
+GET {{baseUrl}}/api/purchase-orders
+Authorization: Bearer {{authToken}}
+
+### GET All Purchase Orders (with filters)
+GET {{baseUrl}}/api/purchase-orders?status=draft&limit=10
+Authorization: Bearer {{authToken}}
+
+### GET All Purchase Orders (by supplier)
+GET {{baseUrl}}/api/purchase-orders?supplier_id=1
+Authorization: Bearer {{authToken}}
+
+### GET All Purchase Orders (date range)
+GET {{baseUrl}}/api/purchase-orders?date_from=2025-01-01&date_to=2025-12-31
+Authorization: Bearer {{authToken}}
+
+### GET Single Purchase Order
+GET {{baseUrl}}/api/purchase-orders/1
+Authorization: Bearer {{authToken}}
+
+### CREATE Purchase Order (Draft)
+# @name createOrder
+POST {{baseUrl}}/api/purchase-orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "supplier_id": 1,
+  "order_date": "2025-01-15",
+  "expected_delivery_date": "2025-01-18",
+  "notes": "Dringend benötigt",
+  "internal_notes": "Kunde wartet auf diese Werkzeuge",
+  "items": [
+    {
+      "storage_item_id": 1,
+      "line_number": 1,
+      "quantity": 10,
+      "unit": "pieces",
+      "unit_price": 45.50,
+      "condition_received": "new",
+      "notes": "HSS Fräser"
+    },
+    {
+      "storage_item_id": 2,
+      "line_number": 2,
+      "quantity": 5,
+      "unit": "pieces",
+      "unit_price": 120.00,
+      "condition_received": "new",
+      "notes": "VHM Bohrer"
+    },
+    {
+      "storage_item_id": 3,
+      "line_number": 3,
+      "quantity": 20,
+      "unit": "pieces",
+      "unit_price": 15.50,
+      "condition_received": "new",
+      "notes": "Wendeschneidplatten"
+    }
+  ]
+}
+
+### Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "id": 1,
+#     "order_number": "PO-2025-0001",  // Auto-generated
+#     "supplier_id": 1,
+#     "supplier_name": "Garant Werkzeugfabrik",
+#     "status": "draft",
+#     "order_date": "2025-01-15",
+#     "expected_delivery_date": "2025-01-18",
+#     "total_amount": 1065.00,  // (10×45.50) + (5×120.00) + (20×15.50)
+#     "currency": "EUR",
+#     "items": [...]
+#   }
+# }
+
+### UPDATE Purchase Order (Draft only)
+PUT {{baseUrl}}/api/purchase-orders/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "expected_delivery_date": "2025-01-20",
+  "notes": "Lieferung verschoben",
+  "items": [
+    {
+      "storage_item_id": 1,
+      "line_number": 1,
+      "quantity": 15,
+      "unit": "pieces",
+      "unit_price": 45.50,
+      "condition_received": "new"
+    },
+    {
+      "storage_item_id": 2,
+      "line_number": 2,
+      "quantity": 5,
+      "unit": "pieces",
+      "unit_price": 120.00,
+      "condition_received": "new"
+    }
+  ]
+}
+
+### DELETE Purchase Order (Draft only)
+DELETE {{baseUrl}}/api/purchase-orders/99
+Authorization: Bearer {{authToken}}
+
+### ================================================================================
+### STATUS TRANSITIONS
+### ================================================================================
+
+### SEND Order (draft → sent)
+POST {{baseUrl}}/api/purchase-orders/1/send
+Authorization: Bearer {{authToken}}
+
+### Expected Response:
+# {
+#   "success": true,
+#   "data": {
+#     "status": "sent",
+#     "sent_date": "2025-01-15"
+#   },
+#   "message": "Bestellung versendet"
+# }
+
+### RECEIVE Full Order (sent → received)
+POST {{baseUrl}}/api/purchase-orders/1/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "actual_delivery_date": "2025-01-18",
+  "items": [
+    {
+      "item_id": 1,
+      "quantity_received": 10
+    },
+    {
+      "item_id": 2,
+      "quantity_received": 5
+    },
+    {
+      "item_id": 3,
+      "quantity_received": 20
+    }
+  ]
+}
+
+### Expected Result:
+# - Status: sent → received
+# - storage_items.quantity_new erhöht (+10, +5, +20)
+# - stock_movements erstellt (3 Einträge)
+# - purchase_order_items.quantity_received aktualisiert
+
+### RECEIVE Partial Item (sent → partially_received)
+# WICHTIG: Erst die Bestellung abrufen, um die Item IDs zu sehen!
+# GET {{baseUrl}}/api/purchase-orders/1
+# Aus der Response die echte "item.id" verwenden, nicht die line_number!
+
+POST {{baseUrl}}/api/purchase-orders/1/items/1/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quantity_received": 5,
+  "notes": "Teillieferung - Rest folgt nächste Woche"
+}
+
+# HINWEIS: Ersetze "/items/1/" mit der echten Item ID aus GET Response!
+# Beispiel: Wenn item.id = 3, dann: /api/purchase-orders/1/items/3/receive
+
+### Expected Result:
+# - Status: sent → partially_received
+# - storage_items.quantity_new erhöht (+5)
+# - stock_movements erstellt (1 Eintrag)
+# - purchase_order_items.quantity_received = 5 (von 10)
+
+### RECEIVE Remaining Partial Item
+POST {{baseUrl}}/api/purchase-orders/1/items/1/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quantity_received": 5,
+  "notes": "Restlieferung angekommen"
+}
+
+### Expected Result:
+# - Status: partially_received → received (wenn alle Items vollständig)
+# - storage_items.quantity_new erhöht (+5)
+# - stock_movements erstellt (1 Eintrag)
+# - purchase_order_items.quantity_received = 10 (vollständig)
+
+### ================================================================================
+### ERROR CASES
+### ================================================================================
+
+### CREATE Order without supplier
+POST {{baseUrl}}/api/purchase-orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "order_date": "2025-01-15",
+  "items": []
+}
+# Expected: 400 - "Lieferant ist erforderlich"
+
+### CREATE Order without items
+POST {{baseUrl}}/api/purchase-orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "supplier_id": 1,
+  "items": []
+}
+# Expected: 400 - "Mindestens eine Position ist erforderlich"
+
+### UPDATE Order (not draft)
+PUT {{baseUrl}}/api/purchase-orders/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "notes": "Trying to update sent order"
+}
+# Expected: 400 - "Nur Entwürfe können bearbeitet werden"
+
+### SEND Order (already sent)
+POST {{baseUrl}}/api/purchase-orders/1/send
+Authorization: Bearer {{authToken}}
+# Expected: 400 - "Nur Entwürfe können versendet werden"
+
+### RECEIVE Too Much Quantity
+POST {{baseUrl}}/api/purchase-orders/1/items/1/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quantity_received": 999
+}
+# Expected: 400 - "Maximal X können empfangen werden"
+
+### ================================================================================
+### HELPER: How to find Item IDs
+### ================================================================================
+
+### Step 1: Get Order by ID
+GET {{baseUrl}}/api/purchase-orders/1
+Authorization: Bearer {{authToken}}
+
+# Response Structure:
+# {
+#   "data": {
+#     "id": 1,
+#     "order_number": "PO-2025-0001",
+#     "items": [
+#       {
+#         "id": 1,              ← This is the ITEM_ID you need!
+#         "line_number": 1,
+#         "storage_item_id": 1,
+#         "quantity_ordered": 10,
+#         "quantity_received": 0,
+#         ...
+#       },
+#       {
+#         "id": 2,              ← Another ITEM_ID
+#         "line_number": 2,
+#         ...
+#       }
+#     ]
+#   }
+# }
+
+# Step 2: Use the "id" field (NOT line_number) for partial receive:
+# POST /api/purchase-orders/1/items/1/receive  ← Use items[0].id
+# POST /api/purchase-orders/1/items/2/receive  ← Use items[1].id
+
+### ================================================================================
+### INTEGRATION TESTS
+### ================================================================================
+
+### COMPLETE WORKFLOW: Create → Send → Receive
+# Step 1: Create Draft
+# @name createTestOrder
+POST {{baseUrl}}/api/purchase-orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "supplier_id": 1,
+  "expected_delivery_date": "2025-01-20",
+  "items": [
+    {
+      "storage_item_id": 1,
+      "line_number": 1,
+      "quantity": 10,
+      "unit_price": 50.00
+    }
+  ]
+}
+
+# Response enthält: { "data": { "id": 2, "items": [{ "id": 4, ... }] } }
+# Notiere: order_id = 2, item_id = 4
+###
+# Step 2: Get Order Details (um Item IDs zu sehen)
+# @name getOrderDetails
+GET {{baseUrl}}/api/purchase-orders/{{createTestOrder.response.body.data.id}}
+Authorization: Bearer {{authToken}}
+
+# Aus der Response die "items[0].id" notieren - das ist die ITEM_ID!
+###
+# Step 3: Send Order
+POST {{baseUrl}}/api/purchase-orders/{{createTestOrder.response.body.data.id}}/send
+Authorization: Bearer {{authToken}}
+###
+# Step 4: Partial Receive (WICHTIG: Echte Item ID verwenden!)
+# Ersetze "4" mit der Item ID aus Step 2!
+POST {{baseUrl}}/api/purchase-orders/4/items/10/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quantity_received": 5,
+  "notes": "Erste Teillieferung"
+}
+###
+# Step 5: Final Receive
+POST {{baseUrl}}/api/purchase-orders/2/items/4/receive
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "quantity_received": 5,
+  "notes": "Restlieferung"
+}
+###
+# Step 5: Verify Stock
+GET {{baseUrl}}/api/storage/items/1
+Authorization: Bearer {{authToken}}
+###
+# Step 6: Verify Stock Movements
+GET {{baseUrl}}/api/stock-movements/item/1
+Authorization: Bearer {{authToken}}
+
+### ================================================================================
+### STOCK VERIFICATION
+### ================================================================================
+
+### Check Stock After Receiving
+GET {{baseUrl}}/api/storage/items/1
+Authorization: Bearer {{authToken}}
+# Verify quantity_new increased
+
+### Check Stock Movements
+GET {{baseUrl}}/api/stock-movements/item/1?limit=10
+Authorization: Bearer {{authToken}}
+# Verify receipt movements created
+
+### Filter Movements by Purchase Order
+GET {{baseUrl}}/api/stock-movements?reference_type=purchase_order&reference_id=1
+Authorization: Bearer {{authToken}}
+
+### ================================================================================
+### STATISTICS & REPORTS
+### ================================================================================
+
+### Orders by Status
+GET {{baseUrl}}/api/purchase-orders?status=draft
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/purchase-orders?status=sent
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/purchase-orders?status=partially_received
+Authorization: Bearer {{authToken}}
+
+GET {{baseUrl}}/api/purchase-orders?status=received
+Authorization: Bearer {{authToken}}
+
+### Orders by Date Range
+GET {{baseUrl}}/api/purchase-orders?date_from=2025-01-01&date_to=2025-01-31
+Authorization: Bearer {{authToken}}
+
+### ================================================================================
+### NOTES
+### ================================================================================
+# Status Workflow:
+#   draft → sent → confirmed → partially_received → received
+#
+# Auto-generated:
+#   - order_number: PO-YYYY-NNNN
+#   - total_amount: Sum of all line_totals
+#   - sent_date: Set when status = sent
+#   - actual_delivery_date: Set when status = received
+#
+# Stock Updates:
+#   - Automatic when receiving order/items
+#   - Creates stock_movements entries
+#   - Updates storage_items quantities by condition
+#
+# Business Rules:
+#   - Only draft orders can be edited/deleted
+#   - Received quantity cannot exceed ordered quantity
+#   - Status transitions are enforced
+#   - Stock movements are tracked for audit

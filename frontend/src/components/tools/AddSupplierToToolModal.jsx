@@ -8,8 +8,8 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
   const [formData, setFormData] = useState({
     storage_item_id: storageItemId,
     supplier_id: '',
-    supplier_article_number: '',
-    price: '',
+    supplier_part_number: '',
+    unit_price: '',
     currency: 'EUR',
     lead_time_days: '',
     min_order_quantity: '',
@@ -28,8 +28,8 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
         setFormData({
           storage_item_id: storageItemId,
           supplier_id: supplierItem.supplier_id,
-          supplier_article_number: supplierItem.supplier_article_number || '',
-          price: supplierItem.price || '',
+          supplier_part_number: supplierItem.supplier_part_number || '',
+          unit_price: supplierItem.unit_price || '',
           currency: supplierItem.currency || 'EUR',
           lead_time_days: supplierItem.lead_time_days || '',
           min_order_quantity: supplierItem.min_order_quantity || '',
@@ -42,8 +42,8 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
         setFormData({
           storage_item_id: storageItemId,
           supplier_id: '',
-          supplier_article_number: '',
-          price: '',
+          supplier_part_number: '',
+          unit_price: '',
           currency: 'EUR',
           lead_time_days: '',
           min_order_quantity: '',
@@ -68,7 +68,7 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
       // Convert empty strings to null for numeric fields
       const submitData = {
         ...formData,
-        price: formData.price ? parseFloat(formData.price) : null,
+        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
         lead_time_days: formData.lead_time_days ? parseInt(formData.lead_time_days) : null,
         min_order_quantity: formData.min_order_quantity ? parseFloat(formData.min_order_quantity) : null,
       };
@@ -141,8 +141,8 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
             </label>
             <input
               type="text"
-              value={formData.supplier_article_number}
-              onChange={(e) => handleChange('supplier_article_number', e.target.value)}
+              value={formData.supplier_part_number}
+              onChange={(e) => handleChange('supplier_part_number', e.target.value)}
               placeholder="z.B. ART-12345"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -158,8 +158,8 @@ export default function AddSupplierToToolModal({ storageItemId, supplierItem, is
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.price}
-                onChange={(e) => handleChange('price', e.target.value)}
+                value={formData.unit_price}
+                onChange={(e) => handleChange('unit_price', e.target.value)}
                 placeholder="0.00"
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />

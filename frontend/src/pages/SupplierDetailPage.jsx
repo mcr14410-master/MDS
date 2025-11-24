@@ -498,12 +498,12 @@ export default function SupplierDetailPage() {
                             </Link>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-mono">
-                            {item.supplier_article_number || '-'}
+                            {item.supplier_part_number || '-'}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                            {item.price ? (
+                            {item.unit_price ? (
                               <>
-                                {parseFloat(item.price).toFixed(2)} {item.currency || 'EUR'}
+                                {parseFloat(item.unit_price).toFixed(2)} {item.currency || 'EUR'}
                               </>
                             ) : (
                               '-'

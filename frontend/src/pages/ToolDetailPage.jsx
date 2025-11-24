@@ -395,14 +395,8 @@ export default function ToolDetailPage() {
 
           {/* Kosten & Sonstiges */}
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Kosten & Sonstiges</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Sonstiges</h2>
             <div className="space-y-3">
-              {currentTool.cost && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Preis:</span>
-                  <span className="text-green-400 font-semibold">€{Number(currentTool.cost).toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-gray-400">Verwendet Wendeplatten:</span>
                 <span className="text-white font-medium">{currentTool.uses_inserts ? 'Ja' : 'Nein'}</span>
@@ -623,7 +617,10 @@ export default function ToolDetailPage() {
               <>
                 {storageItems.length === 1 ? (
                   // Single storage item - show directly
-                  <ToolSuppliersTab storageItemId={storageItems[0].id} />
+                  <ToolSuppliersTab 
+                    storageItemId={storageItems[0].id}
+                    toolName={currentTool?.tool_name || currentTool?.tool_article_number || 'Werkzeug'}
+                  />
                 ) : (
                   // Multiple storage items - show selection or tabs
                   <div className="space-y-6">
@@ -635,7 +632,10 @@ export default function ToolDetailPage() {
                         Zeige Lieferanten für: {storageItems[0].location_name} / {storageItems[0].compartment_name}
                       </div>
                     </div>
-                    <ToolSuppliersTab storageItemId={storageItems[0].id} />
+                    <ToolSuppliersTab 
+                      storageItemId={storageItems[0].id}
+                      toolName={currentTool?.tool_name || currentTool?.tool_article_number || 'Werkzeug'}
+                    />
                   </div>
                 )}
               </>

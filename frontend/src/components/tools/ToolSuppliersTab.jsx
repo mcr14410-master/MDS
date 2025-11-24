@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Star, Package, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Package, Loader2, ExternalLink, ShoppingCart } from 'lucide-react';
 import { useSupplierItemsStore } from '../../stores/supplierItemsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { toast } from '../Toaster';
 import AddSupplierToToolModal from './AddSupplierToToolModal';
+import AddToOrderModal from './AddToOrderModal';
 
-export default function ToolSuppliersTab({ storageItemId }) {
+export default function ToolSuppliersTab({ storageItemId, toolName }) {
   const { hasPermission } = useAuthStore();
   const {
     supplierItems,
@@ -20,6 +21,8 @@ export default function ToolSuppliersTab({ storageItemId }) {
 
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showAddToOrderModal, setShowAddToOrderModal] = useState(false);
+  const [selectedSupplierItem, setSelectedSupplierItem] = useState(null);
 
   useEffect(() => {
     if (storageItemId) {
@@ -92,6 +95,20 @@ export default function ToolSuppliersTab({ storageItemId }) {
     }
   };
 
+  const handleAddToOrder = (item) => {
+    setSelectedSupplierItem(item);
+    setShowAddToOrderModal(true);
+  };
+
+  const handleAddToOrderClose = (success) => {
+    setShowAddToOrderModal(false);
+    setSelectedSupplierItem(null);
+    if (success) {
+      // Could reload suppliers or show success message
+      toast.success('Bestellung erfolgreich aktualisiert');
+    }
+  };
+
   const getCurrencySymbol = (currency) => {
     switch (currency) {
       case 'EUR': return '€';
@@ -160,95 +177,37 @@ export default function ToolSuppliersTab({ storageItemId }) {
           {supplierItems.map((item) => (
             <div
               key={item.id}
-              className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors"
+              className={`bg-gray-800 rounded-lg border transition-all ${
+                item.is_preferred 
+                  ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/10' 
+                  : 'border-gray-700 hover:border-gray-600'
+              }`}
             >
-              <div className="flex items-start justify-between">
-                {/* Supplier Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Link
-                      to={`/suppliers/${item.supplier_id}`}
-                      className="text-lg font-semibold text-white hover:text-blue-400 transition-colors"
-                    >
-                      {item.supplier_name}
-                    </Link>
-                    {item.is_preferred && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                        <Star className="w-3 h-3 mr-1 fill-current" />
-                        Bevorzugt
-                      </span>
-                    )}
-                    {!item.is_active && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-400 border border-gray-600">
-                        Inaktiv
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    {/* Article Number */}
-                    {item.supplier_article_number && (
-                      <div>
-                        <p className="text-gray-400 mb-1">Artikelnummer</p>
-                        <p className="text-white font-mono">{item.supplier_article_number}</p>
-                      </div>
-                    )}
-
-                    {/* Price */}
-                    {item.price && (
-                      <div>
-                        <p className="text-gray-400 mb-1">Preis</p>
-                        <p className="text-white font-semibold">
-                          {formatPrice(item.price, item.currency)}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Lead Time */}
-                    {item.lead_time_days && (
-                      <div>
-                        <p className="text-gray-400 mb-1">Lieferzeit</p>
-                        <p className="text-white">
-                          {item.lead_time_days} {item.lead_time_days === 1 ? 'Tag' : 'Tage'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Min Order Quantity */}
-                    {item.min_order_quantity && (
-                      <div>
-                        <p className="text-gray-400 mb-1">Mindestmenge</p>
-                        <p className="text-white">{item.min_order_quantity}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Notes */}
-                  {item.notes && (
-                    <div className="mt-4 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
-                      <p className="text-sm text-gray-300">{item.notes}</p>
-                    </div>
+              {/* Header with Supplier Name and Status */}
+              <div className="px-6 py-4 border-b border-gray-700/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={`/suppliers/${item.supplier_id}`}
+                    className="text-lg font-semibold text-white hover:text-blue-400 transition-colors flex items-center gap-2"
+                  >
+                    {item.supplier_name}
+                    <ExternalLink className="w-4 h-4 text-gray-500" />
+                  </Link>
+                  {item.is_preferred && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      <Star className="w-3 h-3 mr-1 fill-current" />
+                      Bevorzugt
+                    </span>
                   )}
-
-                  {/* Supplier Link */}
-                  {item.supplier_website && (
-                    <div className="mt-3">
-                      <a
-                        href={item.supplier_website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-1" />
-                        Website öffnen
-                      </a>
-                    </div>
+                  {!item.is_active && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-400 border border-gray-600">
+                      Inaktiv
+                    </span>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 ml-4">
+                <div className="flex items-center gap-2">
                   {!item.is_preferred && hasPermission('storage.edit') && (
                     <button
                       onClick={() => handleSetPreferred(item)}
@@ -256,6 +215,16 @@ export default function ToolSuppliersTab({ storageItemId }) {
                       className="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors"
                     >
                       <Star className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {hasPermission('storage.create') && (
+                    <button
+                      onClick={() => handleAddToOrder(item)}
+                      title="Zur Bestellung hinzufügen"
+                      className="p-2 text-gray-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
                     </button>
                   )}
                   
@@ -280,6 +249,101 @@ export default function ToolSuppliersTab({ storageItemId }) {
                   )}
                 </div>
               </div>
+
+              {/* Details Section */}
+              <div className="px-6 py-5">
+                {/* Primary Info Grid - Always visible fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-5">
+                  {/* Article Number */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Artikelnummer</p>
+                    <p className="text-white font-mono text-sm">
+                      {item.supplier_part_number || <span className="text-gray-500 italic">nicht angegeben</span>}
+                    </p>
+                  </div>
+
+                  {/* Price */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Preis</p>
+                    <p className="text-lg font-bold text-green-400">
+                      {item.unit_price ? formatPrice(item.unit_price, item.currency) : (
+                        <span className="text-sm text-gray-500 font-normal italic">nicht angegeben</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Lead Time */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Lieferzeit</p>
+                    <p className="text-white text-sm">
+                      {item.lead_time_days ? (
+                        <>
+                          <span className="font-semibold">{item.lead_time_days}</span>{' '}
+                          {item.lead_time_days === 1 ? 'Tag' : 'Tage'}
+                        </>
+                      ) : (
+                        <span className="text-gray-500 italic">nicht angegeben</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Min Order Quantity */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Mindestmenge</p>
+                    <p className="text-white text-sm">
+                      {item.min_order_quantity ? (
+                        <span className="font-semibold">{item.min_order_quantity}</span>
+                      ) : (
+                        <span className="text-gray-500 italic">keine</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                {(item.supplier_code || item.contact_person || item.email || item.phone) && (
+                  <div className="pt-4 border-t border-gray-700/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      {item.supplier_code && (
+                        <div>
+                          <p className="text-gray-500 text-xs mb-1">Lieferanten-Code</p>
+                          <p className="text-gray-300 font-mono">{item.supplier_code}</p>
+                        </div>
+                      )}
+                      {item.contact_person && (
+                        <div>
+                          <p className="text-gray-500 text-xs mb-1">Ansprechpartner</p>
+                          <p className="text-gray-300">{item.contact_person}</p>
+                        </div>
+                      )}
+                      {item.email && (
+                        <div>
+                          <p className="text-gray-500 text-xs mb-1">E-Mail</p>
+                          <a href={`mailto:${item.email}`} className="text-blue-400 hover:text-blue-300 transition-colors">
+                            {item.email}
+                          </a>
+                        </div>
+                      )}
+                      {item.phone && (
+                        <div>
+                          <p className="text-gray-500 text-xs mb-1">Telefon</p>
+                          <a href={`tel:${item.phone}`} className="text-blue-400 hover:text-blue-300 transition-colors">
+                            {item.phone}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {item.notes && (
+                  <div className="mt-5 p-4 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Notizen</p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{item.notes}</p>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -296,6 +360,17 @@ export default function ToolSuppliersTab({ storageItemId }) {
             setEditingItem(null);
           }}
           onSave={handleSave}
+        />
+      )}
+
+      {/* Add to Order Modal */}
+      {showAddToOrderModal && selectedSupplierItem && (
+        <AddToOrderModal
+          storageItemId={storageItemId}
+          supplierItem={selectedSupplierItem}
+          toolName={toolName}
+          isOpen={showAddToOrderModal}
+          onClose={handleAddToOrderClose}
         />
       )}
     </div>

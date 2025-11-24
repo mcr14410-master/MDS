@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
 import LowStockWidget from '../components/dashboard/LowStockWidget';
+import PurchaseOrdersWidget from '../components/dashboard/PurchaseOrdersWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -163,6 +164,11 @@ export default function DashboardPage() {
         {/* Low Stock Widget */}
         {user?.permissions?.includes('tools.view') && (
           <LowStockWidget />
+        )}
+
+        {/* Purchase Orders Widget */}
+        {user?.permissions?.includes('storage.view') && (
+          <PurchaseOrdersWidget />
         )}
 
         {/* User Info */}
