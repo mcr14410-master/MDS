@@ -164,7 +164,7 @@ exports.getOrderById = async (req, res) => {
       SELECT
         poi.*,
         si.item_type,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         tm.manufacturer,
         tm.manufacturer_part_number,

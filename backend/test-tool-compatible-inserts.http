@@ -322,7 +322,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "tool_number": "TEST-TOOL-001",
+  "article_number": "TEST-TOOL-001",
   "tool_name": "Test Milling Cutter",
   "item_type": "tool",
   "tool_category": "standard",
@@ -336,7 +336,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "tool_number": "WNMG080408-PM",
+  "article_number": "WNMG080408-PM",
   "tool_name": "WNMG Insert Carbide",
   "item_type": "insert",
   "tool_category": "standard",

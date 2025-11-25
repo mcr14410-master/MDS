@@ -11,7 +11,7 @@ import CustomFieldsRenderer from './CustomFieldsRenderer';
 export default function ToolForm({ tool, onSave, onCancel, loading }) {
   const [activeTab, setActiveTab] = useState(0);
   const [formData, setFormData] = useState({
-    tool_number: '',
+    article_number: '',
     tool_name: '',
     category_id: '',
     subcategory_id: '',
@@ -51,7 +51,7 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
   useEffect(() => {
     if (tool) {
       setFormData({
-        tool_number: tool.tool_number || '',
+        article_number: tool.article_number || '',
         tool_name: tool.tool_name || '',
         category_id: tool.category_id || '',
         subcategory_id: tool.subcategory_id || '',
@@ -157,19 +157,19 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Tool Number */}
+                  {/* Article Number */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Werkzeugnummer <span className="text-red-400">*</span>
+                      Artikelnummer <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
-                      name="tool_number"
-                      value={formData.tool_number}
+                      name="article_number"
+                      value={formData.article_number}
                       onChange={handleChange}
                       required
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="z.B. T001, I050"
+                      placeholder="z.B. GAR-123, WZ-2024-001"
                     />
                   </div>
 

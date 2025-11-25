@@ -36,7 +36,7 @@ export default function StorageItemSelectionModal({
             <h2 className="text-xl font-bold text-white">{config.title}</h2>
             <p className="text-sm text-gray-400 mt-1">{config.subtitle}</p>
             <p className="text-sm text-gray-500 mt-2">
-              Werkzeug: <span className="text-white font-medium">{tool.tool_number} - {tool.tool_name}</span>
+              Werkzeug: <span className="text-white font-medium">{tool.article_number} - {tool.tool_name}</span>
             </p>
           </div>
           <button

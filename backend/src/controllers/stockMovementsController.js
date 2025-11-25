@@ -27,7 +27,7 @@ exports.getMovementsByItem = async (req, res) => {
         sm.*,
         u.username as performed_by_username,
         si.item_type,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         fc.name as from_compartment_name,
         tc.name as to_compartment_name
@@ -92,7 +92,7 @@ exports.getAllMovements = async (req, res) => {
         sm.*,
         u.username as performed_by_username,
         si.item_type,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         sc.name as compartment_name,
         sl.name as location_name
@@ -187,7 +187,7 @@ exports.getMovementById = async (req, res) => {
         sm.*,
         u.username as performed_by_username,
         si.item_type,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         fc.name as from_compartment_name,
         tc.name as to_compartment_name

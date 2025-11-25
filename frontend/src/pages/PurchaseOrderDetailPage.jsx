@@ -475,9 +475,9 @@ export default function PurchaseOrderDetailPage() {
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {item.tool_name || 'Unbekannt'}
                       </div>
-                      {item.tool_number && (
+                      {item.article_number && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.tool_number}
+                          {item.article_number}
                         </div>
                       )}
                       {item.location_name && (

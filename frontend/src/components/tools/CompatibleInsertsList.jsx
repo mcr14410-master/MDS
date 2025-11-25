@@ -79,7 +79,7 @@ export default function CompatibleInsertsList({ inserts, onDelete }) {
                 <div className="flex-1 min-w-0">
                   {/* Tool Number & Name */}
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-blue-400">{insert.insert_tool_number}</span>
+                    <span className="font-semibold text-blue-400">{insert.insert_article_number}</span>
                     {insert.is_preferred && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
                         <Star className="w-3 h-3 fill-current" />

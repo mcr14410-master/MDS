@@ -45,7 +45,7 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/tool-master?search=Fräser
 Authorization: Bearer {{authToken}}
 
-### 1.7 Get all tools - search by tool_number (T001)
+### 1.7 Get all tools - search by article_number (T001)
 GET {{baseUrl}}/tool-master?search=T001
 Authorization: Bearer {{authToken}}
 
@@ -103,7 +103,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T010",
+  "article_number": "T010",
   "tool_name": "Schaftfräser D12 Z4 HSS-E TiN",
   "category_id": 1,
   "subcategory_id": 1,
@@ -132,7 +132,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T020",
+  "article_number": "T020",
   "tool_name": "VHM-Fräser D8 Z3 AlTiN Hochvorschub",
   "category_id": 1,
   "subcategory_id": 1,
@@ -168,7 +168,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "I010",
+  "article_number": "I010",
   "tool_name": "CNMG 120408 TiN für Stahl",
   "category_id": 7,
   "subcategory_id": 18,
@@ -201,7 +201,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T200",
+  "article_number": "T200",
   "tool_name": "Spezial-Nutenfräser Profil A-2024",
   "category_id": 1,
   "subcategory_id": 5,
@@ -235,7 +235,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T030",
+  "article_number": "T030",
   "tool_name": "Spiralbohrer D6.8 HSS-Co DIN338",
   "category_id": 2,
   "subcategory_id": 7,
@@ -303,13 +303,13 @@ Authorization: Bearer {{authToken}}
 # 11. ERROR CASES
 ###############################################################################
 
-### 11.1 Create tool with duplicate tool_number (should return 409)
+### 11.1 Create tool with duplicate article_number (should return 409)
 POST {{baseUrl}}/tool-master
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T001",
+  "article_number": "T001",
   "tool_name": "Duplicate Tool Number Test",
   "category_id": 1,
   "item_type": "tool",
@@ -322,7 +322,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T999"
+  "article_number": "T999"
 }
 
 ### 11.3 Create tool with invalid category_id (should return 400)
@@ -331,7 +331,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T888",
+  "article_number": "T888",
   "tool_name": "Invalid Category Test",
   "category_id": 9999,
   "item_type": "tool",
@@ -344,7 +344,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T777",
+  "article_number": "T777",
   "tool_name": "Invalid Item Type Test",
   "item_type": "invalid_type",
   "tool_category": "standard"
@@ -356,7 +356,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "tool_number": "T666",
+  "article_number": "T666",
   "tool_name": "Negative Diameter Test",
   "diameter": -10.0,
   "item_type": "tool",
@@ -384,7 +384,7 @@ POST {{baseUrl}}/tool-master
 Content-Type: application/json
 
 {
-  "tool_number": "T555",
+  "article_number": "T555",
   "tool_name": "Unauthorized Test",
   "item_type": "tool",
   "tool_category": "standard"

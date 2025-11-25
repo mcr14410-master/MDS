@@ -102,7 +102,7 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
                     className="px-2 py-1 bg-gray-600 text-gray-200 rounded text-xs font-mono"
                     title={item.tool_name}
                   >
-                    {item.tool_number}
+                    {item.article_number}
                   </div>
                 ))}
                 {itemsCount > 3 && (

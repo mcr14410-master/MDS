@@ -28,7 +28,7 @@ exports.getAllTools = async (req, res) => {
       is_low_stock,
       manufacturer,
       search,
-      sort_by = 'tool_number',
+      sort_by = 'article_number',
       sort_order = 'ASC',
       limit = 20,
       offset = 0
@@ -85,9 +85,9 @@ exports.getAllTools = async (req, res) => {
       paramCount++;
     }
 
-    // Search (tool_number OR tool_name)
+    // Search (article_number OR tool_name)
     if (search) {
-      query += ` AND (tool_number ILIKE $${paramCount} OR tool_name ILIKE $${paramCount})`;
+      query += ` AND (article_number ILIKE $${paramCount} OR tool_name ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
     }
@@ -99,7 +99,7 @@ exports.getAllTools = async (req, res) => {
 
     // Sorting - now includes stock fields!
     const allowedSortFields = [
-      'tool_number', 
+      'article_number', 
       'tool_name', 
       'category_name', 
       'created_at', 
@@ -109,7 +109,7 @@ exports.getAllTools = async (req, res) => {
       'total_stock',
       'is_low_stock'
     ];
-    const sortField = allowedSortFields.includes(sort_by) ? sort_by : 'tool_number';
+    const sortField = allowedSortFields.includes(sort_by) ? sort_by : 'article_number';
     const sortDirection = sort_order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
     query += ` ORDER BY ${sortField} ${sortDirection}`;
@@ -192,7 +192,7 @@ exports.getToolById = async (req, res) => {
 exports.createTool = async (req, res) => {
   try {
     const {
-      tool_number,
+      article_number,
       tool_name,
       category_id,
       subcategory_id,
@@ -216,10 +216,10 @@ exports.createTool = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!tool_number || !tool_name) {
+    if (!article_number || !tool_name) {
       return res.status(400).json({
         success: false,
-        error: 'tool_number and tool_name are required'
+        error: 'article_number and tool_name are required'
       });
     }
 
@@ -295,7 +295,7 @@ exports.createTool = async (req, res) => {
 
     const query = `
       INSERT INTO tool_master (
-        tool_number, tool_name, category_id, subcategory_id,
+        article_number, tool_name, category_id, subcategory_id,
         item_type, tool_category, diameter, length, flutes,
         material, coating, substrate_grade, hardness,
         manufacturer, manufacturer_part_number, shop_url, cost,
@@ -308,7 +308,7 @@ exports.createTool = async (req, res) => {
     `;
 
     const values = [
-      tool_number, tool_name, category_id, subcategory_id,
+      article_number, tool_name, category_id, subcategory_id,
       item_type, tool_category, diameter, length, flutes,
       material, coating, substrate_grade, hardness,
       manufacturer, manufacturer_part_number, shop_url, cost,
@@ -345,7 +345,7 @@ exports.createTool = async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         success: false,
-        error: 'A tool with this tool_number already exists'
+        error: 'A tool with this article_number already exists'
       });
     }
 
@@ -365,7 +365,7 @@ exports.updateTool = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      tool_number,
+      article_number,
       tool_name,
       category_id,
       subcategory_id,
@@ -475,9 +475,9 @@ exports.updateTool = async (req, res) => {
     const values = [];
     let paramCount = 1;
 
-    if (tool_number !== undefined) {
-      fields.push(`tool_number = $${paramCount}`);
-      values.push(tool_number);
+    if (article_number !== undefined) {
+      fields.push(`article_number = $${paramCount}`);
+      values.push(article_number);
       paramCount++;
     }
     if (tool_name !== undefined) {
@@ -631,7 +631,7 @@ exports.updateTool = async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         success: false,
-        error: 'A tool with this tool_number already exists'
+        error: 'A tool with this article_number already exists'
       });
     }
 
@@ -670,7 +670,7 @@ exports.deleteTool = async (req, res) => {
         deleted_by = $2,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING id, tool_number, tool_name
+      RETURNING id, article_number, tool_name
     `;
 
     const result = await pool.query(query, [id, userId]);
@@ -727,7 +727,7 @@ exports.getToolsByCategory = async (req, res) => {
     const total = parseInt(countResult.rows[0].count);
 
     // Add pagination
-    query += ` ORDER BY tm.tool_number ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY tm.article_number ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(parseInt(limit));
     params.push(parseInt(offset));
 
@@ -776,7 +776,7 @@ exports.getToolsLowStock = async (req, res) => {
 
     // Sorting
     const allowedSortFields = [
-      'tool_number', 
+      'article_number', 
       'tool_name', 
       'category_name',
       'effective_stock',

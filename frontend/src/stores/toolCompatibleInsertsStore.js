@@ -251,7 +251,7 @@ export const useToolCompatibleInsertsStore = create((set, get) => ({
         return a.is_preferred ? -1 : 1;
       }
       // Then by tool number
-      return (a.insert_tool_number || '').localeCompare(b.insert_tool_number || '');
+      return (a.insert_article_number || '').localeCompare(b.insert_article_number || '');
     });
   },
 
