@@ -179,11 +179,11 @@ export default function LowStockWidget() {
                 key={item.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
               >
-                {/* Header: Tool Number + Status */}
+                {/* Header: Article Number + Status */}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {item.tool_number}
+                      {item.article_number}
                     </span>
                     {getStatusBadge(item.stock_status)}
                   </div>

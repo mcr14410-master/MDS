@@ -105,7 +105,7 @@ exports.getLowStockItems = async (req, res) => {
         si.id,
         si.item_type,
         si.tool_master_id,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         tm.diameter,
         tm.material,
@@ -234,7 +234,7 @@ exports.getRecentMovements = async (req, res) => {
         sm.quantity,
         sm.performed_at,
         u.username as performed_by_username,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         sc.name as compartment_name,
         sl.name as location_name

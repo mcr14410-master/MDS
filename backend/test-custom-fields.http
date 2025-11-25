@@ -38,7 +38,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "tool_number": "EM-001",
+  "article_number": "EM-001",
   "tool_name": "VHM Schaftfräser D10 Z4",
   "category_id": 1,
   "subcategory_id": 1,
@@ -74,7 +74,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "tool_number": "TD-001",
+  "article_number": "TD-001",
   "tool_name": "VHM Spiralbohrer D8.5",
   "category_id": 2,
   "subcategory_id": 8,
@@ -110,7 +110,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "tool_number": "I-CNMG-001",
+  "article_number": "I-CNMG-001",
   "tool_name": "CNMG 120408 TiAlN",
   "category_id": 7,
   "subcategory_id": 40,
@@ -147,7 +147,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "tool_number": "TAP-M8",
+  "article_number": "TAP-M8",
   "tool_name": "Gewindebohrer M8x1.25",
   "category_id": 4,
   "subcategory_id": 22,
@@ -219,7 +219,7 @@ Authorization: Bearer {{authToken}}
 # WHERE custom_field_definitions IS NOT NULL;
 
 ### Direct DB query to check tools with custom_fields
-# SELECT id, tool_number, tool_name, 
+# SELECT id, article_number, tool_name, 
 #        category_id,
 #        jsonb_pretty(custom_fields) as fields 
 # FROM tool_master 

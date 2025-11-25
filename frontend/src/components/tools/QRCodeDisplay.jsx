@@ -40,7 +40,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `qr-code-${storageItem.tool_number || storageItem.id}.png`;
+        link.download = `qr-code-${storageItem.article_number || storageItem.id}.png`;
         link.click();
         URL.revokeObjectURL(url);
       });
@@ -58,7 +58,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `qr-code-${storageItem.tool_number || storageItem.id}.svg`;
+    link.download = `qr-code-${storageItem.article_number || storageItem.id}.svg`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -80,7 +80,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>QR-Code ${storageItem.tool_number || storageItem.id}</title>
+          <title>QR-Code ${storageItem.article_number || storageItem.id}</title>
           <style>
             @page { margin: 0; }
             body {
@@ -116,7 +116,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>QR-Code ${storageItem.tool_number || storageItem.id}</title>
+          <title>QR-Code ${storageItem.article_number || storageItem.id}</title>
           <style>
             @page { margin: 0; }
             body {
@@ -161,7 +161,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
         </head>
         <body>
           <div class="label-container">
-            <div class="tool-number">${storageItem.tool_number || 'N/A'}</div>
+            <div class="tool-number">${storageItem.article_number || 'N/A'}</div>
             <div class="tool-name">${storageItem.tool_name || 'Unbenannt'}</div>
             <div class="qr-code">${svgData}</div>
             <div class="location">${locationText}</div>
@@ -200,7 +200,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
           <div>
             <h2 className="text-xl font-semibold text-white">QR-Code</h2>
             <p className="text-sm text-gray-400 mt-1">
-              {storageItem.tool_number} - {storageItem.tool_name}
+              {storageItem.article_number} - {storageItem.tool_name}
             </p>
           </div>
           <button

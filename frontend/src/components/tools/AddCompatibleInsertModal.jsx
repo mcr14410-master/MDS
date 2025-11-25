@@ -65,7 +65,7 @@ export default function AddCompatibleInsertModal({ toolId, onClose, onSuccess })
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
-      insert.tool_number?.toLowerCase().includes(search) ||
+      insert.article_number?.toLowerCase().includes(search) ||
       insert.tool_name?.toLowerCase().includes(search) ||
       insert.manufacturer?.toLowerCase().includes(search)
     );
@@ -162,7 +162,7 @@ export default function AddCompatibleInsertModal({ toolId, onClose, onSuccess })
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="font-semibold text-blue-400">{insert.tool_number}</div>
+                            <div className="font-semibold text-blue-400">{insert.article_number}</div>
                             <div className="text-sm text-white">{insert.tool_name}</div>
                             {insert.manufacturer && (
                               <div className="text-xs text-gray-400 mt-1">{insert.manufacturer}</div>

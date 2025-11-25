@@ -65,6 +65,9 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const suppliersRoutes = require('./routes/suppliersRoutes');
 const supplierItemsRoutes = require('./routes/supplierItemsRoutes');
 const purchaseOrdersRoutes = require('./routes/purchaseOrdersRoutes');
+const toolNumberListsRoutes = require('./routes/toolNumberListsRoutes');
+const toolNumberListItemsRoutes = require('./routes/toolNumberListItemsRoutes');
+const toolNumberAlternativesRoutes = require('./routes/toolNumberAlternativesRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -91,6 +94,9 @@ app.use('/api', qrCodesRoutes);
 app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/supplier-items', supplierItemsRoutes);
 app.use('/api/purchase-orders', purchaseOrdersRoutes);
+app.use('/api/tool-number-lists', toolNumberListsRoutes);
+app.use('/api/tool-number-list-items', toolNumberListItemsRoutes);
+app.use('/api/tool-number-alternatives', toolNumberAlternativesRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

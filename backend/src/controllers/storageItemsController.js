@@ -26,7 +26,7 @@ exports.getAllStorageItems = async (req, res) => {
         si.*,
         sl.name as location_name,
         sc.name as compartment_name,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name
       FROM storage_items_with_stock si
       LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id
@@ -90,7 +90,7 @@ exports.getStorageItemById = async (req, res) => {
         si.*,
         sl.name as location_name,
         sc.name as compartment_name,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name
       FROM storage_items_with_stock si
       LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id
@@ -195,7 +195,7 @@ exports.createStorageItem = async (req, res) => {
         si.*,
         sl.name as location_name,
         sc.name as compartment_name,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name
       FROM storage_items_with_stock si
       LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id
@@ -308,7 +308,7 @@ exports.updateStorageItem = async (req, res) => {
         si.*,
         sl.name as location_name,
         sc.name as compartment_name,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name
       FROM storage_items_with_stock si
       LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id

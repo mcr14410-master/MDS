@@ -1,0 +1,322 @@
+### ============================================================================
+### Tool Number Lists API Tests
+### Phase 5: T-Number management for NC programs
+### ============================================================================
+
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### ----------------------------------------------------------------------------
+### 1. AUTH - Get Token
+### ----------------------------------------------------------------------------
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### ============================================================================
+### 2. TOOL NUMBER LISTS - CRUD
+### ============================================================================
+
+### 2.1 Get all lists
+GET {{baseUrl}}/tool-number-lists
+Authorization: Bearer {{token}}
+
+### 2.2 Get all lists (include inactive)
+GET {{baseUrl}}/tool-number-lists?include_inactive=true
+Authorization: Bearer {{token}}
+
+### 2.3 Search lists
+GET {{baseUrl}}/tool-number-lists?search=Standard
+Authorization: Bearer {{token}}
+
+### 2.4 Create list - Standard Fräsen
+# @name createList1
+POST {{baseUrl}}/tool-number-lists
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Standard-Fräsen",
+  "description": "Standard T-Nummern für Fräsmaschinen"
+}
+
+###
+@listId1 = {{createList1.response.body.data.id}}
+
+### 2.5 Create list - Aluminium Spezial
+# @name createList2
+POST {{baseUrl}}/tool-number-lists
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Aluminium-Spezial",
+  "description": "Spezielle T-Nummern für Aluminium-Bearbeitung"
+}
+
+###
+@listId2 = {{createList2.response.body.data.id}}
+
+### 2.6 Get list by ID
+GET {{baseUrl}}/tool-number-lists/{{listId1}}
+Authorization: Bearer {{token}}
+
+### 2.7 Update list
+PUT {{baseUrl}}/tool-number-lists/{{listId1}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Standard T-Nummern für Fräsmaschinen (aktualisiert)"
+}
+
+### 2.8 Duplicate list
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/duplicate
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "new_name": "Standard-Fräsen (Backup)"
+}
+
+### ============================================================================
+### 3. LIST ITEMS (T-Numbers)
+### ============================================================================
+
+### 3.1 Add T-Number T113
+# @name createItem1
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_number": "T113",
+  "description": "Schaftfräser D16 Z4 VHM",
+  "notes": "Hauptfräser für Schruppen"
+}
+
+###
+@itemId1 = {{createItem1.response.body.data.id}}
+
+### 3.2 Add T-Number T5
+# @name createItem2
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_number": "T5",
+  "description": "Bohrer D8.5 HSS"
+}
+
+###
+@itemId2 = {{createItem2.response.body.data.id}}
+
+### 3.3 Add T-Number T22
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_number": "T22",
+  "description": "Gewindebohrer M10x1.5"
+}
+
+### 3.4 Get all items for list
+GET {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+
+### 3.5 Update item
+PUT {{baseUrl}}/tool-number-list-items/{{itemId1}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Schaftfräser D16 Z4 VHM TiAlN",
+  "notes": "Hauptfräser für Schruppen - Stahl bis 1000 N/mm²"
+}
+
+### 3.6 Reorder items
+PUT {{baseUrl}}/tool-number-lists/{{listId1}}/items/reorder
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "item_ids": [{{itemId2}}, {{itemId1}}]
+}
+
+### 3.7 Try duplicate T-Number (should fail 409)
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_number": "T113",
+  "description": "Duplicate test"
+}
+
+### ============================================================================
+### 4. ALTERNATIVES
+### ============================================================================
+
+### 4.1 Add alternative tool (needs existing tool_master_id)
+# First get a tool_master_id from your database
+# Replace 1 with an actual tool_master_id
+POST {{baseUrl}}/tool-number-list-items/{{itemId1}}/alternatives
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_master_id": 1,
+  "notes": "Alternative von Hersteller B"
+}
+
+### 4.2 Get alternatives for item
+GET {{baseUrl}}/tool-number-list-items/{{itemId1}}/alternatives
+Authorization: Bearer {{token}}
+
+### 4.3 Update alternative priority
+PUT {{baseUrl}}/tool-number-alternatives/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "priority": 0,
+  "notes": "Bevorzugte Alternative"
+}
+
+### 4.4 Reorder alternatives
+PUT {{baseUrl}}/tool-number-list-items/{{itemId1}}/alternatives/reorder
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "alternative_ids": [2, 1]
+}
+
+### 4.5 Remove alternative
+DELETE {{baseUrl}}/tool-number-alternatives/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 5. MACHINE ASSIGNMENT
+### ============================================================================
+
+### 5.1 Get lists for machine (needs existing machine_id)
+# Replace 1 with actual machine_id
+GET {{baseUrl}}/machines/1/tool-number-lists
+Authorization: Bearer {{token}}
+
+### 5.2 Assign list to machine
+POST {{baseUrl}}/machines/1/tool-number-lists
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "list_id": {{listId1}},
+  "is_active": true
+}
+
+### 5.3 Get machines for list
+GET {{baseUrl}}/tool-number-lists/{{listId1}}/machines
+Authorization: Bearer {{token}}
+
+### 5.4 Toggle list for machine (activate/deactivate)
+PUT {{baseUrl}}/machines/1/tool-number-lists/{{listId1}}/toggle
+Authorization: Bearer {{token}}
+
+### 5.5 Unassign list from machine
+DELETE {{baseUrl}}/machines/1/tool-number-lists/{{listId1}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 6. TOOL MAPPING (NC Program Integration)
+### ============================================================================
+
+### 6.1 Find tool mapping for single T-Number
+# Requires list assigned to machine with T-Number defined
+GET {{baseUrl}}/machines/1/tool-mapping/T113
+Authorization: Bearer {{token}}
+
+### 6.2 Bulk lookup multiple T-Numbers
+POST {{baseUrl}}/machines/1/tool-mapping/bulk
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "tool_numbers": ["T113", "T5", "T22", "T999"]
+}
+
+### ============================================================================
+### 7. LINK ITEM TO TOOL MASTER
+### ============================================================================
+
+### 7.1 Update item with preferred_tool_master_id
+# Replace tool_master_id with actual ID from your database
+PUT {{baseUrl}}/tool-number-list-items/{{itemId1}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "preferred_tool_master_id": 1
+}
+
+### 7.2 Get list (now shows preferred tool info)
+GET {{baseUrl}}/tool-number-lists/{{listId1}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 8. CLEANUP
+### ============================================================================
+
+### 8.1 Delete item
+DELETE {{baseUrl}}/tool-number-list-items/{{itemId2}}
+Authorization: Bearer {{token}}
+
+### 8.2 Delete list (cascades to items and alternatives)
+DELETE {{baseUrl}}/tool-number-lists/{{listId2}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 9. EDGE CASES
+### ============================================================================
+
+### 9.1 Create list without name (should fail)
+POST {{baseUrl}}/tool-number-lists
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "No name provided"
+}
+
+### 9.2 Create item without tool_number (should fail)
+POST {{baseUrl}}/tool-number-lists/{{listId1}}/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "No tool_number"
+}
+
+### 9.3 Get non-existent list (should return 404)
+GET {{baseUrl}}/tool-number-lists/99999
+Authorization: Bearer {{token}}
+
+### 9.4 Create list with duplicate name (should fail 409)
+POST {{baseUrl}}/tool-number-lists
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Standard-Fräsen"
+}

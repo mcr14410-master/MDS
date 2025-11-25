@@ -164,7 +164,7 @@ export default function ToolCard({ tool, onEdit, onDelete }) {
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg font-bold text-blue-400">{tool.tool_number}</span>
+              <span className="text-lg font-bold text-blue-400">{tool.article_number}</span>
               {tool.is_active ? (
                 <CheckCircle2 className="w-4 h-4 text-green-400" />
               ) : (

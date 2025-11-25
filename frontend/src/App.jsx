@@ -22,6 +22,8 @@ import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailPage from './pages/SupplierDetailPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
+import ToolNumberListsPage from './pages/ToolNumberListsPage';
+import ToolNumberListDetailPage from './pages/ToolNumberListDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -198,6 +200,23 @@ function App() {
 		   />
 		  
 		  
+		  {/* Tool Number Lists */}
+		  <Route 
+		    path="/tool-number-lists" 
+		    element={
+		  	<ProtectedRoute requiredPermission="tools.view">
+		  	  <ToolNumberListsPage />
+		  	</ProtectedRoute>
+			} 
+		   />
+		  <Route 
+		    path="/tool-number-lists/:id" 
+		    element={
+		  	<ProtectedRoute requiredPermission="tools.view">
+		  	  <ToolNumberListDetailPage />
+		  	</ProtectedRoute>
+			} 
+		   />
         </Route>
 
 		

@@ -31,7 +31,7 @@ exports.getCompatibleInsertsByTool = async (req, res) => {
     const query = `
       SELECT
         tci.*,
-        tm.tool_number as insert_tool_number,
+        tm.article_number as insert_article_number,
         tm.tool_name as insert_tool_name,
         tm.manufacturer as insert_manufacturer,
         tm.manufacturer_part_number as insert_part_number,
@@ -49,7 +49,7 @@ exports.getCompatibleInsertsByTool = async (req, res) => {
       LEFT JOIN storage_items si ON si.tool_master_id = tm.id AND si.is_deleted = false
       WHERE tci.tool_master_id = $1 AND tci.is_deleted = false
       GROUP BY tci.id, tm.id, u.username
-      ORDER BY tci.is_preferred DESC, tm.tool_number ASC
+      ORDER BY tci.is_preferred DESC, tm.article_number ASC
     `;
 
     const result = await client.query(query, [toolId]);
@@ -83,7 +83,7 @@ exports.getToolsByInsert = async (req, res) => {
     const query = `
       SELECT
         tci.*,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         tm.item_type,
         tm.is_active,
@@ -92,7 +92,7 @@ exports.getToolsByInsert = async (req, res) => {
       JOIN tool_master tm ON tm.id = tci.tool_master_id
       LEFT JOIN users u ON u.id = tci.created_by
       WHERE tci.insert_tool_master_id = $1 AND tci.is_deleted = false
-      ORDER BY tm.tool_number ASC
+      ORDER BY tm.article_number ASC
     `;
 
     const result = await client.query(query, [insertId]);
@@ -126,9 +126,9 @@ exports.getCompatibleInsertById = async (req, res) => {
     const query = `
       SELECT
         tci.*,
-        tm_tool.tool_number as tool_number,
+        tm_tool.article_number as article_number,
         tm_tool.tool_name as tool_name,
-        tm_insert.tool_number as insert_tool_number,
+        tm_insert.article_number as insert_article_number,
         tm_insert.tool_name as insert_tool_name,
         u.username as created_by_username
       FROM tool_compatible_inserts tci
@@ -265,7 +265,7 @@ exports.addCompatibleInsert = async (req, res) => {
         const selectQuery = `
           SELECT
             tci.*,
-            tm.tool_number as insert_tool_number,
+            tm.article_number as insert_article_number,
             tm.tool_name as insert_tool_name,
             u.username as created_by_username
           FROM tool_compatible_inserts tci
@@ -317,7 +317,7 @@ exports.addCompatibleInsert = async (req, res) => {
     const selectQuery = `
       SELECT
         tci.*,
-        tm.tool_number as insert_tool_number,
+        tm.article_number as insert_article_number,
         tm.tool_name as insert_tool_name,
         u.username as created_by_username
       FROM tool_compatible_inserts tci
@@ -408,7 +408,7 @@ exports.updateCompatibleInsert = async (req, res) => {
     const selectQuery = `
       SELECT
         tci.*,
-        tm.tool_number as insert_tool_number,
+        tm.article_number as insert_article_number,
         tm.tool_name as insert_tool_name,
         u.username as created_by_username
       FROM tool_compatible_inserts tci
@@ -491,7 +491,7 @@ exports.getAvailableInserts = async (req, res) => {
     let query = `
       SELECT
         tm.id,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name,
         tm.manufacturer,
         tm.manufacturer_part_number,
@@ -517,7 +517,7 @@ exports.getAvailableInserts = async (req, res) => {
 
     if (search) {
       query += ` AND (
-        tm.tool_number ILIKE $${paramCount} OR
+        tm.article_number ILIKE $${paramCount} OR
         tm.tool_name ILIKE $${paramCount} OR
         tm.manufacturer ILIKE $${paramCount}
       )`;
@@ -533,7 +533,7 @@ exports.getAvailableInserts = async (req, res) => {
 
     query += `
       GROUP BY tm.id
-      ORDER BY tm.tool_number ASC
+      ORDER BY tm.article_number ASC
       LIMIT 100
     `;
 

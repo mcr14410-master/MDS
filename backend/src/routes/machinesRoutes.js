@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const machinesController = require('../controllers/machinesController');
+const toolNumberListsController = require('../controllers/toolNumberListsController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
 // All routes require authentication
@@ -56,5 +57,53 @@ router.put('/:id', machinesController.updateMachine);
  * @access  Private (requires permission: machines.delete)
  */
 router.delete('/:id', machinesController.deleteMachine);
+
+// ============================================================================
+// TOOL NUMBER LISTS ASSIGNMENT
+// ============================================================================
+
+/**
+ * @route   GET /api/machines/:machineId/tool-number-lists
+ * @desc    Get all tool number lists assigned to a machine
+ * @access  Private
+ */
+router.get('/:machineId/tool-number-lists', toolNumberListsController.getListsForMachine);
+
+/**
+ * @route   POST /api/machines/:machineId/tool-number-lists
+ * @desc    Assign a tool number list to a machine
+ * @body    { list_id, is_active }
+ * @access  Private
+ */
+router.post('/:machineId/tool-number-lists', toolNumberListsController.assignListToMachine);
+
+/**
+ * @route   PUT /api/machines/:machineId/tool-number-lists/:listId/toggle
+ * @desc    Toggle tool number list active status for machine
+ * @access  Private
+ */
+router.put('/:machineId/tool-number-lists/:listId/toggle', toolNumberListsController.toggleListForMachine);
+
+/**
+ * @route   DELETE /api/machines/:machineId/tool-number-lists/:listId
+ * @desc    Unassign a tool number list from a machine
+ * @access  Private
+ */
+router.delete('/:machineId/tool-number-lists/:listId', toolNumberListsController.unassignListFromMachine);
+
+/**
+ * @route   GET /api/machines/:machineId/tool-mapping/:toolNumber
+ * @desc    Find tool mapping for a T-Number on a machine
+ * @access  Private
+ */
+router.get('/:machineId/tool-mapping/:toolNumber', toolNumberListsController.findToolMapping);
+
+/**
+ * @route   POST /api/machines/:machineId/tool-mapping/bulk
+ * @desc    Bulk lookup tool mappings for multiple T-Numbers
+ * @body    { tool_numbers: ['T1', 'T2', ...] }
+ * @access  Private
+ */
+router.post('/:machineId/tool-mapping/bulk', toolNumberListsController.findToolMappingsBulk);
 
 module.exports = router;

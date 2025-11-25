@@ -167,7 +167,7 @@ export default function ToolDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl font-bold text-blue-400">{currentTool.tool_number}</span>
+                <span className="text-2xl font-bold text-blue-400">{currentTool.article_number}</span>
                 {currentTool.is_active ? (
                   <CheckCircle2 className="w-6 h-6 text-green-400" />
                 ) : (

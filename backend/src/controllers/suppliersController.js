@@ -577,7 +577,7 @@ exports.getSupplierItems = async (req, res) => {
         supplier_items.*,
         storage_items.item_type,
         storage_items.tool_master_id,
-        tool_master.tool_number,
+        tool_master.article_number,
         tool_master.tool_name,
         tool_master.manufacturer,
         storage_items.quantity_new,

@@ -165,7 +165,7 @@ exports.getDocumentById = async (req, res) => {
       SELECT
         td.*,
         u.username as uploaded_by_username,
-        tm.tool_number,
+        tm.article_number,
         tm.tool_name
       FROM tool_documents td
       LEFT JOIN users u ON u.id = td.uploaded_by

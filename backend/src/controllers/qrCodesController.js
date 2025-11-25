@@ -144,7 +144,7 @@ exports.scanQRCode = async (req, res) => {
       const itemResult = await client.query(
         `SELECT 
           si.*,
-          tm.tool_number,
+          tm.article_number,
           tm.tool_name,
           tm.manufacturer,
           c.name as compartment_name,
