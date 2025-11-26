@@ -1,0 +1,393 @@
+### ============================================================================
+### MESSMITTELVERWALTUNG - API Tests
+### ============================================================================
+### Phase 5: Messmittel mit Kalibrierung (ISO/Luftfahrt)
+### ============================================================================
+
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### ============================================================================
+### 1. AUTH - Login
+### ============================================================================
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### ============================================================================
+### 2. MEASURING EQUIPMENT TYPES
+### ============================================================================
+
+### 2.1 Get all types
+# @name getAllTypes
+GET {{baseUrl}}/measuring-equipment/types
+Authorization: Bearer {{token}}
+
+### 2.2 Get active types only
+GET {{baseUrl}}/measuring-equipment/types?is_active=true
+Authorization: Bearer {{token}}
+
+### 2.3 Get type by ID
+GET {{baseUrl}}/measuring-equipment/types/1
+Authorization: Bearer {{token}}
+
+### 2.4 Create new type
+# @name createType
+POST {{baseUrl}}/measuring-equipment/types
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Spezial-Messmittel",
+  "description": "Spezialmessmittel für besondere Anwendungen",
+  "icon": "star",
+  "default_calibration_interval_months": 6,
+  "sort_order": 50
+}
+
+### 2.5 Update type
+PUT {{baseUrl}}/measuring-equipment/types/{{createType.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Aktualisierte Beschreibung"
+}
+
+### 2.6 Delete type (only if not in use)
+DELETE {{baseUrl}}/measuring-equipment/types/{{createType.response.body.data.id}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 3. MEASURING EQUIPMENT - Stammdaten
+### ============================================================================
+
+### 3.1 Get next inventory number
+# @name getNextNumber
+GET {{baseUrl}}/measuring-equipment/next-number
+Authorization: Bearer {{token}}
+
+### 3.2 Create measuring equipment - Messschieber
+# @name createEquipment1
+POST {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "inventory_number": "MM-2024-001",
+  "name": "Digitaler Messschieber 150mm",
+  "type_id": 1,
+  "manufacturer": "Mitutoyo",
+  "model": "CD-15CPX",
+  "serial_number": "1234567",
+  "measuring_range_min": 0,
+  "measuring_range_max": 150,
+  "resolution": 0.01,
+  "accuracy": 0.02,
+  "unit": "mm",
+  "calibration_interval_months": 12,
+  "last_calibration_date": "2024-06-15",
+  "calibration_provider": "Kalibrierlabor Müller GmbH",
+  "purchase_date": "2023-01-15",
+  "purchase_price": 189.00,
+  "notes": "Standard-Messschieber für Werkstatt"
+}
+
+### 3.3 Create measuring equipment - Bügelmessschraube
+# @name createEquipment2
+POST {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "inventory_number": "MM-2024-002",
+  "name": "Bügelmessschraube 0-25mm",
+  "type_id": 2,
+  "manufacturer": "Mitutoyo",
+  "model": "103-137",
+  "serial_number": "7654321",
+  "measuring_range_min": 0,
+  "measuring_range_max": 25,
+  "resolution": 0.01,
+  "accuracy": 0.002,
+  "unit": "mm",
+  "calibration_interval_months": 12,
+  "last_calibration_date": "2024-05-01"
+}
+
+### 3.4 Create measuring equipment - Lehrdorn
+# @name createEquipment3
+POST {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "inventory_number": "MM-2024-003",
+  "name": "Lehrdorn H7 Ø20",
+  "type_id": 6,
+  "manufacturer": "Hoffmann",
+  "serial_number": "LD-20H7-001",
+  "nominal_value": 20.000,
+  "tolerance_class": "H7",
+  "calibration_interval_months": 12,
+  "last_calibration_date": "2023-12-01"
+}
+
+### 3.5 Create measuring equipment - überfälliges Messmittel
+# @name createEquipmentOverdue
+POST {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "inventory_number": "MM-2024-004",
+  "name": "Alter Messschieber 200mm",
+  "type_id": 1,
+  "manufacturer": "Mahr",
+  "serial_number": "OLD-12345",
+  "measuring_range_min": 0,
+  "measuring_range_max": 200,
+  "resolution": 0.02,
+  "calibration_interval_months": 12,
+  "last_calibration_date": "2023-01-15",
+  "notes": "Kalibrierung überfällig!"
+}
+
+### 3.6 Get all equipment
+# @name getAllEquipment
+GET {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+
+### 3.7 Get equipment with filters
+GET {{baseUrl}}/measuring-equipment?type_id=1
+Authorization: Bearer {{token}}
+
+### 3.8 Get equipment by calibration status
+GET {{baseUrl}}/measuring-equipment?calibration_status=overdue
+Authorization: Bearer {{token}}
+
+### 3.9 Search equipment
+GET {{baseUrl}}/measuring-equipment?search=Mitutoyo
+Authorization: Bearer {{token}}
+
+### 3.10 Get equipment by ID
+GET {{baseUrl}}/measuring-equipment/{{createEquipment1.response.body.data.id}}
+Authorization: Bearer {{token}}
+
+### 3.11 Get equipment statistics
+# @name getStats
+GET {{baseUrl}}/measuring-equipment/stats
+Authorization: Bearer {{token}}
+
+### 3.12 Update equipment
+PUT {{baseUrl}}/measuring-equipment/{{createEquipment1.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "notes": "Aktualisierte Bemerkung - regelmäßig prüfen",
+  "storage_location_id": 1
+}
+
+### 3.13 Update status - lock equipment
+PATCH {{baseUrl}}/measuring-equipment/{{createEquipmentOverdue.response.body.data.id}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "locked",
+  "lock_reason": "Kalibrierung überfällig - nicht verwenden!"
+}
+
+### 3.14 Update status - send to calibration
+PATCH {{baseUrl}}/measuring-equipment/{{createEquipment2.response.body.data.id}}/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "in_calibration"
+}
+
+### ============================================================================
+### 4. CALIBRATIONS
+### ============================================================================
+
+### 4.1 Create calibration - passed
+# @name createCalibration1
+POST {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "equipment_id": 1,
+  "calibration_date": "2024-11-20",
+  "valid_until": "2025-11-20",
+  "result": "passed",
+  "provider": "Kalibrierlabor Müller GmbH",
+  "certificate_number": "KAL-2024-12345",
+  "cost": 45.00,
+  "notes": "Alle Werte innerhalb Toleranz"
+}
+
+### 4.2 Create calibration - adjusted
+# @name createCalibration2
+POST {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "equipment_id": 2,
+  "calibration_date": "2024-11-21",
+  "valid_until": "2025-11-21",
+  "result": "adjusted",
+  "provider": "Intern - Messtechnik",
+  "certificate_number": "INT-2024-001",
+  "deviation": 0.005,
+  "measured_values": {
+    "punkt_1": {"soll": 0, "ist": 0.002},
+    "punkt_2": {"soll": 12.5, "ist": 12.503},
+    "punkt_3": {"soll": 25, "ist": 25.005}
+  },
+  "notes": "Nullpunkt nachjustiert"
+}
+
+### 4.3 Create calibration - failed
+# @name createCalibrationFailed
+POST {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "equipment_id": 4,
+  "calibration_date": "2024-11-22",
+  "valid_until": "2024-11-22",
+  "result": "failed",
+  "provider": "Kalibrierlabor Müller GmbH",
+  "certificate_number": "KAL-2024-99999",
+  "deviation": 0.15,
+  "notes": "Abweichung zu groß - Austausch empfohlen"
+}
+
+### 4.4 Get all calibrations
+GET {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+
+### 4.5 Get calibrations for specific equipment
+GET {{baseUrl}}/calibrations?equipment_id=1
+Authorization: Bearer {{token}}
+
+### 4.6 Get calibrations by result
+GET {{baseUrl}}/calibrations?result=passed
+Authorization: Bearer {{token}}
+
+### 4.7 Get calibration by ID
+GET {{baseUrl}}/calibrations/{{createCalibration1.response.body.data.id}}
+Authorization: Bearer {{token}}
+
+### 4.8 Update calibration
+PUT {{baseUrl}}/calibrations/{{createCalibration1.response.body.data.id}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "notes": "Alle Werte innerhalb Toleranz - dokumentiert"
+}
+
+### ============================================================================
+### 5. CALIBRATION CERTIFICATES (File Upload)
+### ============================================================================
+
+### 5.1 Upload certificate (use form-data in Postman/Insomnia)
+### POST {{baseUrl}}/calibrations/1/certificates
+### Authorization: Bearer {{token}}
+### Content-Type: multipart/form-data
+### file: <your-certificate.pdf>
+
+### 5.2 Get certificates for calibration
+GET {{baseUrl}}/calibrations/{{createCalibration1.response.body.data.id}}/certificates
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 6. VERIFICATION - Check equipment after calibration
+### ============================================================================
+
+### 6.1 Verify equipment 1 has updated calibration dates
+GET {{baseUrl}}/measuring-equipment/1
+Authorization: Bearer {{token}}
+
+### 6.2 Verify equipment 4 is locked after failed calibration
+GET {{baseUrl}}/measuring-equipment/4
+Authorization: Bearer {{token}}
+
+### 6.3 Check statistics again
+GET {{baseUrl}}/measuring-equipment/stats
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 7. CLEANUP (optional)
+### ============================================================================
+
+### 7.1 Delete calibration
+# DELETE {{baseUrl}}/calibrations/{{createCalibration1.response.body.data.id}}
+# Authorization: Bearer {{token}}
+
+### 7.2 Delete equipment (soft delete)
+# DELETE {{baseUrl}}/measuring-equipment/{{createEquipment1.response.body.data.id}}
+# Authorization: Bearer {{token}}
+
+### ============================================================================
+### 8. ERROR CASES
+### ============================================================================
+
+### 8.1 Create equipment with duplicate inventory number
+POST {{baseUrl}}/measuring-equipment
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "inventory_number": "MM-2024-001",
+  "name": "Duplicate Test",
+  "type_id": 1
+}
+
+### 8.2 Create calibration with invalid result
+POST {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "equipment_id": 1,
+  "calibration_date": "2024-11-25",
+  "valid_until": "2025-11-25",
+  "result": "invalid_result"
+}
+
+### 8.3 Create calibration for non-existent equipment
+POST {{baseUrl}}/calibrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "equipment_id": 99999,
+  "calibration_date": "2024-11-25",
+  "valid_until": "2025-11-25",
+  "result": "passed"
+}
+
+### 8.4 Invalid status update
+PATCH {{baseUrl}}/measuring-equipment/1/status
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "status": "invalid_status"
+}

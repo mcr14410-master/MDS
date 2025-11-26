@@ -24,6 +24,8 @@ import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
 import ToolNumberListsPage from './pages/ToolNumberListsPage';
 import ToolNumberListDetailPage from './pages/ToolNumberListDetailPage';
+import MeasuringEquipmentPage from './pages/MeasuringEquipmentPage';
+import MeasuringEquipmentDetailPage from './pages/MeasuringEquipmentDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -216,6 +218,23 @@ function App() {
 		  	  <ToolNumberListDetailPage />
 		  	</ProtectedRoute>
 			} 
+		   />
+		   {/* Measuring Equipment Routes */}
+		   <Route 
+		     path="/measuring-equipment" 
+		     element={
+		       <ProtectedRoute requiredPermission="storage.view">
+		         <MeasuringEquipmentPage />
+		       </ProtectedRoute>
+		     } 
+		   />
+		   <Route 
+		     path="/measuring-equipment/:id" 
+		     element={
+		       <ProtectedRoute requiredPermission="storage.view">
+		         <MeasuringEquipmentDetailPage />
+		       </ProtectedRoute>
+		     } 
 		   />
         </Route>
 
