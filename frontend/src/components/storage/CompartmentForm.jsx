@@ -8,15 +8,24 @@ export default function CompartmentForm({ compartment, locationId, locationName,
 
   const [formData, setFormData] = useState({
     name: '',
+    compartment_type: 'compartment',
     description: '',
     position: '',
     is_active: true,
   });
 
+  const compartmentTypes = [
+    { value: 'drawer', label: 'Schublade' },
+    { value: 'compartment', label: 'Fach' },
+    { value: 'bin', label: 'Behälter' },
+    { value: 'section', label: 'Bereich' },
+  ];
+
   useEffect(() => {
     if (compartment) {
       setFormData({
         name: compartment.name || '',
+        compartment_type: compartment.compartment_type || 'compartment',
         description: compartment.description || '',
         position: compartment.position != null ? compartment.position.toString() : '',
         is_active: compartment.is_active !== undefined ? compartment.is_active : true,
@@ -37,6 +46,7 @@ export default function CompartmentForm({ compartment, locationId, locationName,
     const compartmentData = {
       location_id: parseInt(locationId),
       name: formData.name.trim(),
+      compartment_type: formData.compartment_type,
       description: formData.description.trim() || null,
       position: formData.position ? parseInt(formData.position) : null,
       is_active: formData.is_active,
@@ -103,6 +113,24 @@ export default function CompartmentForm({ compartment, locationId, locationName,
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="z.B. Schublade 1 Oben"
                 />
+              </div>
+
+              {/* Compartment Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Typ <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={formData.compartment_type}
+                  onChange={(e) => setFormData({ ...formData, compartment_type: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {compartmentTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Position */}
