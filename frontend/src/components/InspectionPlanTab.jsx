@@ -1,6 +1,7 @@
 // frontend/src/components/InspectionPlanTab.jsx
 import { useState, useEffect } from 'react';
 import { useInspectionPlansStore } from '../stores/inspectionPlansStore';
+import { useMeasuringEquipmentStore } from '../stores/measuringEquipmentStore';
 import { 
   calculateISO286, 
   calculateISO2768, 
@@ -21,6 +22,8 @@ export default function InspectionPlanTab({ operationId }) {
     moveItemDown
   } = useInspectionPlansStore();
 
+  const { equipment: measuringEquipmentList, fetchEquipment } = useMeasuringEquipmentStore();
+
   const [notes, setNotes] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
@@ -34,6 +37,7 @@ export default function InspectionPlanTab({ operationId }) {
     nominal_value: '',
     mean_value: '',
     measuring_tool: '',
+    measuring_equipment_id: '',
     instruction: ''
   });
 
@@ -47,12 +51,18 @@ export default function InspectionPlanTab({ operationId }) {
   const [upperDeviation, setUpperDeviation] = useState('');
   const [lowerDeviation, setLowerDeviation] = useState('');
 
-  // Load inspection plan on mount
+  // Measuring equipment search
+  const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [showEquipmentDropdown, setShowEquipmentDropdown] = useState(false);
+
+  // Load inspection plan and measuring equipment on mount
   useEffect(() => {
     if (operationId) {
       fetchInspectionPlan(operationId);
     }
-  }, [operationId, fetchInspectionPlan]);
+    // Load all measuring equipment for dropdown (including locked/overdue)
+    fetchEquipment({});
+  }, [operationId, fetchInspectionPlan, fetchEquipment]);
 
   // Sync notes with loaded inspection plan
   useEffect(() => {
@@ -154,6 +164,7 @@ export default function InspectionPlanTab({ operationId }) {
       nominal_value: '',
       mean_value: '',
       measuring_tool: '',
+      measuring_equipment_id: '',
       instruction: ''
     });
     setToleranceMode('manual');
@@ -162,6 +173,8 @@ export default function InspectionPlanTab({ operationId }) {
     setIso2768Grade('m');
     setUpperDeviation('');
     setLowerDeviation('');
+    setEquipmentSearch('');
+    setShowEquipmentDropdown(false);
     setShowAddForm(false);
     setEditingItemId(null);
   };
@@ -183,6 +196,7 @@ export default function InspectionPlanTab({ operationId }) {
         nominal_value: formData.nominal_value ? parseFloat(formData.nominal_value) : null,
         mean_value: formData.mean_value ? parseFloat(formData.mean_value) : null,
         measuring_tool: formData.measuring_tool || null,
+        measuring_equipment_id: formData.measuring_equipment_id ? parseInt(formData.measuring_equipment_id) : null,
         instruction: formData.instruction || null
       });
       
@@ -202,8 +216,16 @@ export default function InspectionPlanTab({ operationId }) {
       nominal_value: item.nominal_value || '',
       mean_value: item.mean_value || '',
       measuring_tool: item.measuring_tool || '',
+      measuring_equipment_id: item.measuring_equipment_id || '',
       instruction: item.instruction || ''
     });
+    
+    // Set equipment search text
+    if (item.measuring_equipment_id && item.equipment_inventory_number) {
+      setEquipmentSearch(`${item.equipment_inventory_number} - ${item.equipment_name || ''}`);
+    } else {
+      setEquipmentSearch('');
+    }
     
     // Erkenne Toleranz-Typ anhand der vorhandenen Werte
     if (!item.nominal_value && item.max_value) {
@@ -252,6 +274,7 @@ export default function InspectionPlanTab({ operationId }) {
         nominal_value: formData.nominal_value ? parseFloat(formData.nominal_value) : null,
         mean_value: formData.mean_value ? parseFloat(formData.mean_value) : null,
         measuring_tool: formData.measuring_tool || null,
+        measuring_equipment_id: formData.measuring_equipment_id ? parseInt(formData.measuring_equipment_id) : null,
         instruction: formData.instruction || null
       }, operationId);
       
@@ -612,10 +635,147 @@ export default function InspectionPlanTab({ operationId }) {
         </div>
       )}
 
-      {/* Measuring Tool */}
+      {/* Measuring Equipment Selection with Search */}
+      <div className="relative">
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Messmittel (aus Bestand)
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            value={equipmentSearch}
+            onChange={(e) => {
+              setEquipmentSearch(e.target.value);
+              setShowEquipmentDropdown(true);
+            }}
+            onFocus={() => setShowEquipmentDropdown(true)}
+            placeholder="Suche nach Inventar-Nr., Name oder Typ..."
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm
+                     focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {formData.measuring_equipment_id && (
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({ ...formData, measuring_equipment_id: '' });
+                setEquipmentSearch('');
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        
+        {/* Dropdown List */}
+        {showEquipmentDropdown && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowEquipmentDropdown(false)} />
+            <div className="absolute z-20 mt-1 w-full max-h-60 overflow-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+              {/* No selection option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ ...formData, measuring_equipment_id: '' });
+                  setEquipmentSearch('');
+                  setShowEquipmentDropdown(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                -- Kein Messmittel verknüpfen --
+              </button>
+              
+              {/* Filtered equipment list */}
+              {measuringEquipmentList
+                .filter(eq => {
+                  if (!equipmentSearch) return true;
+                  const search = equipmentSearch.toLowerCase();
+                  return (
+                    eq.inventory_number?.toLowerCase().includes(search) ||
+                    eq.name?.toLowerCase().includes(search) ||
+                    eq.type_name?.toLowerCase().includes(search)
+                  );
+                })
+                .slice(0, 50) // Limit to 50 results for performance
+                .map(eq => (
+                  <button
+                    key={eq.id}
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        measuring_equipment_id: eq.id.toString()
+                      });
+                      setEquipmentSearch(`${eq.inventory_number} - ${eq.name}`);
+                      setShowEquipmentDropdown(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
+                      formData.measuring_equipment_id === eq.id.toString() ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    }`}
+                  >
+                    <div>
+                      <span className="font-medium text-gray-900 dark:text-white">{eq.inventory_number}</span>
+                      <span className="text-gray-600 dark:text-gray-400 ml-2">{eq.name}</span>
+                      <span className="text-gray-400 dark:text-gray-500 ml-1 text-xs">({eq.type_name})</span>
+                    </div>
+                    <div className="flex-shrink-0 ml-2">
+                      {eq.calibration_status === 'ok' && (
+                        <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded">✓</span>
+                      )}
+                      {eq.calibration_status === 'due_soon' && (
+                        <span className="px-1.5 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">⚠️</span>
+                      )}
+                      {eq.calibration_status === 'overdue' && (
+                        <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded">❌ Überf.</span>
+                      )}
+                      {eq.status === 'locked' && (
+                        <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded">🔒</span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              }
+              
+              {measuringEquipmentList.filter(eq => {
+                if (!equipmentSearch) return true;
+                const search = equipmentSearch.toLowerCase();
+                return (
+                  eq.inventory_number?.toLowerCase().includes(search) ||
+                  eq.name?.toLowerCase().includes(search) ||
+                  eq.type_name?.toLowerCase().includes(search)
+                );
+              }).length === 0 && (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  Keine Messmittel gefunden
+                </div>
+              )}
+            </div>
+          </>
+        )}
+        
+        {/* Status hint */}
+        {formData.measuring_equipment_id && (() => {
+          const eq = measuringEquipmentList.find(m => m.id === parseInt(formData.measuring_equipment_id));
+          if (!eq) return null;
+          
+          if (eq.calibration_status === 'overdue') {
+            return <p className="text-xs text-red-600 dark:text-red-400 mt-1">⚠️ Kalibrierung überfällig!</p>;
+          }
+          if (eq.calibration_status === 'due_soon') {
+            return <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">⚠️ Kalibrierung bald fällig</p>;
+          }
+          if (eq.status === 'locked') {
+            return <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">🔒 Messmittel gesperrt</p>;
+          }
+          return <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Kalibrierung OK</p>;
+        })()}
+      </div>
+
+      {/* Measuring Tool (Freitext) */}
       <div>
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Messmittel
+          Messmittel (Freitext)
         </label>
         <input
           type="text"
@@ -626,6 +786,9 @@ export default function InspectionPlanTab({ operationId }) {
                    focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="z.B. Messschieber 0-150mm, 3D-Messmaschine"
         />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Für externes oder zusätzliches Equipment
+        </p>
       </div>
 
       {/* Instruction */}
@@ -845,11 +1008,41 @@ export default function InspectionPlanTab({ operationId }) {
                         )
                       )}
 
-                      {/* Measuring Tool */}
-                      {item.measuring_tool && (
-                        <div className="mb-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">Messmittel: </span>
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{item.measuring_tool}</span>
+                      {/* Measuring Equipment - combined in one line */}
+                      {(item.measuring_equipment_id || item.measuring_tool) && (
+                        <div className="mb-2 flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Messmittel:</span>
+                          {item.measuring_equipment_id && (
+                            <>
+                              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                {item.equipment_inventory_number}
+                              </span>
+                              <span className="text-sm text-gray-600 dark:text-gray-300">
+                                {item.equipment_name}
+                              </span>
+                              {item.equipment_calibration_status === 'ok' && (
+                                <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded">
+                                  ✓
+                                </span>
+                              )}
+                              {item.equipment_calibration_status === 'due_soon' && (
+                                <span className="px-1.5 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">
+                                  ⚠️
+                                </span>
+                              )}
+                              {item.equipment_calibration_status === 'overdue' && (
+                                <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded">
+                                  ❌
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {item.measuring_equipment_id && item.measuring_tool && (
+                            <span className="text-gray-400 dark:text-gray-500">|</span>
+                          )}
+                          {item.measuring_tool && (
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{item.measuring_tool}</span>
+                          )}
                         </div>
                       )}
 

@@ -46,6 +46,7 @@ export default function MeasuringEquipmentPage() {
     search: '',
     type_id: '',
     calibration_status: '',
+    checkout_status: '', // NEU: 'checked_out' oder 'available'
     sort_by: 'inventory_number',
     sort_order: 'asc',
   });
@@ -106,6 +107,54 @@ export default function MeasuringEquipmentPage() {
     }
   };
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const handleExport = async (type) => {
+    setShowExportMenu(false);
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    
+    let url;
+    switch (type) {
+      case 'overview':
+        url = `${baseUrl}/api/reports/calibration-overview`;
+        break;
+      case 'due':
+        url = `${baseUrl}/api/reports/calibration-due`;
+        break;
+      default:
+        return;
+    }
+
+    try {
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.message) {
+          toast.info(data.message);
+          return;
+        }
+        throw new Error('Export fehlgeschlagen');
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'report.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('PDF-Export erstellt');
+    } catch (err) {
+      toast.error(err.message || 'Export fehlgeschlagen');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -149,6 +198,45 @@ export default function MeasuringEquipmentPage() {
             </button>
           </div>
 
+          {/* Export Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export
+              <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleExport('overview')}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <div className="font-medium">Kalibrierungs-Übersicht</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Alle Messmittel als PDF</div>
+                    </button>
+                    <button
+                      onClick={() => handleExport('due')}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <div className="font-medium">Fälligkeitsbericht</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Nur fällige/überfällige</div>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Types Management */}
           {hasPermission('storage.edit') && (
             <button
@@ -180,7 +268,7 @@ export default function MeasuringEquipmentPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.counts.total_count}
@@ -231,6 +319,15 @@ export default function MeasuringEquipmentPage() {
               {stats.counts.in_service_count}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">In Service</div>
+          </div>
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-yellow-500 transition-colors"
+            onClick={() => handleFilterChange('checkout_status', 'checked_out')}
+          >
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+              {stats.counts.checked_out_count || 0}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Entnommen</div>
           </div>
         </div>
       )}
@@ -314,6 +411,17 @@ export default function MeasuringEquipmentPage() {
             <option value="in_calibration">🔧 In Kalibrierung</option>
           </select>
 
+          {/* Checkout Status Filter */}
+          <select
+            value={filters.checkout_status}
+            onChange={(e) => handleFilterChange('checkout_status', e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Alle Verfügbarkeit</option>
+            <option value="available">✅ Verfügbar</option>
+            <option value="checked_out">📤 Entnommen</option>
+          </select>
+
           {/* Sort */}
           <select
             value={`${filters.sort_by}-${filters.sort_order}`}
@@ -339,11 +447,11 @@ export default function MeasuringEquipmentPage() {
             Suchen
           </button>
 
-          {(filters.search || filters.type_id || filters.calibration_status) && (
+          {(filters.search || filters.type_id || filters.calibration_status || filters.checkout_status) && (
             <button
               type="button"
               onClick={() => {
-                const resetFilters = { search: '', type_id: '', calibration_status: '', sort_by: 'inventory_number', sort_order: 'asc' };
+                const resetFilters = { search: '', type_id: '', calibration_status: '', checkout_status: '', sort_by: 'inventory_number', sort_order: 'asc' };
                 setFilters(resetFilters);
                 fetchEquipment(resetFilters);
               }}

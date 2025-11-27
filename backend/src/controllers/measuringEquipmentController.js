@@ -282,13 +282,27 @@ exports.getAllEquipment = async (req, res) => {
       status,
       calibration_status,
       storage_location_id,
+      checkout_status, // NEU: 'checked_out', 'available', oder leer
       search,
       sort_by = 'inventory_number',
       sort_order = 'asc'
     } = req.query;
 
     let queryText = `
-      SELECT * FROM measuring_equipment_with_status
+      SELECT 
+        me.*,
+        -- Aktive Entnahme
+        c.id as checkout_id,
+        c.checked_out_at,
+        c.checked_out_by,
+        c.purpose as checkout_purpose,
+        c.work_order_number as checkout_work_order,
+        c.expected_return_date,
+        u.username as checked_out_by_name
+      FROM measuring_equipment_with_status me
+      LEFT JOIN measuring_equipment_checkouts c 
+        ON me.id = c.equipment_id AND c.returned_at IS NULL
+      LEFT JOIN users u ON c.checked_out_by = u.id
       WHERE 1=1
     `;
     
@@ -297,35 +311,42 @@ exports.getAllEquipment = async (req, res) => {
 
     // Filters
     if (type_id) {
-      queryText += ` AND type_id = $${paramCount}`;
+      queryText += ` AND me.type_id = $${paramCount}`;
       params.push(type_id);
       paramCount++;
     }
 
     if (status) {
-      queryText += ` AND status = $${paramCount}`;
+      queryText += ` AND me.status = $${paramCount}`;
       params.push(status);
       paramCount++;
     }
 
     if (calibration_status) {
-      queryText += ` AND calibration_status = $${paramCount}`;
+      queryText += ` AND me.calibration_status = $${paramCount}`;
       params.push(calibration_status);
       paramCount++;
     }
 
     if (storage_location_id) {
-      queryText += ` AND storage_location_id = $${paramCount}`;
+      queryText += ` AND me.storage_location_id = $${paramCount}`;
       params.push(storage_location_id);
       paramCount++;
     }
 
+    // NEU: Checkout-Filter
+    if (checkout_status === 'checked_out') {
+      queryText += ` AND c.id IS NOT NULL`;
+    } else if (checkout_status === 'available') {
+      queryText += ` AND c.id IS NULL`;
+    }
+
     if (search) {
       queryText += ` AND (
-        inventory_number ILIKE $${paramCount} OR 
-        name ILIKE $${paramCount} OR 
-        manufacturer ILIKE $${paramCount} OR
-        serial_number ILIKE $${paramCount}
+        me.inventory_number ILIKE $${paramCount} OR 
+        me.name ILIKE $${paramCount} OR 
+        me.manufacturer ILIKE $${paramCount} OR
+        me.serial_number ILIKE $${paramCount}
       )`;
       params.push(`%${search}%`);
       paramCount++;
@@ -336,7 +357,7 @@ exports.getAllEquipment = async (req, res) => {
       'inventory_number', 'name', 'type_name', 'manufacturer', 
       'status', 'next_calibration_date', 'created_at'
     ];
-    const sortField = validSortFields.includes(sort_by) ? sort_by : 'inventory_number';
+    const sortField = validSortFields.includes(sort_by) ? `me.${sort_by}` : 'me.inventory_number';
     const order = sort_order.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
     
     queryText += ` ORDER BY ${sortField} ${order}`;
@@ -376,6 +397,13 @@ exports.getEquipmentStats = async (req, res) => {
       FROM measuring_equipment_with_status
     `);
 
+    // Aktive Entnahmen zählen
+    const checkoutResult = await pool.query(`
+      SELECT COUNT(*) as checked_out_count
+      FROM measuring_equipment_checkouts
+      WHERE returned_at IS NULL
+    `);
+
     // Equipment due in next 30 days
     const upcomingResult = await pool.query(`
       SELECT 
@@ -390,7 +418,10 @@ exports.getEquipmentStats = async (req, res) => {
     res.json({
       success: true,
       data: {
-        counts: result.rows[0],
+        counts: {
+          ...result.rows[0],
+          checked_out_count: parseInt(checkoutResult.rows[0].checked_out_count)
+        },
         upcoming_calibrations: upcomingResult.rows
       }
     });
@@ -853,6 +884,361 @@ exports.getNextInventoryNumber = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Fehler beim Generieren der Inventar-Nummer',
+      error: error.message
+    });
+  }
+};
+
+// ============================================================================
+// CHECKOUTS (Entnahme-System)
+// ============================================================================
+
+/**
+ * POST /api/measuring-equipment/:id/checkout
+ * Messmittel entnehmen
+ */
+exports.checkoutEquipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { purpose, work_order_number, expected_return_date } = req.body;
+
+    // Prüfen ob Messmittel existiert und entnehmbar ist
+    const equipment = await pool.query(`
+      SELECT 
+        me.*,
+        CASE 
+          WHEN me.next_calibration_date < CURRENT_DATE THEN 'overdue'
+          WHEN me.next_calibration_date <= CURRENT_DATE + INTERVAL '30 days' THEN 'due_soon'
+          ELSE 'valid'
+        END as calibration_status
+      FROM measuring_equipment me
+      WHERE me.id = $1 AND me.deleted_at IS NULL
+    `, [id]);
+
+    if (equipment.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Messmittel nicht gefunden'
+      });
+    }
+
+    const eq = equipment.rows[0];
+
+    // Prüfungen für Entnahme
+    if (eq.status === 'locked') {
+      return res.status(400).json({
+        success: false,
+        message: `Messmittel ist gesperrt: ${eq.lock_reason || 'Kein Grund angegeben'}`
+      });
+    }
+
+    if (eq.status === 'retired') {
+      return res.status(400).json({
+        success: false,
+        message: 'Messmittel ist ausgemustert und kann nicht entnommen werden'
+      });
+    }
+
+    if (eq.status === 'in_calibration') {
+      return res.status(400).json({
+        success: false,
+        message: 'Messmittel ist in Kalibrierung und kann nicht entnommen werden'
+      });
+    }
+
+    if (eq.calibration_status === 'overdue') {
+      return res.status(400).json({
+        success: false,
+        message: 'Messmittel hat überfällige Kalibrierung und kann nicht entnommen werden'
+      });
+    }
+
+    // Prüfen ob bereits ausgeliehen
+    const activeCheckout = await pool.query(`
+      SELECT c.*, u.username as checked_out_by_name
+      FROM measuring_equipment_checkouts c
+      JOIN users u ON c.checked_out_by = u.id
+      WHERE c.equipment_id = $1 AND c.returned_at IS NULL
+    `, [id]);
+
+    if (activeCheckout.rows.length > 0) {
+      const checkout = activeCheckout.rows[0];
+      return res.status(400).json({
+        success: false,
+        message: `Messmittel ist bereits ausgeliehen an ${checkout.checked_out_by_name} seit ${new Date(checkout.checked_out_at).toLocaleDateString('de-DE')}`
+      });
+    }
+
+    // Entnahme erstellen
+    const result = await pool.query(`
+      INSERT INTO measuring_equipment_checkouts (
+        equipment_id, checked_out_by, purpose, work_order_number, expected_return_date
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [id, req.user?.id, purpose, work_order_number, expected_return_date]);
+
+    // Mit User-Info zurückgeben
+    const fullResult = await pool.query(`
+      SELECT 
+        c.*,
+        u.username as checked_out_by_name
+      FROM measuring_equipment_checkouts c
+      JOIN users u ON c.checked_out_by = u.id
+      WHERE c.id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Messmittel entnommen',
+      data: fullResult.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error checking out equipment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler bei der Entnahme',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/measuring-equipment/:id/return
+ * Messmittel zurückgeben
+ */
+exports.returnEquipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { return_condition = 'ok', return_notes } = req.body;
+
+    // Aktive Entnahme finden
+    const activeCheckout = await pool.query(`
+      SELECT * FROM measuring_equipment_checkouts
+      WHERE equipment_id = $1 AND returned_at IS NULL
+    `, [id]);
+
+    if (activeCheckout.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Messmittel ist nicht ausgeliehen'
+      });
+    }
+
+    // Rückgabe erfassen
+    const result = await pool.query(`
+      UPDATE measuring_equipment_checkouts SET
+        returned_at = CURRENT_TIMESTAMP,
+        returned_by = $1,
+        return_condition = $2,
+        return_notes = $3
+      WHERE id = $4
+      RETURNING *
+    `, [req.user?.id, return_condition, return_notes, activeCheckout.rows[0].id]);
+
+    // Bei Beschädigung oder Kalibrierungsbedarf: Status setzen
+    if (return_condition === 'damaged') {
+      await pool.query(`
+        UPDATE measuring_equipment SET
+          status = 'locked',
+          lock_reason = 'Beschädigt bei Rückgabe',
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `, [id]);
+    } else if (return_condition === 'needs_calibration') {
+      await pool.query(`
+        UPDATE measuring_equipment SET
+          status = 'in_calibration',
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `, [id]);
+    }
+
+    // Mit User-Info zurückgeben
+    const fullResult = await pool.query(`
+      SELECT 
+        c.*,
+        u1.username as checked_out_by_name,
+        u2.username as returned_by_name
+      FROM measuring_equipment_checkouts c
+      JOIN users u1 ON c.checked_out_by = u1.id
+      LEFT JOIN users u2 ON c.returned_by = u2.id
+      WHERE c.id = $1
+    `, [result.rows[0].id]);
+
+    res.json({
+      success: true,
+      message: 'Messmittel zurückgegeben',
+      data: fullResult.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error returning equipment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler bei der Rückgabe',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/measuring-equipment/:id/checkouts
+ * Entnahme-Historie für ein Messmittel
+ */
+exports.getEquipmentCheckouts = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT 
+        c.*,
+        u1.username as checked_out_by_name,
+        u2.username as returned_by_name
+      FROM measuring_equipment_checkouts c
+      JOIN users u1 ON c.checked_out_by = u1.id
+      LEFT JOIN users u2 ON c.returned_by = u2.id
+      WHERE c.equipment_id = $1
+      ORDER BY c.checked_out_at DESC
+    `, [id]);
+
+    res.json({
+      success: true,
+      count: result.rows.length,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Error getting equipment checkouts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Laden der Entnahme-Historie',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/measuring-equipment/checkouts/active
+ * Alle aktiven Entnahmen (systemweit)
+ */
+exports.getActiveCheckouts = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        c.*,
+        me.inventory_number,
+        me.name as equipment_name,
+        met.name as equipment_type,
+        u1.username as checked_out_by_name,
+        sl.name as storage_location_name
+      FROM measuring_equipment_checkouts c
+      JOIN measuring_equipment me ON c.equipment_id = me.id
+      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
+      JOIN users u1 ON c.checked_out_by = u1.id
+      LEFT JOIN storage_locations sl ON me.storage_location_id = sl.id
+      WHERE c.returned_at IS NULL
+      ORDER BY c.checked_out_at DESC
+    `);
+
+    res.json({
+      success: true,
+      count: result.rows.length,
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Error getting active checkouts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Laden der aktiven Entnahmen',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/measuring-equipment/:id/availability
+ * Prüft ob Messmittel entnehmbar ist
+ */
+exports.checkAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const equipment = await pool.query(`
+      SELECT 
+        me.*,
+        met.name as type_name,
+        CASE 
+          WHEN me.next_calibration_date < CURRENT_DATE THEN 'overdue'
+          WHEN me.next_calibration_date <= CURRENT_DATE + INTERVAL '30 days' THEN 'due_soon'
+          ELSE 'valid'
+        END as calibration_status
+      FROM measuring_equipment me
+      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
+      WHERE me.id = $1 AND me.deleted_at IS NULL
+    `, [id]);
+
+    if (equipment.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Messmittel nicht gefunden'
+      });
+    }
+
+    const eq = equipment.rows[0];
+
+    // Aktive Entnahme prüfen
+    const activeCheckout = await pool.query(`
+      SELECT c.*, u.username as checked_out_by_name
+      FROM measuring_equipment_checkouts c
+      JOIN users u ON c.checked_out_by = u.id
+      WHERE c.equipment_id = $1 AND c.returned_at IS NULL
+    `, [id]);
+
+    const isCheckedOut = activeCheckout.rows.length > 0;
+    const checkout = isCheckedOut ? activeCheckout.rows[0] : null;
+
+    // Verfügbarkeit bestimmen
+    let available = true;
+    let reason = null;
+
+    if (eq.status === 'locked') {
+      available = false;
+      reason = `Gesperrt: ${eq.lock_reason || 'Kein Grund angegeben'}`;
+    } else if (eq.status === 'retired') {
+      available = false;
+      reason = 'Ausgemustert';
+    } else if (eq.status === 'in_calibration') {
+      available = false;
+      reason = 'In Kalibrierung';
+    } else if (eq.calibration_status === 'overdue') {
+      available = false;
+      reason = 'Kalibrierung überfällig';
+    } else if (isCheckedOut) {
+      available = false;
+      reason = `Ausgeliehen an ${checkout.checked_out_by_name}`;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        equipment_id: eq.id,
+        inventory_number: eq.inventory_number,
+        name: eq.name,
+        available,
+        reason,
+        status: eq.status,
+        calibration_status: eq.calibration_status,
+        current_checkout: checkout
+      }
+    });
+
+  } catch (error) {
+    console.error('Error checking availability:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler bei der Verfügbarkeitsprüfung',
       error: error.message
     });
   }

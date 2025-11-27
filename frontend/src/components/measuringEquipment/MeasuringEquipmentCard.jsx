@@ -93,6 +93,25 @@ export default function MeasuringEquipmentCard({
 
       {/* Content */}
       <div className="p-4 space-y-3">
+        {/* Checkout Badge */}
+        {equipment.checkout_id && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <svg className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-xs">
+              <span className="text-yellow-800 dark:text-yellow-200 font-medium">
+                Entnommen: {equipment.checked_out_by_name}
+              </span>
+              {equipment.checkout_work_order && (
+                <span className="text-yellow-600 dark:text-yellow-400 ml-1">
+                  • {equipment.checkout_work_order}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Type */}
         <div className="flex justify-between text-sm">
           <span className="text-gray-500 dark:text-gray-400">Typ</span>

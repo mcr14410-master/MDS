@@ -89,6 +89,7 @@ export const useMeasuringEquipmentStore = create((set, get) => ({
       if (filters.type_id) params.append('type_id', filters.type_id);
       if (filters.status) params.append('status', filters.status);
       if (filters.calibration_status) params.append('calibration_status', filters.calibration_status);
+      if (filters.checkout_status) params.append('checkout_status', filters.checkout_status);
       if (filters.search) params.append('search', filters.search);
       if (filters.sort_by) params.append('sort_by', filters.sort_by);
       if (filters.sort_order) params.append('sort_order', filters.sort_order);
@@ -274,6 +275,71 @@ export const useMeasuringEquipmentStore = create((set, get) => ({
       set({ loading: false });
     } catch (error) {
       set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+
+  // ============================================================================
+  // CHECKOUTS (Entnahme-System)
+  // ============================================================================
+
+  checkoutEquipment: async (id, data) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/measuring-equipment/${id}/checkout`, data);
+      // Refresh equipment list and current equipment
+      await get().fetchEquipment();
+      if (get().currentEquipment?.id === id) {
+        await get().fetchEquipmentById(id);
+      }
+      set({ loading: false });
+      return response.data.data;
+    } catch (error) {
+      set({ error: error.response?.data?.message || error.message, loading: false });
+      throw error;
+    }
+  },
+
+  returnEquipment: async (id, data = {}) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/measuring-equipment/${id}/return`, data);
+      // Refresh equipment list and current equipment
+      await get().fetchEquipment();
+      if (get().currentEquipment?.id === id) {
+        await get().fetchEquipmentById(id);
+      }
+      set({ loading: false });
+      return response.data.data;
+    } catch (error) {
+      set({ error: error.response?.data?.message || error.message, loading: false });
+      throw error;
+    }
+  },
+
+  fetchEquipmentCheckouts: async (id) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/measuring-equipment/${id}/checkouts`);
+      return response.data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  fetchActiveCheckouts: async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/measuring-equipment/checkouts/active`);
+      return response.data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  checkAvailability: async (id) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/measuring-equipment/${id}/availability`);
+      return response.data.data;
+    } catch (error) {
       throw error;
     }
   },

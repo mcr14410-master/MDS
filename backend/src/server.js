@@ -70,6 +70,7 @@ const toolNumberListItemsRoutes = require('./routes/toolNumberListItemsRoutes');
 const toolNumberAlternativesRoutes = require('./routes/toolNumberAlternativesRoutes');
 const measuringEquipmentRoutes = require('./routes/measuringEquipmentRoutes');
 const calibrationsRoutes = require('./routes/calibrationsRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -101,6 +102,7 @@ app.use('/api/tool-number-list-items', toolNumberListItemsRoutes);
 app.use('/api/tool-number-alternatives', toolNumberAlternativesRoutes);
 app.use('/api/measuring-equipment', measuringEquipmentRoutes);
 app.use('/api/calibrations', calibrationsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

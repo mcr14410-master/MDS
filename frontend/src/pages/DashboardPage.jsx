@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
 import LowStockWidget from '../components/dashboard/LowStockWidget';
 import PurchaseOrdersWidget from '../components/dashboard/PurchaseOrdersWidget';
+import CalibrationAlertWidget from '../components/dashboard/CalibrationAlertWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -26,7 +27,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {/* Total Parts */}
           <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -90,30 +91,57 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Low Stock Alert */}
-          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+          {/* Measuring Equipment */}
+          <Link 
+            to="/measuring-equipment"
+            className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow"
+          >
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="text-3xl">🔔</div>
+                  <div className="text-3xl">📏</div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                      Niedriger Bestand
+                      Messmittel
                     </dt>
-                    <dd className={`text-2xl font-semibold ${
-                      (stats?.tools?.low_stock_tools || 0) > 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {stats?.tools?.low_stock_tools || 0}
+                    <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {stats?.measuring_equipment?.total_equipment || 0}
                     </dd>
                   </dl>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
+
+          {/* Calibration Alerts */}
+          <Link 
+            to="/measuring-equipment?calibration_status=overdue"
+            className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow"
+          >
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="text-3xl">⚠️</div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                      Kalibrierung fällig
+                    </dt>
+                    <dd className={`text-2xl font-semibold ${
+                      (parseInt(stats?.measuring_equipment?.overdue_count || 0) + parseInt(stats?.measuring_equipment?.due_soon_count || 0)) > 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {parseInt(stats?.measuring_equipment?.overdue_count || 0) + parseInt(stats?.measuring_equipment?.due_soon_count || 0)}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Quick Actions */}
@@ -158,12 +186,30 @@ export default function DashboardPage() {
                 </div>
               </Link>
             )}
+
+            {user?.permissions?.includes('storage.view') && (
+              <Link
+                to="/measuring-equipment"
+                className="flex items-center p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/30 transition"
+              >
+                <div className="text-2xl mr-3">📏</div>
+                <div>
+                  <div className="text-sm font-medium text-teal-900 dark:text-teal-300">Messmittel</div>
+                  <div className="text-xs text-teal-600 dark:text-teal-400">Messmittelverwaltung</div>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
 
         {/* Low Stock Widget */}
         {user?.permissions?.includes('tools.view') && (
           <LowStockWidget />
+        )}
+
+        {/* Calibration Alert Widget */}
+        {user?.permissions?.includes('storage.view') && (
+          <CalibrationAlertWidget />
         )}
 
         {/* Purchase Orders Widget */}

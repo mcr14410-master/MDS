@@ -51,7 +51,10 @@ export default function MeasuringEquipmentDetailPage() {
     fetchEquipmentById, 
     updateEquipmentStatus,
     deleteCalibration,
-    clearCurrentEquipment 
+    clearCurrentEquipment,
+    checkoutEquipment,
+    returnEquipment,
+    fetchEquipmentCheckouts
   } = useMeasuringEquipmentStore();
 
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
@@ -59,11 +62,35 @@ export default function MeasuringEquipmentDetailPage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [lockReason, setLockReason] = useState('');
+  
+  // Checkout states
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [checkoutPurpose, setCheckoutPurpose] = useState('');
+  const [checkoutWorkOrder, setCheckoutWorkOrder] = useState('');
+  const [checkoutExpectedReturn, setCheckoutExpectedReturn] = useState('');
+  const [returnCondition, setReturnCondition] = useState('ok');
+  const [returnNotes, setReturnNotes] = useState('');
+  const [checkoutHistory, setCheckoutHistory] = useState([]);
+  const [currentCheckout, setCurrentCheckout] = useState(null);
 
   useEffect(() => {
     fetchEquipmentById(id);
+    loadCheckoutHistory();
     return () => clearCurrentEquipment();
   }, [id]);
+
+  const loadCheckoutHistory = async () => {
+    try {
+      const data = await fetchEquipmentCheckouts(id);
+      setCheckoutHistory(data);
+      // Aktuell ausgeliehen?
+      const active = data.find(c => !c.returned_at);
+      setCurrentCheckout(active || null);
+    } catch (error) {
+      console.error('Error loading checkout history:', error);
+    }
+  };
 
   const handleStatusChange = async () => {
     try {
@@ -73,6 +100,41 @@ export default function MeasuringEquipmentDetailPage() {
       fetchEquipmentById(id);
     } catch (error) {
       toast.error(error.message || 'Fehler beim Ändern des Status');
+    }
+  };
+
+  const handleCheckout = async () => {
+    try {
+      await checkoutEquipment(id, {
+        purpose: checkoutPurpose,
+        work_order_number: checkoutWorkOrder || null,
+        expected_return_date: checkoutExpectedReturn || null
+      });
+      toast.success('Messmittel entnommen');
+      setShowCheckoutModal(false);
+      setCheckoutPurpose('');
+      setCheckoutWorkOrder('');
+      setCheckoutExpectedReturn('');
+      loadCheckoutHistory();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Fehler bei der Entnahme');
+    }
+  };
+
+  const handleReturn = async () => {
+    try {
+      await returnEquipment(id, {
+        return_condition: returnCondition,
+        return_notes: returnNotes || null
+      });
+      toast.success('Messmittel zurückgegeben');
+      setShowReturnModal(false);
+      setReturnCondition('ok');
+      setReturnNotes('');
+      loadCheckoutHistory();
+      fetchEquipmentById(id); // Status könnte sich geändert haben
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Fehler bei der Rückgabe');
     }
   };
 
@@ -160,6 +222,36 @@ export default function MeasuringEquipmentDetailPage() {
           <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${statusColors[eq.calibration_status] || 'bg-gray-100 text-gray-800'}`}>
             {statusLabels[eq.calibration_status] || eq.calibration_status}
           </span>
+          <button
+            onClick={async () => {
+              const token = localStorage.getItem('token');
+              try {
+                const response = await fetch(`${API_BASE_URL}/api/reports/equipment/${id}/history`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Export fehlgeschlagen');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Messmittel_${eq.inventory_number}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                toast.success('PDF-Export erstellt');
+              } catch (err) {
+                toast.error('Export fehlgeschlagen');
+              }
+            }}
+            className="px-3 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors inline-flex items-center gap-1"
+            title="Als PDF exportieren"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            PDF
+          </button>
           {hasPermission('storage.edit') && (
             <button
               onClick={() => setShowStatusModal(true)}
@@ -184,6 +276,61 @@ export default function MeasuringEquipmentDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Checkout Status Banner */}
+      {currentCheckout ? (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="font-medium text-yellow-800 dark:text-yellow-200">
+                  Ausgeliehen an {currentCheckout.checked_out_by_name}
+                </h3>
+                <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                  Seit {formatDate(currentCheckout.checked_out_at)}
+                  {currentCheckout.purpose && ` • ${currentCheckout.purpose}`}
+                  {currentCheckout.work_order_number && ` • Auftrag: ${currentCheckout.work_order_number}`}
+                </p>
+                {currentCheckout.expected_return_date && (
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                    Rückgabe erwartet: {formatDate(currentCheckout.expected_return_date)}
+                  </p>
+                )}
+              </div>
+            </div>
+            {hasPermission('storage.edit') && (
+              <button
+                onClick={() => setShowReturnModal(true)}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+              >
+                Zurückgeben
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        eq.status === 'active' && eq.calibration_status !== 'overdue' && hasPermission('storage.edit') && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-green-800 dark:text-green-200 font-medium">Verfügbar</span>
+              </div>
+              <button
+                onClick={() => setShowCheckoutModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+              >
+                Entnehmen
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       {/* Main Content */}
@@ -404,6 +551,82 @@ export default function MeasuringEquipmentDetailPage() {
               </p>
             )}
           </div>
+
+          {/* Checkout History */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Entnahme-Historie ({checkoutHistory.length})
+            </h2>
+            {checkoutHistory.length > 0 ? (
+              <div className="space-y-3">
+                {checkoutHistory.slice(0, 10).map((checkout, index) => (
+                  <div 
+                    key={checkout.id}
+                    className={`border rounded-lg p-3 ${!checkout.returned_at ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10' : 'border-gray-200 dark:border-gray-700'}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {checkout.checked_out_by_name}
+                        </span>
+                        {!checkout.returned_at && (
+                          <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+                            Aktuell
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(checkout.checked_out_at)}
+                      </span>
+                    </div>
+                    {checkout.purpose && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {checkout.purpose}
+                      </p>
+                    )}
+                    {checkout.work_order_number && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Auftrag: {checkout.work_order_number}
+                      </p>
+                    )}
+                    {checkout.returned_at && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            checkout.return_condition === 'ok' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              : checkout.return_condition === 'damaged'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          }`}>
+                            {checkout.return_condition === 'ok' ? 'OK' : checkout.return_condition === 'damaged' ? 'Beschädigt' : 'Kalibrierung nötig'}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Zurück: {formatDate(checkout.returned_at)}
+                            {checkout.returned_by_name && ` von ${checkout.returned_by_name}`}
+                          </span>
+                        </div>
+                        {checkout.return_notes && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+                            {checkout.return_notes}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {checkoutHistory.length > 10 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center pt-2">
+                    + {checkoutHistory.length - 10} weitere Einträge
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400 text-center py-6">
+                Noch keine Entnahmen erfasst
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Right Column - Sidebar */}
@@ -557,6 +780,139 @@ export default function MeasuringEquipmentDetailPage() {
                     Speichern
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75" onClick={() => setShowCheckoutModal(false)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Messmittel entnehmen
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Verwendungszweck *
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutPurpose}
+                    onChange={(e) => setCheckoutPurpose(e.target.value)}
+                    placeholder="z.B. Qualitätsprüfung, Serienfertigung..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Auftragsnummer (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutWorkOrder}
+                    onChange={(e) => setCheckoutWorkOrder(e.target.value)}
+                    placeholder="z.B. A-2025-042"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Geplante Rückgabe (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={checkoutExpectedReturn}
+                    onChange={(e) => setCheckoutExpectedReturn(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowCheckoutModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleCheckout}
+                  disabled={!checkoutPurpose.trim()}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Entnehmen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75" onClick={() => setShowReturnModal(false)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Messmittel zurückgeben
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Zustand bei Rückgabe
+                  </label>
+                  <select
+                    value={returnCondition}
+                    onChange={(e) => setReturnCondition(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="ok">In Ordnung</option>
+                    <option value="damaged">Beschädigt</option>
+                    <option value="needs_calibration">Kalibrierung erforderlich</option>
+                  </select>
+                  {returnCondition === 'damaged' && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                      Das Messmittel wird automatisch gesperrt
+                    </p>
+                  )}
+                  {returnCondition === 'needs_calibration' && (
+                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                      Status wird auf "In Kalibrierung" gesetzt
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Bemerkungen (optional)
+                  </label>
+                  <textarea
+                    value={returnNotes}
+                    onChange={(e) => setReturnNotes(e.target.value)}
+                    rows={3}
+                    placeholder="z.B. Schäden, Auffälligkeiten..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowReturnModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleReturn}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Zurückgeben
+                </button>
               </div>
             </div>
           </div>

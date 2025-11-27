@@ -162,12 +162,19 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <Link 
-                    to={`/measuring-equipment/${eq.id}`}
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {eq.inventory_number}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link 
+                      to={`/measuring-equipment/${eq.id}`}
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {eq.inventory_number}
+                    </Link>
+                    {eq.checkout_id && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" title={`Entnommen: ${eq.checked_out_by_name}`}>
+                        📤
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
