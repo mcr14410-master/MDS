@@ -15,23 +15,14 @@ const pool = new Pool({
 
 /**
  * Get all storage items with stock info
- * GET /api/storage/items?tool_master_id=1&location_id=2&is_low_stock=true
+ * GET /api/storage/items?tool_master_id=1&location_id=2&is_low_stock=true&item_type=tool&measuring_equipment_id=5
  */
 exports.getAllStorageItems = async (req, res) => {
   try {
-    const { tool_master_id, location_id, compartment_id, is_low_stock } = req.query;
+    const { tool_master_id, measuring_equipment_id, location_id, compartment_id, is_low_stock, item_type } = req.query;
 
     let query = `
-      SELECT
-        si.*,
-        sl.name as location_name,
-        sc.name as compartment_name,
-        tm.article_number,
-        tm.tool_name
-      FROM storage_items_with_stock si
-      LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id
-      LEFT JOIN storage_locations sl ON sc.location_id = sl.id
-      LEFT JOIN tool_master tm ON si.tool_master_id = tm.id
+      SELECT * FROM storage_items_with_stock si
       WHERE 1=1
     `;
     const params = [];
@@ -43,8 +34,20 @@ exports.getAllStorageItems = async (req, res) => {
       paramCount++;
     }
 
+    if (measuring_equipment_id) {
+      query += ` AND si.measuring_equipment_id = $${paramCount}`;
+      params.push(parseInt(measuring_equipment_id));
+      paramCount++;
+    }
+
+    if (item_type) {
+      query += ` AND si.item_type = $${paramCount}`;
+      params.push(item_type);
+      paramCount++;
+    }
+
     if (location_id) {
-      query += ` AND sc.location_id = $${paramCount}`;
+      query += ` AND si.compartment_id IN (SELECT id FROM storage_compartments WHERE location_id = $${paramCount})`;
       params.push(parseInt(location_id));
       paramCount++;
     }
@@ -59,7 +62,7 @@ exports.getAllStorageItems = async (req, res) => {
       query += ` AND si.is_low_stock = true`;
     }
 
-    query += ' ORDER BY si.id ASC';
+    query += ' ORDER BY si.item_type, COALESCE(si.tool_name, si.equipment_name) ASC';
 
     const result = await pool.query(query, params);
 
@@ -85,21 +88,10 @@ exports.getStorageItemById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const query = `
-      SELECT
-        si.*,
-        sl.name as location_name,
-        sc.name as compartment_name,
-        tm.article_number,
-        tm.tool_name
-      FROM storage_items_with_stock si
-      LEFT JOIN storage_compartments sc ON si.compartment_id = sc.id
-      LEFT JOIN storage_locations sl ON sc.location_id = sl.id
-      LEFT JOIN tool_master tm ON si.tool_master_id = tm.id
-      WHERE si.id = $1
-    `;
-
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(
+      'SELECT * FROM storage_items_with_stock WHERE id = $1',
+      [id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -917,3 +909,301 @@ exports.scrapStock = async (req, res) => {
 };
 
 module.exports = exports;
+
+// ============================================================================
+// MEASURING EQUIPMENT STORAGE
+// ============================================================================
+
+/**
+ * Assign measuring equipment to storage compartment
+ * POST /api/storage/items/measuring-equipment
+ */
+exports.assignMeasuringEquipmentToStorage = async (req, res) => {
+  try {
+    const { measuring_equipment_id, compartment_id, notes } = req.body;
+
+    // Validation
+    if (!measuring_equipment_id || !compartment_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'measuring_equipment_id und compartment_id sind erforderlich'
+      });
+    }
+
+    // Check if measuring equipment exists
+    const equipmentCheck = await pool.query(
+      'SELECT id, inventory_number, name FROM measuring_equipment WHERE id = $1 AND deleted_at IS NULL',
+      [measuring_equipment_id]
+    );
+
+    if (equipmentCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Messmittel nicht gefunden'
+      });
+    }
+
+    // Check if already assigned to a storage location
+    const existsCheck = await pool.query(
+      'SELECT id FROM storage_items WHERE measuring_equipment_id = $1 AND is_deleted = false',
+      [measuring_equipment_id]
+    );
+
+    if (existsCheck.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Messmittel ist bereits einem Lagerort zugewiesen'
+      });
+    }
+
+    // Check if compartment exists
+    const compartmentCheck = await pool.query(
+      'SELECT id FROM storage_compartments WHERE id = $1 AND is_active = true',
+      [compartment_id]
+    );
+
+    if (compartmentCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerfach nicht gefunden'
+      });
+    }
+
+    // Create storage item for measuring equipment
+    const query = `
+      INSERT INTO storage_items (
+        item_type, measuring_equipment_id, compartment_id,
+        quantity_new, quantity_used, quantity_reground,
+        notes, created_by
+      ) VALUES (
+        'measuring_equipment', $1, $2,
+        1, 0, 0,
+        $3, $4
+      )
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [
+      measuring_equipment_id,
+      compartment_id,
+      notes,
+      req.user.id
+    ]);
+
+    // Fetch complete data with joins from view
+    const fullItem = await pool.query(`
+      SELECT * FROM storage_items_with_stock WHERE id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      data: fullItem.rows[0],
+      message: 'Messmittel erfolgreich eingelagert'
+    });
+  } catch (error) {
+    console.error('Error assigning measuring equipment to storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Einlagern des Messmittels',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Remove measuring equipment from storage
+ * DELETE /api/storage/items/measuring-equipment/:equipmentId
+ */
+exports.removeMeasuringEquipmentFromStorage = async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+    const userId = req.user.id;
+
+    // Find storage item for this equipment
+    const itemResult = await pool.query(
+      'SELECT id FROM storage_items WHERE measuring_equipment_id = $1 AND is_deleted = false',
+      [equipmentId]
+    );
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Messmittel ist keinem Lagerort zugewiesen'
+      });
+    }
+
+    // Soft delete
+    await pool.query(`
+      UPDATE storage_items
+      SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, deleted_by = $2
+      WHERE id = $1
+    `, [itemResult.rows[0].id, userId]);
+
+    res.json({
+      success: true,
+      message: 'Messmittel aus Lager entfernt'
+    });
+  } catch (error) {
+    console.error('Error removing measuring equipment from storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Entfernen des Messmittels',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Move measuring equipment to different compartment
+ * PUT /api/storage/items/measuring-equipment/:equipmentId/move
+ */
+exports.moveMeasuringEquipment = async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+    const { compartment_id } = req.body;
+
+    if (!compartment_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'compartment_id ist erforderlich'
+      });
+    }
+
+    // Find storage item for this equipment
+    const itemResult = await pool.query(
+      'SELECT id FROM storage_items WHERE measuring_equipment_id = $1 AND is_deleted = false',
+      [equipmentId]
+    );
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Messmittel ist keinem Lagerort zugewiesen'
+      });
+    }
+
+    // Check if compartment exists
+    const compartmentCheck = await pool.query(
+      'SELECT id FROM storage_compartments WHERE id = $1 AND is_active = true',
+      [compartment_id]
+    );
+
+    if (compartmentCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerfach nicht gefunden'
+      });
+    }
+
+    // Update compartment
+    await pool.query(`
+      UPDATE storage_items
+      SET compartment_id = $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `, [compartment_id, itemResult.rows[0].id]);
+
+    // Fetch updated data
+    const fullItem = await pool.query(`
+      SELECT * FROM storage_items_with_stock WHERE id = $1
+    `, [itemResult.rows[0].id]);
+
+    res.json({
+      success: true,
+      data: fullItem.rows[0],
+      message: 'Messmittel umgelagert'
+    });
+  } catch (error) {
+    console.error('Error moving measuring equipment:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Umlagern',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get all items in a compartment (tools + measuring equipment)
+ * GET /api/storage/compartments/:compartmentId/items
+ */
+exports.getCompartmentItems = async (req, res) => {
+  try {
+    const { compartmentId } = req.params;
+    const { item_type } = req.query;
+
+    let query = `
+      SELECT * FROM storage_items_with_stock
+      WHERE compartment_id = $1
+    `;
+    const params = [compartmentId];
+
+    if (item_type) {
+      query += ` AND item_type = $2`;
+      params.push(item_type);
+    }
+
+    query += ` ORDER BY item_type, COALESCE(tool_name, equipment_name)`;
+
+    const result = await pool.query(query, params);
+
+    // Separate by type for easier frontend handling
+    const tools = result.rows.filter(r => r.item_type !== 'measuring_equipment');
+    const measuringEquipment = result.rows.filter(r => r.item_type === 'measuring_equipment');
+
+    res.json({
+      success: true,
+      data: {
+        all: result.rows,
+        tools: tools,
+        measuring_equipment: measuringEquipment,
+        counts: {
+          total: result.rows.length,
+          tools: tools.length,
+          measuring_equipment: measuringEquipment.length
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching compartment items:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Laden der Lagerartikel',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get storage location for a measuring equipment
+ * GET /api/storage/items/measuring-equipment/:equipmentId/location
+ */
+exports.getMeasuringEquipmentStorageLocation = async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+
+    const result = await pool.query(`
+      SELECT * FROM storage_items_with_stock
+      WHERE measuring_equipment_id = $1 AND is_active = true
+    `, [equipmentId]);
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'Messmittel ist keinem Lagerort zugewiesen'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error fetching measuring equipment storage location:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Laden des Lagerorts',
+      message: error.message
+    });
+  }
+};

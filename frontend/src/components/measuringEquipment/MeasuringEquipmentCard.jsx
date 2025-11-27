@@ -179,11 +179,14 @@ export default function MeasuringEquipmentCard({
         </div>
 
         {/* Storage Location */}
-        {equipment.storage_location_name && (
+        {(equipment.storage_location_name || equipment.compartment_name) && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 dark:text-gray-400">Lagerort</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {equipment.storage_location_code || equipment.storage_location_name}
+              {equipment.storage_location_name || equipment.location_name}
+              {equipment.compartment_name && (
+                <span className="text-gray-500 dark:text-gray-400"> → {equipment.compartment_name}</span>
+              )}
             </span>
           </div>
         )}

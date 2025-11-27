@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useMeasuringEquipmentStore } from '../stores/measuringEquipmentStore';
+import { useStorageItemsStore } from '../stores/storageItemsStore';
+import { useStorageStore } from '../stores/storageStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import CalibrationFormModal from '../components/measuringEquipment/CalibrationFormModal';
+import MeasuringEquipmentStorageSection from '../components/measuringEquipment/MeasuringEquipmentStorageSection';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -357,12 +360,6 @@ export default function MeasuringEquipmentDetailPage() {
                 <dt className="text-sm text-gray-500 dark:text-gray-400">Seriennummer</dt>
                 <dd className="text-sm font-medium text-gray-900 dark:text-white">{eq.serial_number || '-'}</dd>
               </div>
-              <div>
-                <dt className="text-sm text-gray-500 dark:text-gray-400">Lagerort</dt>
-                <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                  {eq.storage_location_code || eq.storage_location_name || '-'}
-                </dd>
-              </div>
             </div>
           </div>
 
@@ -415,6 +412,12 @@ export default function MeasuringEquipmentDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Storage Location */}
+          <MeasuringEquipmentStorageSection 
+            equipmentId={parseInt(id)} 
+            hasPermission={hasPermission} 
+          />
 
           {/* Calibration History */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

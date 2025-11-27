@@ -214,7 +214,17 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {eq.storage_location_code || '-'}
+                    {eq.storage_location_name || eq.location_name 
+                      ? (
+                        <>
+                          {eq.storage_location_name || eq.location_name}
+                          {eq.compartment_name && (
+                            <span className="text-gray-400 dark:text-gray-500"> → {eq.compartment_name}</span>
+                          )}
+                        </>
+                      )
+                      : '-'
+                    }
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-right">

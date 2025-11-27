@@ -298,11 +298,20 @@ exports.getAllEquipment = async (req, res) => {
         c.purpose as checkout_purpose,
         c.work_order_number as checkout_work_order,
         c.expected_return_date,
-        u.username as checked_out_by_name
+        u.username as checked_out_by_name,
+        -- Lagerort aus Storage-System
+        si.compartment_id,
+        sc.name as compartment_name,
+        sl.name as location_name,
+        sl.code as location_code
       FROM measuring_equipment_with_status me
       LEFT JOIN measuring_equipment_checkouts c 
         ON me.id = c.equipment_id AND c.returned_at IS NULL
       LEFT JOIN users u ON c.checked_out_by = u.id
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id 
+        AND si.is_deleted = false AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
       WHERE 1=1
     `;
     

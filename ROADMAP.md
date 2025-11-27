@@ -19,9 +19,9 @@
 
 **Asset Management (Phase 4-6):** ✅ / 🔄
 - ✅ Werkzeugverwaltung (Lagerhaltung, Bestellung, T-Nummern)
-- 🔄 Messmittelverwaltung (Kalibrierung, ISO/Luftfahrt-ready) - Woche 17 ✅
-- 📋 Spannmittelverwaltung
-- 📋 Vorrichtungsverwaltung
+- ✅ Messmittelverwaltung (Kalibrierung, Checkout, Lager-Integration, ISO/Luftfahrt-ready) - Woche 17-18 ✅
+- 📋 Spannmittelverwaltung (mit Lager-Integration)
+- 📋 Vorrichtungsverwaltung (mit Lager-Integration)
 
 **Optional (Phase 7+):**
 - Shopfloor-UI (Tablet-optimiert)
@@ -39,7 +39,7 @@
 | Phase 2 | W5-8 | ✅ 100% | Kern - Operations, Programme, Maschinen |
 | Phase 3 | W9-12 | ✅ 100% | Work Instructions - Workflow, Setup Sheets, Tool Lists, Inspection Plans |
 | Phase 4 | W13-16 | ✅ 100% | Werkzeugverwaltung - Tool Master, Storage, Suppliers, Purchase Orders |
-| **Phase 5** | **W17-18** | 🔄 **IN PROGRESS** | **Messmittelverwaltung** |
+| **Phase 5** | **W17-18** | ✅ **100%** | **Messmittelverwaltung** |
 | Phase 6 | W19-20 | 📋 Geplant | Spannmittel & Vorrichtungen |
 | Phase 7 | W21+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
 
@@ -408,32 +408,44 @@
 
 **Abgeschlossen am:** 2025-11-26
 
-### 📋 Woche 18: Entnahme & Integration - GEPLANT
+### ✅ Woche 18: Entnahme & Integration - ABGESCHLOSSEN
 
 **Lagerhaltung & Entnahme:**
-- [ ] Lagerort-Zuweisung (nutzt bestehendes Storage System)
-- [ ] Entnahme-Verwaltung (Wer? Wann? Für welchen Auftrag?)
-- [ ] Rückgabe-System
-- [ ] Verfügbarkeits-Check
-- [ ] Gesperrte Messmittel nicht entnehmbar
+- [x] Entnahme-Verwaltung (measuring_equipment_checkouts)
+- [x] Rückgabe-System mit Zustandserfassung
+- [x] Verfügbarkeits-Check
+- [x] Gesperrte/Überfällige Messmittel nicht entnehmbar
+- [x] Checkout-Historie mit User-Namen
 
 **Alarm-System:**
-- [ ] Dashboard-Warnungen bei fälliger Kalibrierung
-- [ ] Überfällige Messmittel hervorheben
-- [ ] Optional: Email-Benachrichtigung
+- [x] Dashboard-Widget: Kalibrierungs-Alarme
+- [x] Überfällige Messmittel hervorheben (rot)
+- [x] Bald fällige Messmittel anzeigen (gelb)
+- [x] Direktlinks zu betroffenen Messmitteln
 
 **Integration:**
-- [ ] Integration in Inspection Plans (Messmittel pro Prüfmerkmal)
-- [ ] Nur kalibrierte Messmittel auswählbar
-- [ ] Export für Audits (Kalibrierungs-Report)
+- [x] Integration in Inspection Plans (Messmittel pro Prüfmerkmal)
+- [x] Nur kalibrierte Messmittel auswählbar (Status-Anzeige)
+- [x] PDF-Audit-Export (Messmittel-Bericht mit Kalibrierungsstatus)
+
+**Lagerverwaltungs-Integration:**
+- [x] Integration in storage_items (item_type='measuring_equipment')
+- [x] Einzelstück-Tracking (quantity=1 fest)
+- [x] Zuweisung zu Lagerfächern (compartments)
+- [x] Anzeige in Fach-Übersicht mit Kalibrierungsstatus
+- [x] Einlagern/Umlagern/Entfernen über Detailseite
+- [x] View erweitert: equipment_inventory_number, calibration_status, is_checked_out
+- [x] Lagerort-Feld aus Stammdaten-Formular entfernt (jetzt über Storage-System)
 
 **ISO/Luftfahrt Features:**
-- Nur kalibrierte Messmittel verwendbar
-- Gesperrte Messmittel (überfällig) nicht entnehmbar
-- Vollständiger Audit-Trail
-- Export für Audits (PDF Reports)
+- [x] Nur kalibrierte Messmittel verwendbar
+- [x] Gesperrte Messmittel (überfällig) nicht entnehmbar
+- [x] Vollständiger Audit-Trail
+- [x] Export für Audits (PDF Reports)
 
-**Deliverable:** Messmittel-Verwaltung mit Kalibrierung funktioniert
+**Abgeschlossen am:** 2025-11-27
+
+**Deliverable:** ✅ Messmittel-Verwaltung mit Kalibrierung, Checkout, Dashboard, Inspection Plans Integration und Lagerverwaltungs-Integration KOMPLETT
 
 ---
 
@@ -441,39 +453,119 @@
 
 ### Woche 19: Spannmittel-Verwaltung
 **Status:** 📋 GEPLANT
-**Ziel:** Spannmittel-Stammdaten
-**Zeitaufwand:** ~6 Stunden
+**Ziel:** Spannmittel-Stammdaten mit Lagerverwaltungs-Integration
+**Zeitaufwand:** ~8-10 Stunden
 
-- [ ] Datenbank-Tabelle (clamping_devices)
-- [ ] Spannmitteltypen (3-Backen, Schraubstock, Spanneisen, etc.)
-- [ ] Stammdaten (Bezeichnung, Hersteller, Größe, Spannbereich)
+**Datenbank:**
+- [ ] clamping_device_types Tabelle (Typen: Schraubstock, Nullpunkt-Spanner, etc.)
+- [ ] clamping_devices Tabelle (Stammdaten)
+- [ ] storage_items erweitern (item_type='clamping_device', clamping_device_id FK)
+- [ ] clamping_device_checkouts Tabelle (Entnahme-System)
+- [ ] clamping_device_with_status VIEW
+
+**Spannmittel-Stammdaten:**
+- [ ] Spannmitteltypen verwalten (CRUD + Modal)
+- [ ] Typen: Maschinenschraubstock, Nullpunkt-Spanner, Magnetspanner, Vakuum-Spanntisch, 3-Backenfutter, etc.
+- [ ] Stammdaten: Bezeichnung, Hersteller, Spannbereich (min/max), Spannkraft
+- [ ] Inventar-Nummer (SP-YYYY-NNN, auto-generiert)
+- [ ] Seriennummer, Modell
 - [ ] Backend CRUD API
-- [ ] Frontend: Spannmittel-Verwaltung UI
-- [ ] Foto-Upload
-- [ ] Lagerhaltung (Standort)
-- [ ] Integration in Setup Sheets
 
-**Deliverable:** Spannmittel-Verwaltung funktioniert
+**Wartungs-Management:**
+- [ ] Wartungsintervall (Monate)
+- [ ] Letzte Wartung, Nächste Wartung (automatisch berechnet)
+- [ ] Status: Aktiv / In Wartung / In Reparatur / Ausgemustert
+- [ ] Zustand: Neu / Gut / Befriedigend / Schlecht
+- [ ] Wartungs-Historie
+
+**Lagerverwaltungs-Integration:**
+- [ ] Integration in storage_items (wie Messmittel)
+- [ ] Einzelstück-Tracking (quantity=1)
+- [ ] Zuweisung zu Lagerfächern
+- [ ] Anzeige in Fach-Übersicht mit Wartungsstatus
+- [ ] Einlagern/Umlagern/Entfernen über Detailseite
+
+**Entnahme-System:**
+- [ ] Checkout/Return wie bei Messmitteln
+- [ ] Zuordnung zu Maschine/Auftrag
+- [ ] Verfügbarkeits-Check
+
+**Frontend:**
+- [ ] Spannmittel-Verwaltung UI (Grid/Table View)
+- [ ] Spannmittel-Detailseite
+- [ ] Lagerort-Sektion (wie Messmittel)
+- [ ] Foto-Upload
+
+**Integration:**
+- [ ] Integration in Setup Sheets
+- [ ] CompartmentCard erweitern (🔩 Spannmittel Icon)
+
+**Deliverable:** Spannmittel-Verwaltung mit Lagerverwaltungs-Integration funktioniert
 
 ---
 
 ### Woche 20: Vorrichtungs-Verwaltung
 **Status:** 📋 GEPLANT
-**Ziel:** Vorrichtungen mit Excel-Import
-**Zeitaufwand:** ~6 Stunden
+**Ziel:** Vorrichtungen mit Lagerverwaltungs-Integration
+**Zeitaufwand:** ~8-10 Stunden
 
-- [ ] Datenbank-Tabelle (fixtures)
-- [ ] Vorrichtungs-Nummer (VORR-YYYY-NNN)
-- [ ] Stammdaten (Bezeichnung, Bauteile, Zeichnung)
-- [ ] Excel-Import (aus bestehender Liste)
+**Datenbank:**
+- [ ] fixture_types Tabelle (Typen: Spannvorrichtung, Aufnahme, Prüfvorrichtung, etc.)
+- [ ] fixtures Tabelle (Stammdaten mit Bauteil-/Operations-Zuordnung)
+- [ ] fixture_documents Tabelle (Zeichnungen, Fotos)
+- [ ] storage_items erweitern (item_type='fixture', fixture_id FK)
+- [ ] fixture_checkouts Tabelle (Entnahme-System)
+- [ ] fixtures_with_status VIEW
+
+**Vorrichtungs-Stammdaten:**
+- [ ] Vorrichtungstypen verwalten (CRUD + Modal)
+- [ ] Typen: Spannvorrichtung, Aufnahmevorrichtung, Prüfvorrichtung, Montagevorrichtung
+- [ ] Inventar-Nummer (VORR-YYYY-NNN, auto-generiert)
+- [ ] Zeichnungsnummer, Version
+- [ ] Zuordnung zu Bauteil (part_id FK)
+- [ ] Zuordnung zu Operation (operation_id FK)
+- [ ] Zuordnung zu Maschine (machine_id FK)
+- [ ] Maße, Gewicht, Material
 - [ ] Backend CRUD API
-- [ ] Frontend: Vorrichtungs-Verwaltung UI
-- [ ] Foto-Upload (Vorrichtung, Zeichnung)
-- [ ] Lagerhaltung (Standort)
-- [ ] Verknüpfung: Vorrichtung → Bauteile (n:m)
-- [ ] Integration in Setup Sheets
 
-**Deliverable:** Vorrichtungs-Verwaltung funktioniert + Excel-Import
+**Prüfungs-Management (wie Kalibrierung):**
+- [ ] Prüfintervall (Monate)
+- [ ] Letzte Prüfung, Nächste Prüfung (automatisch berechnet)
+- [ ] Status: Aktiv / In Änderung / In Reparatur / Ausgemustert / In Benutzung
+- [ ] Zustand: Neu / Gut / Befriedigend / Schlecht
+- [ ] Prüfungs-Historie
+
+**Lagerverwaltungs-Integration:**
+- [ ] Integration in storage_items (wie Messmittel/Spannmittel)
+- [ ] Einzelstück-Tracking (quantity=1)
+- [ ] Zuweisung zu Lagerfächern
+- [ ] Anzeige in Fach-Übersicht mit Prüfstatus
+- [ ] Einlagern/Umlagern/Entfernen über Detailseite
+
+**Entnahme-System:**
+- [ ] Checkout/Return wie bei Messmitteln
+- [ ] Zuordnung zu Maschine/Auftrag
+- [ ] Verfügbarkeits-Check
+
+**Dokumenten-Management:**
+- [ ] CAD-Zeichnungen Upload (PDF, DWG, STEP)
+- [ ] Fotos
+- [ ] Prüfprotokolle
+- [ ] Bedienungsanleitungen
+
+**Frontend:**
+- [ ] Vorrichtungs-Verwaltung UI (Grid/Table View)
+- [ ] Vorrichtungs-Detailseite
+- [ ] Lagerort-Sektion (wie Messmittel)
+- [ ] Dokumente-Tab
+
+**Integration:**
+- [ ] Integration in Setup Sheets
+- [ ] Integration in Operations (Vorrichtung für Operation)
+- [ ] CompartmentCard erweitern (📐 Vorrichtung Icon)
+- [ ] Excel-Import (aus bestehender Liste)
+
+**Deliverable:** Vorrichtungs-Verwaltung mit Lagerverwaltungs-Integration und Excel-Import funktioniert
 
 ---
 
@@ -559,7 +651,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: █████████████████░░░ 85% (17 von 20 Kern-Wochen)
+Gesamt: ██████████████████░░ 90% (18 von 20 Kern-Wochen)
 
 Phase 1 (Fundament):      ████████████████████ 100% ✅
   └─ Woche 1-4:           ████████████████████ 100% ✅
@@ -573,9 +665,9 @@ Phase 3 (Work Instr.):    ██████████████████
 Phase 4 (Werkzeuge):      ████████████████████ 100% ✅
   └─ Woche 13-16:         ████████████████████ 100% ✅
 
-Phase 5 (Messmittel):     ██████████░░░░░░░░░░  50% 🔄 IN PROGRESS
+Phase 5 (Messmittel):     ████████████████████ 100% ✅
   └─ Woche 17:            ████████████████████ 100% ✅
-  └─ Woche 18:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
+  └─ Woche 18:            ████████████████████ 100% ✅
 
 Phase 6 (Spann/Vorr.):    ░░░░░░░░░░░░░░░░░░░░   0% 📋
   └─ Woche 19-20:         ░░░░░░░░░░░░░░░░░░░░   0%
@@ -584,7 +676,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
   └─ Woche 21+:           ░░░░░░░░░░░░░░░░░░░░   0%
 ```
 
-**Arbeitszeit:** ~100h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~2h Phase 5)
+**Arbeitszeit:** ~105h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5)
 
 ---
 
@@ -608,6 +700,8 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 - ✅ **2025-11-25:** Woche 13-16 komplett - Werkzeugverwaltung fertig! (~20h)
 - 🎊 **2025-11-25:** **PHASE 4 KOMPLETT - MEILENSTEIN 4 ERREICHT!**
 - ✅ **2025-11-26:** Woche 17 komplett - Messmittel-Stammdaten & Kalibrierung fertig!
+- ✅ **2025-11-27:** Woche 18 komplett - Messmittel Checkout, Dashboard, Inspection Plans, Lager-Integration fertig!
+- 🎊 **2025-11-27:** **PHASE 5 KOMPLETT - MEILENSTEIN 5 ERREICHT!**
 
 ---
 
@@ -629,6 +723,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 | **Woche 12** | Inspection Plans | Backend (6 Endpoints) + Frontend (4 Toleranzarten) | ✅ 100% |
 | **Woche 13-16** | Werkzeugverwaltung | Tool Master, Storage, Suppliers, Purchase Orders, T-Nummern | ✅ 100% |
 | **Woche 17** | Messmittel-Stammdaten | DB (4 Tabellen), Backend (20+ Endpoints), Frontend (Grid/Table/Modals) | ✅ 100% |
+| **Woche 18** | Messmittel-Integration | Checkout, Dashboard-Alarme, Inspection Plans, Lagerverwaltung | ✅ 100% |
 
 ---
 
@@ -643,14 +738,15 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 
 ## 🔧 Nächste Session
 
-**Phase 5 Woche 18 - Entnahme & Integration**
+**Phase 6 Woche 19 - Spannmittel-Verwaltung**
 
-1. Entnahme-Verwaltung (Wer? Wann? Für welchen Auftrag?)
-2. Rückgabe-System
-3. Dashboard-Warnungen bei fälliger Kalibrierung
-4. Optional: Integration in Inspection Plans
+1. Datenbank: clamping_device_types, clamping_devices, checkouts
+2. Backend CRUD API + Wartungs-Management
+3. Lagerverwaltungs-Integration (storage_items)
+4. Frontend: UI, Detailseite, Lagerort-Sektion
+5. Integration in Setup Sheets
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-26  
-**Aktueller Status:** 🔄 **Phase 5 IN PROGRESS** - Woche 17 ✅ | 17 von 20 Wochen FERTIG!
+**Letzte Aktualisierung:** 2025-11-27  
+**Aktueller Status:** 📋 **Phase 6 GEPLANT** - Phase 5 ✅ KOMPLETT | 18 von 20 Wochen FERTIG!

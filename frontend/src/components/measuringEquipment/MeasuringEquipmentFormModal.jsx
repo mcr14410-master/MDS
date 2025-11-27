@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useMeasuringEquipmentStore } from '../../stores/measuringEquipmentStore';
-import { useStorageStore } from '../../stores/storageStore';
 import { useSuppliersStore } from '../../stores/suppliersStore';
 import { toast } from '../Toaster';
 
 export default function MeasuringEquipmentFormModal({ equipment, types, onClose }) {
   const { createEquipment, updateEquipment, getNextInventoryNumber } = useMeasuringEquipmentStore();
-  const { locations, fetchLocations } = useStorageStore();
   const { suppliers, fetchSuppliers } = useSuppliersStore();
   
   const [loading, setLoading] = useState(false);
@@ -27,7 +25,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
     calibration_interval_months: 12,
     last_calibration_date: '',
     calibration_provider: '',
-    storage_location_id: '',
     purchase_date: '',
     purchase_price: '',
     supplier_id: '',
@@ -37,7 +34,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
   const isEditing = Boolean(equipment);
 
   useEffect(() => {
-    fetchLocations();
     fetchSuppliers({ is_active: true });
     
     if (equipment) {
@@ -58,7 +54,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
         calibration_interval_months: equipment.calibration_interval_months || 12,
         last_calibration_date: equipment.last_calibration_date?.split('T')[0] || '',
         calibration_provider: equipment.calibration_provider || '',
-        storage_location_id: equipment.storage_location_id || '',
         purchase_date: equipment.purchase_date?.split('T')[0] || '',
         purchase_price: equipment.purchase_price || '',
         supplier_id: equipment.supplier_id || '',
@@ -413,30 +408,12 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
               </div>
             </div>
 
-            {/* Storage & Purchase */}
+            {/* Purchase */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                Lagerort & Beschaffung
+                Beschaffung
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Lagerort
-                  </label>
-                  <select
-                    name="storage_location_id"
-                    value={formData.storage_location_id}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Kein Lagerort --</option>
-                    {locations.map(loc => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.code} - {loc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Lieferant
