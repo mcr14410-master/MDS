@@ -1122,6 +1122,217 @@ exports.moveMeasuringEquipment = async (req, res) => {
   }
 };
 
+// ============================================================================
+// CLAMPING DEVICES STORAGE
+// ============================================================================
+
+/**
+ * Add clamping device to storage (quantity-based, unlike measuring equipment)
+ * POST /api/storage/items/clamping-device
+ */
+exports.addClampingDeviceToStorage = async (req, res) => {
+  try {
+    const { 
+      clamping_device_id, 
+      compartment_id, 
+      quantity_new = 0,
+      quantity_used = 0,
+      quantity_reground = 0,
+      notes 
+    } = req.body;
+
+    // Validation
+    if (!clamping_device_id || !compartment_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'clamping_device_id und compartment_id sind erforderlich'
+      });
+    }
+
+    const totalQuantity = parseInt(quantity_new) + parseInt(quantity_used) + parseInt(quantity_reground);
+    if (totalQuantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mindestens eine Menge muss größer als 0 sein'
+      });
+    }
+
+    // Check if clamping device exists
+    const deviceCheck = await pool.query(
+      'SELECT id, inventory_number, name FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL',
+      [clamping_device_id]
+    );
+
+    if (deviceCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Spannmittel nicht gefunden'
+      });
+    }
+
+    // Check if compartment exists
+    const compartmentCheck = await pool.query(
+      'SELECT id FROM storage_compartments WHERE id = $1 AND is_active = true',
+      [compartment_id]
+    );
+
+    if (compartmentCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerfach nicht gefunden'
+      });
+    }
+
+    // Check if already exists at this compartment - if so, update quantities
+    const existsCheck = await pool.query(
+      'SELECT id, quantity_new, quantity_used, quantity_reground FROM storage_items WHERE clamping_device_id = $1 AND compartment_id = $2 AND is_deleted = false',
+      [clamping_device_id, compartment_id]
+    );
+
+    let result;
+    if (existsCheck.rows.length > 0) {
+      // Update existing entry - add to quantities
+      result = await pool.query(`
+        UPDATE storage_items SET
+          quantity_new = quantity_new + $1,
+          quantity_used = quantity_used + $2,
+          quantity_reground = quantity_reground + $3,
+          notes = COALESCE($4, notes),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $5
+        RETURNING *
+      `, [quantity_new, quantity_used, quantity_reground, notes, existsCheck.rows[0].id]);
+    } else {
+      // Create new storage item
+      result = await pool.query(`
+        INSERT INTO storage_items (
+          item_type, clamping_device_id, compartment_id,
+          quantity_new, quantity_used, quantity_reground,
+          notes, created_by
+        ) VALUES (
+          'clamping_device', $1, $2,
+          $3, $4, $5,
+          $6, $7
+        )
+        RETURNING *
+      `, [clamping_device_id, compartment_id, quantity_new, quantity_used, quantity_reground, notes, req.user.id]);
+    }
+
+    // Fetch complete data with joins
+    const fullItem = await pool.query(`
+      SELECT 
+        si.*,
+        sc.code as compartment_code,
+        sc.name as compartment_name,
+        sl.name as location_name,
+        sl.id as location_id
+      FROM storage_items si
+      JOIN storage_compartments sc ON si.compartment_id = sc.id
+      JOIN storage_locations sl ON sc.location_id = sl.id
+      WHERE si.id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      data: fullItem.rows[0],
+      message: existsCheck.rows.length > 0 ? 'Bestand erhöht' : 'Spannmittel eingelagert'
+    });
+  } catch (error) {
+    console.error('Error adding clamping device to storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Einlagern des Spannmittels',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get all storage locations for a clamping device
+ * GET /api/storage/items/clamping-device/:deviceId/locations
+ */
+exports.getClampingDeviceStorageLocations = async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+
+    const result = await pool.query(`
+      SELECT 
+        si.id as storage_item_id,
+        si.quantity_new,
+        si.quantity_used,
+        si.quantity_reground,
+        (si.quantity_new + si.quantity_used + si.quantity_reground) as total_quantity,
+        si.notes,
+        sc.id as compartment_id,
+        sc.code as compartment_code,
+        sc.name as compartment_name,
+        sl.id as location_id,
+        sl.name as location_name,
+        sl.code as location_code
+      FROM storage_items si
+      JOIN storage_compartments sc ON si.compartment_id = sc.id
+      JOIN storage_locations sl ON sc.location_id = sl.id
+      WHERE si.clamping_device_id = $1 AND si.is_deleted = false
+      ORDER BY sl.name, sc.code
+    `, [deviceId]);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error getting clamping device storage locations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Laden der Lagerorte',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Remove clamping device from storage location
+ * DELETE /api/storage/items/clamping-device/:storageItemId
+ */
+exports.removeClampingDeviceFromStorage = async (req, res) => {
+  try {
+    const { storageItemId } = req.params;
+    const userId = req.user.id;
+
+    // Check if exists
+    const itemResult = await pool.query(
+      'SELECT id FROM storage_items WHERE id = $1 AND item_type = $2 AND is_deleted = false',
+      [storageItemId, 'clamping_device']
+    );
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerort-Eintrag nicht gefunden'
+      });
+    }
+
+    // Soft delete
+    await pool.query(`
+      UPDATE storage_items
+      SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, deleted_by = $2
+      WHERE id = $1
+    `, [storageItemId, userId]);
+
+    res.json({
+      success: true,
+      message: 'Lagerort-Eintrag entfernt'
+    });
+  } catch (error) {
+    console.error('Error removing clamping device from storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Entfernen',
+      message: error.message
+    });
+  }
+};
+
 /**
  * Get all items in a compartment (tools + measuring equipment)
  * GET /api/storage/compartments/:compartmentId/items

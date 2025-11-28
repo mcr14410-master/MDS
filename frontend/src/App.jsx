@@ -26,6 +26,8 @@ import ToolNumberListsPage from './pages/ToolNumberListsPage';
 import ToolNumberListDetailPage from './pages/ToolNumberListDetailPage';
 import MeasuringEquipmentPage from './pages/MeasuringEquipmentPage';
 import MeasuringEquipmentDetailPage from './pages/MeasuringEquipmentDetailPage';
+import ClampingDevicesPage from './pages/ClampingDevicesPage';
+import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -236,6 +238,23 @@ function App() {
 		       </ProtectedRoute>
 		     } 
 		   />
+			   {/* Clamping Devices Routes */}
+			   <Route 
+			     path="/clamping-devices" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ClampingDevicesPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   <Route 
+			     path="/clamping-devices/:id" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ClampingDeviceDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
         </Route>
 
 		

@@ -20,7 +20,7 @@
 **Asset Management (Phase 4-6):** ✅ / 🔄
 - ✅ Werkzeugverwaltung (Lagerhaltung, Bestellung, T-Nummern)
 - ✅ Messmittelverwaltung (Kalibrierung, Checkout, Lager-Integration, ISO/Luftfahrt-ready) - Woche 17-18 ✅
-- 📋 Spannmittelverwaltung (mit Lager-Integration)
+- ✅ Spannmittelverwaltung (mit Lager-Integration) - Woche 19 ✅
 - 📋 Vorrichtungsverwaltung (mit Lager-Integration)
 
 **Optional (Phase 7+):**
@@ -39,8 +39,8 @@
 | Phase 2 | W5-8 | ✅ 100% | Kern - Operations, Programme, Maschinen |
 | Phase 3 | W9-12 | ✅ 100% | Work Instructions - Workflow, Setup Sheets, Tool Lists, Inspection Plans |
 | Phase 4 | W13-16 | ✅ 100% | Werkzeugverwaltung - Tool Master, Storage, Suppliers, Purchase Orders |
-| **Phase 5** | **W17-18** | ✅ **100%** | **Messmittelverwaltung** |
-| Phase 6 | W19-20 | 📋 Geplant | Spannmittel & Vorrichtungen |
+| Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
+| **Phase 6** | **W19-20** | 🔄 **50%** | **Spannmittel ✅ & Vorrichtungen 📋** |
 | Phase 7 | W21+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
 
 ---
@@ -449,64 +449,65 @@
 
 ---
 
-## 📋 Phase 6: Spannmittel & Vorrichtungen (Wochen 19-20)
+## 🔄 Phase 6: Spannmittel & Vorrichtungen (Wochen 19-20)
 
-### Woche 19: Spannmittel-Verwaltung
-**Status:** 📋 GEPLANT
+### ✅ Woche 19: Spannmittel-Verwaltung
+**Status:** ✅ ABGESCHLOSSEN
 **Ziel:** Spannmittel-Stammdaten mit Lagerverwaltungs-Integration
-**Zeitaufwand:** ~8-10 Stunden
+**Zeitaufwand:** ~6 Stunden
 
 **Datenbank:**
-- [ ] clamping_device_types Tabelle (Typen: Schraubstock, Nullpunkt-Spanner, etc.)
-- [ ] clamping_devices Tabelle (Stammdaten)
-- [ ] storage_items erweitern (item_type='clamping_device', clamping_device_id FK)
-- [ ] clamping_device_checkouts Tabelle (Entnahme-System)
-- [ ] clamping_device_with_status VIEW
+- [x] clamping_device_types Tabelle (15 vordefinierte Typen)
+- [x] clamping_devices Tabelle (Stammdaten)
+- [x] clamping_device_documents Tabelle (Zeichnungen, Fotos)
+- [x] storage_items erweitern (item_type='clamping_device', clamping_device_id FK)
+- [x] clamping_devices_with_stock VIEW
+- [x] storage_items_with_stock VIEW erweitert (Spannmittel-Spalten)
+- [x] check_item_type Constraint erweitert
+- [x] check_single_item_reference Constraint erweitert
 
 **Spannmittel-Stammdaten:**
-- [ ] Spannmitteltypen verwalten (CRUD + Modal)
-- [ ] Typen: Maschinenschraubstock, Nullpunkt-Spanner, Magnetspanner, Vakuum-Spanntisch, 3-Backenfutter, etc.
-- [ ] Stammdaten: Bezeichnung, Hersteller, Spannbereich (min/max), Spannkraft
-- [ ] Inventar-Nummer (SP-YYYY-NNN, auto-generiert)
-- [ ] Seriennummer, Modell
-- [ ] Backend CRUD API
-
-**Wartungs-Management:**
-- [ ] Wartungsintervall (Monate)
-- [ ] Letzte Wartung, Nächste Wartung (automatisch berechnet)
-- [ ] Status: Aktiv / In Wartung / In Reparatur / Ausgemustert
-- [ ] Zustand: Neu / Gut / Befriedigend / Schlecht
-- [ ] Wartungs-Historie
+- [x] Spannmitteltypen verwalten (CRUD + Modal)
+- [x] 15 Typen: Schraubstock, Spannpratze, Spannzange, Spannfutter, Spanndorn, Spannhülse, Magnetspannplatte, Vakuumspanntisch, Nullpunkt-Spannsystem, Palette, Winkelplatte, Teilapparat, Rundtisch, Würfel, Sonstiges
+- [x] Stammdaten: Bezeichnung, Hersteller, Modell, Spannbereich (min/max), Spannkraft
+- [x] Inventar-Nummer (SPANN-YYYY-NNN)
+- [x] Maße, Gewicht, Kaufdaten
+- [x] Status: Aktiv / In Reparatur / Ausgemustert
+- [x] Backend CRUD API (Controller + Routes)
+- [x] Seed-Daten (18 Test-Spannmittel)
 
 **Lagerverwaltungs-Integration:**
-- [ ] Integration in storage_items (wie Messmittel)
-- [ ] Einzelstück-Tracking (quantity=1)
-- [ ] Zuweisung zu Lagerfächern
-- [ ] Anzeige in Fach-Übersicht mit Wartungsstatus
-- [ ] Einlagern/Umlagern/Entfernen über Detailseite
+- [x] Integration in storage_items (mengenbasiert, nicht Einzelstück)
+- [x] Eigener Endpoint: POST /api/storage/items/clamping-device
+- [x] Zuweisung zu Lagerfächern
+- [x] Einlagern/Umlagern/Entfernen über Detailseite
+- [x] Bestandsanzeige: Lagerort-Anzahl + Gesamtstück
 
-**Entnahme-System:**
-- [ ] Checkout/Return wie bei Messmitteln
-- [ ] Zuordnung zu Maschine/Auftrag
-- [ ] Verfügbarkeits-Check
+**Dokumenten-Management:**
+- [x] Upload-Funktion (PDF, Bilder, CAD)
+- [x] Dokumenttypen: Zeichnung, Foto, Anleitung, Datenblatt, Sonstiges
+- [x] Download/Löschen
 
 **Frontend:**
-- [ ] Spannmittel-Verwaltung UI (Grid/Table View)
-- [ ] Spannmittel-Detailseite
-- [ ] Lagerort-Sektion (wie Messmittel)
-- [ ] Foto-Upload
+- [x] Spannmittel-Verwaltung UI (Grid/Table View umschaltbar)
+- [x] Spannmittel-Detailseite
+- [x] Lagerort-Sektion (ClampingDeviceStorageSection)
+- [x] Dokumente-Sektion (ClampingDeviceDocumentsSection)
+- [x] Klickbare Stats-Karten (Filter)
+- [x] CompartmentCard erweitert (Grip Icon, lila Farbe)
 
-**Integration:**
-- [ ] Integration in Setup Sheets
-- [ ] CompartmentCard erweitern (🔩 Spannmittel Icon)
+**Offen für Phase 6 Woche 20:**
+- [ ] Integration in Setup Sheets (mit Vorrichtungen)
 
-**Deliverable:** Spannmittel-Verwaltung mit Lagerverwaltungs-Integration funktioniert
+**Abgeschlossen am:** 2025-11-28
+
+**Deliverable:** ✅ Spannmittel-Verwaltung mit Lagerverwaltungs-Integration und Dokumenten-Upload KOMPLETT
 
 ---
 
-### Woche 20: Vorrichtungs-Verwaltung
+### 📋 Woche 20: Vorrichtungs-Verwaltung
 **Status:** 📋 GEPLANT
-**Ziel:** Vorrichtungen mit Lagerverwaltungs-Integration
+**Ziel:** Vorrichtungen mit Lagerverwaltungs-Integration + Setup Sheet Integration (Spannmittel + Vorrichtungen)
 **Zeitaufwand:** ~8-10 Stunden
 
 **Datenbank:**
@@ -669,14 +670,15 @@ Phase 5 (Messmittel):     ██████████████████
   └─ Woche 17:            ████████████████████ 100% ✅
   └─ Woche 18:            ████████████████████ 100% ✅
 
-Phase 6 (Spann/Vorr.):    ░░░░░░░░░░░░░░░░░░░░   0% 📋
-  └─ Woche 19-20:         ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 6 (Spann/Vorr.):    ██████████░░░░░░░░░░  50% 🔄
+  └─ Woche 19:            ████████████████████ 100% ✅
+  └─ Woche 20:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
 
 Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░░░   0% 📋
   └─ Woche 21+:           ░░░░░░░░░░░░░░░░░░░░   0%
 ```
 
-**Arbeitszeit:** ~105h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5)
+**Arbeitszeit:** ~111h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~6h Phase 6)
 
 ---
 
@@ -702,6 +704,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 - ✅ **2025-11-26:** Woche 17 komplett - Messmittel-Stammdaten & Kalibrierung fertig!
 - ✅ **2025-11-27:** Woche 18 komplett - Messmittel Checkout, Dashboard, Inspection Plans, Lager-Integration fertig!
 - 🎊 **2025-11-27:** **PHASE 5 KOMPLETT - MEILENSTEIN 5 ERREICHT!**
+- ✅ **2025-11-28:** Woche 19 komplett - Spannmittel-Verwaltung mit Lagerverwaltungs-Integration fertig!
 
 ---
 
@@ -724,6 +727,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 | **Woche 13-16** | Werkzeugverwaltung | Tool Master, Storage, Suppliers, Purchase Orders, T-Nummern | ✅ 100% |
 | **Woche 17** | Messmittel-Stammdaten | DB (4 Tabellen), Backend (20+ Endpoints), Frontend (Grid/Table/Modals) | ✅ 100% |
 | **Woche 18** | Messmittel-Integration | Checkout, Dashboard-Alarme, Inspection Plans, Lagerverwaltung | ✅ 100% |
+| **Woche 19** | Spannmittel | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration | ✅ 100% |
 
 ---
 
@@ -738,15 +742,15 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 
 ## 🔧 Nächste Session
 
-**Phase 6 Woche 19 - Spannmittel-Verwaltung**
+**Phase 6 Woche 20 - Vorrichtungs-Verwaltung + Setup Sheet Integration**
 
-1. Datenbank: clamping_device_types, clamping_devices, checkouts
-2. Backend CRUD API + Wartungs-Management
+1. Datenbank: fixture_types, fixtures, fixture_documents
+2. Backend CRUD API + Prüfungs-Management
 3. Lagerverwaltungs-Integration (storage_items)
 4. Frontend: UI, Detailseite, Lagerort-Sektion
-5. Integration in Setup Sheets
+5. **Setup Sheet Integration:** Spannmittel + Vorrichtungen pro Operation
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-27  
-**Aktueller Status:** 📋 **Phase 6 GEPLANT** - Phase 5 ✅ KOMPLETT | 18 von 20 Wochen FERTIG!
+**Letzte Aktualisierung:** 2025-11-28  
+**Aktueller Status:** 🔄 **Phase 6 IN ARBEIT** - Woche 19 ✅ KOMPLETT | 19 von 20 Wochen FERTIG!

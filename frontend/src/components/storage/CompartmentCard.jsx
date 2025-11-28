@@ -1,4 +1,4 @@
-import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink } from 'lucide-react';
+import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink, Grip } from 'lucide-react';
 import { useStorageStore } from '../../stores/storageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { toast } from '../Toaster';
@@ -10,8 +10,9 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
   const navigate = useNavigate();
 
   // Separate items by type
-  const tools = items.filter(item => item.item_type !== 'measuring_equipment');
+  const tools = items.filter(item => item.item_type === 'tool' || item.item_type === 'insert' || item.item_type === 'accessory');
   const measuringEquipment = items.filter(item => item.item_type === 'measuring_equipment');
+  const clampingDevices = items.filter(item => item.item_type === 'clamping_device');
 
   const handleDelete = async () => {
     if (itemsCount > 0) {
@@ -150,6 +151,12 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
                 <span>{measuringEquipment.length} Messmittel</span>
               </div>
             )}
+            {clampingDevices.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Grip className="w-4 h-4 text-purple-400" />
+                <span>{clampingDevices.length} Spannmittel</span>
+              </div>
+            )}
             {itemsCount === 0 && (
               <div className="flex items-center gap-1.5">
                 <Package className="w-4 h-4" />
@@ -205,6 +212,40 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
               {measuringEquipment.length > 4 && (
                 <div className="text-xs text-gray-500 pl-2">
                   +{measuringEquipment.length - 4} weitere Messmittel
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Clamping Devices List */}
+          {clampingDevices.length > 0 && (
+            <div className="space-y-1.5">
+              {clampingDevices.slice(0, 4).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded cursor-pointer hover:bg-purple-500/20 transition-colors"
+                  onClick={() => navigate(`/clamping-devices/${item.clamping_device_id}`)}
+                  title="Klicken für Details"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Grip className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                    <span className="text-xs font-medium text-purple-300 flex-shrink-0">
+                      {item.clamping_device_inventory_number}
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">
+                      {item.clamping_device_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-purple-300 font-medium">
+                      {(item.quantity_new || 0) + (item.quantity_used || 0) + (item.quantity_reground || 0)} Stk.
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {clampingDevices.length > 4 && (
+                <div className="text-xs text-gray-500 pl-2">
+                  +{clampingDevices.length - 4} weitere Spannmittel
                 </div>
               )}
             </div>

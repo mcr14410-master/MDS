@@ -41,6 +41,32 @@ router.put('/measuring-equipment/:equipmentId/move', requirePermission('storage.
 router.delete('/measuring-equipment/:equipmentId', requirePermission('storage.delete'), storageItemsController.removeMeasuringEquipmentFromStorage);
 
 // ============================================================================
+// CLAMPING DEVICES STORAGE (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   POST /api/storage/items/clamping-device
+ * @desc    Add clamping device to storage compartment (quantity-based)
+ * @body    clamping_device_id, compartment_id, quantity_new, quantity_used, notes
+ * @access  Private (requires permission: storage.create)
+ */
+router.post('/clamping-device', requirePermission('storage.create'), storageItemsController.addClampingDeviceToStorage);
+
+/**
+ * @route   GET /api/storage/items/clamping-device/:deviceId/locations
+ * @desc    Get all storage locations for a clamping device
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/clamping-device/:deviceId/locations', requirePermission('storage.view'), storageItemsController.getClampingDeviceStorageLocations);
+
+/**
+ * @route   DELETE /api/storage/items/clamping-device/:storageItemId
+ * @desc    Remove clamping device from storage location
+ * @access  Private (requires permission: storage.delete)
+ */
+router.delete('/clamping-device/:storageItemId', requirePermission('storage.delete'), storageItemsController.removeClampingDeviceFromStorage);
+
+// ============================================================================
 // COMPARTMENT ITEMS (must be before /:id routes!)
 // ============================================================================
 
