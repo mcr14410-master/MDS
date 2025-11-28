@@ -145,7 +145,7 @@ exports.getLowStockItems = async (req, res) => {
         si.effective_stock,
         si.reorder_point,
         si.min_quantity,
-        si.effective_stock_percent,
+        si.effective_stock,
         si.location_name,
         si.compartment_name,
         -- Calculate stock status
@@ -179,7 +179,6 @@ exports.getLowStockItems = async (req, res) => {
           WHEN si.reorder_point IS NOT NULL AND si.effective_stock <= si.reorder_point THEN 2
           ELSE 3
         END,
-        si.effective_stock_percent ASC,
         si.effective_stock ASC
       LIMIT $1
     `;
