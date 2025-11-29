@@ -260,4 +260,127 @@ export const useSetupSheetsStore = create((set, get) => ({
 
   // Clear current setup sheet
   clearCurrentSetupSheet: () => set({ currentSetupSheet: null }),
+
+  // ============================================================================
+  // SPANNMITTEL ZUORDNUNGEN
+  // ============================================================================
+
+  // Add clamping device to setup sheet
+  addClampingDevice: async (setupSheetId, clampingDeviceId, quantity = 1, notes = '') => {
+    try {
+      const response = await axios.post(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/clamping-devices`,
+        { clamping_device_id: clampingDeviceId, quantity, notes }
+      );
+      
+      // Refresh current setup sheet
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true, data: response.data?.data };
+    } catch (error) {
+      console.error('addClampingDevice error:', error);
+      const errorMessage = error.response?.data?.message || 'Fehler beim Hinzufügen';
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  // Update clamping device assignment
+  updateClampingDevice: async (setupSheetId, itemId, data) => {
+    try {
+      const response = await axios.put(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/clamping-devices/${itemId}`,
+        data
+      );
+      
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true, data: response.data?.data };
+    } catch (error) {
+      console.error('updateClampingDevice error:', error);
+      return { success: false, error: error.response?.data?.message };
+    }
+  },
+
+  // Remove clamping device from setup sheet
+  removeClampingDevice: async (setupSheetId, itemId) => {
+    try {
+      await axios.delete(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/clamping-devices/${itemId}`
+      );
+      
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('removeClampingDevice error:', error);
+      return { success: false, error: error.response?.data?.message };
+    }
+  },
+
+  // ============================================================================
+  // VORRICHTUNGEN ZUORDNUNGEN
+  // ============================================================================
+
+  // Add fixture to setup sheet
+  addFixture: async (setupSheetId, fixtureId, quantity = 1, notes = '') => {
+    try {
+      const response = await axios.post(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/fixtures`,
+        { fixture_id: fixtureId, quantity, notes }
+      );
+      
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true, data: response.data?.data };
+    } catch (error) {
+      console.error('addFixture error:', error);
+      const errorMessage = error.response?.data?.message || 'Fehler beim Hinzufügen';
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  // Update fixture assignment
+  updateFixture: async (setupSheetId, itemId, data) => {
+    try {
+      const response = await axios.put(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/fixtures/${itemId}`,
+        data
+      );
+      
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true, data: response.data?.data };
+    } catch (error) {
+      console.error('updateFixture error:', error);
+      return { success: false, error: error.response?.data?.message };
+    }
+  },
+
+  // Remove fixture from setup sheet
+  removeFixture: async (setupSheetId, itemId) => {
+    try {
+      await axios.delete(
+        `${API_ENDPOINTS.SETUP_SHEETS}/${setupSheetId}/fixtures/${itemId}`
+      );
+      
+      if (get().currentSetupSheet?.id === setupSheetId) {
+        await get().fetchSetupSheet(setupSheetId);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('removeFixture error:', error);
+      return { success: false, error: error.response?.data?.message };
+    }
+  },
 }));

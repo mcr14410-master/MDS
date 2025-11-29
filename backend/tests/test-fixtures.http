@@ -1,0 +1,239 @@
+### Fixtures API Tests
+### Benötigt: REST Client Extension für VS Code
+
+@baseUrl = http://localhost:5000/api
+@authToken = {{login.response.body.token}}
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+
+### ============================================================================
+### FIXTURE TYPES
+### ============================================================================
+
+### Get all fixture types
+GET {{baseUrl}}/fixtures/types
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get active types only
+GET {{baseUrl}}/fixtures/types?is_active=true
+Authorization: Bearer {{authToken}}
+
+###
+
+### Create new fixture type
+POST {{baseUrl}}/fixtures/types
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Laservorrichtung",
+  "description": "Vorrichtung für Laserbearbeitung",
+  "icon": "flame",
+  "sort_order": 11
+}
+
+###
+
+### Update fixture type
+PUT {{baseUrl}}/fixtures/types/11
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Laservorrichtung",
+  "description": "Vorrichtung für Laserbearbeitung (aktualisiert)"
+}
+
+###
+
+### Delete fixture type (only if not used)
+DELETE {{baseUrl}}/fixtures/types/11
+Authorization: Bearer {{authToken}}
+
+###
+
+### ============================================================================
+### FIXTURES
+### ============================================================================
+
+### Get all fixtures
+GET {{baseUrl}}/fixtures
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get fixtures with filters
+GET {{baseUrl}}/fixtures?type_id=1&status=active
+Authorization: Bearer {{authToken}}
+
+###
+
+### Search fixtures
+GET {{baseUrl}}/fixtures?search=V001
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get fixture statistics
+GET {{baseUrl}}/fixtures/stats
+Authorization: Bearer {{authToken}}
+
+###
+
+### Check if fixture number is available
+GET {{baseUrl}}/fixtures/check-number/V00123
+Authorization: Bearer {{authToken}}
+
+###
+
+### Get single fixture by ID
+GET {{baseUrl}}/fixtures/1
+Authorization: Bearer {{authToken}}
+
+###
+
+### Create new fixture
+POST {{baseUrl}}/fixtures
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "fixture_number": "V00001",
+  "name": "Aufspannvorrichtung für Gehäuse XY",
+  "type_id": 1,
+  "part_id": 1,
+  "machine_id": 1,
+  "notes": "Test-Vorrichtung"
+}
+
+###
+
+### Create fixture with operation
+POST {{baseUrl}}/fixtures
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "fixture_number": "V00002",
+  "name": "Fräsvorrichtung für OP20",
+  "type_id": 7,
+  "part_id": 1,
+  "operation_id": 2,
+  "machine_id": 1
+}
+
+###
+
+### Update fixture
+PUT {{baseUrl}}/fixtures/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Aufspannvorrichtung für Gehäuse XY (überarbeitet)",
+  "notes": "Geänderte Bemerkung"
+}
+
+###
+
+### Change fixture status
+PATCH {{baseUrl}}/fixtures/1/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "in_repair"
+}
+
+###
+
+### Delete fixture (soft delete)
+DELETE {{baseUrl}}/fixtures/1
+Authorization: Bearer {{authToken}}
+
+###
+
+### ============================================================================
+### FIXTURE DOCUMENTS
+### ============================================================================
+
+### Get documents for fixture
+GET {{baseUrl}}/fixtures/1/documents
+Authorization: Bearer {{authToken}}
+
+###
+
+### Upload document (use curl or Postman for file upload)
+# POST {{baseUrl}}/fixtures/1/documents/upload
+# Authorization: Bearer {{authToken}}
+# Content-Type: multipart/form-data
+# file: @/path/to/file.pdf
+# document_type: drawing
+# description: Konstruktionszeichnung
+
+###
+
+### Download document
+GET {{baseUrl}}/fixtures/documents/1/download
+Authorization: Bearer {{authToken}}
+
+###
+
+### Update document metadata
+PUT {{baseUrl}}/fixtures/documents/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "document_type": "drawing",
+  "description": "Aktualisierte Zeichnung"
+}
+
+###
+
+### Delete document
+DELETE {{baseUrl}}/fixtures/documents/1
+Authorization: Bearer {{authToken}}
+
+###
+
+### ============================================================================
+### FIXTURE STORAGE
+### ============================================================================
+
+### Add fixture to storage
+POST {{baseUrl}}/storage/items/fixture
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "fixture_id": 1,
+  "compartment_id": 1,
+  "quantity_new": 1
+}
+
+###
+
+### Get storage locations for fixture
+GET {{baseUrl}}/storage/items/fixture/1/locations
+Authorization: Bearer {{authToken}}
+
+###
+
+### Remove fixture from storage
+DELETE {{baseUrl}}/storage/items/fixture/1
+Authorization: Bearer {{authToken}}
+
+###

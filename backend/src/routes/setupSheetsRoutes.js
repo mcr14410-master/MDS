@@ -108,4 +108,72 @@ router.delete(
   setupSheetsController.deletePhoto
 );
 
+// ============================================================================
+// Spannmittel Zuordnungen
+// ============================================================================
+
+/**
+ * POST /api/setup-sheets/:id/clamping-devices
+ * Spannmittel hinzufügen
+ */
+router.post(
+  '/:id/clamping-devices',
+  authenticateToken,
+  setupSheetsController.addClampingDevice
+);
+
+/**
+ * PUT /api/setup-sheets/:id/clamping-devices/:itemId
+ * Spannmittel-Zuordnung aktualisieren
+ */
+router.put(
+  '/:id/clamping-devices/:itemId',
+  authenticateToken,
+  setupSheetsController.updateClampingDevice
+);
+
+/**
+ * DELETE /api/setup-sheets/:id/clamping-devices/:itemId
+ * Spannmittel entfernen
+ */
+router.delete(
+  '/:id/clamping-devices/:itemId',
+  authenticateToken,
+  setupSheetsController.removeClampingDevice
+);
+
+// ============================================================================
+// Vorrichtungen Zuordnungen
+// ============================================================================
+
+/**
+ * POST /api/setup-sheets/:id/fixtures
+ * Vorrichtung hinzufügen
+ */
+router.post(
+  '/:id/fixtures',
+  authenticateToken,
+  setupSheetsController.addFixture
+);
+
+/**
+ * PUT /api/setup-sheets/:id/fixtures/:itemId
+ * Vorrichtung-Zuordnung aktualisieren
+ */
+router.put(
+  '/:id/fixtures/:itemId',
+  authenticateToken,
+  setupSheetsController.updateFixture
+);
+
+/**
+ * DELETE /api/setup-sheets/:id/fixtures/:itemId
+ * Vorrichtung entfernen
+ */
+router.delete(
+  '/:id/fixtures/:itemId',
+  authenticateToken,
+  setupSheetsController.removeFixture
+);
+
 module.exports = router;

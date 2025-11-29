@@ -67,6 +67,32 @@ router.get('/clamping-device/:deviceId/locations', requirePermission('storage.vi
 router.delete('/clamping-device/:storageItemId', requirePermission('storage.delete'), storageItemsController.removeClampingDeviceFromStorage);
 
 // ============================================================================
+// FIXTURES STORAGE (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   POST /api/storage/items/fixture
+ * @desc    Add fixture to storage compartment (quantity-based)
+ * @body    fixture_id, compartment_id, quantity_new, quantity_used, notes
+ * @access  Private (requires permission: storage.create)
+ */
+router.post('/fixture', requirePermission('storage.create'), storageItemsController.addFixtureToStorage);
+
+/**
+ * @route   GET /api/storage/items/fixture/:fixtureId/locations
+ * @desc    Get all storage locations for a fixture
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/fixture/:fixtureId/locations', requirePermission('storage.view'), storageItemsController.getFixtureStorageLocations);
+
+/**
+ * @route   DELETE /api/storage/items/fixture/:storageItemId
+ * @desc    Remove fixture from storage location
+ * @access  Private (requires permission: storage.delete)
+ */
+router.delete('/fixture/:storageItemId', requirePermission('storage.delete'), storageItemsController.removeFixtureFromStorage);
+
+// ============================================================================
 // COMPARTMENT ITEMS (must be before /:id routes!)
 // ============================================================================
 

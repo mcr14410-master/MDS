@@ -1,4 +1,4 @@
-import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink, Grip } from 'lucide-react';
+import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink, Grip, LayoutGrid } from 'lucide-react';
 import { useStorageStore } from '../../stores/storageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { toast } from '../Toaster';
@@ -13,6 +13,7 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
   const tools = items.filter(item => item.item_type === 'tool' || item.item_type === 'insert' || item.item_type === 'accessory');
   const measuringEquipment = items.filter(item => item.item_type === 'measuring_equipment');
   const clampingDevices = items.filter(item => item.item_type === 'clamping_device');
+  const fixtures = items.filter(item => item.item_type === 'fixture');
 
   const handleDelete = async () => {
     if (itemsCount > 0) {
@@ -157,6 +158,12 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
                 <span>{clampingDevices.length} Spannmittel</span>
               </div>
             )}
+            {fixtures.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <LayoutGrid className="w-4 h-4 text-indigo-400" />
+                <span>{fixtures.length} Vorrichtung{fixtures.length !== 1 ? 'en' : ''}</span>
+              </div>
+            )}
             {itemsCount === 0 && (
               <div className="flex items-center gap-1.5">
                 <Package className="w-4 h-4" />
@@ -238,7 +245,7 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-purple-300 font-medium">
-                      {(item.quantity_new || 0) + (item.quantity_used || 0) + (item.quantity_reground || 0)} Stk.
+                      {parseInt(item.quantity_new || 0) + parseInt(item.quantity_used || 0) + parseInt(item.quantity_reground || 0)} Stk.
                     </span>
                   </div>
                 </div>
@@ -246,6 +253,40 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
               {clampingDevices.length > 4 && (
                 <div className="text-xs text-gray-500 pl-2">
                   +{clampingDevices.length - 4} weitere Spannmittel
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Fixtures List */}
+          {fixtures.length > 0 && (
+            <div className="space-y-1.5">
+              {fixtures.slice(0, 4).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded cursor-pointer hover:bg-indigo-500/20 transition-colors"
+                  onClick={() => navigate(`/fixtures/${item.fixture_id}`)}
+                  title="Klicken für Details"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <LayoutGrid className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                    <span className="text-xs font-medium text-indigo-300 flex-shrink-0 font-mono">
+                      {item.fixture_number}
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">
+                      {item.fixture_name || item.fixture_type_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-indigo-300 font-medium">
+                      {parseInt(item.quantity_new || 0) + parseInt(item.quantity_used || 0) + parseInt(item.quantity_reground || 0)} Stk.
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {fixtures.length > 4 && (
+                <div className="text-xs text-gray-500 pl-2">
+                  +{fixtures.length - 4} weitere Vorrichtungen
                 </div>
               )}
             </div>

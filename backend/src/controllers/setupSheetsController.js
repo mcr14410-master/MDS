@@ -139,11 +139,46 @@ exports.getSetupSheetById = async (req, res) => {
 
     const photosResult = await db.query(photosQuery, [id]);
 
+    // Zugeordnete Spannmittel laden (aus setup_sheet_clamping_devices)
+    const clampingQuery = `
+      SELECT * FROM setup_sheet_clamping_devices_view
+      WHERE setup_sheet_id = $1
+      ORDER BY sort_order, id
+    `;
+    const clampingResult = await db.query(clampingQuery, [id]);
+
+    // Zugeordnete Vorrichtungen laden (aus setup_sheet_fixtures)
+    const fixturesQuery = `
+      SELECT * FROM setup_sheet_fixtures_view
+      WHERE setup_sheet_id = $1
+      ORDER BY sort_order, id
+    `;
+    const fixturesResult = await db.query(fixturesQuery, [id]);
+
+    // Zusätzlich: Vorrichtungen die via Operation zugeordnet sind (Schmankerl)
+    const operationFixturesQuery = `
+      SELECT 
+        f.id,
+        f.fixture_number,
+        f.name as fixture_name,
+        f.status,
+        ft.name as type_name,
+        ft.icon as type_icon
+      FROM fixtures f
+      LEFT JOIN fixture_types ft ON ft.id = f.type_id
+      WHERE f.operation_id = $1
+        AND f.deleted_at IS NULL
+    `;
+    const operationFixturesResult = await db.query(operationFixturesQuery, [sheetResult.rows[0].operation_id]);
+
     res.json({
       success: true,
       data: {
         ...sheetResult.rows[0],
-        photos: photosResult.rows
+        photos: photosResult.rows,
+        clamping_devices: clampingResult.rows,
+        fixtures: fixturesResult.rows,
+        operation_fixtures: operationFixturesResult.rows
       }
     });
   } catch (error) {
@@ -579,3 +614,320 @@ exports.updatePhoto = async (req, res) => {
     });
   }
 };
+
+// ============================================================================
+// SPANNMITTEL ZUORDNUNGEN
+// ============================================================================
+
+/**
+ * POST /api/setup-sheets/:id/clamping-devices
+ * Spannmittel zum Setup Sheet hinzufügen
+ */
+exports.addClampingDevice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { clamping_device_id, quantity = 1, notes } = req.body;
+
+    if (!clamping_device_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'clamping_device_id ist erforderlich'
+      });
+    }
+
+    // Prüfen ob Setup Sheet existiert
+    const sheetCheck = await db.query('SELECT id FROM setup_sheets WHERE id = $1', [id]);
+    if (sheetCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Setup Sheet nicht gefunden'
+      });
+    }
+
+    // Prüfen ob Spannmittel existiert
+    const deviceCheck = await db.query(
+      'SELECT id FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL',
+      [clamping_device_id]
+    );
+    if (deviceCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Spannmittel nicht gefunden'
+      });
+    }
+
+    // Höchste sort_order ermitteln
+    const maxOrderResult = await db.query(
+      'SELECT COALESCE(MAX(sort_order), 0) as max_order FROM setup_sheet_clamping_devices WHERE setup_sheet_id = $1',
+      [id]
+    );
+    const nextOrder = maxOrderResult.rows[0].max_order + 1;
+
+    // Einfügen (oder update bei Duplikat)
+    const result = await db.query(`
+      INSERT INTO setup_sheet_clamping_devices 
+        (setup_sheet_id, clamping_device_id, quantity, notes, sort_order, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (setup_sheet_id, clamping_device_id) 
+      DO UPDATE SET quantity = setup_sheet_clamping_devices.quantity + EXCLUDED.quantity
+      RETURNING *
+    `, [id, clamping_device_id, quantity, notes, nextOrder, req.user.id]);
+
+    // Vollständige Daten laden
+    const fullData = await db.query(
+      'SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1',
+      [result.rows[0].id]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Spannmittel hinzugefügt',
+      data: fullData.rows[0]
+    });
+  } catch (error) {
+    console.error('Error adding clamping device:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Hinzufügen des Spannmittels',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * PUT /api/setup-sheets/:id/clamping-devices/:itemId
+ * Spannmittel-Zuordnung aktualisieren
+ */
+exports.updateClampingDevice = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+    const { quantity, notes, sort_order } = req.body;
+
+    const result = await db.query(`
+      UPDATE setup_sheet_clamping_devices SET
+        quantity = COALESCE($1, quantity),
+        notes = COALESCE($2, notes),
+        sort_order = COALESCE($3, sort_order)
+      WHERE id = $4 AND setup_sheet_id = $5
+      RETURNING *
+    `, [quantity, notes, sort_order, itemId, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Zuordnung nicht gefunden'
+      });
+    }
+
+    const fullData = await db.query(
+      'SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1',
+      [itemId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Aktualisiert',
+      data: fullData.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating clamping device:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Aktualisieren',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DELETE /api/setup-sheets/:id/clamping-devices/:itemId
+ * Spannmittel-Zuordnung entfernen
+ */
+exports.removeClampingDevice = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+
+    const result = await db.query(
+      'DELETE FROM setup_sheet_clamping_devices WHERE id = $1 AND setup_sheet_id = $2 RETURNING *',
+      [itemId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Zuordnung nicht gefunden'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Spannmittel entfernt'
+    });
+  } catch (error) {
+    console.error('Error removing clamping device:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Entfernen',
+      error: error.message
+    });
+  }
+};
+
+// ============================================================================
+// VORRICHTUNGEN ZUORDNUNGEN
+// ============================================================================
+
+/**
+ * POST /api/setup-sheets/:id/fixtures
+ * Vorrichtung zum Setup Sheet hinzufügen
+ */
+exports.addFixture = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fixture_id, quantity = 1, notes } = req.body;
+
+    if (!fixture_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'fixture_id ist erforderlich'
+      });
+    }
+
+    // Prüfen ob Setup Sheet existiert
+    const sheetCheck = await db.query('SELECT id FROM setup_sheets WHERE id = $1', [id]);
+    if (sheetCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Setup Sheet nicht gefunden'
+      });
+    }
+
+    // Prüfen ob Vorrichtung existiert
+    const fixtureCheck = await db.query(
+      'SELECT id FROM fixtures WHERE id = $1 AND deleted_at IS NULL',
+      [fixture_id]
+    );
+    if (fixtureCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vorrichtung nicht gefunden'
+      });
+    }
+
+    // Höchste sort_order ermitteln
+    const maxOrderResult = await db.query(
+      'SELECT COALESCE(MAX(sort_order), 0) as max_order FROM setup_sheet_fixtures WHERE setup_sheet_id = $1',
+      [id]
+    );
+    const nextOrder = maxOrderResult.rows[0].max_order + 1;
+
+    // Einfügen (oder update bei Duplikat)
+    const result = await db.query(`
+      INSERT INTO setup_sheet_fixtures 
+        (setup_sheet_id, fixture_id, quantity, notes, sort_order, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (setup_sheet_id, fixture_id) 
+      DO UPDATE SET quantity = setup_sheet_fixtures.quantity + EXCLUDED.quantity
+      RETURNING *
+    `, [id, fixture_id, quantity, notes, nextOrder, req.user.id]);
+
+    // Vollständige Daten laden
+    const fullData = await db.query(
+      'SELECT * FROM setup_sheet_fixtures_view WHERE id = $1',
+      [result.rows[0].id]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Vorrichtung hinzugefügt',
+      data: fullData.rows[0]
+    });
+  } catch (error) {
+    console.error('Error adding fixture:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Hinzufügen der Vorrichtung',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * PUT /api/setup-sheets/:id/fixtures/:itemId
+ * Vorrichtung-Zuordnung aktualisieren
+ */
+exports.updateFixture = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+    const { quantity, notes, sort_order } = req.body;
+
+    const result = await db.query(`
+      UPDATE setup_sheet_fixtures SET
+        quantity = COALESCE($1, quantity),
+        notes = COALESCE($2, notes),
+        sort_order = COALESCE($3, sort_order)
+      WHERE id = $4 AND setup_sheet_id = $5
+      RETURNING *
+    `, [quantity, notes, sort_order, itemId, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Zuordnung nicht gefunden'
+      });
+    }
+
+    const fullData = await db.query(
+      'SELECT * FROM setup_sheet_fixtures_view WHERE id = $1',
+      [itemId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Aktualisiert',
+      data: fullData.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating fixture:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Aktualisieren',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DELETE /api/setup-sheets/:id/fixtures/:itemId
+ * Vorrichtung-Zuordnung entfernen
+ */
+exports.removeFixture = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+
+    const result = await db.query(
+      'DELETE FROM setup_sheet_fixtures WHERE id = $1 AND setup_sheet_id = $2 RETURNING *',
+      [itemId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Zuordnung nicht gefunden'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Vorrichtung entfernt'
+    });
+  } catch (error) {
+    console.error('Error removing fixture:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Entfernen',
+      error: error.message
+    });
+  }
+};
+

@@ -1418,3 +1418,214 @@ exports.getMeasuringEquipmentStorageLocation = async (req, res) => {
     });
   }
 };
+
+// ============================================================================
+// FIXTURES - Storage Integration
+// ============================================================================
+
+/**
+ * Add fixture to storage location (quantity-based)
+ * POST /api/storage/items/fixture
+ */
+exports.addFixtureToStorage = async (req, res) => {
+  try {
+    const { 
+      fixture_id, 
+      compartment_id, 
+      quantity_new = 0,
+      quantity_used = 0,
+      quantity_reground = 0,
+      notes 
+    } = req.body;
+
+    // Validation
+    if (!fixture_id || !compartment_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'fixture_id und compartment_id sind erforderlich'
+      });
+    }
+
+    const totalQuantity = parseInt(quantity_new) + parseInt(quantity_used) + parseInt(quantity_reground);
+    if (totalQuantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mindestens eine Menge muss größer als 0 sein'
+      });
+    }
+
+    // Check if fixture exists
+    const fixtureCheck = await pool.query(
+      'SELECT id, fixture_number, name FROM fixtures WHERE id = $1 AND deleted_at IS NULL',
+      [fixture_id]
+    );
+
+    if (fixtureCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Vorrichtung nicht gefunden'
+      });
+    }
+
+    // Check if compartment exists
+    const compartmentCheck = await pool.query(
+      'SELECT id FROM storage_compartments WHERE id = $1 AND is_active = true',
+      [compartment_id]
+    );
+
+    if (compartmentCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerfach nicht gefunden'
+      });
+    }
+
+    // Check if already exists at this compartment - if so, update quantities
+    const existsCheck = await pool.query(
+      'SELECT id, quantity_new, quantity_used, quantity_reground FROM storage_items WHERE fixture_id = $1 AND compartment_id = $2 AND is_deleted = false',
+      [fixture_id, compartment_id]
+    );
+
+    let result;
+    if (existsCheck.rows.length > 0) {
+      // Update existing entry - add to quantities
+      result = await pool.query(`
+        UPDATE storage_items SET
+          quantity_new = quantity_new + $1,
+          quantity_used = quantity_used + $2,
+          quantity_reground = quantity_reground + $3,
+          notes = COALESCE($4, notes),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $5
+        RETURNING *
+      `, [quantity_new, quantity_used, quantity_reground, notes, existsCheck.rows[0].id]);
+    } else {
+      // Create new storage item
+      result = await pool.query(`
+        INSERT INTO storage_items (
+          item_type, fixture_id, compartment_id,
+          quantity_new, quantity_used, quantity_reground,
+          notes, created_by
+        ) VALUES (
+          'fixture', $1, $2,
+          $3, $4, $5,
+          $6, $7
+        )
+        RETURNING *
+      `, [fixture_id, compartment_id, quantity_new, quantity_used, quantity_reground, notes, req.user.id]);
+    }
+
+    // Fetch complete data with joins
+    const fullItem = await pool.query(`
+      SELECT 
+        si.*,
+        sc.code as compartment_code,
+        sc.name as compartment_name,
+        sl.name as location_name,
+        sl.id as location_id
+      FROM storage_items si
+      JOIN storage_compartments sc ON si.compartment_id = sc.id
+      JOIN storage_locations sl ON sc.location_id = sl.id
+      WHERE si.id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      data: fullItem.rows[0],
+      message: existsCheck.rows.length > 0 ? 'Bestand erhöht' : 'Vorrichtung eingelagert'
+    });
+  } catch (error) {
+    console.error('Error adding fixture to storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Einlagern der Vorrichtung',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get all storage locations for a fixture
+ * GET /api/storage/items/fixture/:fixtureId/locations
+ */
+exports.getFixtureStorageLocations = async (req, res) => {
+  try {
+    const { fixtureId } = req.params;
+
+    const result = await pool.query(`
+      SELECT 
+        si.id as storage_item_id,
+        si.quantity_new,
+        si.quantity_used,
+        si.quantity_reground,
+        (si.quantity_new + si.quantity_used + si.quantity_reground) as total_quantity,
+        si.notes,
+        sc.id as compartment_id,
+        sc.code as compartment_code,
+        sc.name as compartment_name,
+        sl.id as location_id,
+        sl.name as location_name,
+        sl.code as location_code
+      FROM storage_items si
+      JOIN storage_compartments sc ON si.compartment_id = sc.id
+      JOIN storage_locations sl ON sc.location_id = sl.id
+      WHERE si.fixture_id = $1 AND si.is_deleted = false
+      ORDER BY sl.name, sc.code
+    `, [fixtureId]);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error getting fixture storage locations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Laden der Lagerorte',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Remove fixture from storage location
+ * DELETE /api/storage/items/fixture/:storageItemId
+ */
+exports.removeFixtureFromStorage = async (req, res) => {
+  try {
+    const { storageItemId } = req.params;
+    const userId = req.user.id;
+
+    // Check if exists
+    const itemResult = await pool.query(
+      'SELECT id FROM storage_items WHERE id = $1 AND item_type = $2 AND is_deleted = false',
+      [storageItemId, 'fixture']
+    );
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lagerort-Eintrag nicht gefunden'
+      });
+    }
+
+    // Soft delete
+    await pool.query(`
+      UPDATE storage_items
+      SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, deleted_by = $2
+      WHERE id = $1
+    `, [storageItemId, userId]);
+
+    res.json({
+      success: true,
+      message: 'Lagerort-Eintrag entfernt'
+    });
+  } catch (error) {
+    console.error('Error removing fixture from storage:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Entfernen',
+      message: error.message
+    });
+  }
+};

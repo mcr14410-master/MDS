@@ -1,23 +1,23 @@
 /**
- * Clamping Devices Controller
+ * Fixtures Controller
  * 
- * Manages clamping devices (Spannmittel) and types
- * Mengenbasierte Lagerverwaltung ohne Kalibrierung
+ * Manages fixtures (Vorrichtungen) and types
+ * Mengenbasierte Lagerverwaltung, manuelle Nummerierung
  * 
  * Routes:
- * - GET    /api/clamping-devices/types        - Get all types
- * - GET    /api/clamping-devices/types/:id    - Get type by ID
- * - POST   /api/clamping-devices/types        - Create type
- * - PUT    /api/clamping-devices/types/:id    - Update type
- * - DELETE /api/clamping-devices/types/:id    - Delete type
+ * - GET    /api/fixtures/types        - Get all types
+ * - GET    /api/fixtures/types/:id    - Get type by ID
+ * - POST   /api/fixtures/types        - Create type
+ * - PUT    /api/fixtures/types/:id    - Update type
+ * - DELETE /api/fixtures/types/:id    - Delete type
  * 
- * - GET    /api/clamping-devices              - Get all devices
- * - GET    /api/clamping-devices/stats        - Get statistics
- * - GET    /api/clamping-devices/:id          - Get device by ID
- * - POST   /api/clamping-devices              - Create device
- * - PUT    /api/clamping-devices/:id          - Update device
- * - DELETE /api/clamping-devices/:id          - Soft delete device
- * - PATCH  /api/clamping-devices/:id/status   - Update status
+ * - GET    /api/fixtures              - Get all fixtures
+ * - GET    /api/fixtures/stats        - Get statistics
+ * - GET    /api/fixtures/:id          - Get fixture by ID
+ * - POST   /api/fixtures              - Create fixture
+ * - PUT    /api/fixtures/:id          - Update fixture
+ * - DELETE /api/fixtures/:id          - Soft delete fixture
+ * - PATCH  /api/fixtures/:id/status   - Update status
  */
 
 const pool = require('../config/db');
@@ -27,8 +27,8 @@ const pool = require('../config/db');
 // ============================================================================
 
 /**
- * GET /api/clamping-devices/types
- * Get all clamping device types
+ * GET /api/fixtures/types
+ * Get all fixture types
  */
 exports.getAllTypes = async (req, res) => {
   try {
@@ -36,10 +36,10 @@ exports.getAllTypes = async (req, res) => {
 
     let queryText = `
       SELECT 
-        cdt.*,
-        (SELECT COUNT(*) FROM clamping_devices cd 
-         WHERE cd.type_id = cdt.id AND cd.deleted_at IS NULL) as device_count
-      FROM clamping_device_types cdt
+        ft.*,
+        (SELECT COUNT(*) FROM fixtures f 
+         WHERE f.type_id = ft.id AND f.deleted_at IS NULL) as fixture_count
+      FROM fixture_types ft
       WHERE 1=1
     `;
     
@@ -47,12 +47,12 @@ exports.getAllTypes = async (req, res) => {
     let paramCount = 1;
 
     if (is_active !== undefined) {
-      queryText += ` AND cdt.is_active = $${paramCount}`;
+      queryText += ` AND ft.is_active = $${paramCount}`;
       params.push(is_active === 'true');
       paramCount++;
     }
 
-    queryText += ` ORDER BY cdt.sort_order, cdt.name`;
+    queryText += ` ORDER BY ft.sort_order, ft.name`;
 
     const result = await pool.query(queryText, params);
 
@@ -63,17 +63,17 @@ exports.getAllTypes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting clamping device types:', error);
+    console.error('Error getting fixture types:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Laden der Spannmitteltypen',
+      message: 'Fehler beim Laden der Vorrichtungstypen',
       error: error.message
     });
   }
 };
 
 /**
- * GET /api/clamping-devices/types/:id
+ * GET /api/fixtures/types/:id
  * Get type by ID
  */
 exports.getTypeById = async (req, res) => {
@@ -82,17 +82,17 @@ exports.getTypeById = async (req, res) => {
 
     const result = await pool.query(`
       SELECT 
-        cdt.*,
-        (SELECT COUNT(*) FROM clamping_devices cd 
-         WHERE cd.type_id = cdt.id AND cd.deleted_at IS NULL) as device_count
-      FROM clamping_device_types cdt
-      WHERE cdt.id = $1
+        ft.*,
+        (SELECT COUNT(*) FROM fixtures f 
+         WHERE f.type_id = ft.id AND f.deleted_at IS NULL) as fixture_count
+      FROM fixture_types ft
+      WHERE ft.id = $1
     `, [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmitteltyp nicht gefunden'
+        message: 'Vorrichtungstyp nicht gefunden'
       });
     }
 
@@ -102,17 +102,17 @@ exports.getTypeById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting clamping device type:', error);
+    console.error('Error getting fixture type:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Laden des Spannmitteltyps',
+      message: 'Fehler beim Laden des Vorrichtungstyps',
       error: error.message
     });
   }
 };
 
 /**
- * POST /api/clamping-devices/types
+ * POST /api/fixtures/types
  * Create new type
  */
 exports.createType = async (req, res) => {
@@ -133,7 +133,7 @@ exports.createType = async (req, res) => {
     }
 
     const result = await pool.query(`
-      INSERT INTO clamping_device_types 
+      INSERT INTO fixture_types 
         (name, description, icon, sort_order, is_active)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
@@ -141,7 +141,7 @@ exports.createType = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Spannmitteltyp erstellt',
+      message: 'Vorrichtungstyp erstellt',
       data: result.rows[0]
     });
 
@@ -149,20 +149,20 @@ exports.createType = async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         success: false,
-        message: 'Ein Spannmitteltyp mit diesem Namen existiert bereits'
+        message: 'Ein Vorrichtungstyp mit diesem Namen existiert bereits'
       });
     }
-    console.error('Error creating clamping device type:', error);
+    console.error('Error creating fixture type:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Erstellen des Spannmitteltyps',
+      message: 'Fehler beim Erstellen des Vorrichtungstyps',
       error: error.message
     });
   }
 };
 
 /**
- * PUT /api/clamping-devices/types/:id
+ * PUT /api/fixtures/types/:id
  * Update type
  */
 exports.updateType = async (req, res) => {
@@ -177,7 +177,7 @@ exports.updateType = async (req, res) => {
     } = req.body;
 
     const result = await pool.query(`
-      UPDATE clamping_device_types SET
+      UPDATE fixture_types SET
         name = COALESCE($1, name),
         description = COALESCE($2, description),
         icon = COALESCE($3, icon),
@@ -191,13 +191,13 @@ exports.updateType = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmitteltyp nicht gefunden'
+        message: 'Vorrichtungstyp nicht gefunden'
       });
     }
 
     res.json({
       success: true,
-      message: 'Spannmitteltyp aktualisiert',
+      message: 'Vorrichtungstyp aktualisiert',
       data: result.rows[0]
     });
 
@@ -205,21 +205,21 @@ exports.updateType = async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         success: false,
-        message: 'Ein Spannmitteltyp mit diesem Namen existiert bereits'
+        message: 'Ein Vorrichtungstyp mit diesem Namen existiert bereits'
       });
     }
-    console.error('Error updating clamping device type:', error);
+    console.error('Error updating fixture type:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Aktualisieren des Spannmitteltyps',
+      message: 'Fehler beim Aktualisieren des Vorrichtungstyps',
       error: error.message
     });
   }
 };
 
 /**
- * DELETE /api/clamping-devices/types/:id
- * Delete type (only if no devices use it)
+ * DELETE /api/fixtures/types/:id
+ * Delete type (only if no fixtures use it)
  */
 exports.deleteType = async (req, res) => {
   try {
@@ -227,73 +227,70 @@ exports.deleteType = async (req, res) => {
 
     // Check if type is in use
     const checkResult = await pool.query(`
-      SELECT COUNT(*) as count FROM clamping_devices 
+      SELECT COUNT(*) as count FROM fixtures 
       WHERE type_id = $1 AND deleted_at IS NULL
     `, [id]);
 
     if (parseInt(checkResult.rows[0].count) > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Spannmitteltyp wird noch verwendet und kann nicht gelöscht werden'
+        message: 'Vorrichtungstyp wird noch verwendet und kann nicht gelöscht werden'
       });
     }
 
     const result = await pool.query(`
-      DELETE FROM clamping_device_types WHERE id = $1 RETURNING *
+      DELETE FROM fixture_types WHERE id = $1 RETURNING *
     `, [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmitteltyp nicht gefunden'
+        message: 'Vorrichtungstyp nicht gefunden'
       });
     }
 
     res.json({
       success: true,
-      message: 'Spannmitteltyp gelöscht'
+      message: 'Vorrichtungstyp gelöscht'
     });
 
   } catch (error) {
-    console.error('Error deleting clamping device type:', error);
+    console.error('Error deleting fixture type:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Löschen des Spannmitteltyps',
+      message: 'Fehler beim Löschen des Vorrichtungstyps',
       error: error.message
     });
   }
 };
 
 // ============================================================================
-// CLAMPING DEVICES (Stammdaten)
+// FIXTURES (Stammdaten)
 // ============================================================================
 
 /**
- * GET /api/clamping-devices
- * Get all clamping devices with optional filters
+ * GET /api/fixtures
+ * Get all fixtures with optional filters
  */
 exports.getAll = async (req, res) => {
   try {
     const { 
       type_id, 
       status, 
+      part_id,
+      operation_id,
       machine_id,
       search,
       include_deleted = 'false'
     } = req.query;
 
     let queryText = `
-      SELECT * FROM clamping_devices_with_stock
+      SELECT * FROM fixtures_with_stock
       WHERE 1=1
     `;
     
     const params = [];
     let paramCount = 1;
-
-    // Soft-Delete Filter
-    if (include_deleted !== 'true') {
-      // View filtert bereits deleted_at IS NULL
-    }
 
     // Typ-Filter
     if (type_id) {
@@ -309,6 +306,20 @@ exports.getAll = async (req, res) => {
       paramCount++;
     }
 
+    // Bauteil-Filter
+    if (part_id) {
+      queryText += ` AND part_id = $${paramCount}`;
+      params.push(part_id);
+      paramCount++;
+    }
+
+    // Operation-Filter
+    if (operation_id) {
+      queryText += ` AND operation_id = $${paramCount}`;
+      params.push(operation_id);
+      paramCount++;
+    }
+
     // Maschinen-Filter
     if (machine_id) {
       queryText += ` AND machine_id = $${paramCount}`;
@@ -319,16 +330,17 @@ exports.getAll = async (req, res) => {
     // Suche
     if (search) {
       queryText += ` AND (
-        name ILIKE $${paramCount} OR 
-        inventory_number ILIKE $${paramCount} OR
-        manufacturer ILIKE $${paramCount} OR
-        model ILIKE $${paramCount}
+        fixture_number ILIKE $${paramCount} 
+        OR name ILIKE $${paramCount}
+        OR notes ILIKE $${paramCount}
+        OR type_name ILIKE $${paramCount}
+        OR part_number ILIKE $${paramCount}
       )`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
-    queryText += ` ORDER BY type_name, name`;
+    queryText += ` ORDER BY fixture_number`;
 
     const result = await pool.query(queryText, params);
 
@@ -339,52 +351,67 @@ exports.getAll = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting clamping devices:', error);
+    console.error('Error getting fixtures:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Laden der Spannmittel',
+      message: 'Fehler beim Laden der Vorrichtungen',
       error: error.message
     });
   }
 };
 
 /**
- * GET /api/clamping-devices/stats
- * Get statistics
+ * GET /api/fixtures/stats
+ * Get fixture statistics
  */
 exports.getStats = async (req, res) => {
   try {
-    const statsResult = await pool.query(`
+    // Gesamt und nach Status
+    const statusResult = await pool.query(`
       SELECT 
         COUNT(*) FILTER (WHERE deleted_at IS NULL) as total,
         COUNT(*) FILTER (WHERE status = 'active' AND deleted_at IS NULL) as active,
         COUNT(*) FILTER (WHERE status = 'in_repair' AND deleted_at IS NULL) as in_repair,
         COUNT(*) FILTER (WHERE status = 'retired' AND deleted_at IS NULL) as retired
-      FROM clamping_devices
+      FROM fixtures
     `);
 
-    // Nach Typ gruppiert
+    // Nach Typ
     const byTypeResult = await pool.query(`
       SELECT 
-        cdt.name as type_name,
-        COUNT(cd.id) as count
-      FROM clamping_device_types cdt
-      LEFT JOIN clamping_devices cd ON cd.type_id = cdt.id AND cd.deleted_at IS NULL
-      WHERE cdt.is_active = true
-      GROUP BY cdt.id, cdt.name, cdt.sort_order
-      ORDER BY cdt.sort_order
+        ft.id,
+        ft.name,
+        ft.icon,
+        COUNT(f.id) as count
+      FROM fixture_types ft
+      LEFT JOIN fixtures f ON f.type_id = ft.id AND f.deleted_at IS NULL
+      WHERE ft.is_active = true
+      GROUP BY ft.id, ft.name, ft.icon
+      ORDER BY ft.sort_order
+    `);
+
+    // Mit Zuordnung
+    const assignmentResult = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE part_id IS NOT NULL) as with_part,
+        COUNT(*) FILTER (WHERE operation_id IS NOT NULL) as with_operation,
+        COUNT(*) FILTER (WHERE machine_id IS NOT NULL) as with_machine,
+        COUNT(*) FILTER (WHERE part_id IS NULL AND operation_id IS NULL AND machine_id IS NULL) as unassigned
+      FROM fixtures
+      WHERE deleted_at IS NULL
     `);
 
     res.json({
       success: true,
       data: {
-        ...statsResult.rows[0],
-        by_type: byTypeResult.rows
+        ...statusResult.rows[0],
+        by_type: byTypeResult.rows,
+        assignments: assignmentResult.rows[0]
       }
     });
 
   } catch (error) {
-    console.error('Error getting clamping device stats:', error);
+    console.error('Error getting fixture stats:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Statistiken',
@@ -394,22 +421,21 @@ exports.getStats = async (req, res) => {
 };
 
 /**
- * GET /api/clamping-devices/:id
- * Get device by ID
+ * GET /api/fixtures/:id
+ * Get fixture by ID with full details
  */
 exports.getById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(`
-      SELECT * FROM clamping_devices_with_stock
-      WHERE id = $1
+      SELECT * FROM fixtures_with_stock WHERE id = $1
     `, [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmittel nicht gefunden'
+        message: 'Vorrichtung nicht gefunden'
       });
     }
 
@@ -417,24 +443,26 @@ exports.getById = async (req, res) => {
     const storageResult = await pool.query(`
       SELECT 
         si.*,
-        sc.code as compartment_code,
         sc.name as compartment_name,
+        sc.code as compartment_code,
         sl.name as location_name,
         sl.code as location_code,
-        sl.id as location_id
+        sl.id as location_id,
+        sl.building,
+        sl.room
       FROM storage_items si
-      JOIN storage_compartments sc ON si.compartment_id = sc.id
-      JOIN storage_locations sl ON sc.location_id = sl.id
-      WHERE si.clamping_device_id = $1
+      JOIN storage_compartments sc ON sc.id = si.compartment_id
+      JOIN storage_locations sl ON sl.id = sc.location_id
+      WHERE si.fixture_id = $1
         AND si.is_deleted = false
-      ORDER BY sl.name, sc.code
+      ORDER BY sl.name, sc.name
     `, [id]);
 
     // Dokumente laden
     const docsResult = await pool.query(`
-      SELECT * FROM clamping_device_documents
-      WHERE clamping_device_id = $1
-      ORDER BY document_type, uploaded_at DESC
+      SELECT * FROM fixture_documents
+      WHERE fixture_id = $1
+      ORDER BY document_type, created_at DESC
     `, [id]);
 
     res.json({
@@ -447,185 +475,179 @@ exports.getById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting clamping device:', error);
+    console.error('Error getting fixture:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Laden des Spannmittels',
+      message: 'Fehler beim Laden der Vorrichtung',
       error: error.message
     });
   }
 };
 
 /**
- * POST /api/clamping-devices
- * Create new device
+ * POST /api/fixtures
+ * Create new fixture
  */
 exports.create = async (req, res) => {
   try {
     const { 
+      fixture_number,
       name,
       type_id,
-      manufacturer,
-      model,
-      clamping_range_min,
-      clamping_range_max,
-      clamping_force,
-      dimensions,
-      weight,
+      part_id,
+      operation_id,
       machine_id,
       status = 'active',
-      purchase_date,
-      purchase_price,
-      supplier_id,
       notes
     } = req.body;
 
     const userId = req.user?.id;
 
     // Validierung
-    if (!name || !type_id) {
+    if (!fixture_number || !type_id) {
       return res.status(400).json({
         success: false,
-        message: 'Name und Typ sind erforderlich'
+        message: 'Vorrichtungsnummer und Typ sind erforderlich'
       });
     }
 
-    // Inventarnummer generieren: SPANN-YYYY-NNN
-    const year = new Date().getFullYear();
-    const countResult = await pool.query(`
-      SELECT COUNT(*) as count FROM clamping_devices 
-      WHERE inventory_number LIKE $1
-    `, [`SPANN-${year}-%`]);
-    
-    const nextNumber = parseInt(countResult.rows[0].count) + 1;
-    const inventory_number = `SPANN-${year}-${String(nextNumber).padStart(3, '0')}`;
+    // Prüfen ob Nummer bereits existiert
+    const checkResult = await pool.query(`
+      SELECT id FROM fixtures WHERE fixture_number = $1
+    `, [fixture_number]);
+
+    if (checkResult.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Vorrichtungsnummer "${fixture_number}" existiert bereits`
+      });
+    }
 
     const result = await pool.query(`
-      INSERT INTO clamping_devices (
-        inventory_number, name, type_id, manufacturer, model,
-        clamping_range_min, clamping_range_max, clamping_force,
-        dimensions, weight, machine_id, status,
-        purchase_date, purchase_price,
-        supplier_id, notes, created_by
+      INSERT INTO fixtures (
+        fixture_number, name, type_id, 
+        part_id, operation_id, machine_id,
+        status, notes, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17
+        $1, $2, $3, $4, $5, $6, $7, $8, $9
       )
       RETURNING *
     `, [
-      inventory_number, name, type_id, manufacturer, model,
-      clamping_range_min || null, clamping_range_max || null, clamping_force || null,
-      dimensions, weight || null, machine_id || null, status,
-      purchase_date || null, purchase_price || null,
-      supplier_id || null, notes, userId
+      fixture_number, name, type_id,
+      part_id || null, operation_id || null, machine_id || null,
+      status, notes, userId
     ]);
 
     // Mit View-Daten zurückgeben
     const fullResult = await pool.query(`
-      SELECT * FROM clamping_devices_with_stock WHERE id = $1
+      SELECT * FROM fixtures_with_stock WHERE id = $1
     `, [result.rows[0].id]);
 
     res.status(201).json({
       success: true,
-      message: 'Spannmittel erstellt',
+      message: 'Vorrichtung erstellt',
       data: fullResult.rows[0]
     });
 
   } catch (error) {
-    console.error('Error creating clamping device:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        message: 'Vorrichtungsnummer existiert bereits'
+      });
+    }
+    console.error('Error creating fixture:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Erstellen des Spannmittels',
+      message: 'Fehler beim Erstellen der Vorrichtung',
       error: error.message
     });
   }
 };
 
 /**
- * PUT /api/clamping-devices/:id
- * Update device
+ * PUT /api/fixtures/:id
+ * Update fixture
  */
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
     const { 
+      fixture_number,
       name,
       type_id,
-      manufacturer,
-      model,
-      clamping_range_min,
-      clamping_range_max,
-      clamping_force,
-      dimensions,
-      weight,
+      part_id,
+      operation_id,
       machine_id,
-      purchase_date,
-      purchase_price,
-      supplier_id,
       notes
     } = req.body;
 
     const userId = req.user?.id;
 
+    // Wenn fixture_number geändert wird, Duplikat prüfen
+    if (fixture_number) {
+      const checkResult = await pool.query(`
+        SELECT id FROM fixtures WHERE fixture_number = $1 AND id != $2
+      `, [fixture_number, id]);
+
+      if (checkResult.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: `Vorrichtungsnummer "${fixture_number}" existiert bereits`
+        });
+      }
+    }
+
     const result = await pool.query(`
-      UPDATE clamping_devices SET
-        name = COALESCE($1, name),
-        type_id = COALESCE($2, type_id),
-        manufacturer = $3,
-        model = $4,
-        clamping_range_min = $5,
-        clamping_range_max = $6,
-        clamping_force = $7,
-        dimensions = $8,
-        weight = $9,
-        machine_id = $10,
-        purchase_date = $11,
-        purchase_price = $12,
-        supplier_id = $13,
-        notes = $14,
-        updated_by = $15,
+      UPDATE fixtures SET
+        fixture_number = COALESCE($1, fixture_number),
+        name = $2,
+        type_id = COALESCE($3, type_id),
+        part_id = $4,
+        operation_id = $5,
+        machine_id = $6,
+        notes = $7,
+        updated_by = $8,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $16 AND deleted_at IS NULL
+      WHERE id = $9 AND deleted_at IS NULL
       RETURNING *
     `, [
-      name, type_id, manufacturer, model,
-      clamping_range_min, clamping_range_max, clamping_force,
-      dimensions, weight, machine_id,
-      purchase_date, purchase_price,
-      supplier_id, notes, userId, id
+      fixture_number, name, type_id,
+      part_id, operation_id, machine_id,
+      notes, userId, id
     ]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmittel nicht gefunden'
+        message: 'Vorrichtung nicht gefunden'
       });
     }
 
     // Mit View-Daten zurückgeben
     const fullResult = await pool.query(`
-      SELECT * FROM clamping_devices_with_stock WHERE id = $1
+      SELECT * FROM fixtures_with_stock WHERE id = $1
     `, [id]);
 
     res.json({
       success: true,
-      message: 'Spannmittel aktualisiert',
+      message: 'Vorrichtung aktualisiert',
       data: fullResult.rows[0]
     });
 
   } catch (error) {
-    console.error('Error updating clamping device:', error);
+    console.error('Error updating fixture:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Aktualisieren des Spannmittels',
+      message: 'Fehler beim Aktualisieren der Vorrichtung',
       error: error.message
     });
   }
 };
 
 /**
- * DELETE /api/clamping-devices/:id
- * Soft delete device
+ * DELETE /api/fixtures/:id
+ * Soft delete fixture
  */
 exports.delete = async (req, res) => {
   try {
@@ -633,7 +655,7 @@ exports.delete = async (req, res) => {
     const userId = req.user?.id;
 
     const result = await pool.query(`
-      UPDATE clamping_devices SET
+      UPDATE fixtures SET
         deleted_at = CURRENT_TIMESTAMP,
         updated_by = $1
       WHERE id = $2 AND deleted_at IS NULL
@@ -643,27 +665,27 @@ exports.delete = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmittel nicht gefunden'
+        message: 'Vorrichtung nicht gefunden'
       });
     }
 
     res.json({
       success: true,
-      message: 'Spannmittel gelöscht'
+      message: 'Vorrichtung gelöscht'
     });
 
   } catch (error) {
-    console.error('Error deleting clamping device:', error);
+    console.error('Error deleting fixture:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Löschen des Spannmittels',
+      message: 'Fehler beim Löschen der Vorrichtung',
       error: error.message
     });
   }
 };
 
 /**
- * PATCH /api/clamping-devices/:id/status
+ * PATCH /api/fixtures/:id/status
  * Update status
  */
 exports.updateStatus = async (req, res) => {
@@ -681,7 +703,7 @@ exports.updateStatus = async (req, res) => {
     }
 
     const result = await pool.query(`
-      UPDATE clamping_devices SET
+      UPDATE fixtures SET
         status = $1,
         updated_by = $2,
         updated_at = CURRENT_TIMESTAMP
@@ -692,13 +714,13 @@ exports.updateStatus = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Spannmittel nicht gefunden'
+        message: 'Vorrichtung nicht gefunden'
       });
     }
 
     // Mit View-Daten zurückgeben
     const fullResult = await pool.query(`
-      SELECT * FROM clamping_devices_with_stock WHERE id = $1
+      SELECT * FROM fixtures_with_stock WHERE id = $1
     `, [id]);
 
     res.json({
@@ -708,7 +730,7 @@ exports.updateStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating clamping device status:', error);
+    console.error('Error updating fixture status:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Aktualisieren des Status',
@@ -718,30 +740,28 @@ exports.updateStatus = async (req, res) => {
 };
 
 /**
- * POST /api/clamping-devices/:id/generate-inventory-number
- * Generate next inventory number (for preview)
+ * GET /api/fixtures/check-number/:number
+ * Check if fixture number is available
  */
-exports.generateInventoryNumber = async (req, res) => {
+exports.checkNumber = async (req, res) => {
   try {
-    const year = new Date().getFullYear();
-    const countResult = await pool.query(`
-      SELECT COUNT(*) as count FROM clamping_devices 
-      WHERE inventory_number LIKE $1
-    `, [`SPANN-${year}-%`]);
-    
-    const nextNumber = parseInt(countResult.rows[0].count) + 1;
-    const inventory_number = `SPANN-${year}-${String(nextNumber).padStart(3, '0')}`;
+    const { number } = req.params;
+
+    const result = await pool.query(`
+      SELECT id, fixture_number FROM fixtures WHERE fixture_number = $1
+    `, [number]);
 
     res.json({
       success: true,
-      data: { inventory_number }
+      available: result.rows.length === 0,
+      existing: result.rows[0] || null
     });
 
   } catch (error) {
-    console.error('Error generating inventory number:', error);
+    console.error('Error checking fixture number:', error);
     res.status(500).json({
       success: false,
-      message: 'Fehler beim Generieren der Inventarnummer',
+      message: 'Fehler beim Prüfen der Vorrichtungsnummer',
       error: error.message
     });
   }

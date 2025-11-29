@@ -73,6 +73,8 @@ const calibrationsRoutes = require('./routes/calibrationsRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const clampingDevicesRoutes = require('./routes/clampingDevicesRoutes');
 const clampingDeviceDocumentsRoutes = require('./routes/clampingDeviceDocumentsRoutes');
+const fixturesRoutes = require('./routes/fixturesRoutes');
+const fixtureDocumentsRoutes = require('./routes/fixtureDocumentsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 // app.use(auditLog);
@@ -107,6 +109,8 @@ app.use('/api/calibrations', calibrationsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/clamping-devices', clampingDevicesRoutes);
 app.use('/api/clamping-devices', clampingDeviceDocumentsRoutes);
+app.use('/api/fixtures', fixturesRoutes);
+app.use('/api/fixtures', fixtureDocumentsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

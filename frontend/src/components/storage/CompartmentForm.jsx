@@ -8,9 +8,12 @@ export default function CompartmentForm({ compartment, locationId, locationName,
 
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     compartment_type: 'compartment',
     description: '',
-    position: '',
+    row_number: '',
+    sequence: '',
+    dimensions: '',
     is_active: true,
   });
 
@@ -25,9 +28,12 @@ export default function CompartmentForm({ compartment, locationId, locationName,
     if (compartment) {
       setFormData({
         name: compartment.name || '',
+        code: compartment.code || '',
         compartment_type: compartment.compartment_type || 'compartment',
         description: compartment.description || '',
-        position: compartment.position != null ? compartment.position.toString() : '',
+        row_number: compartment.row_number != null ? compartment.row_number.toString() : '',
+        sequence: compartment.sequence != null ? compartment.sequence.toString() : '',
+        dimensions: compartment.dimensions || '',
         is_active: compartment.is_active !== undefined ? compartment.is_active : true,
       });
     }
@@ -41,14 +47,21 @@ export default function CompartmentForm({ compartment, locationId, locationName,
       toast.error('Bitte geben Sie einen Namen ein');
       return;
     }
+    if (!formData.code.trim()) {
+      toast.error('Bitte geben Sie einen Code ein');
+      return;
+    }
 
     // Prepare data
     const compartmentData = {
       location_id: parseInt(locationId),
       name: formData.name.trim(),
+      code: formData.code.trim() || null,
       compartment_type: formData.compartment_type,
       description: formData.description.trim() || null,
-      position: formData.position ? parseInt(formData.position) : null,
+      row_number: formData.row_number ? parseInt(formData.row_number) : null,
+      sequence: formData.sequence ? parseInt(formData.sequence) : 0,
+      dimensions: formData.dimensions.trim() || null,
       is_active: formData.is_active,
     };
 
@@ -100,19 +113,37 @@ export default function CompartmentForm({ compartment, locationId, locationName,
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-6 py-4">
             <div className="space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="z.B. Schublade 1 Oben"
-                />
+              {/* Name & Code */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="z.B. Schublade 1 Oben"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Code <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    placeholder="z.B. S1, A1, F01"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Kurzcode für Anzeige (z.B. LAGER-S1)
+                  </p>
+                </div>
               </div>
 
               {/* Compartment Type */}
@@ -133,36 +164,66 @@ export default function CompartmentForm({ compartment, locationId, locationName,
                 </select>
               </div>
 
-              {/* Position */}
+              {/* Row & Sequence */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Reihe / Zeile
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.row_number}
+                    onChange={(e) => setFormData({ ...formData, row_number: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="z.B. 1, 2, 3..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Sortierung
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.sequence}
+                    onChange={(e) => setFormData({ ...formData, sequence: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Kleinere Werte = weiter oben
+                  </p>
+                </div>
+              </div>
+
+              {/* Dimensions */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Position / Nummer (optional)
+                  Abmessungen
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  type="text"
+                  value={formData.dimensions}
+                  onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="z.B. 1, 2, 3..."
+                  placeholder="z.B. 60x40x10cm"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Niedrigere Nummern werden zuerst angezeigt. Leer lassen für alphabetische Sortierung.
-                </p>
               </div>
 
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Beschreibung (optional)
+                  Beschreibung
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
+                  rows={2}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  placeholder="Zusätzliche Informationen zum Fach..."
+                  placeholder="z.B. Fräser Ø3-10mm"
                 />
               </div>
 

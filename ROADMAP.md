@@ -40,8 +40,9 @@
 | Phase 3 | W9-12 | ✅ 100% | Work Instructions - Workflow, Setup Sheets, Tool Lists, Inspection Plans |
 | Phase 4 | W13-16 | ✅ 100% | Werkzeugverwaltung - Tool Master, Storage, Suppliers, Purchase Orders |
 | Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
-| **Phase 6** | **W19-20** | 🔄 **50%** | **Spannmittel ✅ & Vorrichtungen 📋** |
-| Phase 7 | W21+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
+| Phase 6 | W19-20 | ✅ 100% | Spannmittel & Vorrichtungen |
+| **Phase 7** | **W21-23** | 📋 **0%** | **UI-Optimierung, User-Verwaltung, Wartungssystem** |
+| Phase 7+ | W24+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
 
 ---
 
@@ -527,21 +528,21 @@
 - [ ] Zuordnung zu Operation (operation_id FK)
 - [ ] Zuordnung zu Maschine (machine_id FK)
 - [ ] Maße, Gewicht, Material
-- [ ] Backend CRUD API
+- [x] Backend CRUD API
 
 **Prüfungs-Management (wie Kalibrierung):**
-- [ ] Prüfintervall (Monate)
-- [ ] Letzte Prüfung, Nächste Prüfung (automatisch berechnet)
-- [ ] Status: Aktiv / In Änderung / In Reparatur / Ausgemustert / In Benutzung
-- [ ] Zustand: Neu / Gut / Befriedigend / Schlecht
+- [x] Prüfintervall (Monate)
+- [x] Letzte Prüfung, Nächste Prüfung (automatisch berechnet)
+- [x] Status: Aktiv / In Änderung / In Reparatur / Ausgemustert / In Benutzung
+- [x] Zustand: Neu / Gut / Befriedigend / Schlecht
 - [ ] Prüfungs-Historie
 
 **Lagerverwaltungs-Integration:**
-- [ ] Integration in storage_items (wie Messmittel/Spannmittel)
-- [ ] Einzelstück-Tracking (quantity=1)
-- [ ] Zuweisung zu Lagerfächern
-- [ ] Anzeige in Fach-Übersicht mit Prüfstatus
-- [ ] Einlagern/Umlagern/Entfernen über Detailseite
+- [x] Integration in storage_items (wie Messmittel/Spannmittel)
+- [x] Einzelstück-Tracking (quantity=1)
+- [x] Zuweisung zu Lagerfächern
+- [x] Anzeige in Fach-Übersicht mit Prüfstatus
+- [x] Einlagern/Umlagern/Entfernen über Detailseite
 
 **Entnahme-System:**
 - [ ] Checkout/Return wie bei Messmitteln
@@ -549,37 +550,108 @@
 - [ ] Verfügbarkeits-Check
 
 **Dokumenten-Management:**
-- [ ] CAD-Zeichnungen Upload (PDF, DWG, STEP)
-- [ ] Fotos
+- [x] CAD-Zeichnungen Upload (PDF, DWG, STEP)
+- [x] Fotos
 - [ ] Prüfprotokolle
 - [ ] Bedienungsanleitungen
 
 **Frontend:**
-- [ ] Vorrichtungs-Verwaltung UI (Grid/Table View)
-- [ ] Vorrichtungs-Detailseite
-- [ ] Lagerort-Sektion (wie Messmittel)
-- [ ] Dokumente-Tab
+- [x] Vorrichtungs-Verwaltung UI (Grid/Table View)
+- [x] Vorrichtungs-Detailseite
+- [x] Lagerort-Sektion (wie Messmittel)
+- [x] Dokumente-Tab
 
 **Integration:**
-- [ ] Integration in Setup Sheets
-- [ ] Integration in Operations (Vorrichtung für Operation)
-- [ ] CompartmentCard erweitern (📐 Vorrichtung Icon)
+- [x] Integration in Setup Sheets (Spannmittel + Vorrichtungen Tab)
+- [x] Integration in Operations (Vorrichtung für Operation)
+- [x] CompartmentCard erweitern (📐 Vorrichtung Icon)
 - [ ] Excel-Import (aus bestehender Liste)
 
-**Deliverable:** Vorrichtungs-Verwaltung mit Lagerverwaltungs-Integration und Excel-Import funktioniert
+**Bugfixes & Verbesserungen (Session 29.11.2025):**
+- [x] is_deleted Filter in allen Storage Views
+- [x] Lagerort-Löschung mit Soft-Delete Handling
+- [x] CompartmentForm erweitert (Code, Dimensions, etc.)
+- [x] LocationForm: Code als Pflichtfeld
+- [x] Inline-Editing für Setup Sheet Zuordnungen
+- [x] Alle Lagerorte anzeigen (statt nur primärer)
+
+**Deliverable:** ✅ Vorrichtungs-Verwaltung mit Lagerverwaltungs-Integration und Setup Sheet Integration funktioniert
 
 ---
 
-## 📋 Phase 7: Erweiterungen (Wochen 21+) - Optional
+## 📋 Phase 7: Erweiterungen (Wochen 21+)
 
-### Shopfloor-UI
+### Woche 21: UI-Optimierung & Layout
+**Status:** 📋 Geplant
+**Ziel:** Hauptnavigation und Layout verbessern
+
+- [ ] Navigation überarbeiten (Sidebar/Header)
+- [ ] Responsive Design verbessern
+- [ ] Dark Mode optimieren
+- [ ] Breadcrumbs System
+- [ ] Quick Actions / Shortcuts
+- [ ] Dashboard Widgets anpassbar
+- [ ] Suchfunktion global
+
+**Deliverable:** Verbesserte Benutzeroberfläche mit professionellem Layout
+
+---
+
+### Woche 22: User-Verwaltung
+**Status:** 📋 Geplant
+**Ziel:** Vollständige Benutzerverwaltung
+
+- [ ] User CRUD (Admin UI)
+- [ ] Passwort ändern
+- [ ] Passwort zurücksetzen
+- [ ] Rollen-Verwaltung (Admin UI)
+- [ ] Berechtigungs-Matrix anzeigen
+- [ ] User-Profil Seite
+- [ ] Aktivitäts-Log pro User
+- [ ] Session-Management
+
+**Deliverable:** Vollständige User-Verwaltung mit Rollen & Berechtigungen
+
+---
+
+### Woche 23: Wartungssystem
+**Status:** 📋 Geplant
+**Ziel:** Wartungsplanung für Maschinen & Equipment
+
+**Backend:**
+- [ ] maintenance_plans Tabelle
+- [ ] maintenance_tasks Tabelle
+- [ ] maintenance_logs Tabelle
+- [ ] Wartungsintervalle (täglich, wöchentlich, monatlich, jährlich)
+- [ ] Fälligkeitsberechnung
+- [ ] Skill-Level Requirements
+
+**Frontend:**
+- [ ] Wartungsplan-Übersicht
+- [ ] Wartungsaufgaben-Liste
+- [ ] Wartungs-Kalender
+- [ ] Fälligkeits-Dashboard
+- [ ] Wartungs-Historie
+
+**Integration:**
+- [ ] Maschinen → Wartungspläne
+- [ ] Roboter-Wartung (Laderoboter)
+- [ ] Email-Benachrichtigungen (optional)
+
+**Deliverable:** Wartungssystem mit Planung, Tracking und Historie
+
+---
+
+### Weitere optionale Features
+
+**Shopfloor-UI:**
 - [ ] Tablet-optimiertes UI
 - [ ] QR-Scanner Integration
 - [ ] Touch-freundliche Bedienung
 - [ ] Offline-Modus (Service Worker)
 - [ ] Große Buttons/Icons
 
-### Reports & Analytics
+**Reports & Analytics:**
 - [ ] Dashboard für Meister
 - [ ] Statistiken (Teile, Programme, Werkzeuge, Messmittel)
 - [ ] Kalibrierungs-Report (ISO/Luftfahrt)
@@ -652,7 +724,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ██████████████████░░ 90% (18 von 20 Kern-Wochen)
+Gesamt: ████████████████████ 100% (20 von 20 Kern-Wochen)
 
 Phase 1 (Fundament):      ████████████████████ 100% ✅
   └─ Woche 1-4:           ████████████████████ 100% ✅
@@ -670,15 +742,15 @@ Phase 5 (Messmittel):     ██████████████████
   └─ Woche 17:            ████████████████████ 100% ✅
   └─ Woche 18:            ████████████████████ 100% ✅
 
-Phase 6 (Spann/Vorr.):    ██████████░░░░░░░░░░  50% 🔄
+Phase 6 (Spann/Vorr.):    ████████████████████ 100% ✅
   └─ Woche 19:            ████████████████████ 100% ✅
-  └─ Woche 20:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
+  └─ Woche 20:            ████████████████████ 100% ✅
 
 Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░░░   0% 📋
   └─ Woche 21+:           ░░░░░░░░░░░░░░░░░░░░   0%
 ```
 
-**Arbeitszeit:** ~111h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~6h Phase 6)
+**Arbeitszeit:** ~120h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~15h Phase 6)
 
 ---
 
@@ -705,6 +777,8 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 - ✅ **2025-11-27:** Woche 18 komplett - Messmittel Checkout, Dashboard, Inspection Plans, Lager-Integration fertig!
 - 🎊 **2025-11-27:** **PHASE 5 KOMPLETT - MEILENSTEIN 5 ERREICHT!**
 - ✅ **2025-11-28:** Woche 19 komplett - Spannmittel-Verwaltung mit Lagerverwaltungs-Integration fertig!
+- ✅ **2025-11-28:** Woche 20 komplett - Vorrichtungs-Verwaltung mit Bauteil/Operation/Maschinen-Zuordnung fertig!
+- 🎊 **2025-11-28:** **PHASE 6 KOMPLETT - MEILENSTEIN 6 ERREICHT!**
 
 ---
 
@@ -728,6 +802,10 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 | **Woche 17** | Messmittel-Stammdaten | DB (4 Tabellen), Backend (20+ Endpoints), Frontend (Grid/Table/Modals) | ✅ 100% |
 | **Woche 18** | Messmittel-Integration | Checkout, Dashboard-Alarme, Inspection Plans, Lagerverwaltung | ✅ 100% |
 | **Woche 19** | Spannmittel | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration | ✅ 100% |
+| **Woche 20** | Vorrichtungen | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration, Part/Op/Machine-Zuordnung, Setup Sheet Integration, Bugfixes | ✅ 100% |
+| **Woche 21** | UI-Optimierung | Navigation, Layout, Responsive, Breadcrumbs | 📋 Geplant |
+| **Woche 22** | User-Verwaltung | CRUD, Rollen, Berechtigungen, Profil | 📋 Geplant |
+| **Woche 23** | Wartungssystem | Planung, Tracking, Kalender, Historie | 📋 Geplant |
 
 ---
 
@@ -742,15 +820,20 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 
 ## 🔧 Nächste Session
 
-**Phase 6 Woche 20 - Vorrichtungs-Verwaltung + Setup Sheet Integration**
+**Phase 7 - Woche 21: UI-Optimierung & Layout**
 
-1. Datenbank: fixture_types, fixtures, fixture_documents
-2. Backend CRUD API + Prüfungs-Management
-3. Lagerverwaltungs-Integration (storage_items)
-4. Frontend: UI, Detailseite, Lagerort-Sektion
-5. **Setup Sheet Integration:** Spannmittel + Vorrichtungen pro Operation
+Geplante Features:
+1. Navigation überarbeiten (Sidebar/Header)
+2. Responsive Design verbessern
+3. Breadcrumbs System
+4. Quick Actions / Shortcuts
+5. Dashboard Widgets
+
+**Danach:**
+- Woche 22: User-Verwaltung (CRUD, Rollen, Berechtigungen)
+- Woche 23: Wartungssystem (Planung, Tracking, Historie)
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-28  
-**Aktueller Status:** 🔄 **Phase 6 IN ARBEIT** - Woche 19 ✅ KOMPLETT | 19 von 20 Wochen FERTIG!
+**Letzte Aktualisierung:** 2025-11-29  
+**Aktueller Status:** 🎊 **PHASE 6 KOMPLETT** - Alle 20 Kern-Wochen FERTIG! Phase 7 beginnt.

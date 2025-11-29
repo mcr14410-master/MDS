@@ -54,6 +54,10 @@ export default function LocationForm({ location, onClose, onSuccess, isOpen = tr
       toast.error('Bitte geben Sie einen Namen ein');
       return;
     }
+    if (!formData.code) {
+      toast.error('Bitte geben Sie einen Code ein');
+      return;
+    }
 
     let result;
     if (location) {
@@ -112,15 +116,19 @@ export default function LocationForm({ location, onClose, onSuccess, isOpen = tr
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Code
+                    Code <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                     placeholder="z.B. WZ-01"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Kurzcode für Anzeige in Listen
+                  </p>
                 </div>
               </div>
 

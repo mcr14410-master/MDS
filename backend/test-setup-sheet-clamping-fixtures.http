@@ -1,0 +1,88 @@
+### Setup Sheet Clamping Devices & Fixtures API Tests
+### Requires: existing setup sheet, clamping device, and fixture
+
+@baseUrl = http://localhost:3001/api
+@token = {{login.response.body.token}}
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ============================================================================
+### SETUP SHEET MIT DETAILS (inkl. clamping_devices, fixtures, operation_fixtures)
+### ============================================================================
+
+### Get Setup Sheet with all details
+GET {{baseUrl}}/setup-sheets/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### SPANNMITTEL ZUORDNUNGEN
+### ============================================================================
+
+### Add clamping device to setup sheet
+POST {{baseUrl}}/setup-sheets/1/clamping-devices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clamping_device_id": 1,
+  "quantity": 2,
+  "notes": "Für Erstaufspannung"
+}
+
+### Update clamping device quantity
+PUT {{baseUrl}}/setup-sheets/1/clamping-devices/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 3,
+  "notes": "Aktualisierte Menge"
+}
+
+### Remove clamping device from setup sheet
+DELETE {{baseUrl}}/setup-sheets/1/clamping-devices/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### VORRICHTUNGEN ZUORDNUNGEN
+### ============================================================================
+
+### Add fixture to setup sheet
+POST {{baseUrl}}/setup-sheets/1/fixtures
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fixture_id": 1,
+  "quantity": 1,
+  "notes": "Hauptvorrichtung"
+}
+
+### Update fixture quantity
+PUT {{baseUrl}}/setup-sheets/1/fixtures/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### Remove fixture from setup sheet
+DELETE {{baseUrl}}/setup-sheets/1/fixtures/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### VERIFY - Get updated setup sheet
+### ============================================================================
+
+### Verify all assignments
+GET {{baseUrl}}/setup-sheets/1
+Authorization: Bearer {{token}}

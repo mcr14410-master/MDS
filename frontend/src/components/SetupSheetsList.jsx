@@ -1,5 +1,6 @@
 // frontend/src/components/SetupSheetsList.jsx
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSetupSheetsStore } from '../stores/setupSheetsStore';
 import { useOperationsStore } from '../stores/operationsStore';
 import { useAuthStore } from '../stores/authStore';
@@ -7,6 +8,7 @@ import SetupSheetCard from './SetupSheetCard';
 import SetupSheetForm from './SetupSheetForm';
 import SetupSheetPhotos from './SetupSheetPhotos';
 import SetupSheetStatusActions from './SetupSheetStatusActions';
+import SetupSheetClampingFixtures from './SetupSheetClampingFixtures';
 
 export default function SetupSheetsList({ operationId }) {
   const {
@@ -28,7 +30,7 @@ export default function SetupSheetsList({ operationId }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSetupSheet, setEditingSetupSheet] = useState(null);
   const [viewingSetupSheet, setViewingSetupSheet] = useState(null);
-  const [activeTab, setActiveTab] = useState('details'); // 'details' or 'photos'
+  const [activeTab, setActiveTab] = useState('details'); // 'details', 'clamping', or 'photos'
 
   useEffect(() => {
     if (operationId) {
@@ -199,6 +201,21 @@ export default function SetupSheetsList({ operationId }) {
                 Details
               </button>
               <button
+                onClick={() => setActiveTab('clamping')}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'clamping'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                Spannmittel & Vorrichtungen
+                {((currentSetupSheet.clamping_devices?.length || 0) + (currentSetupSheet.fixtures?.length || 0)) > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">
+                    {(currentSetupSheet.clamping_devices?.length || 0) + (currentSetupSheet.fixtures?.length || 0)}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setActiveTab('photos')}
                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'photos'
@@ -250,29 +267,165 @@ export default function SetupSheetsList({ operationId }) {
                 </div>
 
                 {/* Spannmittel & Vorrichtungen */}
-                {(currentSetupSheet.fixture_description || currentSetupSheet.clamping_description) && (
+                {/* Spannmittel & Vorrichtungen - Kombiniert */}
+                {((currentSetupSheet.clamping_devices?.length > 0) || 
+                  (currentSetupSheet.fixtures?.length > 0) || 
+                  (currentSetupSheet.operation_fixtures?.length > 0) ||
+                  currentSetupSheet.fixture_description || 
+                  currentSetupSheet.clamping_description) && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                       Spannmittel & Vorrichtungen
                     </h3>
-                    <dl className="space-y-2">
-                      {currentSetupSheet.fixture_description && (
-                        <div>
-                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Vorrichtung</dt>
-                          <dd className="text-sm text-gray-900 dark:text-white">
-                            {currentSetupSheet.fixture_description}
-                          </dd>
+                    
+                    {/* Spannmittel */}
+                    <div className="mb-4">
+                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Spannmittel
+                      </dt>
+                      {currentSetupSheet.clamping_devices?.length > 0 ? (
+                        <div className="space-y-2">
+                          {currentSetupSheet.clamping_devices.map((item) => (
+                            <Link
+                              key={item.id}
+                              to={`/clamping-devices/${item.clamping_device_id}`}
+                              className="flex items-center gap-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                            >
+                              <span className="text-xs bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded font-medium">
+                                {item.quantity}x
+                              </span>
+                              <span className="font-mono text-sm text-purple-700 dark:text-purple-300 font-medium">
+                                {item.inventory_number}
+                              </span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {item.clamping_device_name}
+                              </span>
+                              {item.notes && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                  — {item.notes}
+                                </span>
+                              )}
+                              {/* Lagerorte */}
+                              {item.storage_locations?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.storage_locations.map((loc, idx) => (
+                                    <span key={idx} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      {loc.location_code}{loc.compartment_code ? `-${loc.compartment_code}` : ''}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <svg className="w-4 h-4 ml-auto text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          ))}
+                          {/* Freitext-Notiz */}
+                          {currentSetupSheet.clamping_description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-2 pl-2 border-l-2 border-purple-300 dark:border-purple-700">
+                              {currentSetupSheet.clamping_description}
+                            </p>
+                          )}
                         </div>
+                      ) : currentSetupSheet.clamping_description ? (
+                        <dd className="text-sm text-gray-900 dark:text-white">
+                          {currentSetupSheet.clamping_description}
+                        </dd>
+                      ) : (
+                        <dd className="text-sm text-gray-400 dark:text-gray-500 italic">
+                          Keine Spannmittel zugeordnet
+                        </dd>
                       )}
-                      {currentSetupSheet.clamping_description && (
-                        <div>
-                          <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Spannmittel</dt>
-                          <dd className="text-sm text-gray-900 dark:text-white">
-                            {currentSetupSheet.clamping_description}
-                          </dd>
+                    </div>
+
+                    {/* Vorrichtungen */}
+                    <div>
+                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Vorrichtungen
+                      </dt>
+                      {(currentSetupSheet.fixtures?.length > 0 || currentSetupSheet.operation_fixtures?.length > 0) ? (
+                        <div className="space-y-2">
+                          {/* Direkt zugeordnete Vorrichtungen */}
+                          {currentSetupSheet.fixtures?.map((item) => (
+                            <Link
+                              key={item.id}
+                              to={`/fixtures/${item.fixture_id}`}
+                              className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                            >
+                              <span className="text-xs bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded font-medium">
+                                {item.quantity}x
+                              </span>
+                              <span className="font-mono text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+                                {item.fixture_number}
+                              </span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {item.fixture_name || item.type_name}
+                              </span>
+                              {item.notes && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                  — {item.notes}
+                                </span>
+                              )}
+                              {/* Lagerorte */}
+                              {item.storage_locations?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.storage_locations.map((loc, idx) => (
+                                    <span key={idx} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      {loc.location_code}{loc.compartment_code ? `-${loc.compartment_code}` : ''}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <svg className="w-4 h-4 ml-auto text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          ))}
+                          
+                          {/* Via Operation zugeordnete Vorrichtungen */}
+                          {currentSetupSheet.operation_fixtures?.map((item) => (
+                            <Link
+                              key={`op-${item.id}`}
+                              to={`/fixtures/${item.id}`}
+                              className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <span className="text-xs text-gray-500 dark:text-gray-400">📌</span>
+                              <span className="font-mono text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                {item.fixture_number}
+                              </span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {item.fixture_name || item.type_name}
+                              </span>
+                              <svg className="w-4 h-4 ml-auto text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          ))}
+                          {/* Freitext-Notiz */}
+                          {currentSetupSheet.fixture_description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-2 pl-2 border-l-2 border-indigo-300 dark:border-indigo-700">
+                              {currentSetupSheet.fixture_description}
+                            </p>
+                          )}
                         </div>
+                      ) : currentSetupSheet.fixture_description ? (
+                        <dd className="text-sm text-gray-900 dark:text-white">
+                          {currentSetupSheet.fixture_description}
+                        </dd>
+                      ) : (
+                        <dd className="text-sm text-gray-400 dark:text-gray-500 italic">
+                          Keine Vorrichtungen zugeordnet
+                        </dd>
                       )}
-                    </dl>
+                    </div>
                   </div>
                 )}
 
@@ -399,6 +552,13 @@ export default function SetupSheetsList({ operationId }) {
                   </div>
                 )}
               </div>
+            )}
+
+            {activeTab === 'clamping' && (
+              <SetupSheetClampingFixtures
+                setupSheet={currentSetupSheet}
+                onUpdate={() => fetchSetupSheet(currentSetupSheet.id)}
+              />
             )}
 
             {activeTab === 'photos' && (

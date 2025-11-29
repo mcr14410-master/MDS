@@ -28,6 +28,8 @@ import MeasuringEquipmentPage from './pages/MeasuringEquipmentPage';
 import MeasuringEquipmentDetailPage from './pages/MeasuringEquipmentDetailPage';
 import ClampingDevicesPage from './pages/ClampingDevicesPage';
 import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
+import FixturesPage from './pages/FixturesPage';
+import FixtureDetailPage from './pages/FixtureDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -252,6 +254,23 @@ function App() {
 			     element={
 			       <ProtectedRoute requiredPermission="storage.view">
 			         <ClampingDeviceDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   {/* Fixtures Routes */}
+			   <Route 
+			     path="/fixtures" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <FixturesPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   <Route 
+			     path="/fixtures/:id" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <FixtureDetailPage />
 			       </ProtectedRoute>
 			     } 
 			   />
