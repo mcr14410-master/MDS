@@ -50,7 +50,7 @@ export default function Layout({ children }) {
       <div className={`${mainPadding} flex flex-col min-h-screen transition-all duration-300`}>
         {/* Schmaler Header - nur Breadcrumbs */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center h-12 px-4">
+          <div className="flex items-center h-8 px-4">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}

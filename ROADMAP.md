@@ -41,7 +41,7 @@
 | Phase 4 | W13-16 | ✅ 100% | Werkzeugverwaltung - Tool Master, Storage, Suppliers, Purchase Orders |
 | Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
 | Phase 6 | W19-20 | ✅ 100% | Spannmittel & Vorrichtungen |
-| Phase 7 | W21-23 | 🔄 33% | UI-Optimierung, User-Verwaltung, Wartungssystem |
+| Phase 7 | W21-23 | 🔄 67% | UI-Optimierung, User-Verwaltung, Wartungssystem |
 | Phase 7+ | W24+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
 
 ---
@@ -611,19 +611,32 @@
 ---
 
 ### Woche 22: User-Verwaltung
-**Status:** 📋 Geplant
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Vollständige Benutzerverwaltung
 
-- [ ] User CRUD (Admin UI)
-- [ ] Passwort ändern
-- [ ] Passwort zurücksetzen
-- [ ] Rollen-Verwaltung (Admin UI)
-- [ ] Berechtigungs-Matrix anzeigen
-- [ ] User-Profil Seite
-- [ ] Aktivitäts-Log pro User
-- [ ] Session-Management
+- [x] User CRUD (Admin UI)
+- [x] Passwort ändern
+- [x] Passwort zurücksetzen
+- [x] Rollen-Verwaltung (Admin UI)
+- [x] Berechtigungs-Matrix anzeigen
+- [x] User-Profil Seite
+- [x] Aktivitäts-Log pro User (Audit-Log Middleware aktiviert)
+- [ ] Session-Management (optional, verschoben)
 
-**Deliverable:** Vollständige User-Verwaltung mit Rollen & Berechtigungen
+**Implementiert:**
+- Backend: usersController.js, rolesController.js mit vollständigem CRUD
+- Backend: usersRoutes.js, rolesRoutes.js, permissionsRoutes.js
+- Backend: auditLogMiddleware aktiviert (loggt alle CREATE/UPDATE/DELETE)
+- Frontend: UsersPage.jsx - User-Übersicht mit Filter, Create Modal
+- Frontend: UserDetailPage.jsx - Details, Edit, Passwort-Reset, Activity Log
+- Frontend: RolesPage.jsx - Rollen-Übersicht, Berechtigungs-Matrix
+- Frontend: ProfilePage.jsx - Eigenes Profil, Passwort ändern
+- Frontend: Sidebar erweitert mit Admin-Navigation und Profil-Link
+- Sicherheit: Selbstlösch-Schutz, System-Rollen-Schutz, Admin-Rolle geschützt
+
+**Deliverable:** ✅ Vollständige User-Verwaltung mit Rollen & Berechtigungen
+
+**Abgeschlossen am:** 2025-11-29
 
 ---
 
@@ -761,7 +774,7 @@ Phase 6 (Spann/Vorr.):    ██████████████████
 
 Phase 7 (Erweiterungen):  ███████░░░░░░░░░░░░░  33% 🔄
   └─ Woche 21:            ████████████████████ 100% ✅
-  └─ Woche 22:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
+  └─ Woche 22:            ████████████████████ 100% ✅
   └─ Woche 23:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
 ```
 
@@ -820,7 +833,7 @@ Phase 7 (Erweiterungen):  ███████░░░░░░░░░░░
 | **Woche 19** | Spannmittel | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration | ✅ 100% |
 | **Woche 20** | Vorrichtungen | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration, Part/Op/Machine-Zuordnung, Setup Sheet Integration, Bugfixes | ✅ 100% |
 | **Woche 21** | UI-Optimierung | Sidebar-Layout, Collapse, Breadcrumbs, User in Sidebar, LocalStorage | ✅ 100% |
-| **Woche 22** | User-Verwaltung | CRUD, Rollen, Berechtigungen, Profil | 📋 Geplant |
+| **Woche 22** | User-Verwaltung | CRUD, Rollen, Berechtigungen, Profil, Audit-Log | ✅ Abgeschlossen |
 | **Woche 23** | Wartungssystem | Planung, Tracking, Kalender, Historie | 📋 Geplant |
 
 ---
@@ -851,4 +864,4 @@ Geplante Features:
 ---
 
 **Letzte Aktualisierung:** 2025-11-29  
-**Aktueller Status:** 🔄 **PHASE 7 GESTARTET** - Woche 21 (UI-Optimierung) abgeschlossen. Weiter mit Woche 22 (User-Verwaltung).
+**Aktueller Status:** 🔄 **PHASE 7 LÄUFT** - Woche 22 (User-Verwaltung) abgeschlossen. Weiter mit Woche 23 (Wartungssystem).

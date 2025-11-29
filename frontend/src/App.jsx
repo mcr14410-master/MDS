@@ -30,6 +30,10 @@ import ClampingDevicesPage from './pages/ClampingDevicesPage';
 import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
 import FixturesPage from './pages/FixturesPage';
 import FixtureDetailPage from './pages/FixtureDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import UsersPage from './pages/admin/UsersPage';
+import UserDetailPage from './pages/admin/UserDetailPage';
+import RolesPage from './pages/admin/RolesPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -274,6 +278,35 @@ function App() {
 			       </ProtectedRoute>
 			     } 
 			   />
+				   
+				   {/* Profile Route */}
+				   <Route path="/profile" element={<ProfilePage />} />
+				   
+				   {/* Admin Routes */}
+				   <Route 
+				     path="/admin/users" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <UsersPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/admin/users/:id" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <UserDetailPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/admin/roles" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <RolesPage />
+				       </ProtectedRoute>
+				     } 
+				   />
         </Route>
 
 		

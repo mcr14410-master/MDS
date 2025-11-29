@@ -1,0 +1,217 @@
+### =====================================================
+### MDS Users API Tests
+### Woche 22: User-Verwaltung
+### =====================================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@adminToken = {{login.response.body.token}}
+
+
+### =====================================================
+### 1. Auth - Login als Admin
+### =====================================================
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### =====================================================
+### 2. GET All Users
+### =====================================================
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 3. GET Users with Search Filter
+### =====================================================
+GET {{baseUrl}}/users?search=admin
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 4. GET Users with Role Filter
+### =====================================================
+GET {{baseUrl}}/users?role=admin
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 5. GET Users with Active Filter
+### =====================================================
+GET {{baseUrl}}/users?is_active=true
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 6. CREATE New User
+### =====================================================
+# @name createUser
+POST {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "test123",
+  "first_name": "Test",
+  "last_name": "User",
+  "is_active": true,
+  "role_ids": [4]
+}
+
+### =====================================================
+### 7. GET Single User
+### =====================================================
+GET {{baseUrl}}/users/{{createUser.response.body.user.id}}
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 8. UPDATE User
+### =====================================================
+PUT {{baseUrl}}/users/{{createUser.response.body.user.id}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "first_name": "Updated",
+  "last_name": "TestUser",
+  "role_ids": [4, 2]
+}
+
+### =====================================================
+### 9. RESET User Password
+### =====================================================
+POST {{baseUrl}}/users/{{createUser.response.body.user.id}}/reset-password
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "new_password": "newpassword123"
+}
+
+### =====================================================
+### 10. TOGGLE User Active Status
+### =====================================================
+PATCH {{baseUrl}}/users/{{createUser.response.body.user.id}}/toggle-active
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 11. GET User Activity Log
+### =====================================================
+GET {{baseUrl}}/users/1/activity?limit=20
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 12. UPDATE Own Profile
+### =====================================================
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "first_name": "System",
+  "last_name": "Administrator"
+}
+
+### =====================================================
+### 13. DELETE User
+### =====================================================
+DELETE {{baseUrl}}/users/{{createUser.response.body.user.id}}
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### ROLES API Tests
+### =====================================================
+
+### =====================================================
+### 14. GET All Roles
+### =====================================================
+GET {{baseUrl}}/roles
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 15. GET Single Role
+### =====================================================
+GET {{baseUrl}}/roles/1
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 16. GET Permission Matrix
+### =====================================================
+GET {{baseUrl}}/roles/matrix
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 17. GET All Permissions
+### =====================================================
+GET {{baseUrl}}/permissions
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 18. CREATE New Role
+### =====================================================
+# @name createRole
+POST {{baseUrl}}/roles
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "quality_inspector",
+  "description": "Qualitätsprüfer - prüft und dokumentiert Teile",
+  "permission_ids": [1, 5, 23]
+}
+
+### =====================================================
+### 19. UPDATE Role
+### =====================================================
+PUT {{baseUrl}}/roles/{{createRole.response.body.role.id}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "description": "Qualitätsprüfer - erweiterte Berechtigungen",
+  "permission_ids": [1, 5, 6, 23, 24]
+}
+
+### =====================================================
+### 20. DELETE Role (only non-system roles)
+### =====================================================
+DELETE {{baseUrl}}/roles/{{createRole.response.body.role.id}}
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### 21. Try DELETE System Role (should fail)
+### =====================================================
+DELETE {{baseUrl}}/roles/1
+Authorization: Bearer {{adminToken}}
+
+### =====================================================
+### Error Cases
+### =====================================================
+
+### 22. CREATE User with duplicate username
+POST {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email": "admin2@example.com",
+  "password": "test123"
+}
+
+### 23. CREATE User without required fields
+POST {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "incomplete"
+}
+
+### 24. Try DELETE own user (should fail)
+DELETE {{baseUrl}}/users/1
+Authorization: Bearer {{adminToken}}
