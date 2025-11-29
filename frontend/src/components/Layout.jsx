@@ -1,156 +1,81 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import ThemeToggle from './ThemeToggle';
+import Sidebar, { Icons } from './Sidebar';
+import Breadcrumbs from './Breadcrumbs';
+
+const SIDEBAR_COLLAPSED_KEY = 'mds-sidebar-collapsed';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { logout } = useAuthStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Sidebar-Zustand aus LocalStorage laden (nach Mount)
+  useEffect(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (saved === 'true') {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sidebar-Zustand in LocalStorage speichern
+  const handleToggleCollapse = () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(newState));
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Dynamisches Padding basierend auf Sidebar-Zustand
+  const mainPadding = sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64';
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            {/* Logo & Links */}
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link to="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  MDS
-                </Link>
-              </div>
-              
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  to="/"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                >
-                  Dashboard
-                </Link>
-                
-                {user?.permissions?.includes('part.read') && (
-                  <Link
-                    to="/parts"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Bauteile
-                  </Link>
-                )}
+      {/* Sidebar */}
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleCollapse}
+        onLogout={handleLogout}
+      />
 
-                {user?.permissions?.includes('tools.view') && (
-                  <Link
-                    to="/tools"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Werkzeuge
-                  </Link>
-                )}
+      {/* Main Content Area */}
+      <div className={`${mainPadding} flex flex-col min-h-screen transition-all duration-300`}>
+        {/* Schmaler Header - nur Breadcrumbs */}
+        <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center h-12 px-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-1.5 mr-3 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Icons.Menu />
+            </button>
 
-                {user?.permissions?.includes('tools.view') && (
-                  <Link
-                    to="/tool-number-lists"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    T-Nummern
-                  </Link>
-                )}
-
-                {user?.permissions?.includes('machine.read') && (
-                  <Link
-                    to="/machines"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Maschinen
-                  </Link>
-                )}
-
-                {user?.permissions?.includes('storage.view') && (
-                  <Link
-                    to="/storage"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Lagerorte
-                  </Link>
-                )}
-
-                {user?.permissions?.includes('storage.view') && (
-                  <Link
-                    to="/suppliers"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Lieferanten
-                  </Link>
-                )}
-
-                {user?.permissions?.includes('storage.view') && (
-                  <Link
-                    to="/purchase-orders"
-                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    Bestellungen
-                  </Link>
-                )}
-				
-				{user?.permissions?.includes('storage.view') && (
-				  <Link
-				    to="/measuring-equipment"
-				    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-				  >
-				    Messmittel
-				  </Link>
-				)}
-
-				{user?.permissions?.includes('storage.view') && (
-				  <Link
-				    to="/clamping-devices"
-				    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-				  >
-				    Spannmittel
-				  </Link>
-				)}
-
-				{user?.permissions?.includes('storage.view') && (
-				  <Link
-				    to="/fixtures"
-				    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-				  >
-				    Vorrichtungen
-				  </Link>
-				)}
-              </div>
-            </div>
-
-            {/* User Menu */}
-            <div className="flex items-center">
-              <div className="flex items-center space-x-4">
-                <ThemeToggle />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {user?.username}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                  {user?.role}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-700 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
+            {/* Breadcrumbs */}
+            <Breadcrumbs />
           </div>
-        </div>
-      </nav>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 p-4 sm:p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-1.5 px-6 text-center text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+          MDS - Manufacturing Data System • © 2025
+        </footer>
+      </div>
     </div>
   );
 }

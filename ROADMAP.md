@@ -41,7 +41,7 @@
 | Phase 4 | W13-16 | ✅ 100% | Werkzeugverwaltung - Tool Master, Storage, Suppliers, Purchase Orders |
 | Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
 | Phase 6 | W19-20 | ✅ 100% | Spannmittel & Vorrichtungen |
-| **Phase 7** | **W21-23** | 📋 **0%** | **UI-Optimierung, User-Verwaltung, Wartungssystem** |
+| Phase 7 | W21-23 | 🔄 33% | UI-Optimierung, User-Verwaltung, Wartungssystem |
 | Phase 7+ | W24+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
 
 ---
@@ -579,21 +579,34 @@
 
 ---
 
-## 📋 Phase 7: Erweiterungen (Wochen 21+)
+## 🔄 Phase 7: Erweiterungen (Wochen 21+)
 
-### Woche 21: UI-Optimierung & Layout
-**Status:** 📋 Geplant
+### ✅ Woche 21: UI-Optimierung & Layout
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Hauptnavigation und Layout verbessern
+**Zeitaufwand:** ~4 Stunden
 
-- [ ] Navigation überarbeiten (Sidebar/Header)
-- [ ] Responsive Design verbessern
-- [ ] Dark Mode optimieren
-- [ ] Breadcrumbs System
-- [ ] Quick Actions / Shortcuts
-- [ ] Dashboard Widgets anpassbar
-- [ ] Suchfunktion global
+**Sidebar-Navigation:**
+- [x] Neue Sidebar-Komponente mit gruppierten Menüs
+- [x] Collapsible Sidebar (schmale Icon-Ansicht)
+- [x] Flyout-Menüs im Collapsed-Modus
+- [x] Automatisches Öffnen aktiver Menü-Gruppen
+- [x] Sidebar-Zustand in LocalStorage persistieren
 
-**Deliverable:** Verbesserte Benutzeroberfläche mit professionellem Layout
+**Header & Layout:**
+- [x] Schmalerer Header (nur Breadcrumbs)
+- [x] Breadcrumbs-Navigation mit dynamischen Labels
+- [x] User-Bereich in Sidebar verschoben
+- [x] Dark/Light Mode Toggle in Sidebar
+- [x] Responsive Design (Mobile Overlay)
+
+**Dashboard:**
+- [x] Quick Actions erweitert (6 statt 4)
+- [x] Responsive Grid für Quick Actions
+
+**Deliverable:** ✅ Professionelles Sidebar-Layout mit Collapse-Funktion und persistentem Zustand
+
+**Abgeschlossen am:** 2025-11-29
 
 ---
 
@@ -724,7 +737,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ████████████████████ 100% (20 von 20 Kern-Wochen)
+Gesamt: ████████████████████ 100% (20 von 20 Kern-Wochen) + Phase 7 gestartet
 
 Phase 1 (Fundament):      ████████████████████ 100% ✅
   └─ Woche 1-4:           ████████████████████ 100% ✅
@@ -746,11 +759,13 @@ Phase 6 (Spann/Vorr.):    ██████████████████
   └─ Woche 19:            ████████████████████ 100% ✅
   └─ Woche 20:            ████████████████████ 100% ✅
 
-Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░░░   0% 📋
-  └─ Woche 21+:           ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 7 (Erweiterungen):  ███████░░░░░░░░░░░░░  33% 🔄
+  └─ Woche 21:            ████████████████████ 100% ✅
+  └─ Woche 22:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
+  └─ Woche 23:            ░░░░░░░░░░░░░░░░░░░░   0% 📋
 ```
 
-**Arbeitszeit:** ~120h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~15h Phase 6)
+**Arbeitszeit:** ~124h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~15h Phase 6 + ~4h Phase 7)
 
 ---
 
@@ -779,6 +794,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 - ✅ **2025-11-28:** Woche 19 komplett - Spannmittel-Verwaltung mit Lagerverwaltungs-Integration fertig!
 - ✅ **2025-11-28:** Woche 20 komplett - Vorrichtungs-Verwaltung mit Bauteil/Operation/Maschinen-Zuordnung fertig!
 - 🎊 **2025-11-28:** **PHASE 6 KOMPLETT - MEILENSTEIN 6 ERREICHT!**
+- ✅ **2025-11-29:** Woche 21 komplett - UI-Optimierung mit Sidebar-Layout, Breadcrumbs, Collapse-Funktion fertig!
 
 ---
 
@@ -803,7 +819,7 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 | **Woche 18** | Messmittel-Integration | Checkout, Dashboard-Alarme, Inspection Plans, Lagerverwaltung | ✅ 100% |
 | **Woche 19** | Spannmittel | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration | ✅ 100% |
 | **Woche 20** | Vorrichtungen | DB (3 Tabellen), Backend (CRUD + Docs), Frontend (Grid/Table/Detail), Lager-Integration, Part/Op/Machine-Zuordnung, Setup Sheet Integration, Bugfixes | ✅ 100% |
-| **Woche 21** | UI-Optimierung | Navigation, Layout, Responsive, Breadcrumbs | 📋 Geplant |
+| **Woche 21** | UI-Optimierung | Sidebar-Layout, Collapse, Breadcrumbs, User in Sidebar, LocalStorage | ✅ 100% |
 | **Woche 22** | User-Verwaltung | CRUD, Rollen, Berechtigungen, Profil | 📋 Geplant |
 | **Woche 23** | Wartungssystem | Planung, Tracking, Kalender, Historie | 📋 Geplant |
 
@@ -820,20 +836,19 @@ Phase 7 (Optional):       ░░░░░░░░░░░░░░░░░░
 
 ## 🔧 Nächste Session
 
-**Phase 7 - Woche 21: UI-Optimierung & Layout**
+**Phase 7 - Woche 22: User-Verwaltung**
 
 Geplante Features:
-1. Navigation überarbeiten (Sidebar/Header)
-2. Responsive Design verbessern
-3. Breadcrumbs System
-4. Quick Actions / Shortcuts
-5. Dashboard Widgets
+1. User CRUD (Admin UI)
+2. Passwort ändern/zurücksetzen
+3. Rollen-Verwaltung
+4. Berechtigungs-Matrix anzeigen
+5. User-Profil Seite
 
 **Danach:**
-- Woche 22: User-Verwaltung (CRUD, Rollen, Berechtigungen)
 - Woche 23: Wartungssystem (Planung, Tracking, Historie)
 
 ---
 
 **Letzte Aktualisierung:** 2025-11-29  
-**Aktueller Status:** 🎊 **PHASE 6 KOMPLETT** - Alle 20 Kern-Wochen FERTIG! Phase 7 beginnt.
+**Aktueller Status:** 🔄 **PHASE 7 GESTARTET** - Woche 21 (UI-Optimierung) abgeschlossen. Weiter mit Woche 22 (User-Verwaltung).
