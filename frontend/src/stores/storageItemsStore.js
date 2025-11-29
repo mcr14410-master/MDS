@@ -27,9 +27,11 @@ export const useStorageItemsStore = create((set, get) => ({
 
       const params = new URLSearchParams();
       if (filters.tool_master_id) params.append('tool_master_id', filters.tool_master_id);
+      if (filters.measuring_equipment_id) params.append('measuring_equipment_id', filters.measuring_equipment_id);
       if (filters.location_id) params.append('location_id', filters.location_id);
       if (filters.compartment_id) params.append('compartment_id', filters.compartment_id);
       if (filters.is_low_stock) params.append('is_low_stock', filters.is_low_stock);
+      if (filters.item_type) params.append('item_type', filters.item_type);
 
       const url = `${API_BASE}${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
@@ -515,6 +517,103 @@ export const useStorageItemsStore = create((set, get) => ({
    * Clear error
    */
   clearError: () => set({ error: null }),
+
+  // ============================================================================
+  // MEASURING EQUIPMENT STORAGE
+  // ============================================================================
+
+  /**
+   * Assign measuring equipment to storage compartment
+   */
+  assignMeasuringEquipmentToStorage: async (measuring_equipment_id, compartment_id, notes = null) => {
+    try {
+      set({ loading: true, error: null });
+
+      const response = await axios.post(`${API_BASE}/measuring-equipment`, {
+        measuring_equipment_id,
+        compartment_id,
+        notes
+      });
+
+      set((state) => ({
+        storageItems: [response.data.data, ...state.storageItems],
+        loading: false,
+      }));
+
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      console.error('assignMeasuringEquipmentToStorage error:', error);
+      const errorMessage = error.response?.data?.error || 'Fehler beim Einlagern des Messmittels';
+      set({ loading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  /**
+   * Get storage location for a measuring equipment
+   */
+  getMeasuringEquipmentStorageLocation: async (equipmentId) => {
+    try {
+      const response = await axios.get(`${API_BASE}/measuring-equipment/${equipmentId}/location`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      console.error('getMeasuringEquipmentStorageLocation error:', error);
+      const errorMessage = error.response?.data?.error || 'Fehler beim Laden des Lagerorts';
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  /**
+   * Move measuring equipment to different compartment
+   */
+  moveMeasuringEquipment: async (equipmentId, compartment_id) => {
+    try {
+      set({ loading: true, error: null });
+
+      const response = await axios.put(`${API_BASE}/measuring-equipment/${equipmentId}/move`, {
+        compartment_id
+      });
+
+      set((state) => ({
+        storageItems: state.storageItems.map(item =>
+          item.measuring_equipment_id === parseInt(equipmentId) ? response.data.data : item
+        ),
+        loading: false,
+      }));
+
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      console.error('moveMeasuringEquipment error:', error);
+      const errorMessage = error.response?.data?.error || 'Fehler beim Umlagern';
+      set({ loading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  /**
+   * Remove measuring equipment from storage
+   */
+  removeMeasuringEquipmentFromStorage: async (equipmentId) => {
+    try {
+      set({ loading: true, error: null });
+
+      await axios.delete(`${API_BASE}/measuring-equipment/${equipmentId}`);
+
+      set((state) => ({
+        storageItems: state.storageItems.filter(item => 
+          item.measuring_equipment_id !== parseInt(equipmentId)
+        ),
+        loading: false,
+      }));
+
+      return { success: true, message: 'Messmittel aus Lager entfernt' };
+    } catch (error) {
+      console.error('removeMeasuringEquipmentFromStorage error:', error);
+      const errorMessage = error.response?.data?.error || 'Fehler beim Entfernen aus dem Lager';
+      set({ loading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
 
   /**
    * Reset store

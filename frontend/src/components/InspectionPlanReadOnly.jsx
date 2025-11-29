@@ -117,8 +117,36 @@ export default function InspectionPlanReadOnly({ operationId }) {
               </div>
             )}
 
-            {/* Measuring Tool */}
-            {item.measuring_tool && (
+            {/* Measuring Equipment (linked) */}
+            {item.measuring_equipment_id && (
+              <div className="ml-8 mb-2 flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">📏</span>
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {item.equipment_inventory_number}
+                </span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {item.equipment_name}
+                </span>
+                {item.equipment_calibration_status === 'ok' && (
+                  <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded">
+                    ✓
+                  </span>
+                )}
+                {item.equipment_calibration_status === 'due_soon' && (
+                  <span className="px-1.5 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded">
+                    ⚠️
+                  </span>
+                )}
+                {item.equipment_calibration_status === 'overdue' && (
+                  <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded">
+                    ❌
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Measuring Tool (text) */}
+            {item.measuring_tool && !item.measuring_equipment_id && (
               <div className="ml-8 mb-2 flex items-start gap-2">
                 <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">🔧</span>
                 <span className="text-sm text-gray-700 dark:text-gray-300">{item.measuring_tool}</span>

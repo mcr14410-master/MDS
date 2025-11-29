@@ -1,0 +1,135 @@
+=== MDS Session Transcript ===
+Date: 2025-11-27
+Topic: Woche 18 Abschluss - Inspection Plans Integration & UI-Verbesserungen
+Project: Manufacturing Data System (MDS) - Phase 5 Messmittelverwaltung
+
+=== AUSGANGSLAGE ===
+Vorherige Session: PDF-Export und Dashboard-Alarme implementiert
+Offen: Integration in Inspection Plans (Messmittel pro Prüfmerkmal)
+
+=== DURCHGEFÜHRTE ARBEITEN ===
+
+## 1. PDF-Export Frontend-Integration
+Dateien:
+- frontend/src/pages/MeasuringEquipmentPage.jsx (Export-Dropdown)
+- frontend/src/pages/MeasuringEquipmentDetailPage.jsx (PDF-Button)
+
+Features:
+- Export-Dropdown mit 2 Optionen (Übersicht, Fälligkeitsbericht)
+- PDF-Button in DetailPage für Einzelbericht
+- Blob-Download mit korrektem Dateinamen
+
+## 2. Inspection Plans - Messmittel-Verknüpfung
+Migration:
+- 1737000042000_add-measuring-equipment-to-inspection-items.js
+- Neue Spalte: measuring_equipment_id (FK zu measuring_equipment)
+- Index für Performance
+
+Backend (inspectionPlansController.js):
+- Alle Queries erweitert mit LEFT JOIN measuring_equipment_with_status
+- Neue Felder: equipment_inventory_number, equipment_name, equipment_calibration_status
+- CRUD-Operationen für measuring_equipment_id
+
+Frontend (InspectionPlanTab.jsx):
+- Import: useMeasuringEquipmentStore
+- Neue States: equipmentSearch, showEquipmentDropdown
+- formData erweitert: measuring_equipment_id
+- Suchbares Combobox-Dropdown für Messmittel-Auswahl
+
+Frontend (InspectionPlanReadOnly.jsx):
+- Anzeige von verknüpften Messmitteln mit Kalibrierungsstatus
+
+## 3. Bugfix: View statt Tabelle
+Problem: "Spalte me.calibration_status existiert nicht"
+Lösung: JOIN von measuring_equipment auf measuring_equipment_with_status geändert
+Betroffene Stellen: 4 Queries im inspectionPlansController.js
+
+## 4. Verbesserung: Alle Messmittel anzeigen
+Anforderung: Auch gesperrte/überfällige Messmittel auswählbar
+Änderungen:
+- fetchEquipment({}) statt fetchEquipment({ status: 'active' })
+- Status-Hinweis unter Dropdown (grün/gelb/rot/grau)
+
+## 5. Suchbares Dropdown
+Features:
+- Live-Suche nach Inventar-Nr., Name, Typ
+- Status-Badges in Liste (✓, ⚠️, ❌, 🔒)
+- X-Button zum Löschen
+- Max 50 Ergebnisse für Performance
+- Click-Outside zum Schließen
+
+## 6. Auto-Fill entfernt
+Anforderung: Freitext-Feld unabhängig vom Dropdown
+Änderungen:
+- Dropdown-Auswahl befüllt nicht mehr measuring_tool
+- Clear löscht nur measuring_equipment_id
+
+## 7. Einzeilige Messmittel-Anzeige
+Anforderung: Beide Felder in einer Zeile mit "|" Trenner
+Resultat:
+- "Messmittel: MM-2025-001 Bügelmessschraube [✓] | Messuhr mit Stativ"
+- Oder nur eines der beiden
+- flex-wrap für Responsivität
+
+=== GEÄNDERTE/NEUE DATEIEN ===
+
+Backend (2):
+- migrations/1737000042000_add-measuring-equipment-to-inspection-items.js (NEU)
+- src/controllers/inspectionPlansController.js
+
+Frontend (4):
+- src/pages/MeasuringEquipmentPage.jsx
+- src/pages/MeasuringEquipmentDetailPage.jsx
+- src/components/InspectionPlanTab.jsx
+- src/components/InspectionPlanReadOnly.jsx
+
+=== DEPLOYMENT ===
+1. Migration ausführen: npm run migrate up
+2. Backend neu starten
+3. Frontend neu builden
+
+=== WOCHE 18 STATUS - KOMPLETT ===
+✅ Entnahme/Rückgabe-System
+✅ Alarm-System (Dashboard Widget)
+✅ Audit-Export (PDF)
+✅ Integration in Inspection Plans
+
+=== TECHNISCHE DETAILS ===
+
+Inspection Plan Item mit Messmittel:
+```sql
+SELECT 
+  ipi.*,
+  me.inventory_number as equipment_inventory_number,
+  me.name as equipment_name,
+  me.calibration_status as equipment_calibration_status
+FROM inspection_plan_items ipi
+LEFT JOIN measuring_equipment_with_status me ON ipi.measuring_equipment_id = me.id
+WHERE ipi.inspection_plan_id = $1
+```
+
+Suchbares Dropdown State:
+```javascript
+const [equipmentSearch, setEquipmentSearch] = useState('');
+const [showEquipmentDropdown, setShowEquipmentDropdown] = useState(false);
+
+// Filter
+measuringEquipmentList.filter(eq => {
+  const search = equipmentSearch.toLowerCase();
+  return (
+    eq.inventory_number?.toLowerCase().includes(search) ||
+    eq.name?.toLowerCase().includes(search) ||
+    eq.type_name?.toLowerCase().includes(search)
+  );
+}).slice(0, 50)
+```
+
+=== OUTPUT ===
+Alle Dateien in: /mnt/user-data/outputs/week18-checkout/
+
+=== NÄCHSTE PHASE ===
+Phase 6 - Woche 19: Spannmittelverwaltung
+- Stammdaten (Spannfutter, Spannzangen, Schraubstöcke)
+- Zuordnung zu Maschinen
+- Wartungsintervalle
+- Verfügbarkeitsprüfung

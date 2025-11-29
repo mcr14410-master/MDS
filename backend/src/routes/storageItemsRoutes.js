@@ -7,13 +7,111 @@ const { authenticateToken, requirePermission } = require('../middleware/authMidd
 router.use(authenticateToken);
 
 // ============================================================================
+// MEASURING EQUIPMENT STORAGE (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   POST /api/storage/items/measuring-equipment
+ * @desc    Assign measuring equipment to storage compartment
+ * @body    measuring_equipment_id, compartment_id, notes
+ * @access  Private (requires permission: storage.create)
+ */
+router.post('/measuring-equipment', requirePermission('storage.create'), storageItemsController.assignMeasuringEquipmentToStorage);
+
+/**
+ * @route   GET /api/storage/items/measuring-equipment/:equipmentId/location
+ * @desc    Get storage location for a measuring equipment
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/measuring-equipment/:equipmentId/location', requirePermission('storage.view'), storageItemsController.getMeasuringEquipmentStorageLocation);
+
+/**
+ * @route   PUT /api/storage/items/measuring-equipment/:equipmentId/move
+ * @desc    Move measuring equipment to different compartment
+ * @body    compartment_id
+ * @access  Private (requires permission: storage.edit)
+ */
+router.put('/measuring-equipment/:equipmentId/move', requirePermission('storage.edit'), storageItemsController.moveMeasuringEquipment);
+
+/**
+ * @route   DELETE /api/storage/items/measuring-equipment/:equipmentId
+ * @desc    Remove measuring equipment from storage
+ * @access  Private (requires permission: storage.delete)
+ */
+router.delete('/measuring-equipment/:equipmentId', requirePermission('storage.delete'), storageItemsController.removeMeasuringEquipmentFromStorage);
+
+// ============================================================================
+// CLAMPING DEVICES STORAGE (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   POST /api/storage/items/clamping-device
+ * @desc    Add clamping device to storage compartment (quantity-based)
+ * @body    clamping_device_id, compartment_id, quantity_new, quantity_used, notes
+ * @access  Private (requires permission: storage.create)
+ */
+router.post('/clamping-device', requirePermission('storage.create'), storageItemsController.addClampingDeviceToStorage);
+
+/**
+ * @route   GET /api/storage/items/clamping-device/:deviceId/locations
+ * @desc    Get all storage locations for a clamping device
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/clamping-device/:deviceId/locations', requirePermission('storage.view'), storageItemsController.getClampingDeviceStorageLocations);
+
+/**
+ * @route   DELETE /api/storage/items/clamping-device/:storageItemId
+ * @desc    Remove clamping device from storage location
+ * @access  Private (requires permission: storage.delete)
+ */
+router.delete('/clamping-device/:storageItemId', requirePermission('storage.delete'), storageItemsController.removeClampingDeviceFromStorage);
+
+// ============================================================================
+// FIXTURES STORAGE (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   POST /api/storage/items/fixture
+ * @desc    Add fixture to storage compartment (quantity-based)
+ * @body    fixture_id, compartment_id, quantity_new, quantity_used, notes
+ * @access  Private (requires permission: storage.create)
+ */
+router.post('/fixture', requirePermission('storage.create'), storageItemsController.addFixtureToStorage);
+
+/**
+ * @route   GET /api/storage/items/fixture/:fixtureId/locations
+ * @desc    Get all storage locations for a fixture
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/fixture/:fixtureId/locations', requirePermission('storage.view'), storageItemsController.getFixtureStorageLocations);
+
+/**
+ * @route   DELETE /api/storage/items/fixture/:storageItemId
+ * @desc    Remove fixture from storage location
+ * @access  Private (requires permission: storage.delete)
+ */
+router.delete('/fixture/:storageItemId', requirePermission('storage.delete'), storageItemsController.removeFixtureFromStorage);
+
+// ============================================================================
+// COMPARTMENT ITEMS (must be before /:id routes!)
+// ============================================================================
+
+/**
+ * @route   GET /api/storage/items/compartment/:compartmentId
+ * @desc    Get all items in a compartment (tools + measuring equipment)
+ * @query   item_type (optional filter)
+ * @access  Private (requires permission: storage.view)
+ */
+router.get('/compartment/:compartmentId', requirePermission('storage.view'), storageItemsController.getCompartmentItems);
+
+// ============================================================================
 // STORAGE ITEMS - CRUD
 // ============================================================================
 
 /**
  * @route   GET /api/storage/items
  * @desc    Get all storage items with stock info
- * @query   tool_master_id, location_id, compartment_id, is_low_stock
+ * @query   tool_master_id, location_id, compartment_id, is_low_stock, item_type, measuring_equipment_id
  * @access  Private (requires permission: storage.view)
  */
 router.get('/', requirePermission('storage.view'), storageItemsController.getAllStorageItems);

@@ -56,4 +56,17 @@ router.get(
   dashboardController.getRecentMovements
 );
 
+/**
+ * @route   GET /api/dashboard/calibration-alerts
+ * @desc    Get calibration alerts for measuring equipment
+ * @query   limit - Number of alerts to return (default: 10)
+ * @access  Private - requires storage.view permission
+ */
+router.get(
+  '/calibration-alerts',
+  authenticateToken,
+  requirePermission('storage.view'),
+  dashboardController.getCalibrationAlerts
+);
+
 module.exports = router;

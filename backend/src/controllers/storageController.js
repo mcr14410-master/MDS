@@ -371,13 +371,43 @@ exports.deleteLocation = async (req, res) => {
       });
     }
 
-    // Check for compartments (will cascade delete)
-    const compartmentCheck = await pool.query(
-      'SELECT COUNT(*) as count FROM storage_compartments WHERE location_id = $1',
+    // Get all compartment IDs for this location
+    const compartmentResult = await pool.query(
+      'SELECT id FROM storage_compartments WHERE location_id = $1',
       [id]
     );
+    const compartmentIds = compartmentResult.rows.map(r => r.id);
+    const compartmentCount = compartmentIds.length;
 
-    const compartmentCount = parseInt(compartmentCheck.rows[0].count);
+    if (compartmentIds.length > 0) {
+      // Check for ACTIVE storage items (is_deleted = false)
+      const activeItemsCheck = await pool.query(
+        `SELECT COUNT(*) as count FROM storage_items 
+         WHERE compartment_id = ANY($1) AND is_deleted = false`,
+        [compartmentIds]
+      );
+      
+      const activeCount = parseInt(activeItemsCheck.rows[0].count);
+      if (activeCount > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Lagerort kann nicht gelöscht werden - es befinden sich noch ${activeCount} aktive Artikel in den Fächern. Bitte zuerst den Bestand entfernen.`
+        });
+      }
+
+      // Delete soft-deleted items (they block the foreign key)
+      const deletedItemsResult = await pool.query(
+        `DELETE FROM storage_items 
+         WHERE compartment_id = ANY($1) AND is_deleted = true
+         RETURNING id`,
+        [compartmentIds]
+      );
+      
+      const deletedItemsCount = deletedItemsResult.rowCount;
+      if (deletedItemsCount > 0) {
+        console.log(`Hard-deleted ${deletedItemsCount} soft-deleted storage items for location ${id}`);
+      }
+    }
 
     // Delete location (CASCADE will delete compartments)
     const deleteQuery = 'DELETE FROM storage_locations WHERE id = $1';

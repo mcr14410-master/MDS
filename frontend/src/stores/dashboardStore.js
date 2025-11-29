@@ -8,6 +8,7 @@ export const useDashboardStore = create((set, get) => ({
   lowStockItems: [],
   lowStockSummary: null,
   recentMovements: [],
+  calibrationAlerts: null,
   loading: false,
   error: null,
 
@@ -114,6 +115,30 @@ export const useDashboardStore = create((set, get) => ({
       }
     } catch (error) {
       console.error('Error fetching recent movements:', error);
+    }
+  },
+
+  // Fetch calibration alerts for measuring equipment
+  fetchCalibrationAlerts: async (limit = 10) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/dashboard/calibration-alerts?limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch calibration alerts');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        set({ calibrationAlerts: result.data });
+      }
+    } catch (error) {
+      console.error('Error fetching calibration alerts:', error);
     }
   },
 

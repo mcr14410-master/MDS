@@ -5,7 +5,7 @@
 ### ==============================================
 
 @baseUrl = http://localhost:5000
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjMwNzE1NDcsImV4cCI6MTc2MzE1Nzk0N30.XCtowMkCwsuDZujYpXXLJIW5LvkP3XhAiVVQ2QcHJWw
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjQ0MTMyOTAsImV4cCI6MTc2NDQ5OTY5MH0.juhxVvEz0QeVKs1URP3wsfpWTB32jDe3RS93EjJzLLU
 
 ### ==============================================
 ### 1. LOGIN - Token holen

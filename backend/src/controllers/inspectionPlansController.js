@@ -62,11 +62,17 @@ const getInspectionPlan = async (req, res) => {
 
     const inspectionPlan = result.rows[0];
 
-    // Get all items
+    // Get all items with measuring equipment info
     const itemsResult = await client.query(
-      `SELECT * FROM inspection_plan_items
-       WHERE inspection_plan_id = $1
-       ORDER BY sequence_number ASC, id ASC`,
+      `SELECT 
+        ipi.*,
+        me.inventory_number as equipment_inventory_number,
+        me.name as equipment_name,
+        me.calibration_status as equipment_calibration_status
+       FROM inspection_plan_items ipi
+       LEFT JOIN measuring_equipment_with_status me ON ipi.measuring_equipment_id = me.id
+       WHERE ipi.inspection_plan_id = $1
+       ORDER BY ipi.sequence_number ASC, ipi.id ASC`,
       [inspectionPlan.id]
     );
 
@@ -135,9 +141,15 @@ const updateInspectionPlan = async (req, res) => {
     );
 
     const itemsResult = await client.query(
-      `SELECT * FROM inspection_plan_items
-       WHERE inspection_plan_id = $1
-       ORDER BY sequence_number ASC, id ASC`,
+      `SELECT 
+        ipi.*,
+        me.inventory_number as equipment_inventory_number,
+        me.name as equipment_name,
+        me.calibration_status as equipment_calibration_status
+       FROM inspection_plan_items ipi
+       LEFT JOIN measuring_equipment_with_status me ON ipi.measuring_equipment_id = me.id
+       WHERE ipi.inspection_plan_id = $1
+       ORDER BY ipi.sequence_number ASC, ipi.id ASC`,
       [planId]
     );
 
@@ -171,6 +183,7 @@ const addInspectionItem = async (req, res) => {
       nominal_value,
       mean_value,
       measuring_tool,
+      measuring_equipment_id,
       instruction
     } = req.body;
 
@@ -215,18 +228,34 @@ const addInspectionItem = async (req, res) => {
         inspection_plan_id, sequence_number,
         measurement_description, tolerance,
         min_value, max_value, nominal_value, mean_value,
-        measuring_tool, instruction
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        measuring_tool, measuring_equipment_id, instruction
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         planId, nextSequence,
         measurement_description, tolerance,
         min_value, max_value, nominal_value, mean_value,
-        measuring_tool, instruction
+        measuring_tool, measuring_equipment_id || null, instruction
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    // Return with equipment info if linked
+    if (measuring_equipment_id) {
+      const itemWithEquipment = await client.query(
+        `SELECT 
+          ipi.*,
+          me.inventory_number as equipment_inventory_number,
+          me.name as equipment_name,
+          me.calibration_status as equipment_calibration_status
+         FROM inspection_plan_items ipi
+         LEFT JOIN measuring_equipment_with_status me ON ipi.measuring_equipment_id = me.id
+         WHERE ipi.id = $1`,
+        [result.rows[0].id]
+      );
+      res.status(201).json(itemWithEquipment.rows[0]);
+    } else {
+      res.status(201).json(result.rows[0]);
+    }
 
   } catch (error) {
     console.error('Error adding inspection item:', error);
@@ -253,6 +282,7 @@ const updateInspectionItem = async (req, res) => {
       nominal_value,
       mean_value,
       measuring_tool,
+      measuring_equipment_id,
       instruction
     } = req.body;
 
@@ -270,14 +300,15 @@ const updateInspectionItem = async (req, res) => {
            nominal_value = $5,
            mean_value = $6,
            measuring_tool = $7,
-           instruction = $8,
+           measuring_equipment_id = $8,
+           instruction = $9,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9
+       WHERE id = $10
        RETURNING *`,
       [
         measurement_description, tolerance,
         min_value, max_value, nominal_value, mean_value,
-        measuring_tool, instruction,
+        measuring_tool, measuring_equipment_id || null, instruction,
         itemId
       ]
     );
@@ -286,7 +317,20 @@ const updateInspectionItem = async (req, res) => {
       return res.status(404).json({ message: 'Inspection item not found' });
     }
 
-    res.json(result.rows[0]);
+    // Return with equipment info
+    const itemWithEquipment = await client.query(
+      `SELECT 
+        ipi.*,
+        me.inventory_number as equipment_inventory_number,
+        me.name as equipment_name,
+        me.calibration_status as equipment_calibration_status
+       FROM inspection_plan_items ipi
+       LEFT JOIN measuring_equipment_with_status me ON ipi.measuring_equipment_id = me.id
+       WHERE ipi.id = $1`,
+      [itemId]
+    );
+
+    res.json(itemWithEquipment.rows[0]);
 
   } catch (error) {
     console.error('Error updating inspection item:', error);

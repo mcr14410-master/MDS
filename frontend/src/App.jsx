@@ -24,6 +24,12 @@ import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
 import ToolNumberListsPage from './pages/ToolNumberListsPage';
 import ToolNumberListDetailPage from './pages/ToolNumberListDetailPage';
+import MeasuringEquipmentPage from './pages/MeasuringEquipmentPage';
+import MeasuringEquipmentDetailPage from './pages/MeasuringEquipmentDetailPage';
+import ClampingDevicesPage from './pages/ClampingDevicesPage';
+import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
+import FixturesPage from './pages/FixturesPage';
+import FixtureDetailPage from './pages/FixtureDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -217,6 +223,57 @@ function App() {
 		  	</ProtectedRoute>
 			} 
 		   />
+		   {/* Measuring Equipment Routes */}
+		   <Route 
+		     path="/measuring-equipment" 
+		     element={
+		       <ProtectedRoute requiredPermission="storage.view">
+		         <MeasuringEquipmentPage />
+		       </ProtectedRoute>
+		     } 
+		   />
+		   <Route 
+		     path="/measuring-equipment/:id" 
+		     element={
+		       <ProtectedRoute requiredPermission="storage.view">
+		         <MeasuringEquipmentDetailPage />
+		       </ProtectedRoute>
+		     } 
+		   />
+			   {/* Clamping Devices Routes */}
+			   <Route 
+			     path="/clamping-devices" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ClampingDevicesPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   <Route 
+			     path="/clamping-devices/:id" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ClampingDeviceDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   {/* Fixtures Routes */}
+			   <Route 
+			     path="/fixtures" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <FixturesPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   <Route 
+			     path="/fixtures/:id" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <FixtureDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
         </Route>
 
 		

@@ -45,6 +45,24 @@ exports.getDashboardStats = async (req, res) => {
       FROM tools_with_stock
     `;
 
+    // Get measuring equipment stats
+    const measuringQuery = `
+      SELECT 
+        COUNT(*) as total_equipment,
+        COUNT(*) FILTER (WHERE calibration_status = 'ok') as ok_count,
+        COUNT(*) FILTER (WHERE calibration_status = 'due_soon') as due_soon_count,
+        COUNT(*) FILTER (WHERE calibration_status = 'overdue') as overdue_count,
+        COUNT(*) FILTER (WHERE calibration_status = 'locked') as locked_count
+      FROM measuring_equipment_with_status
+    `;
+
+    // Get active checkouts count
+    const checkoutsQuery = `
+      SELECT COUNT(*) as checked_out_count
+      FROM measuring_equipment_checkouts
+      WHERE returned_at IS NULL
+    `;
+
     // Get storage items stats
     const storageQuery = `
       SELECT 
@@ -63,11 +81,13 @@ exports.getDashboardStats = async (req, res) => {
       WHERE performed_at >= NOW() - INTERVAL '7 days'
     `;
 
-    const [partsResult, customersResult, toolsResult, storageResult, movementsResult] = 
+    const [partsResult, customersResult, toolsResult, measuringResult, checkoutsResult, storageResult, movementsResult] = 
       await Promise.all([
         pool.query(partsQuery),
         pool.query(customersQuery),
         pool.query(toolsQuery),
+        pool.query(measuringQuery),
+        pool.query(checkoutsQuery),
         pool.query(storageQuery),
         pool.query(movementsQuery)
       ]);
@@ -78,6 +98,10 @@ exports.getDashboardStats = async (req, res) => {
         parts: partsResult.rows[0],
         customers: customersResult.rows[0],
         tools: toolsResult.rows[0],
+        measuring_equipment: {
+          ...measuringResult.rows[0],
+          checked_out_count: parseInt(checkoutsResult.rows[0].checked_out_count)
+        },
         storage: storageResult.rows[0],
         movements: movementsResult.rows[0]
       }
@@ -121,7 +145,7 @@ exports.getLowStockItems = async (req, res) => {
         si.effective_stock,
         si.reorder_point,
         si.min_quantity,
-        si.effective_stock_percent,
+        si.effective_stock,
         si.location_name,
         si.compartment_name,
         -- Calculate stock status
@@ -155,7 +179,6 @@ exports.getLowStockItems = async (req, res) => {
           WHEN si.reorder_point IS NOT NULL AND si.effective_stock <= si.reorder_point THEN 2
           ELSE 3
         END,
-        si.effective_stock_percent ASC,
         si.effective_stock ASC
       LIMIT $1
     `;
@@ -265,3 +288,75 @@ exports.getRecentMovements = async (req, res) => {
 };
 
 module.exports = exports;
+
+// ============================================================================
+// CALIBRATION ALERTS
+// ============================================================================
+
+/**
+ * Get calibration alerts for dashboard
+ * GET /api/dashboard/calibration-alerts?limit=10
+ */
+exports.getCalibrationAlerts = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    const query = `
+      SELECT 
+        me.id,
+        me.inventory_number,
+        me.name,
+        me.status,
+        me.calibration_status,
+        me.next_calibration_date,
+        me.days_until_calibration,
+        me.calibration_provider,
+        met.name as type_name,
+        sl.name as storage_location_name,
+        -- Checkout info
+        c.id as checkout_id,
+        c.checked_out_by,
+        u.username as checked_out_by_name
+      FROM measuring_equipment_with_status me
+      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
+      LEFT JOIN storage_locations sl ON me.storage_location_id = sl.id
+      LEFT JOIN measuring_equipment_checkouts c ON me.id = c.equipment_id AND c.returned_at IS NULL
+      LEFT JOIN users u ON c.checked_out_by = u.id
+      WHERE me.calibration_status IN ('overdue', 'due_soon')
+      ORDER BY 
+        CASE me.calibration_status 
+          WHEN 'overdue' THEN 1 
+          WHEN 'due_soon' THEN 2 
+          ELSE 3 
+        END,
+        me.days_until_calibration ASC
+      LIMIT $1
+    `;
+
+    const result = await pool.query(query, [limit]);
+
+    // Get summary counts
+    const summaryQuery = `
+      SELECT 
+        COUNT(*) FILTER (WHERE calibration_status = 'overdue') as overdue_count,
+        COUNT(*) FILTER (WHERE calibration_status = 'due_soon') as due_soon_count
+      FROM measuring_equipment_with_status
+    `;
+    const summaryResult = await pool.query(summaryQuery);
+
+    res.json({
+      success: true,
+      data: {
+        alerts: result.rows,
+        summary: summaryResult.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching calibration alerts:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch calibration alerts',
+      message: error.message
+    });
+  }
+};
