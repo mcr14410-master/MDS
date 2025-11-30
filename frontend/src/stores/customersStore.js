@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export const useCustomersStore = create((set, get) => ({
   // State
   customers: [],
@@ -33,7 +31,7 @@ export const useCustomersStore = create((set, get) => ({
       if (filters.sort_by) params.append('sort_by', filters.sort_by);
       if (filters.sort_order) params.append('sort_order', filters.sort_order);
       
-      const url = `${API_BASE_URL}/api/customers${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `/api/customers${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
       
       set({ 
@@ -56,7 +54,7 @@ export const useCustomersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.get(`${API_BASE_URL}/api/customers/${id}`);
+      const response = await axios.get(`/api/customers/${id}`);
       
       set({ 
         currentCustomer: response.data.data,
@@ -78,7 +76,7 @@ export const useCustomersStore = create((set, get) => ({
   // Fetch customer parts
   fetchCustomerParts: async (customerId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/customers/${customerId}/parts`);
+      const response = await axios.get(`/api/customers/${customerId}/parts`);
       set({ customerParts: response.data.data || [] });
       return response.data.data || [];
     } catch (error) {
@@ -92,7 +90,7 @@ export const useCustomersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.post(`${API_BASE_URL}/api/customers`, customerData);
+      const response = await axios.post(`/api/customers`, customerData);
       
       // Add to list
       set(state => ({ 
@@ -117,7 +115,7 @@ export const useCustomersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.put(`${API_BASE_URL}/api/customers/${id}`, customerData);
+      const response = await axios.put(`/api/customers/${id}`, customerData);
       
       // Update in list
       set(state => ({ 
@@ -143,7 +141,7 @@ export const useCustomersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const url = `${API_BASE_URL}/api/customers/${id}${hardDelete ? '?hard_delete=true' : ''}`;
+      const url = `/api/customers/${id}${hardDelete ? '?hard_delete=true' : ''}`;
       await axios.delete(url);
       
       // Remove from list or update is_active

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const useSupplierItemsStore = create((set, get) => ({
   // State
@@ -14,7 +13,7 @@ export const useSupplierItemsStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.get(`${API_BASE_URL}/api/storage/items/${storageItemId}/suppliers`);
+      const response = await axios.get(`/api/storage/items/${storageItemId}/suppliers`);
       
       set({ 
         supplierItems: response.data.data || [],
@@ -40,7 +39,7 @@ export const useSupplierItemsStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       console.log('Creating supplier item with data:', supplierItemData);
-      const response = await axios.post(`${API_BASE_URL}/api/supplier-items`, supplierItemData);
+      const response = await axios.post(`/api/supplier-items`, supplierItemData);
       console.log('Create response:', response.data);
       
       // Add to list
@@ -70,7 +69,7 @@ export const useSupplierItemsStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       console.log('Updating supplier item', id, 'with data:', supplierItemData);
-      const response = await axios.put(`${API_BASE_URL}/api/supplier-items/${id}`, supplierItemData);
+      const response = await axios.put(`/api/supplier-items/${id}`, supplierItemData);
       console.log('Update response:', response.data);
       
       // Update in list
@@ -101,7 +100,7 @@ export const useSupplierItemsStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      await axios.delete(`${API_BASE_URL}/api/supplier-items/${id}`);
+      await axios.delete(`/api/supplier-items/${id}`);
       
       // Remove from list
       set(state => ({ 
@@ -127,7 +126,7 @@ export const useSupplierItemsStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.put(`${API_BASE_URL}/api/supplier-items/${id}/preferred`);
+      const response = await axios.put(`/api/supplier-items/${id}/preferred`);
       
       // Update all items: set preferred only for this one
       set(state => ({ 

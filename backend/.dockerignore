@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Uploads (werden per Volume gemountet)
+uploads/*
+!uploads/.gitkeep
+
+# Test files
+*.http
+test-*.js
+test-*.http
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docs
+docs/
+*.md
+!README.md

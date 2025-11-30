@@ -1,0 +1,60 @@
+# MDS - Manufacturing Data System
+# Läuft parallel zu task-app auf Port 81
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mds
+      POSTGRES_USER: mds
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mds_dev_password}
+    volumes:
+      - /srv/mds/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mds -d mds"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: mds
+      DB_USER: mds
+      DB_PASSWORD: ${DB_PASSWORD:-mds_dev_password}
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      JWT_EXPIRES_IN: 24h
+      UPLOAD_PATH: /app/uploads
+      MAX_FILE_SIZE: 52428800
+      CORS_ORIGIN: "*"
+    volumes:
+      - /srv/mds/uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "81:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend/dist:/srv/frontend:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
