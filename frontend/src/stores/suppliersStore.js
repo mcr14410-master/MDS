@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const useSuppliersStore = create((set, get) => ({
   // State
@@ -36,7 +35,7 @@ export const useSuppliersStore = create((set, get) => ({
       if (filters.sort_by) params.append('sort_by', filters.sort_by);
       if (filters.sort_order) params.append('sort_order', filters.sort_order);
       
-      const url = `${API_BASE_URL}/api/suppliers${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `/api/suppliers${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
       
       set({ 
@@ -59,7 +58,7 @@ export const useSuppliersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.get(`${API_BASE_URL}/api/suppliers/${id}`);
+      const response = await axios.get(`/api/suppliers/${id}`);
       
       set({ 
         currentSupplier: response.data.data,
@@ -84,7 +83,7 @@ export const useSuppliersStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       console.log('Creating supplier with data:', supplierData);
-      const response = await axios.post(`${API_BASE_URL}/api/suppliers`, supplierData);
+      const response = await axios.post(`/api/suppliers`, supplierData);
       console.log('Create response:', response.data);
       
       // Add to list
@@ -114,7 +113,7 @@ export const useSuppliersStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       console.log('Updating supplier', id, 'with data:', supplierData);
-      const response = await axios.put(`${API_BASE_URL}/api/suppliers/${id}`, supplierData);
+      const response = await axios.put(`/api/suppliers/${id}`, supplierData);
       console.log('Update response:', response.data);
       
       // Update in list
@@ -144,7 +143,7 @@ export const useSuppliersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const url = `${API_BASE_URL}/api/suppliers/${id}${hardDelete ? '?hard_delete=true' : ''}`;
+      const url = `/api/suppliers/${id}${hardDelete ? '?hard_delete=true' : ''}`;
       await axios.delete(url);
       
       // Remove from list or update is_active
@@ -179,7 +178,7 @@ export const useSuppliersStore = create((set, get) => ({
   // Get supplier items
   getSupplierItems: async (supplierId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/suppliers/${supplierId}/items`);
+      const response = await axios.get(`/api/suppliers/${supplierId}/items`);
       return response.data.data || [];
     } catch (error) {
       console.error('getSupplierItems error:', error);

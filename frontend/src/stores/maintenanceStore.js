@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const MAINTENANCE_API = `${API_BASE_URL}/api/maintenance`;
+const MAINTENANCE_API = `/api/maintenance`;
 
 export const useMaintenanceStore = create((set, get) => ({
   // ============================================================

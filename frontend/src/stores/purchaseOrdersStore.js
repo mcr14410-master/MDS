@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const usePurchaseOrdersStore = create((set, get) => ({
   // State
@@ -50,7 +49,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
       params.append('limit', currentState.pagination.limit);
       params.append('offset', currentState.pagination.offset);
       
-      const url = `${API_BASE_URL}/api/purchase-orders${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `/api/purchase-orders${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
       
       set({ 
@@ -78,7 +77,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.get(`${API_BASE_URL}/api/purchase-orders/${id}`);
+      const response = await axios.get(`/api/purchase-orders/${id}`);
       
       set({ 
         currentOrder: response.data.data,
@@ -104,7 +103,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.post(`${API_BASE_URL}/api/purchase-orders`, orderData);
+      const response = await axios.post(`/api/purchase-orders`, orderData);
       
       // Add to list
       const currentOrders = get().orders;
@@ -133,7 +132,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.put(`${API_BASE_URL}/api/purchase-orders/${id}`, orderData);
+      const response = await axios.put(`/api/purchase-orders/${id}`, orderData);
       
       // Update in list
       const currentOrders = get().orders;
@@ -166,7 +165,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      await axios.delete(`${API_BASE_URL}/api/purchase-orders/${id}`);
+      await axios.delete(`/api/purchase-orders/${id}`);
       
       // Remove from list
       const currentOrders = get().orders;
@@ -201,7 +200,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const response = await axios.post(`${API_BASE_URL}/api/purchase-orders/${id}/send`);
+      const response = await axios.post(`/api/purchase-orders/${id}/send`);
       
       // Update in list
       const currentOrders = get().orders;
@@ -235,7 +234,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       const response = await axios.post(
-        `${API_BASE_URL}/api/purchase-orders/${id}/receive`,
+        `/api/purchase-orders/${id}/receive`,
         receiveData
       );
       
@@ -271,7 +270,7 @@ export const usePurchaseOrdersStore = create((set, get) => ({
       set({ loading: true, error: null });
       
       await axios.post(
-        `${API_BASE_URL}/api/purchase-orders/${orderId}/items/${itemId}/receive`,
+        `/api/purchase-orders/${orderId}/items/${itemId}/receive`,
         receiveData
       );
       
