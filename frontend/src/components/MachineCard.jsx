@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/authStore';
+import { Link } from 'react-router-dom';
 
 export default function MachineCard({ machine, onEdit, onDelete, getControlTypeColor }) {
   const { hasPermission } = useAuthStore();
@@ -90,9 +91,19 @@ export default function MachineCard({ machine, onEdit, onDelete, getControlTypeC
           <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between text-sm">
               {machine.operating_hours !== null && machine.operating_hours !== undefined && (
-                <div className="text-gray-600 dark:text-gray-400">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{machine.operating_hours.toLocaleString()}</span> Betriebsstunden
-                </div>
+                <a 
+                  href={`/maintenance/operating-hours?machine=${machine.id}`}
+                  className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 group flex items-center gap-1"
+                  title="Betriebsstunden erfassen"
+                >
+                  <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                    {machine.operating_hours.toLocaleString()}
+                  </span> 
+                  Betriebsstunden
+                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </a>
               )}
               {machine.program_count !== null && machine.program_count !== undefined && (
                 <div className="text-gray-600 dark:text-gray-400">
@@ -112,23 +123,34 @@ export default function MachineCard({ machine, onEdit, onDelete, getControlTypeC
       </div>
 
       {/* Actions */}
-      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
-        {hasPermission('machine.update') && (
-          <button
-            onClick={() => onEdit(machine)}
-            className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          >
-            Bearbeiten
-          </button>
-        )}
-        {hasPermission('machine.delete') && machine.is_active && (
-          <button
-            onClick={() => onDelete(machine.id, machine.name)}
-            className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-          >
-            Deaktivieren
-          </button>
-        )}
+      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <Link
+          to={`/maintenance/machines/${machine.id}/stats`}
+          className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Wartung
+        </Link>
+        <div className="flex items-center gap-2">
+          {hasPermission('machine.update') && (
+            <button
+              onClick={() => onEdit(machine)}
+              className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+            >
+              Bearbeiten
+            </button>
+          )}
+          {hasPermission('machine.delete') && machine.is_active && (
+            <button
+              onClick={() => onDelete(machine.id, machine.name)}
+              className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+            >
+              Deaktivieren
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

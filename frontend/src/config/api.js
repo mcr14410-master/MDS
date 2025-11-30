@@ -8,6 +8,15 @@ export const API_ENDPOINTS = {
   ME: `${API_BASE_URL}/api/auth/me`,
   CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
   
+  // Users (Admin)
+  USERS: `${API_BASE_URL}/api/users`,
+  USER_PROFILE: `${API_BASE_URL}/api/users/profile`,
+  
+  // Roles & Permissions
+  ROLES: `${API_BASE_URL}/api/roles`,
+  PERMISSIONS: `${API_BASE_URL}/api/permissions`,
+  ROLES_MATRIX: `${API_BASE_URL}/api/roles/matrix`,
+  
   // Parts
   PARTS: `${API_BASE_URL}/api/parts`,
   PARTS_STATS: `${API_BASE_URL}/api/parts/stats`,

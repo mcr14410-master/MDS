@@ -152,6 +152,32 @@ export default function MaintenancePlanDetailPage() {
   const handleUpdateItem = async () => {
     try {
       setSaving(true);
+      
+      // Erst Referenzbild hochladen wenn vorhanden
+      if (itemForm.referenceImageFile) {
+        const formData = new FormData();
+        formData.append('image', itemForm.referenceImageFile);
+        
+        try {
+          const uploadResponse = await fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/maintenance/checklist/${editingItem.id}/reference-image`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: formData
+            }
+          );
+          const uploadResult = await uploadResponse.json();
+          if (!uploadResult.success) {
+            console.error('Error uploading reference image:', uploadResult.error);
+          }
+        } catch (uploadErr) {
+          console.error('Error uploading reference image:', uploadErr);
+        }
+      }
+      
       await updateChecklistItem(editingItem.id, {
         ...itemForm,
         sequence: itemForm.sequence ? parseInt(itemForm.sequence) : null,
@@ -416,6 +442,25 @@ export default function MaintenancePlanDetailPage() {
             )}
           </div>
         )}
+
+        {/* Referenzbild (nur Anzeige) */}
+        {currentPlan.reference_image && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referenzbild</h4>
+            <a 
+              href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentPlan.reference_image}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block"
+            >
+              <img 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentPlan.reference_image}`}
+                alt="Referenzbild" 
+                className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+              />
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -525,6 +570,24 @@ export default function MaintenancePlanDetailPage() {
                         </span>
                       </div>
                     )}
+
+                    {/* Referenzbild */}
+                    {item.reference_image && (
+                      <div className="mt-2">
+                        <a 
+                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block"
+                        >
+                          <img 
+                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                            alt="Referenzbild" 
+                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                          />
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -559,32 +622,69 @@ export default function MaintenancePlanDetailPage() {
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {currentPlan.recent_tasks.map((task) => (
-              <div key={task.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      task.status === 'completed' ? 'bg-green-500 text-white' :
-                      task.status === 'cancelled' ? 'bg-gray-500 text-white' :
-                      'bg-yellow-500 text-white'
-                    }`}>
-                      {task.status === 'completed' ? 'Erledigt' :
-                       task.status === 'cancelled' ? 'Abgebrochen' : task.status}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {task.completed_at ? new Date(task.completed_at).toLocaleDateString('de-DE') : 
-                       new Date(task.created_at).toLocaleDateString('de-DE')}
-                    </span>
+              <div key={task.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${
+                        task.status === 'completed' ? 'bg-green-500 text-white' :
+                        task.status === 'cancelled' ? 'bg-gray-500 text-white' :
+                        'bg-yellow-500 text-white'
+                      }`}>
+                        {task.status === 'completed' ? 'Erledigt' :
+                         task.status === 'cancelled' ? 'Abgebrochen' : task.status}
+                      </span>
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {task.completed_at ? new Date(task.completed_at).toLocaleDateString('de-DE', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : new Date(task.created_at).toLocaleDateString('de-DE')}
+                      </span>
+                      {task.completed_by_name && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          {task.completed_by_name}
+                        </span>
+                      )}
+                      {task.actual_duration_minutes && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {task.actual_duration_minutes} Min.
+                        </span>
+                      )}
+                    </div>
+                    {task.notes && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                        {task.notes}
+                      </p>
+                    )}
+                    {task.issues_found && (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded flex items-start gap-2">
+                        <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        {task.issues_found}
+                      </p>
+                    )}
                   </div>
-                  {task.notes && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{task.notes}</p>
-                  )}
+                  <Link
+                    to={`/maintenance/tasks/${task.id}/details`}
+                    className="ml-4 text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                  >
+                    Details
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 </div>
-                <Link
-                  to={`/maintenance/tasks/${task.id}`}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
-                >
-                  Details →
-                </Link>
               </div>
             ))}
           </div>
@@ -813,6 +913,66 @@ export default function MaintenancePlanDetailPage() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Reference Image - nur beim Bearbeiten */}
+              {editingItem && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Referenzbild (optional)
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Laden Sie ein Bild hoch, das zeigt wie der Schritt korrekt ausgeführt werden soll
+                  </p>
+                  
+                  {/* Bestehendes Bild anzeigen */}
+                  {editingItem.reference_image && (
+                    <div className="mb-3">
+                      <img 
+                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${editingItem.reference_image}`}
+                        alt="Referenzbild" 
+                        className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Upload Button */}
+                  <label className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors border border-dashed border-blue-300 dark:border-blue-700 w-fit">
+                    <Camera className="w-5 h-5" />
+                    <span className="text-sm font-medium">
+                      {itemForm.referenceImageFile ? itemForm.referenceImageFile.name : 'Referenzbild hochladen'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setItemForm({ ...itemForm, referenceImageFile: file });
+                        }
+                      }}
+                    />
+                  </label>
+                  
+                  {/* Vorschau des neuen Bildes */}
+                  {itemForm.referenceImageFile && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <img 
+                        src={URL.createObjectURL(itemForm.referenceImageFile)} 
+                        alt="Neue Vorschau" 
+                        className="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setItemForm({ ...itemForm, referenceImageFile: null })}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Entfernen
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

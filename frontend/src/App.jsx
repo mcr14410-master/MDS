@@ -30,6 +30,24 @@ import ClampingDevicesPage from './pages/ClampingDevicesPage';
 import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
 import FixturesPage from './pages/FixturesPage';
 import FixtureDetailPage from './pages/FixtureDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import UsersPage from './pages/admin/UsersPage';
+import UserDetailPage from './pages/admin/UserDetailPage';
+import RolesPage from './pages/admin/RolesPage';
+
+// Maintenance Pages
+import MaintenanceDashboardPage from './pages/MaintenanceDashboardPage';
+import MaintenancePlansPage from './pages/MaintenancePlansPage';
+import MaintenancePlanDetailPage from './pages/MaintenancePlanDetailPage';
+import MaintenancePlanFormPage from './pages/MaintenancePlanFormPage';
+import MyMaintenanceTasksPage from './pages/MyMaintenanceTasksPage';
+import TaskExecutePage from './pages/TaskExecutePage';
+import MaintenanceTaskDetailPage from './pages/MaintenanceTaskDetailPage';
+import AllTasksPage from './pages/AllTasksPage';
+import MaintenanceMachinesPage from './pages/MaintenanceMachinesPage';
+import MachineMaintenanceStatsPage from './pages/MachineMaintenanceStatsPage';
+import OperatingHoursPage from './pages/OperatingHoursPage';
+import EscalationsPage from './pages/EscalationsPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -274,6 +292,140 @@ function App() {
 			       </ProtectedRoute>
 			     } 
 			   />
+				   
+				   {/* Profile Route */}
+				   <Route path="/profile" element={<ProfilePage />} />
+				   
+				   {/* Admin Routes */}
+				   <Route 
+				     path="/admin/users" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <UsersPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/admin/users/:id" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <UserDetailPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/admin/roles" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <RolesPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   {/* Maintenance Routes */}
+				   <Route 
+				     path="/maintenance" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MaintenanceDashboardPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/plans" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MaintenancePlansPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/plans/new" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.manage_plans">
+				         <MaintenancePlanFormPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/plans/:id" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MaintenancePlanDetailPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/plans/:id/edit" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.manage_plans">
+				         <MaintenancePlanFormPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/tasks/my" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MyMaintenanceTasksPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/tasks/:id/execute" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.complete">
+				         <TaskExecutePage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/tasks/:id/details" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MaintenanceTaskDetailPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/tasks" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <AllTasksPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/machines" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MaintenanceMachinesPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/machines/:id/stats" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <MachineMaintenanceStatsPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/operating-hours" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <OperatingHoursPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/maintenance/escalations" 
+				     element={
+				       <ProtectedRoute requiredPermission="maintenance.read">
+				         <EscalationsPage />
+				       </ProtectedRoute>
+				     } 
+				   />
         </Route>
 
 		

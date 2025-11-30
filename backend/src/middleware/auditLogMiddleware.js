@@ -56,6 +56,13 @@ const auditLog = async (req, res, next) => {
       // Only log successful operations (2xx status codes)
       if (statusCode < 200 || statusCode >= 300) return;
 
+      // Use originalUrl for full path (req.path only shows path after route mount point)
+      const fullPath = req.originalUrl || req.path;
+      
+      // Skip certain paths (login, health checks, etc.)
+      const skipPaths = ['/api/auth/login', '/api/auth/register', '/api/health'];
+      if (skipPaths.some(p => fullPath.startsWith(p))) return;
+
       // Determine action based on method
       let action = '';
       switch (method) {
@@ -73,61 +80,94 @@ const auditLog = async (req, res, next) => {
           return; // Don't log other methods
       }
 
-      // Extract table name from route path
-      const pathParts = req.path.split('/').filter(p => p);
-      let tableName = 'unknown';
-      let recordId = null;
+      // Extract entity type from route path
+      // Remove query string if present
+      const pathWithoutQuery = fullPath.split('?')[0];
+      const pathParts = pathWithoutQuery.split('/').filter(p => p);
+      let entityType = 'unknown';
+      let entityId = null;
 
-      // Parse route: /api/parts/123 -> table: parts, id: 123
+      // Parse various route patterns:
+      // /api/parts/123 -> entity_type: parts, entity_id: 123
+      // /api/parts/5/operations -> entity_type: operations (CREATE)
+      // /api/parts/5/operations/10 -> entity_type: operations, entity_id: 10
+      // /api/operations/10 -> entity_type: operations, entity_id: 10
+      
       if (pathParts.length >= 2) {
-        tableName = pathParts[1]; // e.g., "parts", "operations", "machines"
-        
-        // Try to extract record ID from URL (for UPDATE/DELETE)
-        if (pathParts.length >= 3 && !isNaN(pathParts[2])) {
-          recordId = parseInt(pathParts[2]);
+        // Check for nested routes like /api/parts/5/operations/10
+        if (pathParts.length >= 4 && !isNaN(pathParts[2])) {
+          // Nested route: use the sub-resource as entity type
+          entityType = pathParts[3]; // e.g., "operations", "programs"
+          if (pathParts.length >= 5 && !isNaN(pathParts[4])) {
+            entityId = parseInt(pathParts[4]);
+          }
+        } else {
+          // Simple route: /api/parts/123
+          entityType = pathParts[1];
+          if (pathParts.length >= 3 && !isNaN(pathParts[2])) {
+            entityId = parseInt(pathParts[2]);
+          }
         }
       }
 
       // Try to extract record ID from response body (for CREATE)
-      if (action === 'CREATE' && responseBody) {
+      if (!entityId && responseBody) {
         try {
           const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
-          if (parsed.part?.id) recordId = parsed.part.id;
-          if (parsed.operation?.id) recordId = parsed.operation.id;
-          if (parsed.machine?.id) recordId = parsed.machine.id;
-          if (parsed.id) recordId = parsed.id;
+          // Check various response formats - look for any .id field
+          const findId = (obj) => {
+            if (!obj || typeof obj !== 'object') return null;
+            if (obj.id) return obj.id;
+            // Check common response patterns
+            for (const key of Object.keys(obj)) {
+              if (obj[key] && typeof obj[key] === 'object' && obj[key].id) {
+                return obj[key].id;
+              }
+            }
+            return null;
+          };
+          entityId = findId(parsed);
         } catch (e) {
           // Ignore parse errors
         }
       }
 
-      // Prepare data to log
-      const oldData = method === 'DELETE' ? req.body : null;
-      const newData = method === 'DELETE' ? null : req.body;
+      // For CREATE without ID, still log with entityId = 0 (will be updated)
+      if (!entityId && action === 'CREATE') {
+        entityId = 0; // Placeholder - indicates new record
+      }
+
+      // Skip if still no entity ID and not CREATE
+      if (!entityId) return;
+
+      // Prepare changes data
+      const changes = {
+        method: method,
+        path: req.path,
+        body: req.body || null
+      };
 
       // Insert audit log
       const query = `
         INSERT INTO audit_logs (
           user_id,
+          entity_type,
+          entity_id,
           action,
-          table_name,
-          record_id,
-          old_data,
-          new_data,
+          changes,
           ip_address,
           user_agent
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
       `;
 
       const values = [
         req.user.id,
+        entityType,
+        entityId,
         action,
-        tableName,
-        recordId,
-        oldData ? JSON.stringify(oldData) : null,
-        newData ? JSON.stringify(newData) : null,
-        req.ip || req.connection.remoteAddress,
+        JSON.stringify(changes),
+        req.ip || req.connection?.remoteAddress || null,
         req.get('user-agent') || 'unknown'
       ];
 
@@ -142,11 +182,11 @@ const auditLog = async (req, res, next) => {
 
 /**
  * Get audit logs for a specific record
- * @param {string} tableName - Name of the table
- * @param {number} recordId - ID of the record
+ * @param {string} entityType - Type of entity (e.g., 'parts', 'machines')
+ * @param {number} entityId - ID of the record
  * @returns {Promise<Array>} - Array of audit log entries
  */
-const getAuditLogs = async (tableName, recordId) => {
+const getAuditLogs = async (entityType, entityId) => {
   try {
     const query = `
       SELECT 
@@ -156,11 +196,11 @@ const getAuditLogs = async (tableName, recordId) => {
         u.last_name
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
-      WHERE al.table_name = $1 AND al.record_id = $2
+      WHERE al.entity_type = $1 AND al.entity_id = $2
       ORDER BY al.created_at DESC
     `;
 
-    const result = await pool.query(query, [tableName, recordId]);
+    const result = await pool.query(query, [entityType, entityId]);
     return result.rows;
   } catch (error) {
     console.error('Error fetching audit logs:', error);
@@ -200,17 +240,11 @@ const getUserAuditLogs = async (userId, limit = 50) => {
 /**
  * Get all audit logs with filtering
  * @param {Object} filters - Filter options
- * @param {string} filters.tableName - Filter by table name
- * @param {string} filters.action - Filter by action (CREATE, UPDATE, DELETE)
- * @param {number} filters.userId - Filter by user ID
- * @param {Date} filters.startDate - Filter by start date
- * @param {Date} filters.endDate - Filter by end date
- * @param {number} filters.limit - Number of logs to return (default: 100)
  * @returns {Promise<Array>} - Array of audit log entries
  */
 const getAllAuditLogs = async (filters = {}) => {
   try {
-    const { tableName, action, userId, startDate, endDate, limit = 100 } = filters;
+    const { entityType, action, userId, startDate, endDate, limit = 100 } = filters;
     
     let query = `
       SELECT 
@@ -226,9 +260,9 @@ const getAllAuditLogs = async (filters = {}) => {
     const params = [];
     let paramCount = 1;
 
-    if (tableName) {
-      query += ` AND al.table_name = $${paramCount}`;
-      params.push(tableName);
+    if (entityType) {
+      query += ` AND al.entity_type = $${paramCount}`;
+      params.push(entityType);
       paramCount++;
     }
 

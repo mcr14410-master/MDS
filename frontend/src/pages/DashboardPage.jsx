@@ -5,6 +5,7 @@ import { useDashboardStore } from '../stores/dashboardStore';
 import LowStockWidget from '../components/dashboard/LowStockWidget';
 import PurchaseOrdersWidget from '../components/dashboard/PurchaseOrdersWidget';
 import CalibrationAlertWidget from '../components/dashboard/CalibrationAlertWidget';
+import MaintenanceWidget from '../components/dashboard/MaintenanceWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -147,7 +148,7 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Schnellzugriff</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {user?.permissions?.includes('part.read') && (
               <Link
                 to="/parts"
@@ -199,23 +200,56 @@ export default function DashboardPage() {
                 </div>
               </Link>
             )}
+
+            {user?.permissions?.includes('machine.read') && (
+              <Link
+                to="/machines"
+                className="flex items-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition"
+              >
+                <div className="text-2xl mr-3">⚙️</div>
+                <div>
+                  <div className="text-sm font-medium text-orange-900 dark:text-orange-300">Maschinen</div>
+                  <div className="text-xs text-orange-600 dark:text-orange-400">Maschinenpark</div>
+                </div>
+              </Link>
+            )}
+
+            {user?.permissions?.includes('storage.view') && (
+              <Link
+                to="/clamping-devices"
+                className="flex items-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition"
+              >
+                <div className="text-2xl mr-3">🔩</div>
+                <div>
+                  <div className="text-sm font-medium text-indigo-900 dark:text-indigo-300">Spannmittel</div>
+                  <div className="text-xs text-indigo-600 dark:text-indigo-400">Spannmittelverwaltung</div>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
+
+
 
         {/* Low Stock Widget */}
         {user?.permissions?.includes('tools.view') && (
           <LowStockWidget />
         )}
 
-        {/* Calibration Alert Widget */}
-        {user?.permissions?.includes('storage.view') && (
-          <CalibrationAlertWidget />
-        )}
-
         {/* Purchase Orders Widget */}
         {user?.permissions?.includes('storage.view') && (
           <PurchaseOrdersWidget />
         )}
+
+		{/* Maintenance Widget */}
+		{user?.permissions?.includes('maintenance.read') && (
+		  <MaintenanceWidget />
+		)}		
+				
+		{/* Calibration Alert Widget */}
+		{user?.permissions?.includes('storage.view') && (
+		  <CalibrationAlertWidget />
+		)}		
 
         {/* User Info */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
