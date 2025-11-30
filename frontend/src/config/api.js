@@ -1,9 +1,13 @@
 // API Configuration
-// Production: VITE_API_URL='' (leer) → relative URLs (/api/...)
-// Development: VITE_API_URL nicht gesetzt → http://localhost:5000
-const API_BASE_URL = import.meta.env.VITE_API_URL !== undefined 
-  ? import.meta.env.VITE_API_URL 
-  : 'http://localhost:5000';
+// Production: Relative URLs wenn nicht auf localhost
+// Development: http://localhost:5000
+const isProduction = typeof window !== 'undefined' && 
+  !window.location.hostname.includes('localhost') && 
+  !window.location.hostname.includes('127.0.0.1');
+
+const API_BASE_URL = isProduction 
+  ? '' 
+  : (import.meta.env.VITE_API_URL ?? 'http://localhost:5000');
 
 export const API_ENDPOINTS = {
   // Auth

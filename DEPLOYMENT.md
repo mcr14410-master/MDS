@@ -74,15 +74,16 @@ chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
 
-### 4. Datenbank initialisieren
+### 4. Erstinstallation (Datenbank + Admin-User)
 
 ```bash
-# Migrations ausführen
-./scripts/migrate.sh
-
-# Seed-Daten (Admin-User, etc.)
-docker compose exec backend npm run seed
+./scripts/init.sh
 ```
+
+Das Script:
+- Führt alle Migrations aus
+- Erstellt Admin-User mit Passwort `admin123`
+- Fragt optional nach Test-Daten
 
 ### 5. Zugriff testen
 
@@ -100,6 +101,7 @@ http://<pi-ip>:81
 | `docker compose logs -f backend` | Nur Backend-Logs |
 | `docker compose ps` | Status anzeigen |
 | `docker compose restart backend` | Backend neustarten |
+| `./scripts/init.sh` | Erstinstallation (Migrations + Admin) |
 | `./scripts/backup.sh` | Datenbank-Backup |
 | `./scripts/restore.sh <file>` | Datenbank wiederherstellen |
 | `./scripts/migrate.sh` | Migrations ausführen |

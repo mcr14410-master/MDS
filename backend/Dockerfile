@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Dependencies zuerst (besseres Caching)
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Nicht benötigte Build-Tools entfernen
 RUN apk del python3 make g++
@@ -28,8 +28,8 @@ USER nodejs
 
 EXPOSE 5000
 
-# Health-Check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+# Health-Check (deaktiviert - verursachte Probleme auf Pi)
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+#   CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 CMD ["node", "src/server.js"]
