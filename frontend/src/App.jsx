@@ -20,6 +20,8 @@ import ToolDetailPage from './pages/ToolDetailPage';
 import QRScanPage from './pages/QRScanPage';
 import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailPage from './pages/SupplierDetailPage';
+import CustomersPage from './pages/CustomersPage';
+import CustomerDetailPage from './pages/CustomerDetailPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
 import ToolNumberListsPage from './pages/ToolNumberListsPage';
@@ -208,6 +210,18 @@ function App() {
 		    path="/suppliers/:id" 
 		    element={
 		  	<SupplierDetailPage />
+			} 
+		   />
+		  <Route 
+		    path="/customers" 
+		    element={
+		  	<CustomersPage />
+			} 
+		   />
+		  <Route 
+		    path="/customers/:id" 
+		    element={
+		  	<CustomerDetailPage />
 			} 
 		   />
 		  <Route 

@@ -1,0 +1,195 @@
+### Customers API Tests
+### Base URL: http://localhost:5000/api
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpYXQiOjE3NjQ1MzA1MzEsImV4cCI6MTc2NDYxNjkzMX0.ZxQS4SDIeDax9AsISHX6ueam7YzWsdAZSkoHX7v4gSU
+
+
+### ==========================================
+### GET ALL CUSTOMERS
+### ==========================================
+
+### Get all customers (no filter)
+GET {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+
+### Get all customers (active only)
+GET {{baseUrl}}/customers?is_active=true
+Authorization: Bearer {{token}}
+
+### Get all customers (inactive only)
+GET {{baseUrl}}/customers?is_active=false
+Authorization: Bearer {{token}}
+
+### Get all customers with search
+GET {{baseUrl}}/customers?search=Aero
+Authorization: Bearer {{token}}
+
+### Get all customers sorted by name desc
+GET {{baseUrl}}/customers?sort_by=name&sort_order=desc
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### GET CUSTOMER BY ID
+### ==========================================
+
+### Get customer by ID
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### Get customer by ID (not found)
+GET {{baseUrl}}/customers/9999
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### CREATE CUSTOMER
+### ==========================================
+
+### Create new customer (minimal)
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Kunde GmbH"
+}
+
+### Create new customer (full)
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Premium Aviation Parts AG",
+  "customer_number": "CUST-100",
+  "contact_person": "Max Mustermann",
+  "email": "m.mustermann@premium-aviation.de",
+  "phone": "+49 89 12345678",
+  "address": "Industriestraße 42, 80939 München",
+  "notes": "Premium-Kunde, Luftfahrt-Zertifizierung erforderlich",
+  "is_active": true
+}
+
+### Create customer - validation error (no name)
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "test@test.de"
+}
+
+### Create customer - duplicate name error
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Aerospace Industries GmbH"
+}
+
+
+### ==========================================
+### UPDATE CUSTOMER
+### ==========================================
+
+### Update customer
+PUT {{baseUrl}}/customers/9
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contact_person": "Neuer Ansprechpartner",
+  "phone": "+49 89 99999999"
+}
+
+### Update customer - full
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Aerospace Industries GmbH",
+  "customer_number": "CUST-001",
+  "contact_person": "Anna Schmidt",
+  "email": "a.schmidt@aerospace-industries.de",
+  "phone": "+49 89 11111111",
+  "address": "Flughafen Allee 1, 85356 München-Flughafen",
+  "notes": "Hauptkunde seit 2020, EN9100 zertifiziert",
+  "is_active": true
+}
+
+### Update customer (not found)
+PUT {{baseUrl}}/customers/9999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Does Not Exist"
+}
+
+
+### ==========================================
+### DELETE CUSTOMER
+### ==========================================
+
+### Delete customer (soft delete - deactivate)
+DELETE {{baseUrl}}/customers/3
+Authorization: Bearer {{token}}
+
+### Delete customer (hard delete)
+DELETE {{baseUrl}}/customers/3?hard_delete=true
+Authorization: Bearer {{token}}
+
+### Delete customer with linked parts (should fail on hard delete)
+DELETE {{baseUrl}}/customers/1?hard_delete=true
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### GET CUSTOMER PARTS
+### ==========================================
+
+### Get all parts for customer
+GET {{baseUrl}}/customers/1/parts
+Authorization: Bearer {{token}}
+
+### Get parts for customer (not found)
+GET {{baseUrl}}/customers/9999/parts
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### INTEGRATION TESTS
+### ==========================================
+
+### 1. Create customer
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Integration Test Kunde",
+  "contact_person": "Test Person",
+  "email": "test@integration.de"
+}
+
+### 2. Verify customer was created
+GET {{baseUrl}}/customers?search=Integration
+Authorization: Bearer {{token}}
+
+### 3. Update the customer (use ID from step 1)
+PUT {{baseUrl}}/customers/11
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Updated via integration test"
+}
+
+### 4. Delete the customer
+DELETE {{baseUrl}}/customers/11?hard_delete=true
+Authorization: Bearer {{token}}

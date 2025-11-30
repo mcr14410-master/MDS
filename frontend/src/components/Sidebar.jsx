@@ -333,11 +333,14 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Fertigung" 
               icon={Icons.Parts} 
-              routes={['/parts', '/machines']}
+              routes={['/parts', '/machines', '/customers']}
               collapsed={collapsed}
             >
               {hasPermission('part.read') && (
-                <NavSubItem to="/parts" label="Bauteile" />
+                <>
+                  <NavSubItem to="/customers" label="Kunden" />
+                  <NavSubItem to="/parts" label="Bauteile" />
+                </>
               )}
               {hasPermission('machine.read') && (
                 <NavSubItem to="/machines" label="Maschinen" />
