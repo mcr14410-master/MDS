@@ -1,0 +1,661 @@
+### ============================================================
+### MDS - Maintenance System API Tests
+### ============================================================
+### Verwende VS Code REST Client Extension
+### ============================================================
+
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### ============================================================
+### 1. LOGIN - Token holen
+### ============================================================
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Variable für Token setzen
+@token = {{login.response.body.token}}
+
+### ============================================================
+### 2. MAINTENANCE TYPES
+### ============================================================
+
+### Alle Wartungstypen abrufen
+GET {{baseUrl}}/maintenance/types
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 3. DASHBOARD & ÜBERSICHTEN
+### ============================================================
+
+### Dashboard mit Statistiken
+GET {{baseUrl}}/maintenance/dashboard
+Authorization: Bearer {{token}}
+
+### Maschinen-Wartungsstatus Übersicht
+GET {{baseUrl}}/maintenance/machines
+Authorization: Bearer {{token}}
+
+### Maschinen-Status nach Kategorie filtern
+GET {{baseUrl}}/maintenance/machines?category=cnc
+Authorization: Bearer {{token}}
+
+### Maschinen-Status nach Status filtern (critical, warning, ok)
+GET {{baseUrl}}/maintenance/machines?status=critical
+Authorization: Bearer {{token}}
+
+### Fällige Wartungen Übersicht
+GET {{baseUrl}}/maintenance/due
+Authorization: Bearer {{token}}
+
+### Fällige Wartungen nach Skill-Level
+GET {{baseUrl}}/maintenance/due?skill_level=helper
+Authorization: Bearer {{token}}
+
+### Überfällige Wartungen
+GET {{baseUrl}}/maintenance/due?time_status=overdue
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 4. MAINTENANCE PLANS - CRUD
+### ============================================================
+
+### Alle Wartungspläne abrufen
+GET {{baseUrl}}/maintenance/plans
+Authorization: Bearer {{token}}
+
+### Wartungspläne mit Filter
+GET {{baseUrl}}/maintenance/plans?is_active=true&skill_level=helper
+Authorization: Bearer {{token}}
+
+### Wartungspläne für bestimmte Maschine
+GET {{baseUrl}}/maintenance/plans?machine_id=1
+Authorization: Bearer {{token}}
+
+### Schicht-kritische Wartungspläne
+GET {{baseUrl}}/maintenance/plans?is_shift_critical=true
+Authorization: Bearer {{token}}
+
+### Suche in Wartungsplänen
+GET {{baseUrl}}/maintenance/plans?search=Öl
+Authorization: Bearer {{token}}
+
+### ============================================================
+### Neuen Wartungsplan erstellen
+### ============================================================
+
+# @name createPlan
+POST {{baseUrl}}/maintenance/plans
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "machine_id": 1,
+  "maintenance_type_id": 1,
+  "title": "Tägliche Ölstandsprüfung",
+  "description": "Ölstand im Schauglas prüfen und bei Bedarf nachfüllen",
+  "interval_type": "days",
+  "interval_value": 1,
+  "next_due_at": "2025-11-30T07:00:00Z",
+  "required_skill_level": "helper",
+  "estimated_duration_minutes": 5,
+  "priority": "normal",
+  "is_active": true,
+  "is_shift_critical": false,
+  "instructions": "Maschine muss stillstehen. Ölstand im Schauglas ablesen.",
+  "safety_notes": "Keine besonderen Gefahren",
+  "checklist_items": [
+    {
+      "title": "Maschine stillsetzen",
+      "description": "NOT-AUS betätigen oder Programm beenden",
+      "sequence": 1,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "stop"
+    },
+    {
+      "title": "Ölstand im Schauglas prüfen",
+      "description": "Ölstand muss zwischen MIN und MAX Markierung liegen",
+      "sequence": 2,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "escalate"
+    },
+    {
+      "title": "Foto vom Schauglas",
+      "description": "Foto des aktuellen Ölstands zur Dokumentation",
+      "sequence": 3,
+      "requires_photo": true,
+      "decision_type": "none"
+    }
+  ]
+}
+
+### Variable für Plan-ID setzen
+@planId = {{createPlan.response.body.data.id}}
+
+### Einzelnen Wartungsplan abrufen (mit Checklist)
+GET {{baseUrl}}/maintenance/plans/{{planId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### Wartungsplan aktualisieren
+### ============================================================
+
+PUT {{baseUrl}}/maintenance/plans/{{planId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Tägliche Ölstandsprüfung (aktualisiert)",
+  "estimated_duration_minutes": 10,
+  "priority": "high"
+}
+
+### ============================================================
+### Wartungsplan für Roboter (Schicht-kritisch)
+### ============================================================
+
+# @name createRobotPlan
+POST {{baseUrl}}/maintenance/plans
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "machine_id": 1,
+  "maintenance_type_id": 10,
+  "title": "Roboter Schicht-Checkliste",
+  "description": "MUSS vor Nachtbetrieb vollständig abgearbeitet sein!",
+  "interval_type": "days",
+  "interval_value": 1,
+  "next_due_at": "2025-11-29T17:00:00Z",
+  "required_skill_level": "operator",
+  "estimated_duration_minutes": 30,
+  "priority": "critical",
+  "is_active": true,
+  "is_shift_critical": true,
+  "shift_deadline_time": "17:00",
+  "safety_notes": "Roboter muss vor allen Prüfungen im Stillstand sein!",
+  "checklist_items": [
+    {
+      "title": "Greifer Sichtprüfung",
+      "description": "Greifer auf Beschädigungen und Verschleiß prüfen",
+      "sequence": 1,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "escalate",
+      "is_critical": true
+    },
+    {
+      "title": "Druckluft prüfen",
+      "description": "Manometer ablesen - muss zwischen 5-7 bar liegen",
+      "sequence": 2,
+      "requires_measurement": true,
+      "measurement_unit": "bar",
+      "min_value": 5.0,
+      "max_value": 7.0,
+      "on_failure_action": "stop",
+      "is_critical": true
+    },
+    {
+      "title": "NOT-AUS Test",
+      "description": "NOT-AUS betätigen und Funktion prüfen",
+      "sequence": 3,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "stop",
+      "is_critical": true
+    },
+    {
+      "title": "Kollisionssensoren testen",
+      "description": "Sensoren manuell auslösen und Reaktion prüfen",
+      "sequence": 4,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "stop",
+      "is_critical": true
+    },
+    {
+      "title": "Testlauf mit Dummy-Teil",
+      "description": "Einen kompletten Zyklus mit Testteil durchführen",
+      "sequence": 5,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "escalate",
+      "is_critical": true
+    },
+    {
+      "title": "Foto der Roboterzelle",
+      "description": "Gesamtansicht der Zelle fotografieren",
+      "sequence": 6,
+      "requires_photo": true
+    }
+  ]
+}
+
+###
+@robotPlanId = {{createRobotPlan.response.body.data.id}}
+
+### ============================================================
+### Betriebsstunden-basierter Wartungsplan
+### ============================================================
+
+POST {{baseUrl}}/maintenance/plans
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "machine_id": 1,
+  "maintenance_type_id": 8,
+  "title": "500h Service - Schmierung",
+  "description": "Alle 500 Betriebsstunden durchzuführen",
+  "interval_hours": 500,
+  "next_due_hours": 500,
+  "required_skill_level": "operator",
+  "estimated_duration_minutes": 60,
+  "priority": "normal",
+  "is_active": true,
+  "required_tools": "Fettpresse, Ölkanne, Lappen",
+  "required_parts": "Schmierfett DIN 51825, Maschinenöl CLP 220",
+  "checklist_items": [
+    {
+      "title": "Linearführungen schmieren",
+      "description": "Alle Führungsbahnen mit Fett versorgen",
+      "sequence": 1
+    },
+    {
+      "title": "Kugelumlaufspindeln schmieren",
+      "description": "Schmiernippel an allen Spindeln abschmieren",
+      "sequence": 2
+    },
+    {
+      "title": "Getriebe Ölstand prüfen",
+      "description": "Bei Bedarf Öl nachfüllen",
+      "sequence": 3,
+      "decision_type": "yes_no",
+      "expected_answer": true,
+      "on_failure_action": "continue"
+    }
+  ]
+}
+
+### ============================================================
+### 5. CHECKLIST ITEMS
+### ============================================================
+
+### Checklist-Items für Plan abrufen
+GET {{baseUrl}}/maintenance/plans/{{planId}}/checklist
+Authorization: Bearer {{token}}
+
+### Neues Checklist-Item hinzufügen
+# @name addChecklistItem
+POST {{baseUrl}}/maintenance/plans/{{planId}}/checklist
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Ölfilter prüfen",
+  "description": "Filter auf Verstopfung prüfen",
+  "requires_photo": true,
+  "decision_type": "yes_no",
+  "expected_answer": true,
+  "on_failure_action": "escalate",
+  "is_critical": true
+}
+
+###
+@checklistItemId = {{addChecklistItem.response.body.data.id}}
+
+### Checklist-Item aktualisieren
+PUT {{baseUrl}}/maintenance/checklist/{{checklistItemId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Ölfilter prüfen (kritisch!)",
+  "is_critical": true
+}
+
+### Checklist-Items neu sortieren
+PUT {{baseUrl}}/maintenance/plans/{{planId}}/checklist/reorder
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "items": [
+    { "id": 1, "sequence": 1 },
+    { "id": 2, "sequence": 2 },
+    { "id": 3, "sequence": 3 },
+    { "id": 4, "sequence": 4 }
+  ]
+}
+
+### Checklist-Item löschen
+DELETE {{baseUrl}}/maintenance/checklist/{{checklistItemId}}
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 6. WARTUNGSPLAN LÖSCHEN
+### ============================================================
+
+### Soft Delete (deaktivieren)
+DELETE {{baseUrl}}/maintenance/plans/{{planId}}
+Authorization: Bearer {{token}}
+
+### Hard Delete (endgültig löschen)
+DELETE {{baseUrl}}/maintenance/plans/{{robotPlanId}}?hard_delete=true
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 7. KOMPLEXE ABFRAGEN
+### ============================================================
+
+### Alle überfälligen Wartungen für Helfer
+GET {{baseUrl}}/maintenance/due?skill_level=helper&time_status=overdue
+Authorization: Bearer {{token}}
+
+### Alle schicht-kritischen Pläne
+GET {{baseUrl}}/maintenance/plans?is_shift_critical=true&is_active=true
+Authorization: Bearer {{token}}
+
+### Maschinen mit kritischem Status
+GET {{baseUrl}}/maintenance/machines?status=critical
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 8. MAINTENANCE TASKS
+### ============================================================
+
+### Alle Tasks abrufen
+GET {{baseUrl}}/maintenance/tasks
+Authorization: Bearer {{token}}
+
+### Tasks mit Filter (offen)
+GET {{baseUrl}}/maintenance/tasks?status=pending
+Authorization: Bearer {{token}}
+
+### Tasks für bestimmte Maschine
+GET {{baseUrl}}/maintenance/tasks?machine_id=1
+Authorization: Bearer {{token}}
+
+### Schicht-kritische Tasks
+GET {{baseUrl}}/maintenance/tasks?is_shift_critical=true
+Authorization: Bearer {{token}}
+
+### Meine Aufgaben (Helfer/Bediener-Ansicht)
+GET {{baseUrl}}/maintenance/tasks/my
+Authorization: Bearer {{token}}
+
+### Meine offenen Aufgaben für heute
+GET {{baseUrl}}/maintenance/tasks/my?date=2025-11-29
+Authorization: Bearer {{token}}
+
+### Tagesübersicht für alle Benutzer (Meister)
+GET {{baseUrl}}/maintenance/tasks/today
+Authorization: Bearer {{token}}
+
+### ============================================================
+### Task erstellen und Workflow durchlaufen
+### ============================================================
+
+### Task aus Plan erstellen
+# @name createTask
+POST {{baseUrl}}/maintenance/tasks
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "maintenance_plan_id": 1,
+  "due_date": "2025-11-29T08:00:00Z",
+  "notes": "Routine-Wartung"
+}
+
+###
+@taskId = {{createTask.response.body.data.id}}
+
+### Einzelne Task abrufen (mit Checklist)
+GET {{baseUrl}}/maintenance/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+
+### Task einem Benutzer zuweisen
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/assign
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 1
+}
+
+### Task starten
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/start
+Authorization: Bearer {{token}}
+
+### Checklist-Item abhaken (einfach)
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/checklist/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "completed": true,
+  "notes": "Erledigt"
+}
+
+### Checklist-Item mit Messwert
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/checklist/2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "completed": true,
+  "measurement_value": 6.2,
+  "notes": "Druck im grünen Bereich"
+}
+
+### Checklist-Item mit Foto
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/checklist/3
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "completed": true,
+  "photo_path": "/uploads/maintenance/task-1-item-3.jpg",
+  "notes": "Foto dokumentiert"
+}
+
+### Task abschließen
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/complete
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "notes": "Wartung ohne Probleme durchgeführt",
+  "actual_duration_minutes": 25
+}
+
+### Task abbrechen (alternativ)
+PUT {{baseUrl}}/maintenance/tasks/{{taskId}}/cancel
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Maschine in Produktion - verschoben auf morgen"
+}
+
+### ============================================================
+### Automatische Task-Generierung
+### ============================================================
+
+### Tasks aus fälligen Plänen generieren (Cron-Job)
+POST {{baseUrl}}/maintenance/tasks/generate
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 9. OPERATING HOURS - Betriebsstunden
+### ============================================================
+
+### Betriebsstunden-Übersicht aller Maschinen
+GET {{baseUrl}}/maintenance/operating-hours
+Authorization: Bearer {{token}}
+
+### Betriebsstunden-Log einer Maschine
+GET {{baseUrl}}/maintenance/operating-hours/1
+Authorization: Bearer {{token}}
+
+### Betriebsstunden-Log mit Zeitraum
+GET {{baseUrl}}/maintenance/operating-hours/1?from=2025-11-01&to=2025-11-30
+Authorization: Bearer {{token}}
+
+### Betriebsstunden-Statistik
+GET {{baseUrl}}/maintenance/operating-hours/1/stats
+Authorization: Bearer {{token}}
+
+### Betriebsstunden-Statistik letzte 7 Tage
+GET {{baseUrl}}/maintenance/operating-hours/1/stats?days=7
+Authorization: Bearer {{token}}
+
+### Betriebsstunden erfassen
+POST {{baseUrl}}/maintenance/operating-hours/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "recorded_hours": 12453.5,
+  "notes": "Schichtende abgelesen"
+}
+
+### Betriebsstunden erfassen (mit OCR-Quelle)
+POST {{baseUrl}}/maintenance/operating-hours/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "recorded_hours": 12461.2,
+  "source": "ocr",
+  "notes": "Automatisch per Foto erkannt"
+}
+
+### ============================================================
+### 10. ESCALATIONS - Eskalationen
+### ============================================================
+
+### Alle Eskalationen
+GET {{baseUrl}}/maintenance/escalations
+Authorization: Bearer {{token}}
+
+### Offene Eskalationen
+GET {{baseUrl}}/maintenance/escalations?status=open
+Authorization: Bearer {{token}}
+
+### Meine Eskalationen (als Empfänger)
+GET {{baseUrl}}/maintenance/escalations/my
+Authorization: Bearer {{token}}
+
+### Eskalations-Statistik
+GET {{baseUrl}}/maintenance/escalations/stats
+Authorization: Bearer {{token}}
+
+### Eskalations-Statistik letzte 7 Tage
+GET {{baseUrl}}/maintenance/escalations/stats?days=7
+Authorization: Bearer {{token}}
+
+### ============================================================
+### Eskalation erstellen und Workflow
+### ============================================================
+
+### Problem melden (Eskalation erstellen)
+# @name createEscalation
+POST {{baseUrl}}/maintenance/escalations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "maintenance_task_id": 1,
+  "checklist_item_id": 2,
+  "reason": "Ölstand deutlich unter Minimum - Nachfüllen nicht möglich, Öl nicht vorhanden",
+  "escalation_level": 1
+}
+###
+@escalationId = {{createEscalation.response.body.data.id}}
+
+### Einzelne Eskalation abrufen
+GET {{baseUrl}}/maintenance/escalations/{{escalationId}}
+Authorization: Bearer {{token}}
+
+### Eskalation bestätigen (zur Kenntnis nehmen)
+PUT {{baseUrl}}/maintenance/escalations/{{escalationId}}/acknowledge
+Authorization: Bearer {{token}}
+
+### Eskalation lösen
+PUT {{baseUrl}}/maintenance/escalations/{{escalationId}}/resolve
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "resolution": "Öl bestellt und nachgefüllt. 3 Liter benötigt."
+}
+
+### Eskalation schließen (ohne Lösung)
+PUT {{baseUrl}}/maintenance/escalations/{{escalationId}}/close
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "resolution": "Maschine außer Betrieb genommen, Wartung verschoben"
+}
+
+### Weiter eskalieren (zu höherem Level)
+PUT {{baseUrl}}/maintenance/escalations/{{escalationId}}/re-escalate
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Problem besteht weiterhin, benötige Techniker-Unterstützung"
+}
+
+### ============================================================
+### 11. KOMPLETTE WORKFLOWS
+### ============================================================
+
+### Workflow: Helfer führt tägliche Wartung durch
+### 1. Meine Aufgaben abrufen
+GET {{baseUrl}}/maintenance/tasks/my
+Authorization: Bearer {{token}}
+
+### 2. Task starten
+# PUT {{baseUrl}}/maintenance/tasks/1/start
+
+### 3. Checklist-Items abhaken
+# PUT {{baseUrl}}/maintenance/tasks/1/checklist/1 (completed: true)
+# PUT {{baseUrl}}/maintenance/tasks/1/checklist/2 (completed: true)
+
+### 4a. Alles OK → Task abschließen
+# PUT {{baseUrl}}/maintenance/tasks/1/complete
+
+### 4b. Problem gefunden → Eskalieren
+# POST {{baseUrl}}/maintenance/escalations
+
+### ============================================================
+
+### Workflow: Roboter Schicht-Check
+### 1. Schicht-kritische Tasks abrufen
+GET {{baseUrl}}/maintenance/tasks?is_shift_critical=true&status=pending
+Authorization: Bearer {{token}}
+
+### 2. Alle kritischen Checklist-Items müssen erledigt sein
+### 3. Vor 17:00 Uhr abschließen!
+
+### ============================================================
+
+### Workflow: Betriebsstunden-basierte Wartung
+### 1. Betriebsstunden ablesen und erfassen
+# POST {{baseUrl}}/maintenance/operating-hours/1 { "recorded_hours": 5023 }
+
+### 2. System prüft ob Wartung fällig (z.B. alle 500h)
+### 3. Falls fällig: Task wird automatisch erstellt (generate endpoint)

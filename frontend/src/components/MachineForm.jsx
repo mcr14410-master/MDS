@@ -298,13 +298,30 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Betriebsstunden</label>
-                <input
-                  type="number"
-                  name="operating_hours"
-                  value={formData.operating_hours}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    name="operating_hours"
+                    value={formData.operating_hours}
+                    readOnly
+                    disabled
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  />
+                  {machine?.id && (
+                    <a
+                      href={`/maintenance/operating-hours?machine=${machine.id}`}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm flex items-center gap-1 whitespace-nowrap"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Erfassen
+                    </a>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Betriebsstunden werden über die Wartung erfasst
+                </p>
               </div>
             </div>
           </div>

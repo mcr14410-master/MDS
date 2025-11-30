@@ -30,6 +30,8 @@ async function getAll(req, res) {
         u.first_name,
         u.last_name,
         u.is_active,
+        u.skill_level,
+        u.is_available,
         u.last_login,
         u.created_at,
         u.updated_at,
@@ -119,6 +121,8 @@ async function getById(req, res) {
         u.first_name,
         u.last_name,
         u.is_active,
+        u.skill_level,
+        u.is_available,
         u.last_login,
         u.created_at,
         u.updated_at,
@@ -175,7 +179,7 @@ async function getById(req, res) {
  */
 async function create(req, res) {
   try {
-    const { username, email, password, first_name, last_name, is_active = true, role_ids = [] } = req.body;
+    const { username, email, password, first_name, last_name, is_active = true, skill_level = 'operator', role_ids = [] } = req.body;
 
     // Validate required fields
     if (!username || !email || !password) {
@@ -225,10 +229,10 @@ async function create(req, res) {
 
       // Insert user
       const userResult = await client.query(
-        `INSERT INTO users (username, email, password_hash, first_name, last_name, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, username, email, first_name, last_name, is_active, created_at`,
-        [username, email, passwordHash, first_name || null, last_name || null, is_active]
+        `INSERT INTO users (username, email, password_hash, first_name, last_name, is_active, skill_level)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, username, email, first_name, last_name, is_active, skill_level, created_at`,
+        [username, email, passwordHash, first_name || null, last_name || null, is_active, skill_level]
       );
 
       const newUser = userResult.rows[0];
@@ -299,7 +303,7 @@ async function create(req, res) {
 async function update(req, res) {
   try {
     const { id } = req.params;
-    const { username, email, first_name, last_name, is_active, role_ids } = req.body;
+    const { username, email, first_name, last_name, is_active, skill_level, is_available, role_ids } = req.body;
 
     // Check if user exists
     const existingUser = await pool.query('SELECT id FROM users WHERE id = $1', [id]);
@@ -376,6 +380,23 @@ async function update(req, res) {
       if (is_active !== undefined) {
         updates.push(`is_active = $${paramIndex++}`);
         values.push(is_active);
+      }
+      if (skill_level !== undefined) {
+        // Validate skill_level
+        const validSkillLevels = ['helper', 'operator', 'technician', 'specialist'];
+        if (!validSkillLevels.includes(skill_level)) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: `Ungültiges Skill-Level. Erlaubt: ${validSkillLevels.join(', ')}`
+          });
+        }
+        updates.push(`skill_level = $${paramIndex++}`);
+        values.push(skill_level);
+      }
+      if (is_available !== undefined) {
+        updates.push(`is_available = $${paramIndex++}`);
+        values.push(is_available);
       }
 
       if (updates.length > 0) {

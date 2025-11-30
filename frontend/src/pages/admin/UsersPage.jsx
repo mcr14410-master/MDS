@@ -31,6 +31,7 @@ function UsersPage() {
     first_name: '',
     last_name: '',
     is_active: true,
+    skill_level: 'operator',
     role_ids: []
   });
   const [formError, setFormError] = useState('');
@@ -68,6 +69,7 @@ function UsersPage() {
         first_name: '',
         last_name: '',
         is_active: true,
+        skill_level: 'operator',
         role_ids: []
       });
     } else {
@@ -96,6 +98,26 @@ function UsersPage() {
       supervisor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     };
     return colors[roleName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+  };
+
+  const getSkillLevelBadge = (level) => {
+    const colors = {
+      helper: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      operator: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      technician: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      specialist: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    };
+    return colors[level] || colors.operator;
+  };
+
+  const getSkillLevelLabel = (level) => {
+    const labels = {
+      helper: 'Helfer',
+      operator: 'Bediener',
+      technician: 'Techniker',
+      specialist: 'Spezialist'
+    };
+    return labels[level] || 'Bediener';
   };
 
   const breadcrumbItems = [
@@ -215,6 +237,9 @@ function UsersPage() {
                   Rollen
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Skill-Level
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -264,6 +289,16 @@ function UsersPage() {
                         </span>
                       ))}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getSkillLevelBadge(user.skill_level)}`}>
+                      {getSkillLevelLabel(user.skill_level)}
+                    </span>
+                    {user.is_available === false && (
+                      <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded" title="Nicht verfügbar">
+                        ✕
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
@@ -413,6 +448,22 @@ function UsersPage() {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Skill-Level (Wartung)
+                  </label>
+                  <select
+                    value={formData.skill_level}
+                    onChange={(e) => setFormData({ ...formData, skill_level: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="helper">Helfer</option>
+                    <option value="operator">Bediener</option>
+                    <option value="technician">Techniker</option>
+                    <option value="specialist">Spezialist</option>
+                  </select>
                 </div>
                 
                 <div className="flex items-center gap-2">

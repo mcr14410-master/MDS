@@ -5,6 +5,7 @@ import { useDashboardStore } from '../stores/dashboardStore';
 import LowStockWidget from '../components/dashboard/LowStockWidget';
 import PurchaseOrdersWidget from '../components/dashboard/PurchaseOrdersWidget';
 import CalibrationAlertWidget from '../components/dashboard/CalibrationAlertWidget';
+import MaintenanceWidget from '../components/dashboard/MaintenanceWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -228,20 +229,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
+
+
         {/* Low Stock Widget */}
         {user?.permissions?.includes('tools.view') && (
           <LowStockWidget />
-        )}
-
-        {/* Calibration Alert Widget */}
-        {user?.permissions?.includes('storage.view') && (
-          <CalibrationAlertWidget />
         )}
 
         {/* Purchase Orders Widget */}
         {user?.permissions?.includes('storage.view') && (
           <PurchaseOrdersWidget />
         )}
+
+		{/* Maintenance Widget */}
+		{user?.permissions?.includes('maintenance.read') && (
+		  <MaintenanceWidget />
+		)}		
+				
+		{/* Calibration Alert Widget */}
+		{user?.permissions?.includes('storage.view') && (
+		  <CalibrationAlertWidget />
+		)}		
 
         {/* User Info */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">

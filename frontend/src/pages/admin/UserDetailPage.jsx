@@ -35,6 +35,8 @@ function UserDetailPage() {
     first_name: '',
     last_name: '',
     is_active: true,
+    skill_level: 'operator',
+    is_available: true,
     role_ids: []
   });
   const [formError, setFormError] = useState('');
@@ -54,6 +56,8 @@ function UserDetailPage() {
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
         is_active: userData.is_active,
+        skill_level: userData.skill_level || 'operator',
+        is_available: userData.is_available !== false,
         role_ids: userData.roles?.map(r => r.id) || []
       });
     }
@@ -120,6 +124,16 @@ function UserDetailPage() {
     return colors[roleName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
   };
 
+  const getSkillLevelInfo = (level) => {
+    const levels = {
+      helper: { label: 'Helfer', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', description: 'Einfache Wartungsaufgaben' },
+      operator: { label: 'Bediener', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', description: 'Standard Wartungsaufgaben' },
+      technician: { label: 'Techniker', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400', description: 'Komplexe Wartungsaufgaben' },
+      specialist: { label: 'Spezialist', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', description: 'Experten-Wartungsaufgaben' }
+    };
+    return levels[level] || levels.operator;
+  };
+
   const getActionLabel = (action) => {
     const labels = {
       'CREATE': 'Erstellt',
@@ -164,10 +178,25 @@ function UserDetailPage() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center relative ${
+            userData.is_available === false 
+              ? 'bg-gray-200 dark:bg-gray-700' 
+              : 'bg-blue-100 dark:bg-blue-900/30'
+          }`}>
+            <span className={`text-2xl font-bold ${
+              userData.is_available === false 
+                ? 'text-gray-400 dark:text-gray-500' 
+                : 'text-blue-600 dark:text-blue-400'
+            }`}>
               {userData.username.charAt(0).toUpperCase()}
             </span>
+            {userData.is_available === false && (
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center" title="Nicht verfügbar">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </span>
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -177,11 +206,26 @@ function UserDetailPage() {
                   (Ihr Profil)
                 </span>
               )}
+              {userData.is_available === false && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-normal bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full">
+                  Nicht verfügbar
+                </span>
+              )}
             </h1>
             {userData.full_name && (
               <p className="text-gray-600 dark:text-gray-400">{userData.full_name}</p>
             )}
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {/* Skill-Level Badge */}
+              {userData.skill_level && (
+                <span 
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getSkillLevelInfo(userData.skill_level).color}`}
+                  title={getSkillLevelInfo(userData.skill_level).description}
+                >
+                  🔧 {getSkillLevelInfo(userData.skill_level).label}
+                </span>
+              )}
+              {/* Rollen */}
               {userData.roles?.map(role => (
                 <span 
                   key={role.id}
@@ -337,21 +381,61 @@ function UserDetailPage() {
                     ))}
                   </div>
                 </div>
-                
-                {!isOwnProfile && (
+
+                {/* Skill-Level für Wartung */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Skill-Level (Wartung)
+                  </label>
+                  <select
+                    value={formData.skill_level}
+                    onChange={(e) => setFormData({ ...formData, skill_level: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="helper">Helfer - Einfache Wartungsaufgaben</option>
+                    <option value="operator">Bediener - Standard Wartungsaufgaben</option>
+                    <option value="technician">Techniker - Komplexe Wartungsaufgaben</option>
+                    <option value="specialist">Spezialist - Experten-Wartungsaufgaben</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Bestimmt welche Wartungsaufgaben diesem Benutzer angezeigt werden
+                  </p>
+                </div>
+
+                {/* Verfügbarkeit und Aktiv-Status */}
+                <div className="space-y-3">
+                  {!isOwnProfile && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="is_active"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                        className="rounded border-gray-300 dark:border-gray-600"
+                      />
+                      <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
+                        Benutzer ist aktiv (kann sich anmelden)
+                      </label>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id="is_active"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      id="is_available"
+                      checked={formData.is_available}
+                      onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
                       className="rounded border-gray-300 dark:border-gray-600"
                     />
-                    <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
-                      Benutzer ist aktiv
+                    <label htmlFor="is_available" className="text-sm text-gray-700 dark:text-gray-300">
+                      Verfügbar für Wartungsaufgaben
                     </label>
                   </div>
-                )}
+                  {!formData.is_available && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 ml-6">
+                      ⚠️ Nicht verfügbare Benutzer (Urlaub/Krank) sehen keine neuen Wartungsaufgaben
+                    </p>
+                  )}
+                </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -366,6 +450,8 @@ function UserDetailPage() {
                         first_name: userData.first_name || '',
                         last_name: userData.last_name || '',
                         is_active: userData.is_active,
+                        skill_level: userData.skill_level || 'operator',
+                        is_available: userData.is_available !== false,
                         role_ids: userData.roles?.map(r => r.id) || []
                       });
                     }}
