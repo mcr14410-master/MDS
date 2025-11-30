@@ -21,10 +21,10 @@ sudo mkdir -p /srv/mds/uploads
 sudo mkdir -p /srv/mds/backups
 sudo chown -R 1001:1001 /srv/mds/uploads
 
-# Frontend bauen (lokal)
+# Frontend bauen (lokal)-geaendert
 echo "🔨 Baue Frontend..."
 cd frontend
-npm ci
+npm install --legacy-peer-deps
 npm run build
 cd ..
 
