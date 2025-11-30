@@ -1,20 +1,26 @@
 // frontend/src/pages/PartFormPage.jsx
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
+import { useCustomersStore } from '../stores/customersStore';
 import { toast } from '../components/Toaster';
 
 export default function PartFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isEditMode = Boolean(id);
   
   const { currentPart, loading, createPart, updatePart, fetchPart } = usePartsStore();
+  const { customers, fetchCustomers } = useCustomersStore();
+  
+  // Get customer_id from URL if present (e.g., /parts/new?customer_id=1)
+  const urlCustomerId = searchParams.get('customer_id');
   
   const [formData, setFormData] = useState({
     part_number: '',
     part_name: '',
-    customer_id: '',
+    customer_id: urlCustomerId || '',
     revision: 'A',
     material: '',
     dimensions: '',
@@ -33,6 +39,11 @@ export default function PartFormPage() {
       fetchPart(id);
     }
   }, [isEditMode, id, fetchPart]);
+
+  // Load customers for dropdown
+  useEffect(() => {
+    fetchCustomers({ is_active: true });
+  }, []);
 
   // Populate form when part is loaded
   useEffect(() => {
@@ -229,24 +240,25 @@ export default function PartFormPage() {
                 )}
               </div>
 
-              {/* Customer ID */}
+              {/* Customer */}
               <div>
                 <label htmlFor="customer_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Kunden-ID (optional)
+                  Kunde
                 </label>
-                <input
-                  type="number"
+                <select
                   id="customer_id"
                   name="customer_id"
                   value={formData.customer_id}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                  placeholder="Leer lassen oder z.B. 1"
-                  min="1"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Verfügbare IDs: 1 (Airbus), 2 (BMW), 3 (Siemens)
-                </p>
+                >
+                  <option value="">-- Kein Kunde --</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.customer_number} - {customer.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Revision */}

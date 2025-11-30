@@ -42,7 +42,8 @@
 | Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
 | Phase 6 | W19-20 | ✅ 100% | Spannmittel & Vorrichtungen |
 | Phase 7 | W21-23 | ✅ 100% | UI-Optimierung, User-Verwaltung, Wartungssystem |
-| Phase 7+ | W24+ | 📋 Optional | Shopfloor-UI, Reports, Parser, Deployment |
+| Phase 8 | W24-34 | 🔄 18% | Kundenverwaltung ✅, Deployment, Maschinen-Docs, Lager, Roboter, Urlaub |
+| Phase 9+ | W35+ | 📋 Optional | Shopfloor-UI, Reports, Parser |
 
 ---
 
@@ -684,7 +685,136 @@
 
 ---
 
-### Weitere optionale Features
+---
+
+## 📋 Phase 8: Erweiterungen (Wochen 24-35)
+
+### ✅ Woche 24-25: Kundenverwaltung
+**Status:** ✅ **ABGESCHLOSSEN**
+**Ziel:** Kunden verwalten und Bauteilen zuordnen
+
+- [x] DB: `customers` Tabelle (bereits vorhanden)
+- [x] DB: `customer_contacts` Tabelle (Ansprechpartner)
+- [x] DB: `parts.customer_id` Foreign Key (bereits vorhanden)
+- [x] Backend: Customers CRUD API
+- [x] Backend: Contacts CRUD API (nested routes)
+- [x] Frontend: Kunden-Übersicht (Grid mit Live-Suche)
+- [x] Frontend: Kunden-Detail mit Ansprechpartnern
+- [x] Frontend: Kunden-Formular (Create/Edit Modal)
+- [x] Frontend: Ansprechpartner-Formular (Create/Edit Modal)
+- [x] Frontend: Bauteile nach Kunde filtern
+- [x] Frontend: Kunde in Part-Formular auswählen (Dropdown)
+- [x] Bereiche für Ansprechpartner (Einkauf, Qualität, Technik, etc.)
+- [x] Hauptansprechpartner markierbar
+
+**Deliverable:** ✅ Kundenverwaltung mit Ansprechpartnern und Bauteil-Zuordnung
+
+**Abgeschlossen am:** 2025-12-01
+
+---
+
+### 📋 Woche 26: Docker-Setup & Raspberry Pi Deployment
+**Status:** 📋 Geplant
+**Ziel:** Produktiv-Deployment auf Raspberry Pi
+
+- [ ] Docker Compose optimieren (Backend, Frontend, PostgreSQL)
+- [ ] Environment-Variablen (.env.production)
+- [ ] Nginx Reverse Proxy Setup
+- [ ] SSL/HTTPS (Let's Encrypt oder Self-Signed)
+- [ ] Raspberry Pi Setup-Anleitung
+- [ ] Backup-Strategie (pg_dump Cronjob)
+- [ ] Health-Checks & Auto-Restart
+- [ ] Performance-Optimierung für Pi
+
+**Deliverable:** Deployment-ready Docker-Setup + Dokumentation
+
+---
+
+### 📋 Woche 27-28: MachineDetailPage + Dokumente & Fehler-Wiki
+**Status:** 📋 Geplant
+**Ziel:** Maschinen-Detailseite mit Dokumenten und Fehler-Datenbank
+
+**MachineDetailPage:**
+- [ ] Frontend: MachineDetailPage (analog zu PartDetailPage)
+- [ ] Übersicht: Stammdaten, Wartungsstatus, Operations, Programme
+- [ ] DB: `machine_documents` Tabelle (Kategorie, Datei, Beschreibung)
+- [ ] Backend: Document Upload/Download API
+- [ ] Frontend: Dokumente-Tab (Handbuch, Schaltplan, Wartungsanleitung, etc.)
+- [ ] Kategorien: Handbuch, Schaltplan, Wartungsanleitung, Zertifikat, Sonstiges
+
+**Fehler-Wiki:**
+- [ ] DB: `machine_errors` Tabelle (code, description, solution, machine_id nullable)
+- [ ] DB: `machine_error_images` Tabelle (Bilder zur Lösung)
+- [ ] Backend: Errors CRUD API mit Bild-Upload
+- [ ] Frontend: Fehler-Liste (maschinenspezifisch + allgemein)
+- [ ] Frontend: Fehler-Detail mit Lösungsanleitung + Bilder
+- [ ] Frontend: Fehler-Suche (Code, Beschreibung)
+- [ ] Frontend: Fehler in MachineDetailPage integrieren
+
+**Deliverable:** Vollständige Maschinen-Dokumentation + Fehler-Datenbank
+
+---
+
+### 📋 Woche 29-30: Lagersystem erweitern (Verbrauchsmaterial & Normteile)
+**Status:** 📋 Geplant
+**Ziel:** Verbrauchsmaterial und Normteile verwalten
+
+- [ ] DB: `inventory_items` Tabelle (Typ: consumable/standard_part)
+- [ ] DB: `inventory_categories` Tabelle (Kühlschmierstoff, Öl, Schrauben, etc.)
+- [ ] DB: `inventory_transactions` Tabelle (Ein/Ausgang, Verbrauch)
+- [ ] Backend: Inventory CRUD API
+- [ ] Backend: Bestandswarnung bei Mindestbestand
+- [ ] Frontend: Lager-Übersicht mit Kategorien
+- [ ] Frontend: Artikel-Formular (Create/Edit)
+- [ ] Frontend: Bestandsbuchung (Eingang/Ausgang)
+- [ ] Frontend: Mindestbestand-Alarme im Dashboard
+- [ ] Integration: Lieferanten aus Tool-System verknüpfen
+- [ ] Integration: Wartungssystem (Verbrauch bei Wartung buchen)
+
+**Deliverable:** Lagerverwaltung für Verbrauchsmaterial mit Warnungen
+
+---
+
+### 📋 Woche 31-32: Beladeroboter Setup System
+**Status:** 📋 Geplant
+**Ziel:** Robot-Setups pro Operation dokumentieren
+
+- [ ] DB: `robot_setups` Tabelle (operation_id, greifer, rack, programm)
+- [ ] DB: `robot_setup_images` Tabelle (Setup-Fotos)
+- [ ] DB: `gripper_types` Tabelle (Greifer-Stammdaten)
+- [ ] DB: `rack_configurations` Tabelle (Rack-Konfigurationen)
+- [ ] Backend: Robot Setup CRUD API
+- [ ] Backend: Bild-Upload für Setup-Dokumentation
+- [ ] Frontend: Robot Setup in Operation-Detail
+- [ ] Frontend: Setup-Formular (Greifer, Rack, Programm)
+- [ ] Frontend: Setup-Galerie (Bilder)
+- [ ] Frontend: Greifer/Rack Stammdaten-Verwaltung
+- [ ] Integration: Setup Sheet Verknüpfung
+
+**Deliverable:** Beladeroboter-Dokumentation pro Operation
+
+---
+
+### 📋 Woche 33-34: Urlaubsplanung
+**Status:** 📋 Geplant
+**Ziel:** Urlaub/Abwesenheiten im Kalender verwalten
+
+- [ ] DB: `vacations` Tabelle (user_id, start_date, end_date, type, status)
+- [ ] DB: `vacation_types` Tabelle (Urlaub, Krank, Schulung, etc.)
+- [ ] Backend: Vacations CRUD API
+- [ ] Backend: Überschneidungs-Check (max. X Mitarbeiter gleichzeitig)
+- [ ] Backend: Jahresübersicht API
+- [ ] Frontend: Kalender-Ansicht (Monat/Jahr)
+- [ ] Frontend: Urlaub eintragen (Formular)
+- [ ] Frontend: Überschneidungs-Warnung
+- [ ] Frontend: Mitarbeiter-Filter
+- [ ] Später: Antrags-Workflow (beantragen → genehmigen)
+
+**Deliverable:** Urlaubskalender mit Überschneidungs-Check
+
+---
+
+### Weitere optionale Features (Phase 9+)
 
 **Shopfloor-UI:**
 - [ ] Tablet-optimiertes UI
@@ -758,7 +888,7 @@
 ## 📊 Fortschritt
 
 ```
-Gesamt: ████████████████████ 100% (20 von 20 Kern-Wochen) + Phase 7 gestartet
+Gesamt: ████████████████████ 100% (20 von 20 Kern-Wochen) + Phase 8 gestartet
 
 Phase 1 (Fundament):      ████████████████████ 100% ✅
   └─ Woche 1-4:           ████████████████████ 100% ✅
@@ -784,9 +914,13 @@ Phase 7 (Erweiterungen):  ██████████████████
   └─ Woche 21:            ████████████████████ 100% ✅
   └─ Woche 22:            ████████████████████ 100% ✅
   └─ Woche 23:            ████████████████████ 100% ✅
+
+Phase 8 (Erweiterungen):  ███░░░░░░░░░░░░░░░░░ 18%
+  └─ Woche 24:            ████████████████████ 100% ✅ Kundenverwaltung
+  └─ Woche 26:            ░░░░░░░░░░░░░░░░░░░░ 0% Docker/Deployment
 ```
 
-**Arbeitszeit:** ~140h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~15h Phase 6 + ~20h Phase 7)
+**Arbeitszeit:** ~145h investiert (~78h Phase 1-3 + ~20h Phase 4 + ~7h Phase 5 + ~15h Phase 6 + ~20h Phase 7 + ~5h Phase 8)
 
 ---
 
@@ -819,6 +953,7 @@ Phase 7 (Erweiterungen):  ██████████████████
 - ✅ **2025-11-29:** Woche 22 komplett - User-Verwaltung mit CRUD, Rollen, Berechtigungen, Profil, Audit-Log fertig!
 - ✅ **2025-11-30:** Woche 23 komplett - Wartungssystem mit Planung, Checklisten, Foto-Upload, Statistiken fertig!
 - 🎊 **2025-11-30:** **PHASE 7 KOMPLETT - MEILENSTEIN 7 ERREICHT!**
+- ✅ **2025-12-01:** Woche 24 komplett - Kundenverwaltung mit Ansprechpartnern, Live-Suche, Bauteil-Zuordnung fertig!
 
 ---
 
@@ -846,6 +981,7 @@ Phase 7 (Erweiterungen):  ██████████████████
 | **Woche 21** | UI-Optimierung | Sidebar-Layout, Collapse, Breadcrumbs, User in Sidebar, LocalStorage | ✅ 100% |
 | **Woche 22** | User-Verwaltung | CRUD, Rollen, Berechtigungen, Profil, Audit-Log | ✅ 100% |
 | **Woche 23** | Wartungssystem | Pläne, Tasks, Checklisten, Foto-Upload, Dashboard, Statistiken | ✅ 100% |
+| **Woche 24** | Kundenverwaltung | Customers CRUD, Contacts, Live-Suche, Bauteil-Zuordnung | ✅ 100% |
 
 ---
 
@@ -860,16 +996,16 @@ Phase 7 (Erweiterungen):  ██████████████████
 
 ## 🔧 Nächste Session
 
-**Phase 8 - Optionale Features**
+**Phase 8 - Woche 26: Docker-Setup & Raspberry Pi Deployment**
 
-Mögliche nächste Bereiche:
-1. **Messmittel-Kalibrierung erweitern** - Automatische Erinnerungen, Zertifikate
-2. **Werkzeugverwaltung erweitern** - NC-Programm T-Nummern Extraktion
-3. **Reports & Analytics** - Dashboard für Meister, PDF-Export
-4. **Shopfloor-UI** - Tablet-optimierte Oberfläche
-5. **QR-Code Integration** - Schnellzugriff auf Dokumente
+Geplante Aufgaben:
+1. Docker Compose optimieren (Backend, Frontend, PostgreSQL)
+2. Environment-Variablen (.env.production)
+3. Nginx Reverse Proxy Setup
+4. Raspberry Pi Setup-Anleitung
+5. Backup-Strategie (pg_dump Cronjob)
 
 ---
 
-**Letzte Aktualisierung:** 2025-11-30  
-**Aktueller Status:** ✅ **PHASE 7 KOMPLETT** - Wartungssystem vollständig implementiert. Bereit für Phase 8 (Optionale Features).
+**Letzte Aktualisierung:** 2025-12-01  
+**Aktueller Status:** 🔄 **PHASE 8 GESTARTET** - Kundenverwaltung abgeschlossen. Nächster Schritt: Docker/Deployment.

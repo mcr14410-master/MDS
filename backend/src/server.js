@@ -63,6 +63,8 @@ const toolCompatibleInsertsRoutes = require('./routes/toolCompatibleInsertsRoute
 const qrCodesRoutes = require('./routes/qrCodes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const suppliersRoutes = require('./routes/suppliersRoutes');
+const customersRoutes = require('./routes/customersRoutes');
+const customerContactsRoutes = require('./routes/customerContactsRoutes');
 const supplierItemsRoutes = require('./routes/supplierItemsRoutes');
 const purchaseOrdersRoutes = require('./routes/purchaseOrdersRoutes');
 const toolNumberListsRoutes = require('./routes/toolNumberListsRoutes');
@@ -103,6 +105,8 @@ app.use('/api', toolCompatibleInsertsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', qrCodesRoutes);
 app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/customers', customersRoutes);
+app.use('/api/customers/:customerId/contacts', customerContactsRoutes);
 app.use('/api/supplier-items', supplierItemsRoutes);
 app.use('/api/purchase-orders', purchaseOrdersRoutes);
 app.use('/api/tool-number-lists', toolNumberListsRoutes);
