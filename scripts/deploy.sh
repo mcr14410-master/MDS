@@ -83,6 +83,13 @@ echo "[deploy] ▶️  Services starten..."
 docker compose up -d
 popd >/dev/null
 
+# --- Datenbank Migrations ---
+echo "[deploy] 🗃️  Datenbank Migrations..."
+sleep 3  # Warten bis Backend bereit
+docker compose -f "$REPO_ROOT/compose.yaml" exec -T backend npm run migrate:up 2>/dev/null \
+  && echo "[deploy] ✅ Migrations erfolgreich" \
+  || echo "[deploy] ⚠️  Migrations übersprungen (evtl. bereits aktuell)"
+
 # --- Caddy reload (keine Downtime) ---
 CID="$(docker compose -f "$REPO_ROOT/compose.yaml" ps -q caddy 2>/dev/null || true)"
 if [ -n "$CID" ]; then

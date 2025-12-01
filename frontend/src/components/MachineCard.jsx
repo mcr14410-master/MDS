@@ -1,9 +1,6 @@
-import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
 
-export default function MachineCard({ machine, onEdit, onDelete, getControlTypeColor }) {
-  const { hasPermission } = useAuthStore();
-
+export default function MachineCard({ machine, getControlTypeColor }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
       {/* Header */}
@@ -11,7 +8,12 @@ export default function MachineCard({ machine, onEdit, onDelete, getControlTypeC
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              {machine.name}
+              <Link 
+                to={`/machines/${machine.id}`}
+                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                {machine.name}
+              </Link>
               {!machine.is_active && (
                 <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-full">
                   Inaktiv
@@ -133,24 +135,15 @@ export default function MachineCard({ machine, onEdit, onDelete, getControlTypeC
           </svg>
           Wartung
         </Link>
-        <div className="flex items-center gap-2">
-          {hasPermission('machine.update') && (
-            <button
-              onClick={() => onEdit(machine)}
-              className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-            >
-              Bearbeiten
-            </button>
-          )}
-          {hasPermission('machine.delete') && machine.is_active && (
-            <button
-              onClick={() => onDelete(machine.id, machine.name)}
-              className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-            >
-              Deaktivieren
-            </button>
-          )}
-        </div>
+        <Link
+          to={`/machines/${machine.id}`}
+          className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center gap-1"
+        >
+          Details
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
     </div>
   );

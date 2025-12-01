@@ -1,844 +1,296 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  Settings, 
-  Edit, 
-  Trash2, 
-  Plus,
-  ChevronLeft,
-  Clock,
-  Calendar,
-  Users,
-  Gauge,
-  AlertTriangle,
-  CheckCircle,
-  GripVertical,
-  Camera,
-  Ruler,
-  X,
-  Save,
-  Play,
-  MoreVertical
-} from 'lucide-react';
-import { useMaintenanceStore } from '../stores/maintenanceStore';
+import { Link } from 'react-router-dom';
+import { useClampingDevicesStore } from '../stores/clampingDevicesStore';
+import ClampingDeviceTypesModal from '../components/clampingDevices/ClampingDeviceTypesModal';
+import ClampingDeviceFormModal from '../components/clampingDevices/ClampingDeviceFormModal';
 
-export default function MaintenancePlanDetailPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  
+export default function ClampingDevicesPage() {
   const { 
-    currentPlan,
+    devices, 
+    types, 
+    stats, 
     loading, 
-    error,
-    fetchPlan,
-    deletePlan,
-    addChecklistItem,
-    updateChecklistItem,
-    deleteChecklistItem,
-    reorderChecklistItems,
-    createTask,
-    clearCurrentPlan,
-    clearError 
-  } = useMaintenanceStore();
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [itemForm, setItemForm] = useState({
-    title: '',
-    description: '',
-    sequence: '',
-    is_critical: false,
-    requires_photo: false,
-    requires_measurement: false,
-    measurement_unit: '',
-    min_value: '',
-    max_value: '',
-    decision_type: 'none',
-    on_failure_action: 'continue',
-    expected_answer: null
+    fetchDevices, 
+    fetchTypes, 
+    fetchStats 
+  } = useClampingDevicesStore();
+  
+  const [showTypesModal, setShowTypesModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingDevice, setEditingDevice] = useState(null);
+  const [filters, setFilters] = useState({
+    type_id: '',
+    status: '',
+    search: '',
   });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadPlan();
-    return () => clearCurrentPlan();
-  }, [id]);
+    fetchTypes();
+    fetchStats();
+    fetchDevices();
+  }, []);
 
-  const loadPlan = async () => {
-    try {
-      await fetchPlan(id);
-    } catch (err) {
-      console.error('Error loading plan:', err);
-    }
-  };
+  useEffect(() => {
+    const activeFilters = {};
+    if (filters.type_id) activeFilters.type_id = filters.type_id;
+    if (filters.status) activeFilters.status = filters.status;
+    if (filters.search) activeFilters.search = filters.search;
+    
+    fetchDevices(activeFilters);
+  }, [filters]);
 
-  const handleDelete = async (hardDelete = false) => {
-    try {
-      await deletePlan(id, hardDelete);
-      navigate('/maintenance/plans');
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  };
-
-  const handleCreateTask = async () => {
-    try {
-      const task = await createTask({
-        maintenance_plan_id: parseInt(id),
-        due_date: new Date().toISOString()
-      });
-      navigate(`/maintenance/tasks/${task.id}/execute`);
-    } catch (err) {
-      console.error('Error creating task:', err);
-    }
-  };
-
-  const resetItemForm = () => {
-    setItemForm({
-      title: '',
-      description: '',
-      sequence: '',
-      is_critical: false,
-      requires_photo: false,
-      requires_measurement: false,
-      measurement_unit: '',
-      min_value: '',
-      max_value: '',
-      decision_type: 'none',
-      on_failure_action: 'continue',
-      expected_answer: null
-    });
-  };
-
-  const handleAddItem = async () => {
-    try {
-      setSaving(true);
-      await addChecklistItem(id, {
-        ...itemForm,
-        sequence: itemForm.sequence ? parseInt(itemForm.sequence) : null,
-        min_value: itemForm.min_value ? parseFloat(itemForm.min_value) : null,
-        max_value: itemForm.max_value ? parseFloat(itemForm.max_value) : null
-      });
-      setShowAddItemModal(false);
-      resetItemForm();
-      await fetchPlan(id);
-    } catch (err) {
-      console.error('Error adding item:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleEditItem = (item) => {
-    setEditingItem(item);
-    setItemForm({
-      title: item.title || '',
-      description: item.description || '',
-      sequence: item.sequence || '',
-      is_critical: item.is_critical || false,
-      requires_photo: item.requires_photo || false,
-      requires_measurement: item.requires_measurement || false,
-      measurement_unit: item.measurement_unit || '',
-      min_value: item.min_value || '',
-      max_value: item.max_value || '',
-      decision_type: item.decision_type || 'none',
-      on_failure_action: item.on_failure_action || 'continue',
-      expected_answer: item.expected_answer || ''
-    });
-    setShowAddItemModal(true);
-  };
-
-  const handleUpdateItem = async () => {
-    try {
-      setSaving(true);
-      await updateChecklistItem(editingItem.id, {
-        ...itemForm,
-        sequence: itemForm.sequence ? parseInt(itemForm.sequence) : null,
-        min_value: itemForm.min_value ? parseFloat(itemForm.min_value) : null,
-        max_value: itemForm.max_value ? parseFloat(itemForm.max_value) : null
-      });
-      setShowAddItemModal(false);
-      setEditingItem(null);
-      resetItemForm();
-      await fetchPlan(id);
-    } catch (err) {
-      console.error('Error updating item:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteItem = async (itemId) => {
-    if (!confirm('Checklist-Item wirklich löschen?')) return;
-    try {
-      await deleteChecklistItem(itemId);
-      await fetchPlan(id);
-    } catch (err) {
-      console.error('Error deleting item:', err);
-    }
-  };
-
-  const getIntervalText = (plan) => {
-    if (plan.interval_hours) {
-      return `Alle ${plan.interval_hours} Betriebsstunden`;
-    }
-    if (plan.interval_type && plan.interval_value) {
-      const types = {
-        hours: 'Stunden',
-        days: 'Tage',
-        weeks: 'Wochen',
-        months: 'Monate',
-        years: 'Jahre'
-      };
-      return `Alle ${plan.interval_value} ${types[plan.interval_type] || plan.interval_type}`;
-    }
-    return 'Kein Intervall definiert';
-  };
-
-  const getSkillLevelBadge = (level) => {
-    const levels = {
-      helper: { label: 'Helfer', color: 'bg-green-500/10 text-green-600' },
-      operator: { label: 'Bediener', color: 'bg-blue-500/10 text-blue-600' },
-      technician: { label: 'Techniker', color: 'bg-orange-500/10 text-orange-600' },
-      specialist: { label: 'Spezialist', color: 'bg-red-500/10 text-red-600' }
+  const getStatusBadge = (status) => {
+    const badges = {
+      active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      in_repair: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      retired: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-500',
     };
-    const config = levels[level] || levels.operator;
-    return <span className={`px-2 py-1 text-xs rounded-full ${config.color}`}>{config.label}</span>;
+    const labels = {
+      active: 'Aktiv',
+      in_repair: 'In Reparatur',
+      retired: 'Ausgemustert',
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badges[status] || badges.active}`}>
+        {labels[status] || status}
+      </span>
+    );
   };
-
-  if (loading && !currentPlan) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (!currentPlan) {
-    return (
-      <div className="text-center py-12">
-        <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          Wartungsplan nicht gefunden
-        </h2>
-        <Link to="/maintenance/plans" className="text-blue-600 hover:text-blue-700">
-          Zurück zur Übersicht
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <Link 
-              to="/maintenance/plans"
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg mt-1"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-500" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentPlan.title}
-                </h1>
-                {currentPlan.is_shift_critical && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-purple-500 text-white flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    Schicht-kritisch
-                  </span>
-                )}
-                {!currentPlan.is_active && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-gray-500 text-white">
-                    Inaktiv
-                  </span>
-                )}
-              </div>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {currentPlan.description || 'Keine Beschreibung'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleCreateTask}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              <Play className="w-4 h-4" />
-              Jetzt ausführen
-            </button>
-            <Link
-              to={`/maintenance/plans/${id}/edit`}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Edit className="w-4 h-4" />
-              Bearbeiten
-            </Link>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Spannmittel
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Verwaltung von Schraubstöcken, Spannzangen, Vorrichtungen
+          </p>
         </div>
-
-        {/* Meta Info */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div>
-            <div className="text-sm text-gray-500 mb-1">Maschine</div>
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <Gauge className="w-4 h-4 text-gray-400" />
-              {currentPlan.machine_name}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500 mb-1">Intervall</div>
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              {getIntervalText(currentPlan)}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500 mb-1">Dauer</div>
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <Clock className="w-4 h-4 text-gray-400" />
-              ~{currentPlan.estimated_duration_minutes || '?'} Minuten
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500 mb-1">Skill-Level</div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-400" />
-              {getSkillLevelBadge(currentPlan.required_skill_level)}
-            </div>
-          </div>
-        </div>
-
-        {/* Fälligkeiten & Letzte Ausführung */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Zeitbasierte Pläne */}
-          {currentPlan.next_due_at && !currentPlan.interval_hours && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">Nächste Fälligkeit</h4>
-              <span className={`text-sm ${
-                currentPlan.status === 'overdue' ? 'text-red-600 dark:text-red-400 font-medium' :
-                currentPlan.status === 'due_today' ? 'text-yellow-600 dark:text-yellow-400 font-medium' :
-                'text-blue-600 dark:text-blue-300'
-              }`}>
-                {new Date(currentPlan.next_due_at).toLocaleDateString('de-DE', {
-                  weekday: 'long',
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
-            </div>
-          )}
-
-          {/* Betriebsstundenbasierte Pläne */}
-          {currentPlan.interval_hours && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">Nächste Fälligkeit</h4>
-              <span className={`text-sm ${
-                currentPlan.current_operating_hours >= currentPlan.next_due_hours ? 'text-red-600 dark:text-red-400 font-medium' :
-                (currentPlan.next_due_hours - currentPlan.current_operating_hours) <= 50 ? 'text-yellow-600 dark:text-yellow-400 font-medium' :
-                'text-blue-600 dark:text-blue-300'
-              }`}>
-                Bei {currentPlan.next_due_hours?.toLocaleString('de-DE')}h
-                <span className="text-gray-500 dark:text-gray-400 ml-1">
-                  (aktuell: {currentPlan.current_operating_hours?.toLocaleString('de-DE')}h)
-                </span>
-              </span>
-            </div>
-          )}
-
-          {/* Letzte Ausführung */}
-          {currentPlan.last_completed_at && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <h4 className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">Letzte Ausführung</h4>
-              <span className="text-sm text-green-600 dark:text-green-300">
-                {new Date(currentPlan.last_completed_at).toLocaleDateString('de-DE', {
-                  weekday: 'long',
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Instructions & Safety */}
-        {(currentPlan.instructions || currentPlan.safety_notes) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {currentPlan.instructions && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anleitung</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{currentPlan.instructions}</p>
-              </div>
-            )}
-            {currentPlan.safety_notes && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <h4 className="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1 flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  Sicherheitshinweise
-                </h4>
-                <p className="text-sm text-yellow-600 dark:text-yellow-300">{currentPlan.safety_notes}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Required Tools & Parts */}
-        {(currentPlan.required_tools || currentPlan.required_parts) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {currentPlan.required_tools && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Benötigte Werkzeuge</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{currentPlan.required_tools}</p>
-              </div>
-            )}
-            {currentPlan.required_parts && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Benötigte Teile</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{currentPlan.required_parts}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-lg flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={clearError} className="text-red-600 hover:text-red-800">×</button>
-        </div>
-      )}
-
-      {/* Checklist Items */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Checkliste ({currentPlan.checklist_items?.length || 0} Schritte)
-          </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowTypesModal(true)}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Typen verwalten
+          </button>
           <button
             onClick={() => {
-              setEditingItem(null);
-              resetItemForm();
-              setShowAddItemModal(true);
+              setEditingDevice(null);
+              setShowFormModal(true);
             }}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
-            <Plus className="w-4 h-4" />
-            Schritt hinzufügen
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Neues Spannmittel
           </button>
         </div>
-
-        {currentPlan.checklist_items?.length === 0 ? (
-          <div className="p-12 text-center">
-            <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Keine Checklist-Items
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Fügen Sie Schritte hinzu, die bei der Wartung abgearbeitet werden sollen.
-            </p>
-            <button
-              onClick={() => {
-                setEditingItem(null);
-                resetItemForm();
-                setShowAddItemModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4" />
-              Ersten Schritt hinzufügen
-            </button>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {currentPlan.checklist_items?.map((item, index) => (
-              <div
-                key={item.id}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Drag Handle & Number */}
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <GripVertical className="w-4 h-4 cursor-move" />
-                    <span className="text-sm font-mono w-6">#{item.sequence || index + 1}</span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-gray-900 dark:text-white">
-                        {item.title}
-                      </h3>
-                      {item.is_critical && (
-                        <span className="px-2 py-0.5 text-xs rounded bg-red-500 text-white">Kritisch</span>
-                      )}
-                      {item.requires_photo && (
-                        <span className="p-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600" title="Foto erforderlich">
-                          <Camera className="w-3 h-3" />
-                        </span>
-                      )}
-                      {item.requires_measurement && (
-                        <span className="p-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600" title="Messung erforderlich">
-                          <Ruler className="w-3 h-3" />
-                        </span>
-                      )}
-                      {item.decision_type !== 'none' && (
-                        <span className="px-2 py-0.5 text-xs rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                          {item.decision_type === 'yes_no' ? 'Ja/Nein' : item.decision_type}
-                        </span>
-                      )}
-                    </div>
-
-                    {item.description && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {item.description}
-                      </p>
-                    )}
-
-                    {item.requires_measurement && (item.min_value !== null || item.max_value !== null) && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        Toleranz: {item.min_value} - {item.max_value} {item.measurement_unit || ''}
-                      </div>
-                    )}
-
-                    {item.on_failure_action !== 'continue' && (
-                      <div className="text-sm mt-1">
-                        <span className={item.on_failure_action === 'stop' ? 'text-red-500' : 'text-orange-500'}>
-                          Bei Fehler: {item.on_failure_action === 'stop' ? 'Stoppen' : 'Eskalieren'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEditItem(item)}
-                      className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Recent Tasks */}
-      {currentPlan.recent_tasks?.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Letzte Ausführungen
-            </h2>
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total || 0}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Gesamt</div>
           </div>
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {currentPlan.recent_tasks.map((task) => (
-              <div key={task.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      task.status === 'completed' ? 'bg-green-500 text-white' :
-                      task.status === 'cancelled' ? 'bg-gray-500 text-white' :
-                      'bg-yellow-500 text-white'
-                    }`}>
-                      {task.status === 'completed' ? 'Erledigt' :
-                       task.status === 'cancelled' ? 'Abgebrochen' : task.status}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {task.completed_at ? new Date(task.completed_at).toLocaleDateString('de-DE') : 
-                       new Date(task.created_at).toLocaleDateString('de-DE')}
-                    </span>
-                  </div>
-                  {task.notes && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{task.notes}</p>
-                  )}
-                </div>
-                <Link
-                  to={`/maintenance/tasks/${task.id}`}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-green-600">{stats.active || 0}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Aktiv</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-orange-600">{stats.in_repair || 0}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">In Reparatur</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-gray-500">{stats.retired || 0}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Ausgemustert</div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Suche
+            </label>
+            <input
+              type="text"
+              placeholder="Name, Inventar-Nr., Hersteller..."
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Typ
+            </label>
+            <select
+              value={filters.type_id}
+              onChange={(e) => setFilters({ ...filters, type_id: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Alle Typen</option>
+              {types.filter(t => t.is_active).map(type => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Status
+            </label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Alle Status</option>
+              <option value="active">Aktiv</option>
+              <option value="in_repair">In Reparatur</option>
+              <option value="retired">Ausgemustert</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : devices.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-gray-200 dark:border-gray-700">
+          <div className="text-gray-400 dark:text-gray-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Keine Spannmittel vorhanden
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Erstellen Sie Ihr erstes Spannmittel oder passen Sie die Filter an.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Spannmittel
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Typ
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Hersteller / Modell
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Spannbereich
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Bestand
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Aktionen
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {devices.map((device) => (
+                <tr 
+                  key={device.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
-                  Details →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Wartungsplan löschen?
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Möchten Sie den Wartungsplan "{currentPlan.title}" wirklich löschen?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={() => handleDelete(false)}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-              >
-                Deaktivieren
-              </button>
-              <button
-                onClick={() => handleDelete(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Endgültig löschen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add/Edit Item Modal */}
-      {showAddItemModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full my-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingItem ? 'Schritt bearbeiten' : 'Neuer Schritt'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddItemModal(false);
-                  setEditingItem(null);
-                  resetItemForm();
-                }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Titel *
-                </label>
-                <input
-                  type="text"
-                  value={itemForm.title}
-                  onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
-                  placeholder="z.B. Ölstand prüfen"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Beschreibung
-                </label>
-                <textarea
-                  value={itemForm.description}
-                  onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                  placeholder="Detaillierte Anleitung für diesen Schritt..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              {/* Options Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Reihenfolge
-                  </label>
-                  <input
-                    type="number"
-                    value={itemForm.sequence}
-                    onChange={(e) => setItemForm({ ...itemForm, sequence: e.target.value })}
-                    placeholder="Auto"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Entscheidungstyp
-                  </label>
-                  <select
-                    value={itemForm.decision_type}
-                    onChange={(e) => setItemForm({ ...itemForm, decision_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    <option value="none">Keine</option>
-                    <option value="yes_no">Ja/Nein</option>
-                    <option value="measurement">Messung</option>
-                    <option value="photo_required">Foto</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Bei Fehler
-                  </label>
-                  <select
-                    value={itemForm.on_failure_action}
-                    onChange={(e) => setItemForm({ ...itemForm, on_failure_action: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    <option value="continue">Fortfahren</option>
-                    <option value="escalate">Eskalieren</option>
-                    <option value="stop">Stoppen</option>
-                  </select>
-                </div>
-                {itemForm.decision_type === 'yes_no' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Erwartete Antwort
-                    </label>
-                    <select
-                      value={itemForm.expected_answer === true ? 'true' : itemForm.expected_answer === false ? 'false' : ''}
-                      onChange={(e) => setItemForm({ 
-                        ...itemForm, 
-                        expected_answer: e.target.value === 'true' ? true : e.target.value === 'false' ? false : null 
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  <td className="px-4 py-4">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {device.name}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {device.inventory_number}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                    {device.type_name}
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="text-gray-900 dark:text-white">
+                      {device.manufacturer || '-'}
+                    </div>
+                    {device.model && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {device.model}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                    {device.clamping_range_min || device.clamping_range_max ? (
+                      `${device.clamping_range_min || 0} - ${device.clamping_range_max || '?'} mm`
+                    ) : '-'}
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {device.total_stock || 0}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    {getStatusBadge(device.status)}
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <Link
+                      to={`/clamping-devices/${device.id}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                     >
-                      <option value="">-- Keine Validierung --</option>
-                      <option value="true">Ja erwartet</option>
-                      <option value="false">Nein erwartet</option>
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Bei falscher Antwort wird die "Bei Fehler"-Aktion ausgelöst
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Checkboxes */}
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={itemForm.is_critical}
-                    onChange={(e) => setItemForm({ ...itemForm, is_critical: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Kritisch</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={itemForm.requires_photo}
-                    onChange={(e) => setItemForm({ ...itemForm, requires_photo: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Foto erforderlich</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={itemForm.requires_measurement}
-                    onChange={(e) => setItemForm({ ...itemForm, requires_measurement: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Messung erforderlich</span>
-                </label>
-              </div>
-
-              {/* Measurement Fields */}
-              {itemForm.requires_measurement && (
-                <div className="grid grid-cols-3 gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Einheit
-                    </label>
-                    <input
-                      type="text"
-                      value={itemForm.measurement_unit}
-                      onChange={(e) => setItemForm({ ...itemForm, measurement_unit: e.target.value })}
-                      placeholder="z.B. bar, mm, °C"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Min. Wert
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={itemForm.min_value}
-                      onChange={(e) => setItemForm({ ...itemForm, min_value: e.target.value })}
-                      placeholder="z.B. 5"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Max. Wert
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={itemForm.max_value}
-                      onChange={(e) => setItemForm({ ...itemForm, max_value: e.target.value })}
-                      placeholder="z.B. 7"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3 justify-end mt-6">
-              <button
-                onClick={() => {
-                  setShowAddItemModal(false);
-                  setEditingItem(null);
-                  resetItemForm();
-                }}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={editingItem ? handleUpdateItem : handleAddItem}
-                disabled={!itemForm.title || saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Speichern...' : editingItem ? 'Aktualisieren' : 'Hinzufügen'}
-              </button>
-            </div>
-          </div>
+                      Details
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      )}
+
+      {/* Types Modal */}
+      {showTypesModal && (
+        <ClampingDeviceTypesModal onClose={() => setShowTypesModal(false)} />
+      )}
+
+      {/* Form Modal */}
+      {showFormModal && (
+        <ClampingDeviceFormModal 
+          device={editingDevice}
+          types={types}
+          onClose={(saved) => {
+            setShowFormModal(false);
+            setEditingDevice(null);
+            if (saved) {
+              fetchDevices();
+              fetchStats();
+            }
+          }}
+        />
       )}
     </div>
   );

@@ -42,7 +42,7 @@
 | Phase 5 | W17-18 | ✅ 100% | Messmittelverwaltung |
 | Phase 6 | W19-20 | ✅ 100% | Spannmittel & Vorrichtungen |
 | Phase 7 | W21-23 | ✅ 100% | UI-Optimierung, User-Verwaltung, Wartungssystem |
-| Phase 8 | W24-34 | 🔄 18% | Kundenverwaltung ✅, Deployment, Maschinen-Docs, Lager, Roboter, Urlaub |
+| Phase 8 | W24-34 | 🔄 36% | Kundenverwaltung ✅, MachineDetailPage ✅, Wiki-System ✅, Deployment, Lager, Roboter, Urlaub |
 | Phase 9+ | W35+ | 📋 Optional | Shopfloor-UI, Reports, Parser |
 
 ---
@@ -730,28 +730,39 @@
 
 ---
 
-### 📋 Woche 27-28: MachineDetailPage + Dokumente & Fehler-Wiki
-**Status:** 📋 Geplant
-**Ziel:** Maschinen-Detailseite mit Dokumenten und Fehler-Datenbank
+### ✅ Woche 27-28: MachineDetailPage + Dokumente & Wiki-System
+**Status:** ✅ **ABGESCHLOSSEN**
+**Ziel:** Maschinen-Detailseite mit Dokumenten und Wiki-System
 
 **MachineDetailPage:**
-- [ ] Frontend: MachineDetailPage (analog zu PartDetailPage)
-- [ ] Übersicht: Stammdaten, Wartungsstatus, Operations, Programme
-- [ ] DB: `machine_documents` Tabelle (Kategorie, Datei, Beschreibung)
-- [ ] Backend: Document Upload/Download API
-- [ ] Frontend: Dokumente-Tab (Handbuch, Schaltplan, Wartungsanleitung, etc.)
-- [ ] Kategorien: Handbuch, Schaltplan, Wartungsanleitung, Zertifikat, Sonstiges
+- [x] Frontend: MachineDetailPage (analog zu PartDetailPage)
+- [x] 5 Tabs: Details, Dokumente, Statistik, T-Nummern, Fehler-Wiki
+- [x] Stammdaten, Technische Daten, Netzwerk & CAM übersichtlich
+- [x] Maschinenfoto als Hauptdokument in Sidebar
+- [x] DB: `machine_documents` Tabelle mit ENUM (manual, schematic, maintenance_manual, certificate, photo, other)
+- [x] Backend: Document Upload/Download/View API mit Multer
+- [x] Frontend: Dokumente-Tab (Upload, Download, Hauptdokument setzen)
+- [x] MachineCard vereinfacht: "Details →" Link statt Inline-Buttons
+- [x] MachineForm Modal in DetailPage integriert
 
-**Fehler-Wiki:**
-- [ ] DB: `machine_errors` Tabelle (code, description, solution, machine_id nullable)
-- [ ] DB: `machine_error_images` Tabelle (Bilder zur Lösung)
-- [ ] Backend: Errors CRUD API mit Bild-Upload
-- [ ] Frontend: Fehler-Liste (maschinenspezifisch + allgemein)
-- [ ] Frontend: Fehler-Detail mit Lösungsanleitung + Bilder
-- [ ] Frontend: Fehler-Suche (Code, Beschreibung)
-- [ ] Frontend: Fehler in MachineDetailPage integrieren
+**Wiki-System (allgemein erweiterbar):**
+- [x] DB: `wiki_categories` Tabelle (Maschinenfehler, Anleitungen, Best Practices)
+- [x] DB: `wiki_articles` Tabelle (error_code, title, problem, cause, solution)
+- [x] DB: `wiki_article_images` Tabelle (Bilder pro Artikel)
+- [x] DB: Volltext-Suche Index (PostgreSQL GIN)
+- [x] DB: Wartungsplan-Verlinkung (maintenance_plan_id)
+- [x] Backend: Wiki CRUD API mit Bild-Upload
+- [x] Backend: View-Count, Helpful-Count
+- [x] Frontend: WikiPage (Kategorien, Suche, Artikelliste)
+- [x] Frontend: WikiArticlePage (Problem, Ursache, Lösung, Bilder)
+- [x] Frontend: WikiArticleForm mit Wartungsplan-Suche
+- [x] Frontend: MachineWikiTab in MachineDetailPage
+- [x] Sidebar: Wiki Navigation
+- [x] Permissions: wiki.read/create/update/delete
 
-**Deliverable:** Vollständige Maschinen-Dokumentation + Fehler-Datenbank
+**Deliverable:** ✅ Vollständige Maschinen-Dokumentation + Wiki-System
+
+**Abgeschlossen am:** 2025-12-01
 
 ---
 
