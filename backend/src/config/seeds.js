@@ -216,8 +216,135 @@ async function seed() {
       }
     }
 
+    // 8. Lagerorte
+    console.log('Creating storage locations...');
+    await client.query(`
+      INSERT INTO storage_locations (name, code, description, location_type, item_category, building, room, is_active)
+      VALUES 
+        ('Werkzeugschrank WZ-01', 'WZ-01', 'Hauptwerkzeugschrank Halle A', 'cabinet', 'tools', 'Halle A', 'Werkstatt', true),
+        ('Werkzeugschrank WZ-02', 'WZ-02', 'Sonderwerkzeuge', 'cabinet', 'tools', 'Halle A', 'Werkstatt', true),
+        ('Messmittelschrank MM-01', 'MM-01', 'Kalibrierte Messmittel', 'cabinet', 'measuring_equipment', 'Halle A', 'QS-Raum', true),
+        ('Spannmittelregal SR-01', 'SR-01', 'Spannmittel Fräsmaschinen', 'shelf_unit', 'clamping_devices', 'Halle A', 'Werkstatt', true),
+        ('Vorrichtungslager VL-01', 'VL-01', 'Vorrichtungen und Aufspannungen', 'shelf_unit', 'fixtures', 'Halle B', 'Lager', true),
+        ('Rohmateriallager RM-01', 'RM-01', 'Aluminium und Stahl', 'area', 'consumables', 'Halle B', 'Lager', true)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
+    // 9. Lieferanten
+    console.log('Creating suppliers...');
+    await client.query(`
+      INSERT INTO suppliers (name, supplier_code, contact_person, email, phone, website, address_line1, postal_code, city, country, payment_terms, delivery_time_days, is_preferred, is_active)
+      VALUES 
+        ('Gühring KG', 'LF-001', 'Herr Schmidt', 'vertrieb@guehring.de', '+49 7443 17-0', 'www.guehring.de', 'Herderstraße 50-54', '72458', 'Albstadt', 'Deutschland', '30 Tage netto', 3, true, true),
+        ('Hoffmann Group', 'LF-002', 'Frau Weber', 'service@hoffmann-group.com', '+49 89 8391-0', 'www.hoffmann-group.com', 'Haberlandstraße 55', '81241', 'München', 'Deutschland', '14 Tage 2% Skonto', 2, true, true),
+        ('Mitutoyo Deutschland', 'LF-003', 'Herr Müller', 'info@mitutoyo.de', '+49 2104 4868-0', 'www.mitutoyo.de', 'Borsigstraße 8-10', '41469', 'Neuss', 'Deutschland', '30 Tage netto', 5, false, true),
+        ('Schunk GmbH', 'LF-004', 'Frau Bauer', 'info@schunk.com', '+49 7133 103-0', 'www.schunk.com', 'Bahnhofstraße 106-134', '74348', 'Lauffen', 'Deutschland', '30 Tage netto', 7, true, true),
+        ('Emuge-Franken', 'LF-005', 'Herr Fischer', 'info@emuge.de', '+49 9131 87-0', 'www.emuge.de', 'Nürnberger Straße 96-100', '91207', 'Lauf', 'Deutschland', '30 Tage netto', 4, false, true)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
+    // 10. Messmittel
+    console.log('Creating measuring equipment...');
+    const messmittelSchrank = await client.query("SELECT id FROM storage_locations WHERE code = 'MM-01'");
+    const mmStorageId = messmittelSchrank.rows[0]?.id;
+    const messchieberType = await client.query("SELECT id FROM measuring_equipment_types WHERE name = 'Messschieber'");
+    const buegelmessType = await client.query("SELECT id FROM measuring_equipment_types WHERE name = 'Bügelmessschraube'");
+    const messschieberTypeId = messchieberType.rows[0]?.id;
+    const buegelmessTypeId = buegelmessType.rows[0]?.id;
+
+    if (messschieberTypeId && mmStorageId) {
+      await client.query(`
+        INSERT INTO measuring_equipment (inventory_number, name, type_id, manufacturer, model, serial_number, measuring_range_min, measuring_range_max, resolution, status, calibration_interval_months, last_calibration_date, next_calibration_date, storage_location_id)
+        VALUES 
+          ('MM-2024-001', 'Digitaler Messschieber 150mm', $1, 'Mitutoyo', 'CD-15DCX', 'SN-12345678', 0, 150, 0.01, 'active', 12, '2024-06-01', '2025-06-01', $2),
+          ('MM-2024-002', 'Digitaler Messschieber 300mm', $1, 'Mitutoyo', 'CD-30DCX', 'SN-23456789', 0, 300, 0.01, 'active', 12, '2024-06-01', '2025-06-01', $2),
+          ('MM-2024-003', 'Analoger Messschieber 200mm', $1, 'Mahr', 'MarCal 16 ER', 'SN-34567890', 0, 200, 0.02, 'active', 12, '2024-03-15', '2025-03-15', $2)
+        ON CONFLICT (inventory_number) DO NOTHING;
+      `, [messschieberTypeId, mmStorageId]);
+    }
+
+    if (buegelmessTypeId && mmStorageId) {
+      await client.query(`
+        INSERT INTO measuring_equipment (inventory_number, name, type_id, manufacturer, model, serial_number, measuring_range_min, measuring_range_max, resolution, status, calibration_interval_months, last_calibration_date, next_calibration_date, storage_location_id)
+        VALUES 
+          ('MM-2024-004', 'Bügelmessschraube 0-25mm', $1, 'Mitutoyo', 'Digimatic 293-240', 'SN-45678901', 0, 25, 0.001, 'active', 12, '2024-06-01', '2025-06-01', $2),
+          ('MM-2024-005', 'Bügelmessschraube 25-50mm', $1, 'Mitutoyo', 'Digimatic 293-241', 'SN-56789012', 25, 50, 0.001, 'active', 12, '2024-06-01', '2025-06-01', $2)
+        ON CONFLICT (inventory_number) DO NOTHING;
+      `, [buegelmessTypeId, mmStorageId]);
+    }
+
+    // 11. Spannmittel
+    console.log('Creating clamping devices...');
+    const spannmittelRegal = await client.query("SELECT id FROM storage_locations WHERE code = 'SR-01'");
+    const srStorageId = spannmittelRegal.rows[0]?.id;
+    const schraubstockType = await client.query("SELECT id FROM clamping_device_types WHERE name = 'Schraubstock'");
+    const spannzangeType = await client.query("SELECT id FROM clamping_device_types WHERE name = 'Spannzange'");
+    const schraubstockTypeId = schraubstockType.rows[0]?.id;
+    const spannzangeTypeId = spannzangeType.rows[0]?.id;
+
+    if (schraubstockTypeId && srStorageId) {
+      await client.query(`
+        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status, quantity_total, quantity_available, storage_location_id)
+        VALUES 
+          ('SPANN-001', 'NC-Schraubstock 125mm Schunk', $1, 'Schunk', 'KONTEC KSC 125', 0, 125, 'active', 2, 2, $2),
+          ('SPANN-002', 'NC-Schraubstock 160mm Schunk', $1, 'Schunk', 'KONTEC KSC 160', 0, 160, 'active', 1, 1, $2),
+          ('SPANN-003', 'Präzisions-Schraubstock 100mm', $1, 'Röhm', 'RKP 100', 0, 100, 'active', 3, 3, $2)
+        ON CONFLICT (inventory_number) DO NOTHING;
+      `, [schraubstockTypeId, srStorageId]);
+    }
+
+    if (spannzangeTypeId && srStorageId) {
+      await client.query(`
+        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status, quantity_total, quantity_available, storage_location_id)
+        VALUES 
+          ('SPANN-004', 'ER32 Spannzangensatz 2-20mm', $1, 'Rego-Fix', 'ER32', 2, 20, 'active', 1, 1, $2),
+          ('SPANN-005', 'ER40 Spannzangensatz 3-26mm', $1, 'Rego-Fix', 'ER40', 3, 26, 'active', 1, 1, $2)
+        ON CONFLICT (inventory_number) DO NOTHING;
+      `, [spannzangeTypeId, srStorageId]);
+    }
+
+    // 12. Vorrichtungen
+    console.log('Creating fixtures...');
+    const vorrichtungsLager = await client.query("SELECT id FROM storage_locations WHERE code = 'VL-01'");
+    const vlStorageId = vorrichtungsLager.rows[0]?.id;
+    const aufspannType = await client.query("SELECT id FROM fixture_types WHERE name = 'Aufspannvorrichtung'");
+    const aufspannTypeId = aufspannType.rows[0]?.id;
+
+    if (aufspannTypeId && vlStorageId && partId) {
+      await client.query(`
+        INSERT INTO fixtures (fixture_number, name, type_id, part_id, drawing_number, status, storage_location_id)
+        VALUES 
+          ('V00001', 'Aufspannvorrichtung Gehäuse OP10', $1, $3, 'V-Z-12345-001', 'active', $2),
+          ('V00002', 'Aufspannvorrichtung Gehäuse OP20', $1, $3, 'V-Z-12345-002', 'active', $2)
+        ON CONFLICT (fixture_number) DO NOTHING;
+      `, [aufspannTypeId, vlStorageId, partId]);
+    }
+
+    // Allgemeine Vorrichtungen ohne Bauteilbindung
+    if (aufspannTypeId && vlStorageId) {
+      await client.query(`
+        INSERT INTO fixtures (fixture_number, name, type_id, drawing_number, status, storage_location_id)
+        VALUES 
+          ('V00003', 'Universal-Aufspannplatte 400x400', $1, 'V-UNI-001', 'active', $2),
+          ('V00004', 'Würfelvorrichtung 6-seitig', $1, 'V-UNI-002', 'active', $2)
+        ON CONFLICT (fixture_number) DO NOTHING;
+      `, [aufspannTypeId, vlStorageId]);
+    }
+
     await client.query('COMMIT');
     console.log('\n✅ Database seeding completed successfully!');
+    console.log('\n📊 Erstellte Testdaten:');
+    console.log('   • 3 Kunden (Airbus, BMW, Siemens)');
+    console.log('   • 3 Maschinen (DMG DMU 50, Hermle C42U, Mazak Integrex)');
+    console.log('   • 3 Bauteile mit Arbeitsgängen');
+    console.log('   • 3 Werkzeuge');
+    console.log('   • 1 NC-Programm mit Revision');
+    console.log('   • 1 Wartungsplan mit Checkliste');
+    console.log('   • 6 Lagerorte');
+    console.log('   • 5 Lieferanten');
+    console.log('   • 5 Messmittel');
+    console.log('   • 5 Spannmittel');
+    console.log('   • 4 Vorrichtungen');
     
   } catch (error) {
     await client.query('ROLLBACK');

@@ -17,7 +17,7 @@ MDS läuft parallel zur task-app auf Port **81**.
 │   ┌────┴─────┐          ┌────┴─────┐                        │
 │   │ Backend  │          │ Backend  │                        │
 │   │ (Java)   │          │ (Node)   │                        │
-│   └────┬─────┘          └────┬─────┘                        │
+│   └────┬─────┘          └────┴─────┘                        │
 │        │                     │                              │
 │   ┌────┴─────┐          ┌────┴─────┐                        │
 │   │PostgreSQL│          │PostgreSQL│                        │
@@ -33,48 +33,57 @@ MDS läuft parallel zur task-app auf Port **81**.
 
 - Raspberry Pi 5 mit 8GB RAM
 - Docker & Docker Compose installiert
+- Git installiert
 - SSD unter `/srv` gemountet
 - task-app läuft bereits (Port 80)
 
-## Installation
+---
 
-### 1. Projekt auf Pi kopieren
+## Erstinstallation
+
+### 1. Repository klonen
 
 ```bash
-# Vom Entwicklungsrechner
-scp -r mds/ pi@raspberrypi:~/mds/
-
-# Oder mit Git
-git clone <repo-url> ~/mds
+cd ~
+git clone https://github.com/DEIN-USER/mds.git
 cd ~/mds
 ```
 
 ### 2. Environment konfigurieren
 
 ```bash
-cd ~/mds
+# .env aus Vorlage erstellen
+cp .env.production.example .env
 
-# .env erstellen
-cp .env.production .env
-
-# Passwörter generieren und eintragen
+# Passwörter setzen
 nano .env
 ```
 
-**Wichtig:** Sichere Passwörter setzen!
+**Inhalt der .env:**
+```env
+DB_PASSWORD=DEIN_SICHERES_DB_PASSWORT
+JWT_SECRET=DEIN_ZUFAELLIGER_SECRET_KEY
+```
+
+**Tipp:** JWT Secret generieren:
 ```bash
-# JWT Secret generieren
 openssl rand -base64 32
 ```
 
-### 3. Deployment ausführen
+### 3. Deploy ausführen
 
 ```bash
 chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
 
-### 4. Erstinstallation (Datenbank + Admin-User)
+Das Script macht automatisch:
+- Verzeichnisse unter `/srv/mds/` erstellen
+- Frontend im Docker-Container bauen
+- Backend-Image bauen
+- Alle Container starten
+
+### 4. Datenbank initialisieren
 
 ```bash
 ./scripts/init.sh
@@ -83,105 +92,167 @@ chmod +x scripts/*.sh
 Das Script:
 - Führt alle Migrations aus
 - Erstellt Admin-User mit Passwort `admin123`
-- Fragt optional nach Test-Daten
+- Fragt optional nach Test-Daten (Maschinen, Bauteile, etc.)
 
-### 5. Zugriff testen
+### 5. Fertig!
 
 ```
 http://<pi-ip>:81
+
+Login: admin / admin123
 ```
 
-## Befehle
+**⚠️ Wichtig:** Passwort nach erstem Login ändern!
 
-| Befehl | Beschreibung |
-|--------|--------------|
-| `docker compose up -d` | Container starten |
-| `docker compose down` | Container stoppen |
-| `docker compose logs -f` | Logs anzeigen |
-| `docker compose logs -f backend` | Nur Backend-Logs |
-| `docker compose ps` | Status anzeigen |
-| `docker compose restart backend` | Backend neustarten |
-| `./scripts/init.sh` | Erstinstallation (Migrations + Admin) |
-| `./scripts/backup.sh` | Datenbank-Backup |
-| `./scripts/restore.sh <file>` | Datenbank wiederherstellen |
-| `./scripts/migrate.sh` | Migrations ausführen |
+---
 
-## Backup einrichten
+## Updates
 
-```bash
-# Cronjob für tägliches Backup um 2:00 Uhr
-crontab -e
-
-# Zeile hinzufügen:
-0 2 * * * /home/pi/mds/scripts/backup.sh >> /var/log/mds-backup.log 2>&1
-```
-
-Backups werden unter `/srv/mds/backups/` gespeichert (7 Tage).
-
-## Update-Prozess
+Updates sind einfach - ein Befehl:
 
 ```bash
 cd ~/mds
-
-# Neueste Version holen
-git pull
-
-# Frontend neu bauen
-cd frontend && npm ci && npm run build && cd ..
-
-# Images neu bauen und starten
-docker compose build
-docker compose up -d
-
-# Migrations ausführen (falls nötig)
-./scripts/migrate.sh
+./scripts/deploy.sh
 ```
+
+Das Script macht automatisch:
+1. `git pull` mit Autostash (lokale Änderungen werden gesichert)
+2. Frontend im Container neu bauen
+3. Backend-Image neu bauen
+4. Container neu starten (Caddy reload ohne Downtime)
+5. Health-Check
+
+### Nach DB-Änderungen (neue Migrations)
+
+```bash
+./scripts/deploy.sh
+docker compose exec backend npm run migrate:up
+```
+
+---
+
+## Scripts
+
+| Script | Beschreibung |
+|--------|--------------|
+| `./scripts/deploy.sh` | **Haupt-Script** - Git pull, Build, Deploy |
+| `./scripts/init.sh` | Erstinstallation - Migrations + Admin-User |
+| `./scripts/backup.sh` | Datenbank-Backup erstellen |
+| `./scripts/restore.sh <file>` | Datenbank wiederherstellen |
+| `./scripts/migrate.sh` | Nur Migrations ausführen |
+
+---
+
+## Docker-Befehle
+
+| Befehl | Beschreibung |
+|--------|--------------|
+| `docker compose ps` | Status anzeigen |
+| `docker compose logs -f` | Alle Logs |
+| `docker compose logs -f backend` | Nur Backend-Logs |
+| `docker compose restart backend` | Backend neustarten |
+| `docker compose down` | Alles stoppen |
+| `docker compose up -d` | Alles starten |
+
+---
+
+## Backup einrichten
+
+### Manuelles Backup
+
+```bash
+./scripts/backup.sh
+```
+
+### Automatisches Backup (Cronjob)
+
+```bash
+crontab -e
+
+# Täglich um 2:00 Uhr:
+0 2 * * * /home/pi/mds/scripts/backup.sh >> /var/log/mds-backup.log 2>&1
+```
+
+Backups werden unter `/srv/mds/backups/` gespeichert (7 Tage aufbewahrt).
+
+### Backup wiederherstellen
+
+```bash
+./scripts/restore.sh /srv/mds/backups/mds_backup_XXXXXXXX_XXXXXX.sql.gz
+```
+
+---
 
 ## Troubleshooting
 
 ### Container startet nicht
+
 ```bash
 docker compose logs backend
 docker compose logs db
 ```
 
-### Datenbank-Verbindung fehlgeschlagen
+### Login funktioniert nicht
+
 ```bash
-# DB Container prüfen
+# Admin-Passwort zurücksetzen
+./scripts/init.sh
+```
+
+### Datenbank-Verbindung fehlgeschlagen
+
+```bash
 docker compose exec db psql -U mds -d mds -c "SELECT 1"
 ```
 
 ### Port 81 bereits belegt
+
 ```bash
 sudo lsof -i :81
-# Falls nötig, Port in compose.yaml ändern
+# Port in compose.yaml ändern falls nötig
 ```
 
 ### Speicherplatz prüfen
+
 ```bash
 df -h /srv
 docker system df
+docker system prune -f  # Aufräumen
 ```
 
-### Logs aufräumen
+### Frontend-Änderungen werden nicht angezeigt
+
 ```bash
-docker compose logs --tail=100  # Nur letzte 100 Zeilen
-docker system prune -f          # Ungenutzte Images/Container entfernen
+# Browser-Cache leeren (Strg+Shift+R)
+# Oder Caddy neustarten:
+docker compose restart caddy
 ```
+
+---
 
 ## Verzeichnisstruktur
 
 ```
-/srv/mds/
-├── postgres/     # PostgreSQL Daten
-├── uploads/      # Hochgeladene Dateien
-│   ├── programs/ # NC-Programme
-│   ├── photos/   # Bilder
-│   └── documents/# Dokumente
-└── backups/      # Datenbank-Backups
+~/mds/                    # Git Repository
+├── .env                  # Lokale Konfiguration (nicht im Git!)
+├── compose.yaml          # Docker Compose
+├── Caddyfile             # Reverse Proxy
+├── scripts/              # Deploy & Maintenance Scripts
+├── backend/              # Node.js Backend
+└── frontend/             # React Frontend
+
+/srv/mds/                 # Persistente Daten (SSD)
+├── postgres/             # PostgreSQL Daten
+├── uploads/              # Hochgeladene Dateien
+│   ├── programs/         # NC-Programme
+│   ├── photos/           # Bilder
+│   └── documents/        # Dokumente
+└── backups/              # Datenbank-Backups
 ```
 
-## Ressourcen-Verbrauch (ca.)
+---
+
+## Ressourcen-Verbrauch
 
 | Service | RAM | CPU |
 |---------|-----|-----|
@@ -191,3 +262,24 @@ docker system prune -f          # Ungenutzte Images/Container entfernen
 | **Gesamt MDS** | ~270MB | Low |
 
 Bei 8GB RAM problemlos parallel zu task-app.
+
+---
+
+## Quick Reference
+
+```bash
+# Update
+cd ~/mds && ./scripts/deploy.sh
+
+# Status
+docker compose ps
+
+# Logs
+docker compose logs -f backend
+
+# Backup
+./scripts/backup.sh
+
+# Admin-Reset
+./scripts/init.sh
+```
