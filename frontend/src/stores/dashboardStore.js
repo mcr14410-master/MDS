@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Production: Relative URLs wenn nicht auf localhost
+const isProduction = typeof window !== 'undefined' && 
+  !window.location.hostname.includes('localhost') && 
+  !window.location.hostname.includes('127.0.0.1');
+
+const API_URL = isProduction ? '' : (import.meta.env.VITE_API_URL ?? 'http://localhost:5000');
 
 export const useDashboardStore = create((set, get) => ({
   // State

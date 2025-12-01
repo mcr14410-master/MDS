@@ -275,60 +275,56 @@ async function seed() {
 
     // 11. Spannmittel
     console.log('Creating clamping devices...');
-    const spannmittelRegal = await client.query("SELECT id FROM storage_locations WHERE code = 'SR-01'");
-    const srStorageId = spannmittelRegal.rows[0]?.id;
     const schraubstockType = await client.query("SELECT id FROM clamping_device_types WHERE name = 'Schraubstock'");
     const spannzangeType = await client.query("SELECT id FROM clamping_device_types WHERE name = 'Spannzange'");
     const schraubstockTypeId = schraubstockType.rows[0]?.id;
     const spannzangeTypeId = spannzangeType.rows[0]?.id;
 
-    if (schraubstockTypeId && srStorageId) {
+    if (schraubstockTypeId) {
       await client.query(`
-        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status, quantity_total, quantity_available, storage_location_id)
+        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status)
         VALUES 
-          ('SPANN-001', 'NC-Schraubstock 125mm Schunk', $1, 'Schunk', 'KONTEC KSC 125', 0, 125, 'active', 2, 2, $2),
-          ('SPANN-002', 'NC-Schraubstock 160mm Schunk', $1, 'Schunk', 'KONTEC KSC 160', 0, 160, 'active', 1, 1, $2),
-          ('SPANN-003', 'Präzisions-Schraubstock 100mm', $1, 'Röhm', 'RKP 100', 0, 100, 'active', 3, 3, $2)
+          ('SPANN-001', 'NC-Schraubstock 125mm Schunk', $1, 'Schunk', 'KONTEC KSC 125', 0, 125, 'active'),
+          ('SPANN-002', 'NC-Schraubstock 160mm Schunk', $1, 'Schunk', 'KONTEC KSC 160', 0, 160, 'active'),
+          ('SPANN-003', 'Präzisions-Schraubstock 100mm', $1, 'Röhm', 'RKP 100', 0, 100, 'active')
         ON CONFLICT (inventory_number) DO NOTHING;
-      `, [schraubstockTypeId, srStorageId]);
+      `, [schraubstockTypeId]);
     }
 
-    if (spannzangeTypeId && srStorageId) {
+    if (spannzangeTypeId) {
       await client.query(`
-        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status, quantity_total, quantity_available, storage_location_id)
+        INSERT INTO clamping_devices (inventory_number, name, type_id, manufacturer, model, clamping_range_min, clamping_range_max, status)
         VALUES 
-          ('SPANN-004', 'ER32 Spannzangensatz 2-20mm', $1, 'Rego-Fix', 'ER32', 2, 20, 'active', 1, 1, $2),
-          ('SPANN-005', 'ER40 Spannzangensatz 3-26mm', $1, 'Rego-Fix', 'ER40', 3, 26, 'active', 1, 1, $2)
+          ('SPANN-004', 'ER32 Spannzangensatz 2-20mm', $1, 'Rego-Fix', 'ER32', 2, 20, 'active'),
+          ('SPANN-005', 'ER40 Spannzangensatz 3-26mm', $1, 'Rego-Fix', 'ER40', 3, 26, 'active')
         ON CONFLICT (inventory_number) DO NOTHING;
-      `, [spannzangeTypeId, srStorageId]);
+      `, [spannzangeTypeId]);
     }
 
     // 12. Vorrichtungen
     console.log('Creating fixtures...');
-    const vorrichtungsLager = await client.query("SELECT id FROM storage_locations WHERE code = 'VL-01'");
-    const vlStorageId = vorrichtungsLager.rows[0]?.id;
     const aufspannType = await client.query("SELECT id FROM fixture_types WHERE name = 'Aufspannvorrichtung'");
     const aufspannTypeId = aufspannType.rows[0]?.id;
 
-    if (aufspannTypeId && vlStorageId && partId) {
+    if (aufspannTypeId && partId) {
       await client.query(`
-        INSERT INTO fixtures (fixture_number, name, type_id, part_id, drawing_number, status, storage_location_id)
+        INSERT INTO fixtures (fixture_number, name, type_id, part_id, status)
         VALUES 
-          ('V00001', 'Aufspannvorrichtung Gehäuse OP10', $1, $3, 'V-Z-12345-001', 'active', $2),
-          ('V00002', 'Aufspannvorrichtung Gehäuse OP20', $1, $3, 'V-Z-12345-002', 'active', $2)
+          ('V00001', 'Aufspannvorrichtung Gehäuse OP10', $1, $2, 'active'),
+          ('V00002', 'Aufspannvorrichtung Gehäuse OP20', $1, $2, 'active')
         ON CONFLICT (fixture_number) DO NOTHING;
-      `, [aufspannTypeId, vlStorageId, partId]);
+      `, [aufspannTypeId, partId]);
     }
 
     // Allgemeine Vorrichtungen ohne Bauteilbindung
-    if (aufspannTypeId && vlStorageId) {
+    if (aufspannTypeId) {
       await client.query(`
-        INSERT INTO fixtures (fixture_number, name, type_id, drawing_number, status, storage_location_id)
+        INSERT INTO fixtures (fixture_number, name, type_id, status)
         VALUES 
-          ('V00003', 'Universal-Aufspannplatte 400x400', $1, 'V-UNI-001', 'active', $2),
-          ('V00004', 'Würfelvorrichtung 6-seitig', $1, 'V-UNI-002', 'active', $2)
+          ('V00003', 'Universal-Aufspannplatte 400x400', $1, 'active'),
+          ('V00004', 'Würfelvorrichtung 6-seitig', $1, 'active')
         ON CONFLICT (fixture_number) DO NOTHING;
-      `, [aufspannTypeId, vlStorageId]);
+      `, [aufspannTypeId]);
     }
 
     await client.query('COMMIT');
