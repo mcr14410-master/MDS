@@ -237,8 +237,6 @@ export default function MachinesPage() {
                   <MachineCard
                     key={machine.id}
                     machine={machine}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
                     getControlTypeColor={getControlTypeColor}
                   />
                 ))}

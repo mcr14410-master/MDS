@@ -12,6 +12,7 @@ import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
 import OperationDetailPage from './pages/OperationDetailPage';
 import MachinesPage from './pages/MachinesPage';
+import MachineDetailPage from './pages/MachineDetailPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
 import StorageLocationDetailPage from './pages/StorageLocationDetailPage';
 import ToolCategoriesPage from './pages/ToolCategoriesPage';
@@ -50,6 +51,10 @@ import MaintenanceMachinesPage from './pages/MaintenanceMachinesPage';
 import MachineMaintenanceStatsPage from './pages/MachineMaintenanceStatsPage';
 import OperatingHoursPage from './pages/OperatingHoursPage';
 import EscalationsPage from './pages/EscalationsPage';
+
+// Wiki Pages
+import WikiPage from './pages/WikiPage';
+import WikiArticlePage from './pages/WikiArticlePage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -145,6 +150,14 @@ function App() {
             element={
               <ProtectedRoute requiredPermission="machine.read">
                 <MachinesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/machines/:id"
+            element={
+              <ProtectedRoute requiredPermission="machine.read">
+                <MachineDetailPage />
               </ProtectedRoute>
             }
           />
@@ -440,8 +453,25 @@ function App() {
 				       </ProtectedRoute>
 				     } 
 				   />
-        </Route>
 
+           {/* Wiki Routes */}
+           <Route 
+             path="/wiki" 
+             element={
+               <ProtectedRoute requiredPermission="wiki.read">
+                 <WikiPage />
+               </ProtectedRoute>
+             } 
+           />
+           <Route 
+             path="/wiki/:id" 
+             element={
+               <ProtectedRoute requiredPermission="wiki.read">
+                 <WikiArticlePage />
+               </ProtectedRoute>
+             } 
+           />
+        </Route>
 		
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -8,6 +8,8 @@ export const useMachinesStore = create((set, get) => ({
   currentMachine: null,
   stats: null,
   operations: [],
+  documents: [],
+  toolNumberLists: [],
   loading: false,
   error: null,
 
@@ -212,5 +214,87 @@ export const useMachinesStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   // Clear current machine
-  clearCurrentMachine: () => set({ currentMachine: null, stats: null, operations: [] }),
+  clearCurrentMachine: () => set({ currentMachine: null, stats: null, operations: [], documents: [], toolNumberLists: [] }),
+
+  // ============================================================================
+  // DOCUMENTS
+  // ============================================================================
+
+  // Fetch documents for a machine
+  fetchMachineDocuments: async (machineId) => {
+    try {
+      const response = await axios.get(`${API_ENDPOINTS.MACHINES}/${machineId}/documents`);
+      set({ documents: response.data.data || [] });
+      return response.data.data || [];
+    } catch (error) {
+      console.error('fetchMachineDocuments error:', error);
+      throw new Error(error.response?.data?.error || 'Fehler beim Laden der Dokumente');
+    }
+  },
+
+  // Upload document
+  uploadDocument: async (machineId, formData) => {
+    try {
+      const response = await axios.post(
+        `${API_ENDPOINTS.MACHINES}/${machineId}/documents/upload`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      // Add to documents list
+      set(state => ({
+        documents: [response.data.data, ...state.documents]
+      }));
+      return response.data.data;
+    } catch (error) {
+      console.error('uploadDocument error:', error);
+      throw new Error(error.response?.data?.error || 'Fehler beim Hochladen');
+    }
+  },
+
+  // Delete document
+  deleteDocument: async (documentId) => {
+    try {
+      await axios.delete(`${API_ENDPOINTS.MACHINE_DOCUMENTS}/${documentId}`);
+      set(state => ({
+        documents: state.documents.filter(d => d.id !== documentId)
+      }));
+    } catch (error) {
+      console.error('deleteDocument error:', error);
+      throw new Error(error.response?.data?.error || 'Fehler beim Löschen');
+    }
+  },
+
+  // Set primary document
+  setPrimaryDocument: async (documentId) => {
+    try {
+      const response = await axios.put(`${API_ENDPOINTS.MACHINE_DOCUMENTS}/${documentId}/set-primary`);
+      // Update documents list
+      set(state => ({
+        documents: state.documents.map(d => ({
+          ...d,
+          is_primary: d.id === documentId
+        }))
+      }));
+      return response.data.data;
+    } catch (error) {
+      console.error('setPrimaryDocument error:', error);
+      throw new Error(error.response?.data?.error || 'Fehler beim Setzen des Hauptdokuments');
+    }
+  },
+
+  // ============================================================================
+  // TOOL NUMBER LISTS
+  // ============================================================================
+
+  // Fetch tool number lists for a machine
+  fetchMachineToolNumberLists: async (machineId) => {
+    try {
+      const response = await axios.get(`${API_ENDPOINTS.MACHINES}/${machineId}/tool-number-lists`);
+      set({ toolNumberLists: response.data.data || [] });
+      return response.data.data || [];
+    } catch (error) {
+      console.error('fetchMachineToolNumberLists error:', error);
+      throw new Error(error.response?.data?.error || 'Fehler beim Laden der T-Nummern-Listen');
+    }
+  },
 }));

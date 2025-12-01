@@ -77,10 +77,12 @@ const clampingDevicesRoutes = require('./routes/clampingDevicesRoutes');
 const clampingDeviceDocumentsRoutes = require('./routes/clampingDeviceDocumentsRoutes');
 const fixturesRoutes = require('./routes/fixturesRoutes');
 const fixtureDocumentsRoutes = require('./routes/fixtureDocumentsRoutes');
+const machineDocumentsRoutes = require('./routes/machineDocumentsRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const rolesRoutes = require('./routes/rolesRoutes');
 const permissionsRoutes = require('./routes/permissionsRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
+const wikiRoutes = require('./routes/wikiRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -101,6 +103,7 @@ app.use('/api/tool-master', toolMasterRoutes);
 app.use('/api/storage/items', storageItemsRoutes);
 app.use('/api/stock-movements', stockMovementsRoutes);
 app.use('/api', toolDocumentsRoutes);
+app.use('/api/machine-documents', machineDocumentsRoutes);
 app.use('/api', toolCompatibleInsertsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', qrCodesRoutes);
@@ -123,6 +126,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/wiki', wikiRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

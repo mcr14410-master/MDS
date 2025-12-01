@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   
   // Machines
   MACHINES: `${API_BASE_URL}/api/machines`,
+  MACHINE_DOCUMENTS: `${API_BASE_URL}/api/machine-documents`,
   
   // Setup Sheets
   SETUP_SHEETS: `${API_BASE_URL}/api/setup-sheets`,
@@ -52,6 +53,12 @@ export const API_ENDPOINTS = {
   // Suppliers
   SUPPLIERS: `${API_BASE_URL}/api/suppliers`,
   SUPPLIER_ITEMS: `${API_BASE_URL}/api/supplier-items`,
+
+  // Wiki
+  WIKI: `${API_BASE_URL}/api/wiki`,
+
+  // Maintenance
+  MAINTENANCE: `${API_BASE_URL}/api/maintenance`,
 
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
