@@ -12,6 +12,7 @@ import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
 import OperationDetailPage from './pages/OperationDetailPage';
 import MachinesPage from './pages/MachinesPage';
+import MachineDetailPage from './pages/MachineDetailPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
 import StorageLocationDetailPage from './pages/StorageLocationDetailPage';
 import ToolCategoriesPage from './pages/ToolCategoriesPage';
@@ -145,6 +146,14 @@ function App() {
             element={
               <ProtectedRoute requiredPermission="machine.read">
                 <MachinesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/machines/:id"
+            element={
+              <ProtectedRoute requiredPermission="machine.read">
+                <MachineDetailPage />
               </ProtectedRoute>
             }
           />

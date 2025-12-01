@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const machinesController = require('../controllers/machinesController');
 const toolNumberListsController = require('../controllers/toolNumberListsController');
+const machineDocumentsController = require('../controllers/machineDocumentsController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
 // All routes require authentication
@@ -105,5 +106,33 @@ router.get('/:machineId/tool-mapping/:toolNumber', toolNumberListsController.fin
  * @access  Private
  */
 router.post('/:machineId/tool-mapping/bulk', toolNumberListsController.findToolMappingsBulk);
+
+// ============================================================================
+// MACHINE DOCUMENTS
+// ============================================================================
+
+/**
+ * @route   GET /api/machines/:machineId/documents
+ * @desc    Get all documents for a machine
+ * @access  Private
+ */
+router.get('/:machineId/documents', machineDocumentsController.getDocumentsByMachine);
+
+/**
+ * @route   GET /api/machines/:machineId/documents/stats
+ * @desc    Get document statistics for a machine
+ * @access  Private
+ */
+router.get('/:machineId/documents/stats', machineDocumentsController.getDocumentStats);
+
+/**
+ * @route   POST /api/machines/:machineId/documents/upload
+ * @desc    Upload document to a machine
+ * @access  Private
+ */
+router.post('/:machineId/documents/upload', 
+  machineDocumentsController.uploadMiddleware, 
+  machineDocumentsController.uploadDocument
+);
 
 module.exports = router;
