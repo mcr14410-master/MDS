@@ -52,6 +52,10 @@ import MachineMaintenanceStatsPage from './pages/MachineMaintenanceStatsPage';
 import OperatingHoursPage from './pages/OperatingHoursPage';
 import EscalationsPage from './pages/EscalationsPage';
 
+// Wiki Pages
+import WikiPage from './pages/WikiPage';
+import WikiArticlePage from './pages/WikiArticlePage';
+
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -449,8 +453,25 @@ function App() {
 				       </ProtectedRoute>
 				     } 
 				   />
-        </Route>
 
+           {/* Wiki Routes */}
+           <Route 
+             path="/wiki" 
+             element={
+               <ProtectedRoute requiredPermission="wiki.read">
+                 <WikiPage />
+               </ProtectedRoute>
+             } 
+           />
+           <Route 
+             path="/wiki/:id" 
+             element={
+               <ProtectedRoute requiredPermission="wiki.read">
+                 <WikiArticlePage />
+               </ProtectedRoute>
+             } 
+           />
+        </Route>
 		
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

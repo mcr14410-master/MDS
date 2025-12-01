@@ -152,16 +152,16 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         {/* Backdrop */}
-        <div className="fixed inset-0 bg-gray-900/75 transition-opacity" onClick={onClose}></div>
+        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900/75 transition-opacity" onClick={onClose}></div>
 
         {/* Modal */}
-        <div className="relative bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-700">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">Dokument hochladen</h3>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dokument hochladen</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -171,14 +171,14 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* Document Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Dokumenttyp
               </label>
               <select
                 value={documentType}
                 onChange={(e) => setDocumentType(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {documentTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -190,7 +190,7 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
 
             {/* File Upload Area */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Datei
               </label>
 
@@ -206,7 +206,7 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
                     ? 'border-blue-500 bg-blue-500/10'
                     : selectedFile
                     ? 'border-green-500 bg-green-500/10'
-                    : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
+                    : 'border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700/50 hover:border-gray-500'
                 }`}
               >
                 <input
@@ -225,8 +225,8 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
                       alt="Preview" 
                       className="max-w-full max-h-64 mx-auto rounded-lg mb-3"
                     />
-                    <p className="text-white font-medium">{selectedFile.name}</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-gray-900 dark:text-white font-medium">{selectedFile.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {formatFileSize(selectedFile.size)}
                     </p>
                     <button
@@ -237,16 +237,16 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
                         setImagePreview(null);
                         setValidationError('');
                       }}
-                      className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+                      className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-300"
                     >
                       Andere Datei wählen
                     </button>
                   </div>
                 ) : selectedFile ? (
                   <div>
-                    <FileIcon className="w-12 h-12 mx-auto mb-3 text-green-400" />
-                    <p className="text-white font-medium">{selectedFile.name}</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <FileIcon className="w-12 h-12 mx-auto mb-3 text-green-600 dark:text-green-400" />
+                    <p className="text-gray-900 dark:text-white font-medium">{selectedFile.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {formatFileSize(selectedFile.size)}
                     </p>
                     <button
@@ -256,15 +256,15 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
                         setSelectedFile(null);
                         setValidationError('');
                       }}
-                      className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+                      className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-300"
                     >
                       Andere Datei wählen
                     </button>
                   </div>
                 ) : (
                   <div>
-                    <FileIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-gray-300 mb-1">
+                    <FileIcon className="w-12 h-12 mx-auto mb-3 text-gray-500 dark:text-gray-400" />
+                    <p className="text-gray-600 dark:text-gray-300 mb-1">
                       Datei hierher ziehen oder klicken zum Auswählen
                     </p>
                     <p className="text-xs text-gray-500">
@@ -276,7 +276,7 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
 
               {/* Validation Error */}
               {validationError && (
-                <div className="mt-2 flex items-center gap-2 text-red-400 text-sm">
+                <div className="mt-2 flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
                   <AlertCircle className="w-4 h-4" />
                   <span>{validationError}</span>
                 </div>
@@ -285,14 +285,14 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                 Beschreibung (optional)
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 placeholder="z.B. Technisches Datenblatt vom Hersteller"
               />
             </div>
@@ -303,7 +303,7 @@ export default function DocumentUploadModal({ toolId, onClose, onSuccess }) {
                 type="button"
                 onClick={onClose}
                 disabled={uploading}
-                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
               >
                 Abbrechen
               </button>

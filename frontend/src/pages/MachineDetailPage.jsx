@@ -7,6 +7,7 @@ import { toast } from '../components/Toaster';
 import MachineDocumentsTab from '../components/MachineDocumentsTab';
 import MachineImage from '../components/MachineImage';
 import MachineForm from '../components/MachineForm';
+import MachineWikiTab from '../components/MachineWikiTab';
 
 export default function MachineDetailPage() {
   const { id } = useParams();
@@ -181,6 +182,7 @@ export default function MachineDetailPage() {
             { id: 'documents', label: 'Dokumente', count: documents?.length },
             { id: 'statistics', label: 'Statistik' },
             { id: 'toolnumbers', label: 'T-Nummern', count: toolNumberLists?.length },
+            { id: 'wiki', label: 'Fehler-Wiki' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -217,6 +219,10 @@ export default function MachineDetailPage() {
 
       {activeTab === 'toolnumbers' && (
         <ToolNumbersTab machineId={id} toolNumberLists={toolNumberLists} />
+      )}
+
+      {activeTab === 'wiki' && (
+        <MachineWikiTab machine={currentMachine} />
       )}
 
       {/* Edit Form Modal */}

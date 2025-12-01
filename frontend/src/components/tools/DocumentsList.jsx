@@ -46,26 +46,26 @@ export default function DocumentsList({ documents, onDelete }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
       </div>
     );
   }
 
   if (!documents || documents.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
         <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400">Keine Dokumente vorhanden</p>
+        <p className="text-gray-500 dark:text-gray-400">Keine Dokumente vorhanden</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-white">Dokumente</h3>
-        <p className="text-sm text-gray-400 mt-1">{documents.length} Dokument(e)</p>
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dokumente</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{documents.length} Dokument(e)</p>
       </div>
 
       {/* Documents Grid */}
@@ -75,7 +75,7 @@ export default function DocumentsList({ documents, onDelete }) {
           const typeColor = getDocumentTypeColor(doc.document_type);
 
           return (
-            <div key={doc.id} className="px-6 py-4 hover:bg-gray-700/50 transition-colors">
+            <div key={doc.id} className="px-6 py-4 hover:bg-gray-200 dark:bg-gray-700/50 transition-colors">
               <div className="flex items-start gap-4">
                 {/* Icon */}
                 <div className={`flex-shrink-0 w-12 h-12 rounded-lg bg-${typeColor}-500/20 flex items-center justify-center`}>
@@ -85,7 +85,7 @@ export default function DocumentsList({ documents, onDelete }) {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   {/* Filename */}
-                  <h4 className="font-medium text-white truncate">{doc.file_name}</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white truncate">{doc.file_name}</h4>
 
                   {/* Type Badge & Size */}
                   <div className="flex items-center gap-2 mt-1">
@@ -97,7 +97,7 @@ export default function DocumentsList({ documents, onDelete }) {
 
                   {/* Description */}
                   {doc.description && (
-                    <p className="text-sm text-gray-400 mt-2 line-clamp-2">{doc.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">{doc.description}</p>
                   )}
 
                   {/* Metadata */}
@@ -123,7 +123,7 @@ export default function DocumentsList({ documents, onDelete }) {
                   {/* Download */}
                   <button
                     onClick={() => handleDownload(doc)}
-                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
                     title="Herunterladen"
                   >
                     <Download className="w-5 h-5" />
@@ -133,7 +133,7 @@ export default function DocumentsList({ documents, onDelete }) {
                   {user?.permissions?.includes('tools.documents.delete') && (
                     <button
                       onClick={() => handleDelete(doc)}
-                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Löschen"
                     >
                       <Trash2 className="w-5 h-5" />

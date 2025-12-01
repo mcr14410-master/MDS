@@ -156,18 +156,18 @@ export default function StockMovementModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         {/* Backdrop */}
-        <div className="fixed inset-0 bg-gray-900/75 transition-opacity" onClick={onClose}></div>
+        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900/75 transition-opacity" onClick={onClose}></div>
 
         {/* Modal */}
-        <div className="relative bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-700">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {config.title}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -177,7 +177,7 @@ export default function StockMovementModal({
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* Condition Pills */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Zustand wählen
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -187,8 +187,8 @@ export default function StockMovementModal({
                   disabled={isConditionDisabled('new')}
                   className={`py-3 px-2 rounded-lg border transition-all ${
                     selectedCondition === 'new'
-                      ? 'bg-green-500/20 border-green-500 text-green-400'
-                      : 'bg-gray-700 border-gray-600 text-gray-400 hover:border-gray-500'
+                      ? 'bg-green-500/20 border-green-500 text-green-600 dark:text-green-400'
+                      : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-500'
                   } ${isConditionDisabled('new') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="font-semibold text-sm">Neu</div>
@@ -201,8 +201,8 @@ export default function StockMovementModal({
                   disabled={isConditionDisabled('used')}
                   className={`py-3 px-2 rounded-lg border transition-all ${
                     selectedCondition === 'used'
-                      ? 'bg-orange-500/20 border-orange-500 text-orange-400'
-                      : 'bg-gray-700 border-gray-600 text-gray-400 hover:border-gray-500'
+                      ? 'bg-orange-500/20 border-orange-500 text-orange-600 dark:text-orange-400'
+                      : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-500'
                   } ${isConditionDisabled('used') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="font-semibold text-sm">Gebraucht</div>
@@ -215,8 +215,8 @@ export default function StockMovementModal({
                   disabled={isConditionDisabled('reground')}
                   className={`py-3 px-2 rounded-lg border transition-all ${
                     selectedCondition === 'reground'
-                      ? 'bg-blue-500/20 border-blue-500 text-blue-400'
-                      : 'bg-gray-700 border-gray-600 text-gray-400 hover:border-gray-500'
+                      ? 'bg-blue-500/20 border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-500'
                   } ${isConditionDisabled('reground') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="font-semibold text-sm">Nachgeschl.</div>
@@ -227,7 +227,7 @@ export default function StockMovementModal({
 
             {/* Quantity */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                 {operation === 'adjust' ? 'Neuer Bestand' : 'Menge'}
               </label>
               <input
@@ -238,11 +238,11 @@ export default function StockMovementModal({
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0"
               />
               {config.requiresQuantityCheck && operation !== 'adjust' && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Verfügbar: {storageItem[`quantity_${selectedCondition}`]} Stk
                 </p>
               )}
@@ -251,14 +251,14 @@ export default function StockMovementModal({
             {/* Transfer: Target Compartment */}
             {operation === 'transfer' && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                   Ziel-Lagerort
                 </label>
                 <select
                   value={toCompartmentId}
                   onChange={(e) => setToCompartmentId(e.target.value)}
                   required
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Bitte wählen...</option>
                   {compartments.map(comp => (
@@ -272,14 +272,14 @@ export default function StockMovementModal({
 
             {/* Reason */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                 Grund / Notizen
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 placeholder={
                   operation === 'issue' ? 'z.B. Entnahme für Auftrag #12345' :
                   operation === 'receive' ? 'z.B. Wareneingang von Lieferant' :
@@ -291,22 +291,22 @@ export default function StockMovementModal({
 
             {/* Preview */}
             {preview && quantity && (
-              <div className="p-3 bg-gray-700/50 rounded-lg border border-gray-600">
-                <div className="text-sm text-gray-400 mb-2">Vorschau:</div>
+              <div className="p-3 bg-gray-200 dark:bg-gray-700/50 rounded-lg border border-gray-300 dark:border-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Vorschau:</div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Aktuell:</span>
-                    <span className="text-white font-medium">{preview.before.toFixed(2)} Stk</span>
+                    <span className="text-gray-500 dark:text-gray-400">Aktuell:</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{preview.before.toFixed(2)} Stk</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Änderung:</span>
-                    <span className={`font-medium ${preview.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className="text-gray-500 dark:text-gray-400">Änderung:</span>
+                    <span className={`font-medium ${preview.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                       {preview.change >= 0 ? '+' : ''}{preview.change.toFixed(2)} Stk
                     </span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-600">
-                    <span className="text-gray-400">Neu:</span>
-                    <span className="text-white font-bold">{preview.after.toFixed(2)} Stk</span>
+                  <div className="flex justify-between pt-2 border-t border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-400">Neu:</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{preview.after.toFixed(2)} Stk</span>
                   </div>
                 </div>
               </div>
@@ -317,14 +317,14 @@ export default function StockMovementModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
                 Abbrechen
               </button>
               <button
                 type="submit"
                 disabled={loading || !quantity}
-                className={`flex-1 px-4 py-2 bg-${config.color}-600 text-white rounded-lg hover:bg-${config.color}-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex-1 px-4 py-2 bg-${config.color}-600 text-gray-900 dark:text-white rounded-lg hover:bg-${config.color}-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {loading ? 'Wird gespeichert...' : config.submitText}
               </button>

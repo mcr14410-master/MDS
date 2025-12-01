@@ -43,23 +43,23 @@ export default function CustomFieldsDisplay({ categoryId, customFields }) {
     switch (fieldDef.type) {
       case 'number':
         return (
-          <span className="text-white font-medium">
+          <span className="text-gray-900 dark:text-white font-medium">
             {parseFloat(value).toLocaleString('de-DE')}
-            {fieldDef.unit && <span className="text-gray-400 ml-1">{fieldDef.unit}</span>}
+            {fieldDef.unit && <span className="text-gray-500 dark:text-gray-400 ml-1">{fieldDef.unit}</span>}
           </span>
         );
 
       case 'text':
-        return <span className="text-white font-medium">{value}</span>;
+        return <span className="text-gray-900 dark:text-white font-medium">{value}</span>;
 
       case 'select':
         // Find the label for the selected value
         const option = fieldDef.options?.find(opt => opt.value === value);
-        return <span className="text-white font-medium">{option?.label || value}</span>;
+        return <span className="text-gray-900 dark:text-white font-medium">{option?.label || value}</span>;
 
       case 'checkbox':
         return value === true ? (
-          <span className="flex items-center gap-1 text-green-400 font-medium">
+          <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
             <CheckCircle2 className="w-4 h-4" />
             Ja
           </span>
@@ -71,7 +71,7 @@ export default function CustomFieldsDisplay({ categoryId, customFields }) {
         );
 
       default:
-        return <span className="text-white font-medium">{String(value)}</span>;
+        return <span className="text-gray-900 dark:text-white font-medium">{String(value)}</span>;
     }
   };
 
@@ -87,9 +87,9 @@ export default function CustomFieldsDisplay({ categoryId, customFields }) {
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 mt-6 border border-gray-700">
-      <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Info className="w-5 h-5 text-blue-400" />
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mt-6 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         Zusätzliche Felder
       </h2>
       
@@ -100,7 +100,7 @@ export default function CustomFieldsDisplay({ categoryId, customFields }) {
           return (
             <div key={fieldDef.key} className="space-y-1">
               <div className="flex justify-between items-start">
-                <span className="text-gray-400 text-sm">{fieldDef.label}:</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">{fieldDef.label}:</span>
                 <div className="text-right">
                   {formatValue(fieldDef, value)}
                 </div>
@@ -116,10 +116,10 @@ export default function CustomFieldsDisplay({ categoryId, customFields }) {
       {/* Optional: Show all defined fields with empty state */}
       {fieldsWithValues.length < fieldDefinitions.length && (
         <details className="mt-4">
-          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-400">
+          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-500 dark:text-gray-400">
             Alle möglichen Felder anzeigen ({fieldDefinitions.length - fieldsWithValues.length} weitere)
           </summary>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             {fieldDefinitions
               .filter(fieldDef => !fieldsWithValues.includes(fieldDef))
               .map(fieldDef => (

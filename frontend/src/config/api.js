@@ -54,6 +54,12 @@ export const API_ENDPOINTS = {
   SUPPLIERS: `${API_BASE_URL}/api/suppliers`,
   SUPPLIER_ITEMS: `${API_BASE_URL}/api/supplier-items`,
 
+  // Wiki
+  WIKI: `${API_BASE_URL}/api/wiki`,
+
+  // Maintenance
+  MAINTENANCE: `${API_BASE_URL}/api/maintenance`,
+
   // Health
   HEALTH: `${API_BASE_URL}/api/health`,
 };

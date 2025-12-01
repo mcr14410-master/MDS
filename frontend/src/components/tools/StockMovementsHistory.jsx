@@ -67,54 +67,54 @@ export default function StockMovementsHistory({ storageItemId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
       </div>
     );
   }
 
   if (!movements || movements.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
-        <p className="text-gray-400">Keine Lagerbewegungen vorhanden</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+        <p className="text-gray-500 dark:text-gray-400">Keine Lagerbewegungen vorhanden</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-white">Bewegungshistorie</h3>
-        <p className="text-sm text-gray-400 mt-1">{movements.length} Bewegungen</p>
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Bewegungshistorie</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{movements.length} Bewegungen</p>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-gray-900/50">
+          <thead className="bg-gray-50 dark:bg-gray-900/50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Datum
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Art
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Zustand
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Menge
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Vorher
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Nachher
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Grund
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Benutzer
               </th>
             </tr>
@@ -126,9 +126,9 @@ export default function StockMovementsHistory({ storageItemId }) {
               const TypeIcon = typeConfig.icon;
 
               return (
-                <tr key={movement.id} className="hover:bg-gray-800/50 transition-colors">
+                <tr key={movement.id} className="hover:bg-white dark:bg-gray-800/50 transition-colors">
                   {/* Date */}
-                  <td className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {new Date(movement.performed_at).toLocaleString('de-DE', {
                       day: '2-digit',
                       month: '2-digit',
@@ -155,28 +155,28 @@ export default function StockMovementsHistory({ storageItemId }) {
 
                   {/* Quantity */}
                   <td className="px-4 py-3 text-sm text-right font-mono">
-                    <span className={movement.quantity >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    <span className={movement.quantity >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                       {movement.quantity > 0 ? '+' : ''}{parseFloat(movement.quantity).toFixed(2)}
                     </span>
                   </td>
 
                   {/* Before */}
-                  <td className="px-4 py-3 text-sm text-right font-mono text-gray-400">
+                  <td className="px-4 py-3 text-sm text-right font-mono text-gray-500 dark:text-gray-400">
                     {movement.quantity_before !== null ? parseFloat(movement.quantity_before).toFixed(2) : '-'}
                   </td>
 
                   {/* After */}
-                  <td className="px-4 py-3 text-sm text-right font-mono text-white">
+                  <td className="px-4 py-3 text-sm text-right font-mono text-gray-900 dark:text-white">
                     {movement.quantity_after !== null ? parseFloat(movement.quantity_after).toFixed(2) : '-'}
                   </td>
 
                   {/* Reason */}
-                  <td className="px-4 py-3 text-sm text-gray-400 max-w-xs truncate">
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                     {movement.reason || '-'}
                   </td>
 
                   {/* User */}
-                  <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {movement.performed_by_username || '-'}
                   </td>
                 </tr>

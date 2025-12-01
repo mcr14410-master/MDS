@@ -194,18 +194,18 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-2xl w-full p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6 border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">QR-Code</h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">QR-Code</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {storageItem.article_number} - {storageItem.tool_name}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -213,7 +213,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
 
         {qrCodeLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
           </div>
         ) : (
           <>
@@ -232,7 +232,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
               </div>
               
               <div className="space-y-2">
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Scans: {qrCode?.scanCount || 0}
                 </p>
                 <p className="text-xs text-gray-500 font-mono">
@@ -243,7 +243,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
 
             {/* Size Selector */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 QR-Code Größe
               </label>
               <div className="flex gap-2">
@@ -254,7 +254,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
                     className={`px-3 py-1 rounded text-sm transition-colors ${
                       qrSize === size
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {size}px
@@ -265,7 +265,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
 
             {/* Print Variant Selector */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Druckvariante
               </label>
               <div className="flex gap-2">
@@ -274,7 +274,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
                   className={`flex-1 px-4 py-2 rounded transition-colors ${
                     printVariant === 'qr-only'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   Nur QR-Code
@@ -284,7 +284,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
                   className={`flex-1 px-4 py-2 rounded transition-colors ${
                     printVariant === 'with-label'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   Mit Beschriftung
@@ -317,7 +317,7 @@ export default function QRCodeDisplay({ storageItem, onClose }) {
               </button>
               <button
                 onClick={handleRegenerate}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-md transition-colors"
                 title="QR-Code neu generieren"
               >
                 <RefreshCw className="w-4 h-4" />

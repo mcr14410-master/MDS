@@ -105,25 +105,25 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
       </div>
     );
   }
 
   if (!documents || documents.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
         <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400">Keine Dokumente vorhanden</p>
+        <p className="text-gray-500 dark:text-gray-400">Keine Dokumente vorhanden</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header with Tabs */}
-      <div className="px-6 py-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Dokumente</h3>
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dokumente</h3>
         
         {/* Sub-Tabs */}
         <div className="flex gap-1 overflow-x-auto">
@@ -132,7 +132,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeSubTab === 'all'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Alle ({counts.all})
@@ -142,7 +142,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeSubTab === 'images'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             <ImageIcon className="w-4 h-4 inline mr-1" />
@@ -153,7 +153,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeSubTab === 'drawings'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             <Box className="w-4 h-4 inline mr-1" />
@@ -164,7 +164,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeSubTab === 'datasheets'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             <FileText className="w-4 h-4 inline mr-1" />
@@ -175,7 +175,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeSubTab === 'other'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             <Archive className="w-4 h-4 inline mr-1" />
@@ -187,7 +187,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
       {/* Documents List */}
       {filteredDocuments.length === 0 ? (
         <div className="px-6 py-8 text-center">
-          <p className="text-gray-400">Keine Dokumente in dieser Kategorie</p>
+          <p className="text-gray-500 dark:text-gray-400">Keine Dokumente in dieser Kategorie</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-700">
@@ -196,7 +196,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
             const typeColor = getDocumentTypeColor(doc.document_type);
 
             return (
-              <div key={doc.id} className="px-6 py-4 hover:bg-gray-700/50 transition-colors">
+              <div key={doc.id} className="px-6 py-4 hover:bg-gray-200 dark:bg-gray-700/50 transition-colors">
                 <div className="flex items-start gap-4">
                   {/* Icon */}
                   <div className={`flex-shrink-0 w-12 h-12 rounded-lg bg-${typeColor}-500/20 flex items-center justify-center`}>
@@ -207,9 +207,9 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
                   <div className="flex-1 min-w-0">
                     {/* Filename with Primary Badge */}
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-white truncate">{doc.file_name}</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-white truncate">{doc.file_name}</h4>
                       {doc.is_primary && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                        <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30">
                           <Star className="w-3 h-3 fill-current" />
                           Hauptdokument
                         </span>
@@ -226,7 +226,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
 
                     {/* Description */}
                     {doc.description && (
-                      <p className="text-sm text-gray-400 mt-2 line-clamp-2">{doc.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">{doc.description}</p>
                     )}
 
                     {/* Metadata */}
@@ -252,7 +252,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
 				  {/* View - TEMPORARILY DISABLED
 				  <button
 				    onClick={() => handleView(doc)}
-				    className="p-2 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+				    className="p-2 text-green-600 dark:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
 				    title="Anzeigen"
 				  >
 				    <Eye className="w-5 h-5" />
@@ -262,7 +262,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
                     {/* Download */}
                     <button
                       onClick={() => handleDownload(doc)}
-                      className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
                       title="Herunterladen"
                     >
                       <Download className="w-5 h-5" />
@@ -272,7 +272,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
                     {user?.permissions?.includes('tools.documents.upload') && !doc.is_primary && (
                       <button
                         onClick={() => handleSetPrimary(doc)}
-                        className="p-2 text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                        className="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors"
                         title="Als Hauptdokument markieren"
                       >
                         <Star className="w-5 h-5" />
@@ -283,7 +283,7 @@ export default function ToolDocumentsManager({ documents, onDelete, onSetPrimary
                     {user?.permissions?.includes('tools.documents.delete') && (
                       <button
                         onClick={() => handleDelete(doc)}
-                        className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                         title="Löschen"
                       >
                         <Trash2 className="w-5 h-5" />

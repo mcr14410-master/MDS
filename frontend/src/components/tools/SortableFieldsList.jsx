@@ -26,14 +26,14 @@ function SortableFieldItem({ field, index, onEdit, onDelete }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors"
+      className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:border-gray-600 transition-colors"
     >
       <div className="flex items-start gap-3">
         {/* Drag Handle */}
         <button
           {...attributes}
           {...listeners}
-          className="mt-1 text-gray-500 hover:text-gray-300 cursor-grab active:cursor-grabbing"
+          className="mt-1 text-gray-500 hover:text-gray-600 dark:text-gray-300 cursor-grab active:cursor-grabbing"
         >
           <GripVertical className="w-5 h-5" />
         </button>
@@ -41,20 +41,20 @@ function SortableFieldItem({ field, index, onEdit, onDelete }) {
         {/* Field Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="font-medium text-white">{field.label}</h4>
-            <code className="text-xs bg-gray-800 px-2 py-0.5 rounded text-blue-400">
+            <h4 className="font-medium text-gray-900 dark:text-white">{field.label}</h4>
+            <code className="text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded text-blue-600 dark:text-blue-400">
               {field.key}
             </code>
             <span className="text-xs text-gray-500">{field.type}</span>
             {field.required && (
-              <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">
+              <span className="text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded">
                 Pflicht
               </span>
             )}
           </div>
           
           {field.help && (
-            <p className="text-sm text-gray-400 mt-1">{field.help}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{field.help}</p>
           )}
 
           {/* Type-specific info */}
@@ -73,13 +73,13 @@ function SortableFieldItem({ field, index, onEdit, onDelete }) {
         <div className="flex gap-1">
           <button
             onClick={() => onEdit(index)}
-            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(index)}
-            className="p-2 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-500/20 rounded transition-colors"
           >
             <Trash2 className="w-4 h-4" />
           </button>

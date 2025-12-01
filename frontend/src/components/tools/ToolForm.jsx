@@ -6,7 +6,6 @@ import CustomFieldsRenderer from './CustomFieldsRenderer';
 /**
  * ToolForm Component
  * Multi-tab form for creating/editing tools
- * Tabs: 1) Basis, 2) Geometrie & Material, 3) Hersteller & Kosten
  */
 export default function ToolForm({ tool, onSave, onCancel, loading }) {
   const [activeTab, setActiveTab] = useState(0);
@@ -35,19 +34,16 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
 
   const { categories, subcategories, fetchCategories, fetchSubcategories } = useToolCategoriesStore();
 
-  // Load categories on mount
   useEffect(() => {
-    fetchCategories(false); // Only active categories
+    fetchCategories(false);
   }, [fetchCategories]);
 
-  // Load subcategories when category changes
   useEffect(() => {
     if (formData.category_id) {
       fetchSubcategories(formData.category_id);
     }
   }, [formData.category_id, fetchSubcategories]);
 
-  // Populate form if editing
   useEffect(() => {
     if (tool) {
       setFormData({
@@ -85,27 +81,22 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Prepare data (convert empty strings to null for optional fields)
     const dataToSave = { ...formData };
 
-    // Convert numeric fields
     if (dataToSave.category_id) dataToSave.category_id = parseInt(dataToSave.category_id);
     if (dataToSave.subcategory_id) dataToSave.subcategory_id = parseInt(dataToSave.subcategory_id);
     if (dataToSave.diameter) dataToSave.diameter = parseFloat(dataToSave.diameter);
     if (dataToSave.length) dataToSave.length = parseFloat(dataToSave.length);
     if (dataToSave.flutes) dataToSave.flutes = parseInt(dataToSave.flutes);
 
-    // Convert empty strings to null for optional text fields (but not custom_fields)
     Object.keys(dataToSave).forEach(key => {
       if (key !== 'custom_fields' && dataToSave[key] === '') {
         dataToSave[key] = null;
       }
     });
 
-    // Ensure custom_fields is sent (empty object if no custom fields)
     if (!dataToSave.custom_fields || Object.keys(dataToSave.custom_fields).length === 0) {
-      dataToSave.custom_fields = null; // Send null instead of empty object
+      dataToSave.custom_fields = null;
     }
 
     onSave(dataToSave);
@@ -117,32 +108,35 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
     { id: 2, label: 'Hersteller & Kosten' },
   ];
 
+  const inputClass = "w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-white">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {tool ? 'Werkzeug bearbeiten' : 'Neues Werkzeug'}
           </h2>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-700 px-6">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 px-6">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 font-medium transition-colors border-b-2 ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {tab.label}
@@ -157,10 +151,9 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
             {activeTab === 0 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Article Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Artikelnummer <span className="text-red-400">*</span>
+                    <label className={labelClass}>
+                      Artikelnummer <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -168,15 +161,14 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                       value={formData.article_number}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. GAR-123, WZ-2024-001"
                     />
                   </div>
 
-                  {/* Tool Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Werkzeugname <span className="text-red-400">*</span>
+                    <label className={labelClass}>
+                      Werkzeugname <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -184,132 +176,72 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                       value={formData.tool_name}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. Schaftfräser D10 Z2 HSS-E"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Category */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Kategorie
-                    </label>
+                    <label className={labelClass}>Kategorie</label>
                     <select
                       name="category_id"
                       value={formData.category_id}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                     >
-                      <option value="">-- Kategorie wählen --</option>
+                      <option value="">Keine Kategorie</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Subcategory */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Unterkategorie
-                    </label>
+                    <label className={labelClass}>Unterkategorie</label>
                     <select
                       name="subcategory_id"
                       value={formData.subcategory_id}
                       onChange={handleChange}
                       disabled={!formData.category_id}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={inputClass}
                     >
-                      <option value="">-- Unterkategorie wählen --</option>
-                      {subcategories.map(subcat => (
-                        <option key={subcat.id} value={subcat.id}>{subcat.name}</option>
+                      <option value="">Keine Unterkategorie</option>
+                      {subcategories.map(sub => (
+                        <option key={sub.id} value={sub.id}>{sub.name}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {/* Item Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Typ <span className="text-red-400">*</span>
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="item_type"
-                        value="tool"
-                        checked={formData.item_type === 'tool'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Werkzeug</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="item_type"
-                        value="insert"
-                        checked={formData.item_type === 'insert'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Wendeplatte</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="item_type"
-                        value="accessory"
-                        checked={formData.item_type === 'accessory'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Zubehör</span>
-                    </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Artikeltyp</label>
+                    <select
+                      name="item_type"
+                      value={formData.item_type}
+                      onChange={handleChange}
+                      className={inputClass}
+                    >
+                      <option value="tool">Werkzeug</option>
+                      <option value="insert">Wendeplatte</option>
+                      <option value="accessory">Zubehör</option>
+                    </select>
                   </div>
-                </div>
 
-                {/* Tool Category */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Klassifizierung <span className="text-red-400">*</span>
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="tool_category"
-                        value="standard"
-                        checked={formData.tool_category === 'standard'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Standard</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="tool_category"
-                        value="special"
-                        checked={formData.tool_category === 'special'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Spezial</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="tool_category"
-                        value="modified"
-                        checked={formData.tool_category === 'modified'}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-blue-500"
-                      />
-                      <span className="text-gray-300">Modifiziert</span>
-                    </label>
+                  <div>
+                    <label className={labelClass}>Klassifizierung</label>
+                    <select
+                      name="tool_category"
+                      value={formData.tool_category}
+                      onChange={handleChange}
+                      className={inputClass}
+                    >
+                      <option value="standard">Standard</option>
+                      <option value="special">Spezial</option>
+                      <option value="modified">Modifiziert</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -319,119 +251,98 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
             {activeTab === 1 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Diameter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Durchmesser (mm)
-                    </label>
+                    <label className={labelClass}>Durchmesser (mm)</label>
                     <input
                       type="number"
-                      step="0.001"
                       name="diameter"
                       value={formData.diameter}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      step="0.01"
+                      className={inputClass}
                       placeholder="z.B. 10.0"
                     />
                   </div>
 
-                  {/* Length */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Länge (mm)
-                    </label>
+                    <label className={labelClass}>Länge (mm)</label>
                     <input
                       type="number"
-                      step="0.01"
                       name="length"
                       value={formData.length}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="z.B. 100.0"
+                      step="0.01"
+                      className={inputClass}
+                      placeholder="z.B. 80.0"
                     />
                   </div>
 
-                  {/* Flutes */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Schneiden (Z)
-                    </label>
+                    <label className={labelClass}>Schneiden (Z)</label>
                     <input
                       type="number"
                       name="flutes"
                       value={formData.flutes}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="z.B. 2"
+                      min="1"
+                      className={inputClass}
+                      placeholder="z.B. 4"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Material */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Material
-                    </label>
+                    <label className={labelClass}>Material</label>
                     <input
                       type="text"
                       name="material"
                       value={formData.material}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="z.B. HSS-E, Carbide"
+                      className={inputClass}
+                      placeholder="z.B. HSS, VHM, PKD"
                     />
                   </div>
 
-                  {/* Coating */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Beschichtung
-                    </label>
+                    <label className={labelClass}>Beschichtung</label>
                     <input
                       type="text"
                       name="coating"
                       value={formData.coating}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. TiN, TiAlN, AlTiN"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Substrate Grade */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Substrat-Sorte (ISO)
-                    </label>
+                    <label className={labelClass}>Substrat-Sorte (ISO)</label>
                     <input
                       type="text"
                       name="substrate_grade"
                       value={formData.substrate_grade}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. K20, P25"
                     />
                   </div>
 
-                  {/* Hardness */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Härte
-                    </label>
+                    <label className={labelClass}>Härte</label>
                     <input
                       type="text"
                       name="hardness"
                       value={formData.hardness}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. 65 HRC"
                     />
                   </div>
                 </div>
 
-                {/* Custom Fields Renderer */}
                 {formData.category_id && (
                   <CustomFieldsRenderer
                     categoryId={formData.category_id}
@@ -446,68 +357,55 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
             {activeTab === 2 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Manufacturer */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Hersteller
-                    </label>
+                    <label className={labelClass}>Hersteller</label>
                     <input
                       type="text"
                       name="manufacturer"
                       value={formData.manufacturer}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. Garant, Sandvik"
                     />
                   </div>
 
-                  {/* Manufacturer Part Number */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Herstellerteilenummer
-                    </label>
+                    <label className={labelClass}>Herstellerteilenummer</label>
                     <input
                       type="text"
                       name="manufacturer_part_number"
                       value={formData.manufacturer_part_number}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       placeholder="z.B. GAR-10-HSS-TiAlN"
                     />
                   </div>
                 </div>
 
-                {/* Shop URL */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Shop-URL
-                  </label>
+                  <label className={labelClass}>Shop-URL</label>
                   <input
                     type="url"
                     name="shop_url"
                     value={formData.shop_url}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="https://..."
                   />
                 </div>
 
-                {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Notizen
-                  </label>
+                  <label className={labelClass}>Notizen</label>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
                     rows={4}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClass}
                     placeholder="Zusätzliche Informationen..."
                   />
                 </div>
 
-                {/* Checkboxes */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -515,9 +413,9 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                       name="uses_inserts"
                       checked={formData.uses_inserts}
                       onChange={handleChange}
-                      className="w-4 h-4 text-blue-500 rounded"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
-                    <span className="text-gray-300">Verwendet Wendeschneidplatten</span>
+                    <span className="text-gray-700 dark:text-gray-300">Verwendet Wendeschneidplatten</span>
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -526,9 +424,9 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                       name="is_active"
                       checked={formData.is_active}
                       onChange={handleChange}
-                      className="w-4 h-4 text-blue-500 rounded"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
-                    <span className="text-gray-300">Aktiv</span>
+                    <span className="text-gray-700 dark:text-gray-300">Aktiv</span>
                   </label>
                 </div>
               </div>
@@ -536,13 +434,13 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50">
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <div className="flex gap-2">
               {activeTab > 0 && (
                 <button
                   type="button"
                   onClick={() => setActiveTab(activeTab - 1)}
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   Zurück
                 </button>
@@ -553,7 +451,7 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Abbrechen
               </button>

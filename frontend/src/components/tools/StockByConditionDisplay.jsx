@@ -11,8 +11,8 @@ export default function StockByConditionDisplay({ storageItem }) {
 
   if (!storageItem) {
     return (
-      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <p className="text-gray-400 text-sm">Keine Lagerdaten vorhanden</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Keine Lagerdaten vorhanden</p>
       </div>
     );
   }
@@ -37,11 +37,11 @@ export default function StockByConditionDisplay({ storageItem }) {
   const getStatusIcon = () => {
     switch (status) {
       case 'ok':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
+        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-yellow-400" />;
+        return <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
       case 'critical':
-        return <XCircle className="w-5 h-5 text-red-400" />;
+        return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
       default:
         return null;
     }
@@ -71,10 +71,10 @@ export default function StockByConditionDisplay({ storageItem }) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
       {/* Title */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Bestand nach Zustand</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Bestand nach Zustand</h3>
         <div className="flex items-center gap-2">
           {getStatusIcon()}
           <span className={`text-sm font-medium text-${getStatusColor()}-400`}>
@@ -88,12 +88,12 @@ export default function StockByConditionDisplay({ storageItem }) {
         {/* New */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-300">Neu</span>
-            <span className="text-sm font-bold text-green-400">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Neu</span>
+            <span className="text-sm font-bold text-green-600 dark:text-green-400">
               {qtyNew} Stk
             </span>
           </div>
-          <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-300"
               style={{ width: `${getPercentage(qtyNew)}%` }}
@@ -107,12 +107,12 @@ export default function StockByConditionDisplay({ storageItem }) {
         {/* Used */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-300">Gebraucht</span>
-            <span className="text-sm font-bold text-orange-400">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Gebraucht</span>
+            <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
               {qtyUsed} Stk
             </span>
           </div>
-          <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-orange-500 transition-all duration-300"
               style={{ width: `${getPercentage(qtyUsed)}%` }}
@@ -126,12 +126,12 @@ export default function StockByConditionDisplay({ storageItem }) {
         {/* Reground */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-300">Nachgeschliffen</span>
-            <span className="text-sm font-bold text-blue-400">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Nachgeschliffen</span>
+            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
               {qtyReground} Stk
             </span>
           </div>
-          <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 transition-all duration-300"
               style={{ width: `${getPercentage(qtyReground)}%` }}
@@ -144,20 +144,20 @@ export default function StockByConditionDisplay({ storageItem }) {
       </div>
 
       {/* Summary */}
-      <div className="pt-4 border-t border-gray-700">
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-xs text-gray-400 mb-1">Gesamt</div>
-            <div className="text-2xl font-bold text-white">{total.toFixed(1)}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Gesamt</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{total.toFixed(1)}</div>
             <div className="text-xs text-gray-500">Stück</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 mb-1">Effektiv</div>
-            <div className="text-2xl font-bold text-blue-400">{effective.toFixed(1)}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Effektiv</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{effective.toFixed(1)}</div>
             <div className="text-xs text-gray-500">Gewichtet</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 mb-1">Status</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</div>
             <div className={`text-2xl font-bold text-${getStatusColor()}-400`}>
               {status === 'ok' ? '✓' : status === 'warning' ? '⚠' : '✗'}
             </div>
@@ -167,19 +167,19 @@ export default function StockByConditionDisplay({ storageItem }) {
 
         {/* Reorder Point Info */}
         {storageItem.enable_low_stock_alert && storageItem.reorder_point && (
-          <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
+          <div className="mt-4 p-3 bg-gray-200 dark:bg-gray-700/50 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Bestellpunkt:</span>
-              <span className="text-white font-medium">{parseFloat(storageItem.reorder_point).toFixed(1)} (effektiv)</span>
+              <span className="text-gray-500 dark:text-gray-400">Bestellpunkt:</span>
+              <span className="text-gray-900 dark:text-white font-medium">{parseFloat(storageItem.reorder_point).toFixed(1)} (effektiv)</span>
             </div>
             {status === 'warning' && (
-              <div className="mt-2 flex items-center gap-2 text-yellow-400 text-xs">
+              <div className="mt-2 flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-xs">
                 <AlertTriangle className="w-4 h-4" />
                 <span>Bestand unter Bestellpunkt - Nachbestellung empfohlen</span>
               </div>
             )}
             {status === 'critical' && (
-              <div className="mt-2 flex items-center gap-2 text-red-400 text-xs">
+              <div className="mt-2 flex items-center gap-2 text-red-600 dark:text-red-400 text-xs">
                 <XCircle className="w-4 h-4" />
                 <span>Kritischer Bestand - Dringende Nachbestellung erforderlich</span>
               </div>
