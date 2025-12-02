@@ -124,16 +124,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Test Credentials Info */}
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-xs text-blue-800 dark:text-blue-300 font-medium mb-2">Test-Login:</p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              Username: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">admin</code>
-            </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              Passwort: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">admin123</code>
-            </p>
-          </div>
         </form>
       </div>
     </div>
