@@ -713,20 +713,25 @@
 
 ---
 
-### 📋 Woche 26: Docker-Setup & Raspberry Pi Deployment
-**Status:** 📋 Geplant
+### ✅ Woche 26: Docker-Setup & Raspberry Pi Deployment
+**Status:** ✅ **ABGESCHLOSSEN**
 **Ziel:** Produktiv-Deployment auf Raspberry Pi
+**Zeitaufwand:** ~6 Stunden
 
-- [ ] Docker Compose optimieren (Backend, Frontend, PostgreSQL)
-- [ ] Environment-Variablen (.env.production)
-- [ ] Nginx Reverse Proxy Setup
-- [ ] SSL/HTTPS (Let's Encrypt oder Self-Signed)
-- [ ] Raspberry Pi Setup-Anleitung
-- [ ] Backup-Strategie (pg_dump Cronjob)
-- [ ] Health-Checks & Auto-Restart
-- [ ] Performance-Optimierung für Pi
+- [x] Docker Compose (Backend, Frontend, PostgreSQL, Caddy)
+- [x] Environment-Variablen (.env.production.example)
+- [x] Caddy Reverse Proxy Setup (Port 81 parallel zu task-app)
+- [x] Raspberry Pi Setup-Anleitung (DEPLOYMENT.md)
+- [x] Backup-Strategie (backup.sh + restore.sh)
+- [x] Deploy-Script mit Git-Pull, Container-Build, Health-Check
+- [x] Init-Script (Migrations + Admin-User + Permissions)
+- [x] Seeds erweitert (Lagerorte, Lieferanten, Messmittel, Spannmittel, Vorrichtungen)
+- [x] Frontend API-URL Auto-Detection (Production/Development)
+- [x] CORS-Fixes (dashboardStore)
 
-**Deliverable:** Deployment-ready Docker-Setup + Dokumentation
+**Deliverable:** ✅ MDS läuft produktiv auf Raspberry Pi 5 (Port 81)
+
+**Abgeschlossen am:** 2025-12-01
 
 ---
 
