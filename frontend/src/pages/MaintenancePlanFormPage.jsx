@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useMachinesStore } from '../stores/machinesStore';
+import API_BASE_URL from '../config/api';
 
 export default function MaintenancePlanFormPage() {
   const { id } = useParams();
@@ -63,7 +64,7 @@ export default function MaintenancePlanFormPage() {
     try {
       setDeletingImage(true);
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/maintenance/plans/${id}/reference-image`,
+        `${API_BASE_URL}/api/maintenance/plans/${id}/reference-image`,
         {
           method: 'DELETE',
           headers: {
@@ -163,7 +164,7 @@ export default function MaintenancePlanFormPage() {
         
         try {
           await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/maintenance/plans/${planId}/reference-image`,
+            `${API_BASE_URL}/api/maintenance/plans/${planId}/reference-image`,
             {
               method: 'POST',
               headers: {
@@ -565,7 +566,7 @@ export default function MaintenancePlanFormPage() {
             {isEdit && currentPlan?.reference_image && !referenceImageFile && (
               <div className="relative group">
                 <img 
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentPlan.reference_image}`}
+                  src={`${API_BASE_URL}${currentPlan.reference_image}`}
                   alt="Aktuelles Referenzbild" 
                   className="w-40 h-40 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
                 />

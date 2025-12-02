@@ -120,8 +120,7 @@ async function login(req, res) {
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid credentials'
+        error: 'Benutzername oder Passwort falsch'
       });
     }
 
@@ -130,8 +129,7 @@ async function login(req, res) {
     // Check if user is active
     if (!user.is_active) {
       return res.status(403).json({
-        error: 'Forbidden',
-        message: 'User account is disabled'
+        error: 'Benutzerkonto ist deaktiviert'
       });
     }
 
@@ -140,8 +138,7 @@ async function login(req, res) {
 
     if (!isPasswordValid) {
       return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid credentials'
+        error: 'Benutzername oder Passwort falsch'
       });
     }
 

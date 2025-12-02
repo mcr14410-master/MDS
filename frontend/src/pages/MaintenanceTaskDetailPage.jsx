@@ -11,15 +11,21 @@ import {
   Wrench,
   FileText,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Play,
+  Loader2
 } from 'lucide-react';
 import axios from '../utils/axios';
+import API_BASE_URL from '../config/api';
+import { useMaintenanceStore } from '../stores/maintenanceStore';
 
 export default function MaintenanceTaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { startTask } = useMaintenanceStore();
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
 
@@ -41,6 +47,18 @@ export default function MaintenanceTaskDetailPage() {
       setError('Fehler beim Laden der Task-Details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartTask = async () => {
+    try {
+      setStarting(true);
+      await startTask(id);
+      navigate(`/maintenance/tasks/${id}/execute`);
+    } catch (err) {
+      console.error('Fehler beim Starten:', err);
+      setError(err.message || 'Fehler beim Starten der Aufgabe');
+      setStarting(false);
     }
   };
 
@@ -123,15 +141,54 @@ export default function MaintenanceTaskDetailPage() {
             </p>
           )}
         </div>
+        
+        {/* Action Buttons */}
+        {['pending', 'assigned', 'in_progress'].includes(task.status) && (
+          <button
+            onClick={handleStartTask}
+            disabled={starting}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+          >
+            {starting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4" />
+            )}
+            {task.status === 'in_progress' ? 'Fortsetzen' : 'Aufgabe starten'}
+          </button>
+        )}
       </div>
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Fällig am */}
+        {task.due_date && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${new Date(task.due_date) < new Date() && task.status !== 'completed' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
+                <Calendar className={`w-5 h-5 ${new Date(task.due_date) < new Date() && task.status !== 'completed' ? 'text-red-500' : 'text-orange-500'}`} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Fällig am</p>
+                <p className={`text-sm font-medium ${new Date(task.due_date) < new Date() && task.status !== 'completed' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                  {new Date(task.due_date).toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Erstellt */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <Calendar className="w-5 h-5 text-gray-500" />
+              <Clock className="w-5 h-5 text-gray-500" />
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Erstellt</p>
@@ -147,6 +204,23 @@ export default function MaintenanceTaskDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Zugewiesen an */}
+        {task.assigned_to_name && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <User className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Zugewiesen an</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {task.assigned_to_name}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Abgeschlossen */}
         {task.completed_at && (
@@ -165,23 +239,11 @@ export default function MaintenanceTaskDetailPage() {
                     hour: '2-digit',
                     minute: '2-digit'
                   })}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Bearbeiter */}
-        {task.completed_by_name && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <User className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Bearbeitet von</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {task.completed_by_name}
+                  {task.completed_by_name && (
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">
+                      von {task.completed_by_name}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -189,7 +251,7 @@ export default function MaintenanceTaskDetailPage() {
         )}
 
         {/* Dauer */}
-        {task.actual_duration_minutes && (
+        {(task.estimated_duration_minutes || task.actual_duration_minutes) && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
@@ -198,17 +260,80 @@ export default function MaintenanceTaskDetailPage() {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Dauer</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {task.actual_duration_minutes} Minuten
-                  {task.estimated_duration_minutes && (
-                    <span className="text-gray-500 ml-1">
-                      (geplant: {task.estimated_duration_minutes})
-                    </span>
+                  {task.actual_duration_minutes ? (
+                    <>
+                      {task.actual_duration_minutes} Min.
+                      {task.estimated_duration_minutes && (
+                        <span className="text-gray-500 ml-1">(geplant: {task.estimated_duration_minutes})</span>
+                      )}
+                    </>
+                  ) : (
+                    <>~{task.estimated_duration_minutes} Min.</>
                   )}
                 </p>
               </div>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Aufgaben-Details (Beschreibung, Priorität, Standort, Skill-Level) */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Aufgaben-Details
+          </h2>
+        </div>
+        <div className="p-4 space-y-4">
+          {/* Priorität & Skill-Level & Standort in einer Zeile */}
+          <div className="flex flex-wrap gap-3">
+            {task.priority && (
+              <span className={`px-3 py-1 text-sm rounded-full ${
+                task.priority === 'critical' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                task.priority === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                task.priority === 'normal' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
+                Priorität: {task.priority === 'critical' ? 'Kritisch' : task.priority === 'high' ? 'Hoch' : task.priority === 'normal' ? 'Normal' : 'Niedrig'}
+              </span>
+            )}
+            {task.required_skill_level && (
+              <span className={`px-3 py-1 text-sm rounded-full ${
+                task.required_skill_level === 'specialist' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                task.required_skill_level === 'technician' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                task.required_skill_level === 'operator' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
+                Skill: {task.required_skill_level === 'specialist' ? 'Spezialist' : 
+                        task.required_skill_level === 'technician' ? 'Techniker' : 
+                        task.required_skill_level === 'operator' ? 'Bediener' : 'Helfer'}
+              </span>
+            )}
+            {task.machine_location && (
+              <span className="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                📍 {task.machine_location}
+              </span>
+            )}
+            {!task.maintenance_plan_id && (
+              <span className="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                Allgemeine Aufgabe
+              </span>
+            )}
+          </div>
+
+          {/* Beschreibung */}
+          {task.description ? (
+            <div>
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Beschreibung</h4>
+              <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                {task.description}
+              </p>
+            </div>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 italic">Keine Beschreibung vorhanden</p>
+          )}
+        </div>
       </div>
 
       {/* Notizen & Probleme */}
@@ -317,13 +442,13 @@ export default function MaintenanceTaskDetailPage() {
                     {item.photo_path && (
                       <div className="pt-2">
                         <a 
-                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`} 
+                          href={`${API_BASE_URL}${item.photo_path}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-block"
                         >
                           <img 
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`}
+                            src={`${API_BASE_URL}${item.photo_path}`}
                             alt="Wartungsfoto" 
                             className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
                           />

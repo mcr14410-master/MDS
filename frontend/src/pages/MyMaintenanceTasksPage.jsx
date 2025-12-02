@@ -319,7 +319,7 @@ export default function MyTasksPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {task.plan_title}
+                        {task.plan_title || task.title}
                       </h3>
                       {getStatusBadge(task.status)}
                       {getIntervalText(task) && (
@@ -419,7 +419,7 @@ export default function MyTasksPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {task.plan_title}
+                        {task.plan_title || task.title}
                       </h3>
                       {getStatusBadge(task.status)}
                       {getIntervalText(task) && (

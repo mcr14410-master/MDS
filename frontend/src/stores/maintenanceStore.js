@@ -500,6 +500,23 @@ export const useMaintenanceStore = create((set, get) => ({
     }
   },
 
+  releaseTask: async (taskId, reason, keepAssignment = false) => {
+    try {
+      const response = await axios.put(`${MAINTENANCE_API}/tasks/${taskId}/release`, { reason, keepAssignment });
+      set(state => ({
+        tasks: state.tasks.map(t => t.id === parseInt(taskId) ? response.data.data : t),
+        myTasks: keepAssignment 
+          ? state.myTasks.map(t => t.id === parseInt(taskId) ? response.data.data : t)
+          : state.myTasks.filter(t => t.id !== parseInt(taskId)),
+        currentTask: null
+      }));
+      return response.data.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Fehler beim Zurücklegen der Aufgabe';
+      throw new Error(errorMessage);
+    }
+  },
+
   generateTasks: async () => {
     try {
       set({ loading: true, error: null });

@@ -7,6 +7,7 @@ import MeasuringEquipmentCard from '../components/measuringEquipment/MeasuringEq
 import MeasuringEquipmentTable from '../components/measuringEquipment/MeasuringEquipmentTable';
 import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentTypesModal from '../components/measuringEquipment/MeasuringEquipmentTypesModal';
+import API_BASE_URL from '../config/api';
 
 // Kalibrierungsstatus-Farben
 const calibrationStatusColors = {
@@ -112,15 +113,14 @@ export default function MeasuringEquipmentPage() {
   const handleExport = async (type) => {
     setShowExportMenu(false);
     const token = localStorage.getItem('token');
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     
     let url;
     switch (type) {
       case 'overview':
-        url = `${baseUrl}/api/reports/calibration-overview`;
+        url = `${API_BASE_URL}/api/reports/calibration-overview`;
         break;
       case 'due':
-        url = `${baseUrl}/api/reports/calibration-due`;
+        url = `${API_BASE_URL}/api/reports/calibration-due`;
         break;
       default:
         return;

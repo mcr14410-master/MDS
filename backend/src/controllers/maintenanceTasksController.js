@@ -43,7 +43,7 @@ exports.getAllTasks = async (req, res) => {
         -- Plan-Daten (nullable für standalone)
         mp.title AS plan_title,
         mp.description AS plan_description,
-        mp.required_skill_level,
+        COALESCE(mt.required_skill_level, mp.required_skill_level) AS required_skill_level,
         mp.is_shift_critical,
         mp.shift_deadline_time,
         mp.interval_type,
@@ -192,18 +192,18 @@ exports.getMyTasks = async (req, res) => {
         mt.*,
         mp.title AS plan_title,
         mp.description AS plan_description,
-        mp.required_skill_level,
-        mp.estimated_duration_minutes,
+        COALESCE(mt.required_skill_level, mp.required_skill_level) AS required_skill_level,
+        COALESCE(mt.estimated_duration_minutes, mp.estimated_duration_minutes) AS estimated_duration_minutes,
         mp.is_shift_critical,
         mp.shift_deadline_time,
-        mp.priority,
+        COALESCE(mt.priority, mp.priority, 'normal') AS priority,
         mp.instructions,
         mp.safety_notes,
         mp.interval_type,
         mp.interval_value,
         mp.interval_hours,
         m.name AS machine_name,
-        m.location AS machine_location,
+        COALESCE(mt.location, m.location) AS machine_location,
         mtype.name AS maintenance_type,
         mtype.icon AS maintenance_type_icon,
         mtype.color AS maintenance_type_color,
@@ -220,7 +220,7 @@ exports.getMyTasks = async (req, res) => {
         OR (
           mt.assigned_to IS NULL 
           AND mt.status = 'pending'
-          AND COALESCE(mp.required_skill_level, 'helper') = ANY($2::varchar[])
+          AND COALESCE(mt.required_skill_level, mp.required_skill_level, 'helper') = ANY($2::varchar[])
         )
       )
     `;
@@ -262,12 +262,12 @@ exports.getMyTasks = async (req, res) => {
       SELECT 
         COUNT(*) FILTER (WHERE mt.status = 'completed' AND DATE(mt.completed_at) = CURRENT_DATE AND mt.assigned_to = $1) AS completed_today,
         COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress') AND (
-          mt.assigned_to = $1 OR (mt.assigned_to IS NULL AND mt.status = 'pending' AND COALESCE(mp.required_skill_level, 'helper') = ANY($2::varchar[]))
+          mt.assigned_to = $1 OR (mt.assigned_to IS NULL AND mt.status = 'pending' AND COALESCE(mt.required_skill_level, mp.required_skill_level, 'helper') = ANY($2::varchar[]))
         )) AS open_tasks,
         SUM(CASE WHEN mt.status IN ('pending', 'assigned', 'in_progress') AND (
-          mt.assigned_to = $1 OR (mt.assigned_to IS NULL AND mt.status = 'pending' AND COALESCE(mp.required_skill_level, 'helper') = ANY($2::varchar[]))
+          mt.assigned_to = $1 OR (mt.assigned_to IS NULL AND mt.status = 'pending' AND COALESCE(mt.required_skill_level, mp.required_skill_level, 'helper') = ANY($2::varchar[]))
         )
-            THEN COALESCE(mp.estimated_duration_minutes, mt.estimated_duration_minutes, 0) ELSE 0 END) AS estimated_minutes_remaining
+            THEN COALESCE(mt.estimated_duration_minutes, mp.estimated_duration_minutes, 0) ELSE 0 END) AS estimated_minutes_remaining
       FROM maintenance_tasks mt
       LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
     `;
@@ -301,7 +301,7 @@ exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Task mit Details
+    // Task mit Details - LEFT JOINs für standalone Tasks
     const taskQuery = `
       SELECT 
         mt.*,
@@ -309,10 +309,10 @@ exports.getTaskById = async (req, res) => {
         mp.title AS plan_title,
         mp.description AS plan_description,
         mp.required_skill_level,
-        mp.estimated_duration_minutes,
+        COALESCE(mt.estimated_duration_minutes, mp.estimated_duration_minutes) AS estimated_duration_minutes,
         mp.is_shift_critical,
         mp.shift_deadline_time,
-        mp.priority,
+        COALESCE(mt.priority, mp.priority, 'normal') AS priority,
         mp.instructions,
         mp.safety_notes,
         mp.required_tools,
@@ -321,7 +321,7 @@ exports.getTaskById = async (req, res) => {
         m.id AS machine_id,
         m.name AS machine_name,
         m.machine_category,
-        m.location AS machine_location,
+        COALESCE(mt.location, m.location) AS machine_location,
         m.current_operating_hours,
         mtype.name AS maintenance_type,
         mtype.icon AS maintenance_type_icon,
@@ -330,9 +330,9 @@ exports.getTaskById = async (req, res) => {
         u_assigned.first_name AS assigned_to_first_name,
         u_completed.username AS completed_by_username
       FROM maintenance_tasks mt
-      JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
-      JOIN machines m ON mt.machine_id = m.id
-      JOIN maintenance_types mtype ON mp.maintenance_type_id = mtype.id
+      LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
+      LEFT JOIN machines m ON mt.machine_id = m.id
+      LEFT JOIN maintenance_types mtype ON mp.maintenance_type_id = mtype.id
       LEFT JOIN users u_assigned ON mt.assigned_to = u_assigned.id
       LEFT JOIN users u_completed ON mt.completed_by = u_completed.id
       WHERE mt.id = $1
@@ -349,26 +349,30 @@ exports.getTaskById = async (req, res) => {
 
     const task = taskResult.rows[0];
 
-    // Checklist Items mit Completion-Status
-    const checklistQuery = `
-      SELECT 
-        mci.*,
-        mcc.id AS completion_id,
-        mcc.completed,
-        mcc.measurement_value,
-        mcc.photo_path,
-        mcc.notes AS completion_notes,
-        mcc.completed_by,
-        mcc.completed_at,
-        u.username AS completed_by_username
-      FROM maintenance_checklist_items mci
-      LEFT JOIN maintenance_checklist_completions mcc 
-        ON mci.id = mcc.checklist_item_id AND mcc.maintenance_task_id = $1
-      LEFT JOIN users u ON mcc.completed_by = u.id
-      WHERE mci.maintenance_plan_id = $2
-      ORDER BY mci.sequence ASC
-    `;
-    const checklistResult = await pool.query(checklistQuery, [id, task.plan_id]);
+    // Checklist Items nur für plan_based Tasks laden
+    let checklistItems = [];
+    if (task.plan_id) {
+      const checklistQuery = `
+        SELECT 
+          mci.*,
+          mcc.id AS completion_id,
+          mcc.completed,
+          mcc.measurement_value,
+          mcc.photo_path,
+          mcc.notes AS completion_notes,
+          mcc.completed_by,
+          mcc.completed_at,
+          u.username AS completed_by_username
+        FROM maintenance_checklist_items mci
+        LEFT JOIN maintenance_checklist_completions mcc 
+          ON mci.id = mcc.checklist_item_id AND mcc.maintenance_task_id = $1
+        LEFT JOIN users u ON mcc.completed_by = u.id
+        WHERE mci.maintenance_plan_id = $2
+        ORDER BY mci.sequence ASC
+      `;
+      const checklistResult = await pool.query(checklistQuery, [id, task.plan_id]);
+      checklistItems = checklistResult.rows;
+    }
 
     // Fotos laden
     const photosQuery = `
@@ -398,7 +402,7 @@ exports.getTaskById = async (req, res) => {
       success: true,
       data: {
         ...task,
-        checklist_items: checklistResult.rows,
+        checklist_items: checklistItems,
         photos: photosResult.rows,
         escalations: escalationsResult.rows
       }
@@ -497,35 +501,70 @@ exports.assignTask = async (req, res) => {
     const { id } = req.params;
     const { user_id } = req.body;
 
+    // Zuweisung aufheben wenn user_id leer
     if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Benutzer-ID ist erforderlich'
+      const unassignQuery = `
+        UPDATE maintenance_tasks SET
+          assigned_to = NULL,
+          assigned_at = NULL,
+          status = 'pending',
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *
+      `;
+      const result = await pool.query(unassignQuery, [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Aufgabe nicht gefunden'
+        });
+      }
+      
+      return res.json({
+        success: true,
+        data: result.rows[0],
+        message: 'Zuweisung aufgehoben'
       });
     }
 
-    // Prüfen ob User existiert und Skill-Level passt
-    const userQuery = `
-      SELECT u.id, u.maintenance_skill_level, mp.required_skill_level
-      FROM users u, maintenance_tasks mt
-      JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
-      WHERE u.id = $1 AND mt.id = $2
+    // Task und User Daten laden (LEFT JOIN für standalone Tasks)
+    const checkQuery = `
+      SELECT 
+        mt.id,
+        mt.maintenance_plan_id,
+        COALESCE(mt.required_skill_level, mp.required_skill_level, 'helper') AS required_skill_level,
+        u.id AS user_id,
+        u.skill_level AS user_skill_level
+      FROM maintenance_tasks mt
+      LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
+      CROSS JOIN users u
+      WHERE mt.id = $1 AND u.id = $2
     `;
-    const userResult = await pool.query(userQuery, [user_id, id]);
+    const checkResult = await pool.query(checkQuery, [id, user_id]);
 
-    if (userResult.rows.length === 0) {
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Benutzer oder Aufgabe nicht gefunden'
       });
     }
 
-    // Skill-Level Mapping
-    const skillLevelMap = { 'helper': 1, 'operator': 2, 'technician': 3, 'specialist': 3 };
-    const userSkill = userResult.rows[0].maintenance_skill_level || 1;
-    const requiredSkill = skillLevelMap[userResult.rows[0].required_skill_level] || 1;
+    const taskData = checkResult.rows[0];
 
-    if (userSkill < requiredSkill) {
+    // Skill-Level Hierarchie prüfen
+    const skillHierarchy = {
+      'helper': ['helper', 'operator', 'technician', 'specialist'],
+      'operator': ['operator', 'technician', 'specialist'],
+      'technician': ['technician', 'specialist'],
+      'specialist': ['specialist']
+    };
+    
+    const requiredSkill = taskData.required_skill_level || 'helper';
+    const userSkill = taskData.user_skill_level || 'helper';
+    const allowedSkills = skillHierarchy[requiredSkill] || ['helper', 'operator', 'technician', 'specialist'];
+
+    if (!allowedSkills.includes(userSkill)) {
       return res.status(400).json({
         success: false,
         error: 'Benutzer hat nicht das erforderliche Skill-Level für diese Aufgabe',
@@ -579,15 +618,15 @@ exports.startTask = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Hole Task mit Plan-Infos und User Skill-Level
+    // Hole Task mit Plan-Infos und User Skill-Level (LEFT JOIN für standalone)
     const checkQuery = `
       SELECT 
         mt.*,
-        mp.required_skill_level,
-        mp.title AS plan_title,
+        COALESCE(mt.required_skill_level, mp.required_skill_level, 'helper') AS required_skill_level,
+        COALESCE(mt.title, mp.title) AS task_title,
         u.skill_level AS user_skill_level
       FROM maintenance_tasks mt
-      JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
+      LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
       CROSS JOIN users u
       WHERE mt.id = $1 AND u.id = $2
     `;
@@ -602,22 +641,22 @@ exports.startTask = async (req, res) => {
 
     const task = checkResult.rows[0];
 
-    // Skill-Level prüfen
+    // Skill-Level prüfen mit Hierarchie
     const skillHierarchy = {
-      'helper': 1,
-      'operator': 2,
-      'technician': 3,
-      'specialist': 4
+      'helper': ['helper', 'operator', 'technician', 'specialist'],
+      'operator': ['operator', 'technician', 'specialist'],
+      'technician': ['technician', 'specialist'],
+      'specialist': ['specialist']
     };
-    const requiredLevel = skillHierarchy[task.required_skill_level] || 2;
-    const userLevel = skillHierarchy[task.user_skill_level] || 1;
+    const allowedSkills = skillHierarchy[task.required_skill_level] || skillHierarchy['helper'];
+    const userSkill = task.user_skill_level || 'helper';
 
-    if (userLevel < requiredLevel) {
+    if (!allowedSkills.includes(userSkill)) {
       return res.status(403).json({
         success: false,
-        error: `Diese Aufgabe erfordert mindestens Skill-Level "${task.required_skill_level}". Ihr Level: "${task.user_skill_level}"`,
+        error: `Diese Aufgabe erfordert mindestens Skill-Level "${task.required_skill_level}". Ihr Level: "${userSkill}"`,
         required_skill_level: task.required_skill_level,
-        user_skill_level: task.user_skill_level
+        user_skill_level: userSkill
       });
     }
 
@@ -958,25 +997,42 @@ exports.completeTask = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Prüfen ob alle kritischen Checklist-Items erledigt sind
-    const criticalCheckQuery = `
-      SELECT mci.id, mci.title, mci.is_critical, mcc.completed
-      FROM maintenance_checklist_items mci
-      LEFT JOIN maintenance_checklist_completions mcc 
-        ON mci.id = mcc.checklist_item_id AND mcc.maintenance_task_id = $1
-      WHERE mci.maintenance_plan_id = (SELECT maintenance_plan_id FROM maintenance_tasks WHERE id = $1)
-        AND mci.is_critical = true
-        AND (mcc.completed IS NULL OR mcc.completed = false)
-    `;
-    const criticalResult = await client.query(criticalCheckQuery, [id]);
-
-    if (criticalResult.rows.length > 0) {
+    // Erst Task laden um zu prüfen ob plan_based oder standalone
+    const taskCheckQuery = `SELECT * FROM maintenance_tasks WHERE id = $1`;
+    const taskCheck = await client.query(taskCheckQuery, [id]);
+    
+    if (taskCheck.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
-        error: 'Nicht alle kritischen Checklist-Items sind erledigt',
-        missing_items: criticalResult.rows.map(r => r.title)
+        error: 'Aufgabe nicht gefunden'
       });
+    }
+    
+    const existingTask = taskCheck.rows[0];
+    const isPlanBased = existingTask.maintenance_plan_id !== null;
+
+    // Prüfen ob alle kritischen Checklist-Items erledigt sind (nur bei plan_based)
+    if (isPlanBased) {
+      const criticalCheckQuery = `
+        SELECT mci.id, mci.title, mci.is_critical, mcc.completed
+        FROM maintenance_checklist_items mci
+        LEFT JOIN maintenance_checklist_completions mcc 
+          ON mci.id = mcc.checklist_item_id AND mcc.maintenance_task_id = $1
+        WHERE mci.maintenance_plan_id = $2
+          AND mci.is_critical = true
+          AND (mcc.completed IS NULL OR mcc.completed = false)
+      `;
+      const criticalResult = await client.query(criticalCheckQuery, [id, existingTask.maintenance_plan_id]);
+
+      if (criticalResult.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          error: 'Nicht alle kritischen Checklist-Items sind erledigt',
+          missing_items: criticalResult.rows.map(r => r.title)
+        });
+      }
     }
 
     // Task abschließen
@@ -1012,90 +1068,93 @@ exports.completeTask = async (req, res) => {
     }
 
     const task = taskResult.rows[0];
-
-    // Wartungsplan aktualisieren (nächste Fälligkeit berechnen)
-    const planQuery = `
-      SELECT mp.*, m.current_operating_hours
-      FROM maintenance_plans mp
-      JOIN machines m ON mp.machine_id = m.id
-      WHERE mp.id = $1
-    `;
-    const planResult = await client.query(planQuery, [task.maintenance_plan_id]);
-    const plan = planResult.rows[0];
-
     let nextDueAt = null;
     let nextDueHours = null;
 
-    // Zeitbasiertes Intervall
-    if (plan.interval_type && plan.interval_value) {
-      const now = new Date();
-      switch (plan.interval_type) {
-        case 'hours':
-          nextDueAt = new Date(now.getTime() + plan.interval_value * 60 * 60 * 1000);
-          break;
-        case 'days':
-          nextDueAt = new Date(now.getTime() + plan.interval_value * 24 * 60 * 60 * 1000);
-          break;
-        case 'weeks':
-          nextDueAt = new Date(now.getTime() + plan.interval_value * 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'months':
-          nextDueAt = new Date(now);
-          nextDueAt.setMonth(nextDueAt.getMonth() + plan.interval_value);
-          break;
-        case 'years':
-          nextDueAt = new Date(now);
-          nextDueAt.setFullYear(nextDueAt.getFullYear() + plan.interval_value);
-          break;
+    // Wartungsplan aktualisieren (nur bei plan_based Tasks)
+    if (isPlanBased) {
+      const planQuery = `
+        SELECT mp.*, m.current_operating_hours
+        FROM maintenance_plans mp
+        JOIN machines m ON mp.machine_id = m.id
+        WHERE mp.id = $1
+      `;
+      const planResult = await client.query(planQuery, [task.maintenance_plan_id]);
+      const plan = planResult.rows[0];
+
+      if (plan) {
+        // Zeitbasiertes Intervall
+        if (plan.interval_type && plan.interval_value) {
+          const now = new Date();
+          switch (plan.interval_type) {
+            case 'hours':
+              nextDueAt = new Date(now.getTime() + plan.interval_value * 60 * 60 * 1000);
+              break;
+            case 'days':
+              nextDueAt = new Date(now.getTime() + plan.interval_value * 24 * 60 * 60 * 1000);
+              break;
+            case 'weeks':
+              nextDueAt = new Date(now.getTime() + plan.interval_value * 7 * 24 * 60 * 60 * 1000);
+              break;
+            case 'months':
+              nextDueAt = new Date(now);
+              nextDueAt.setMonth(nextDueAt.getMonth() + plan.interval_value);
+              break;
+            case 'years':
+              nextDueAt = new Date(now);
+              nextDueAt.setFullYear(nextDueAt.getFullYear() + plan.interval_value);
+              break;
+          }
+        }
+
+        // Betriebsstunden-basiertes Intervall
+        if (plan.interval_hours) {
+          const intervalHours = parseFloat(plan.interval_hours);
+          const currentHours = parseFloat(plan.current_operating_hours) || 0;
+          nextDueHours = currentHours + intervalHours;
+        }
+
+        // Plan aktualisieren
+        const updateNextDueAt = plan.interval_hours ? null : nextDueAt;
+        const updateNextDueHours = plan.interval_hours ? nextDueHours : null;
+        
+        await client.query(`
+          UPDATE maintenance_plans SET
+            last_completed_at = CURRENT_TIMESTAMP,
+            last_completed_hours = $1,
+            next_due_at = $2,
+            next_due_hours = $3,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $4
+        `, [
+          plan.current_operating_hours,
+          updateNextDueAt,
+          updateNextDueHours,
+          task.maintenance_plan_id
+        ]);
       }
     }
 
-    // Betriebsstunden-basiertes Intervall
-    if (plan.interval_hours) {
-      const intervalHours = parseFloat(plan.interval_hours);
-      const currentHours = parseFloat(plan.current_operating_hours) || 0;
-      nextDueHours = currentHours + intervalHours;
+    // Maschine last_maintenance aktualisieren (nur wenn Maschine zugeordnet)
+    if (task.machine_id) {
+      await client.query(`
+        UPDATE machines SET
+          last_maintenance = CURRENT_DATE,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `, [task.machine_id]);
     }
-
-    // Plan aktualisieren
-    // Für betriebsstundenbasierte Pläne: next_due_at auf NULL setzen
-    // Für zeitbasierte Pläne: next_due_hours auf NULL setzen
-    const updateNextDueAt = plan.interval_hours ? null : nextDueAt;
-    const updateNextDueHours = plan.interval_hours ? nextDueHours : null;
-    
-    await client.query(`
-      UPDATE maintenance_plans SET
-        last_completed_at = CURRENT_TIMESTAMP,
-        last_completed_hours = $1,
-        next_due_at = $2,
-        next_due_hours = $3,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4
-    `, [
-      plan.current_operating_hours,
-      updateNextDueAt,
-      updateNextDueHours,
-      task.maintenance_plan_id
-    ]);
-
-    // Maschine last_maintenance aktualisieren
-    await client.query(`
-      UPDATE machines SET
-        last_maintenance = CURRENT_DATE,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-    `, [task.machine_id]);
 
     await client.query('COMMIT');
 
     res.json({
       success: true,
       data: taskResult.rows[0],
-      next_maintenance: {
+      next_maintenance: isPlanBased ? {
         next_due_at: nextDueAt,
         next_due_hours: nextDueHours
-      },
-      message: 'Wartungsaufgabe abgeschlossen'
+      } : null,
+      message: isPlanBased ? 'Wartungsaufgabe abgeschlossen' : 'Aufgabe abgeschlossen'
     });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -1147,6 +1206,74 @@ exports.cancelTask = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Fehler beim Abbrechen der Aufgabe',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Release task (put back to pool for others to pick up)
+ * PUT /api/maintenance/tasks/:id/release
+ */
+exports.releaseTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, keepAssignment } = req.body;
+
+    let query;
+    if (keepAssignment) {
+      // "Für mich behalten" - Status zurück auf assigned, aber User bleibt
+      query = `
+        UPDATE maintenance_tasks SET
+          status = 'assigned',
+          started_at = NULL,
+          notes = CASE 
+            WHEN $1::text IS NOT NULL AND $1::text != '' 
+            THEN COALESCE(notes || E'\\n', '') || 'Pausiert: ' || $1::text
+            ELSE notes
+          END,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2 AND status IN ('pending', 'assigned', 'in_progress')
+        RETURNING *
+      `;
+    } else {
+      // "Für alle freigeben" - Komplett zurücksetzen
+      query = `
+        UPDATE maintenance_tasks SET
+          status = 'pending',
+          assigned_to = NULL,
+          assigned_at = NULL,
+          started_at = NULL,
+          notes = CASE 
+            WHEN $1::text IS NOT NULL AND $1::text != '' 
+            THEN COALESCE(notes || E'\\n', '') || 'Zurückgelegt: ' || $1::text
+            ELSE notes
+          END,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2 AND status IN ('pending', 'assigned', 'in_progress')
+        RETURNING *
+      `;
+    }
+
+    const result = await pool.query(query, [reason || null, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Aufgabe kann nicht zurückgelegt werden'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: keepAssignment ? 'Aufgabe pausiert' : 'Aufgabe zurückgelegt'
+    });
+  } catch (error) {
+    console.error('Fehler beim Zurücklegen der Aufgabe:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Zurücklegen der Aufgabe',
       message: error.message
     });
   }
@@ -1307,6 +1434,7 @@ exports.createStandaloneTask = async (req, res) => {
       priority = 'normal',
       due_date,
       assigned_to,
+      required_skill_level,
       estimated_duration_minutes,
       machine_id,
       recurrence_pattern = 'none'
@@ -1319,13 +1447,17 @@ exports.createStandaloneTask = async (req, res) => {
       });
     }
 
+    // Entweder direkte Zuweisung ODER Skill-Level, nicht beides
+    const effectiveAssignedTo = assigned_to || null;
+    const effectiveSkillLevel = !assigned_to && required_skill_level ? required_skill_level : null;
+
     const insertQuery = `
       INSERT INTO maintenance_tasks (
         task_type, title, description, location, priority,
-        due_date, assigned_to, estimated_duration_minutes,
+        due_date, assigned_to, required_skill_level, estimated_duration_minutes,
         machine_id, recurrence_pattern, created_by, status, created_at
       ) VALUES (
-        'standalone', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', CURRENT_TIMESTAMP
+        'standalone', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', CURRENT_TIMESTAMP
       )
       RETURNING *
     `;
@@ -1336,7 +1468,8 @@ exports.createStandaloneTask = async (req, res) => {
       location || null,
       priority,
       due_date || null,
-      assigned_to || null,
+      effectiveAssignedTo,
+      effectiveSkillLevel,
       estimated_duration_minutes || null,
       machine_id || null,
       recurrence_pattern,
@@ -1561,11 +1694,14 @@ exports.getTaskDetails = async (req, res) => {
     const taskQuery = `
       SELECT 
         mt.*,
+        COALESCE(mt.title, mp.title) AS title,
         mp.title AS plan_title,
+        COALESCE(mt.description, mp.description) AS description,
         mp.description AS plan_description,
-        mp.estimated_duration_minutes,
+        COALESCE(mt.estimated_duration_minutes, mp.estimated_duration_minutes) AS estimated_duration_minutes,
+        COALESCE(mt.required_skill_level, mp.required_skill_level) AS required_skill_level,
         m.name AS machine_name,
-        m.location AS machine_location,
+        COALESCE(mt.location, m.location) AS machine_location,
         m.machine_type,
         COALESCE(NULLIF(CONCAT(u_completed.first_name, ' ', u_completed.last_name), ' '), u_completed.username) AS completed_by_name,
         u_completed.username AS completed_by_username,
@@ -1644,30 +1780,94 @@ exports.getTaskDetails = async (req, res) => {
  */
 exports.getDashboardStats = async (req, res) => {
   try {
+    // Haupt-Task-Statistiken
     const statsQuery = `
       SELECT 
         COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress') 
           AND mt.due_date < CURRENT_DATE) AS overdue_count,
         COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress') 
           AND DATE(mt.due_date) = CURRENT_DATE) AS due_today_count,
+        COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress') 
+          AND mt.due_date >= CURRENT_DATE 
+          AND mt.due_date <= CURRENT_DATE + INTERVAL '7 days') AS due_this_week_count,
         COUNT(*) FILTER (WHERE mt.status = 'in_progress') AS in_progress_count,
         COUNT(*) FILTER (WHERE mt.status = 'completed' 
           AND DATE(mt.completed_at) = CURRENT_DATE) AS completed_today_count,
-        COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress')) AS total_open_count
+        COUNT(*) FILTER (WHERE mt.status = 'completed' 
+          AND mt.completed_at >= CURRENT_DATE - INTERVAL '7 days') AS completed_this_week_count,
+        COUNT(*) FILTER (WHERE mt.status IN ('pending', 'assigned', 'in_progress')) AS total_open_count,
+        COUNT(*) FILTER (WHERE mt.task_type = 'standalone') AS standalone_count
       FROM maintenance_tasks mt
     `;
     
-    const result = await pool.query(statsQuery);
-    const stats = result.rows[0];
+    // Schichtkritische Tasks
+    const criticalQuery = `
+      SELECT COUNT(*) AS shift_critical_count
+      FROM maintenance_tasks mt
+      JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
+      WHERE mt.status IN ('pending', 'assigned', 'in_progress')
+        AND mp.is_shift_critical = true
+    `;
+    
+    // Aktive Wartungspläne
+    const plansQuery = `
+      SELECT COUNT(*) AS active_plans_count
+      FROM maintenance_plans
+      WHERE is_active = true
+    `;
+    
+    // Offene Eskalationen
+    const escalationsQuery = `
+      SELECT COUNT(*) AS escalation_count
+      FROM maintenance_escalations
+      WHERE status IN ('open', 'acknowledged')
+    `;
+    
+    // Kürzlich abgeschlossene Tasks (letzte 5)
+    const recentQuery = `
+      SELECT 
+        mt.id,
+        COALESCE(mt.title, mp.title) AS title,
+        m.name AS machine_name,
+        mt.completed_at,
+        u.first_name || ' ' || u.last_name AS completed_by_name
+      FROM maintenance_tasks mt
+      LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
+      LEFT JOIN machines m ON mt.machine_id = m.id
+      LEFT JOIN users u ON mt.completed_by = u.id
+      WHERE mt.status = 'completed'
+      ORDER BY mt.completed_at DESC
+      LIMIT 5
+    `;
+
+    const [statsResult, criticalResult, plansResult, escalationsResult, recentResult] = await Promise.all([
+      pool.query(statsQuery),
+      pool.query(criticalQuery),
+      pool.query(plansQuery),
+      pool.query(escalationsQuery),
+      pool.query(recentQuery)
+    ]);
+    
+    const stats = statsResult.rows[0];
+    const critical = criticalResult.rows[0];
+    const plans = plansResult.rows[0];
+    const escalations = escalationsResult.rows[0];
 
     res.json({
       success: true,
       data: {
         overdue_count: parseInt(stats.overdue_count) || 0,
         due_today_count: parseInt(stats.due_today_count) || 0,
+        due_this_week_count: parseInt(stats.due_this_week_count) || 0,
         in_progress_count: parseInt(stats.in_progress_count) || 0,
         completed_today_count: parseInt(stats.completed_today_count) || 0,
-        total_open_count: parseInt(stats.total_open_count) || 0
+        completed_this_week_count: parseInt(stats.completed_this_week_count) || 0,
+        total_open_count: parseInt(stats.total_open_count) || 0,
+        standalone_count: parseInt(stats.standalone_count) || 0,
+        shift_critical_count: parseInt(critical.shift_critical_count) || 0,
+        active_plans_count: parseInt(plans.active_plans_count) || 0,
+        escalation_count: parseInt(escalations.escalation_count) || 0,
+        recent_completions: recentResult.rows
       }
     });
   } catch (error) {

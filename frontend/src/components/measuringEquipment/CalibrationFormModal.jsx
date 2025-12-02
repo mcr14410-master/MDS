@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMeasuringEquipmentStore } from '../../stores/measuringEquipmentStore';
 import { toast } from '../Toaster';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import API_BASE_URL from '../../config/api';
 
 export default function CalibrationFormModal({ equipmentId, calibration, onClose }) {
   const { createCalibration, updateCalibration, uploadCertificate, deleteCertificate } = useMeasuringEquipmentStore();
