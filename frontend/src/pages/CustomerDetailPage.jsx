@@ -6,8 +6,7 @@ import { toast } from '../components/Toaster';
 import CustomerFormModal from '../components/customers/CustomerFormModal';
 import ContactFormModal from '../components/customers/ContactFormModal';
 import axios from '../utils/axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import API_BASE_URL from '../config/api';
 
 export default function CustomerDetailPage() {
   const { id } = useParams();

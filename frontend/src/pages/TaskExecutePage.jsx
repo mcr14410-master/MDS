@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
+import API_BASE_URL from '../config/api';
 
 export default function TaskExecutePage() {
   const { id } = useParams();
@@ -76,7 +77,7 @@ export default function TaskExecutePage() {
         
         try {
           const uploadResponse = await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/maintenance/tasks/${id}/checklist/${item.id}/photo`,
+            `${API_BASE_URL}/api/maintenance/tasks/${id}/checklist/${item.id}/photo`,
             {
               method: 'POST',
               headers: {
@@ -306,13 +307,13 @@ export default function TaskExecutePage() {
           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referenzbild</h4>
             <a 
-              href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentTask.plan_reference_image}`}
+              href={`${API_BASE_URL}${currentTask.plan_reference_image}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
             >
               <img 
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentTask.plan_reference_image}`}
+                src={`${API_BASE_URL}${currentTask.plan_reference_image}`}
                 alt="Referenzbild" 
                 className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
               />
@@ -399,13 +400,13 @@ export default function TaskExecutePage() {
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Referenzbild:</p>
                       <a 
-                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                        href={`${API_BASE_URL}${item.reference_image}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-block"
                       >
                         <img 
-                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                          src={`${API_BASE_URL}${item.reference_image}`}
                           alt="Referenzbild" 
                           className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
                         />
@@ -553,13 +554,13 @@ export default function TaskExecutePage() {
                   {item.photo_path && (
                     <div className="mt-3">
                       <a 
-                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`} 
+                        href={`${API_BASE_URL}${item.photo_path}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="inline-block"
                       >
                         <img 
-                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`}
+                          src={`${API_BASE_URL}${item.photo_path}`}
                           alt="Wartungsfoto" 
                           className="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
                         />

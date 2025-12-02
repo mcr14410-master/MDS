@@ -7,8 +7,7 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import CalibrationFormModal from '../components/measuringEquipment/CalibrationFormModal';
 import MeasuringEquipmentStorageSection from '../components/measuringEquipment/MeasuringEquipmentStorageSection';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import API_BASE_URL from '../config/api';
 
 const statusColors = {
   ok: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',

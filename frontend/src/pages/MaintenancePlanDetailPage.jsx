@@ -21,6 +21,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
+import API_BASE_URL from '../config/api';
 
 export default function MaintenancePlanDetailPage() {
   const { id } = useParams();
@@ -160,7 +161,7 @@ export default function MaintenancePlanDetailPage() {
         
         try {
           const uploadResponse = await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/maintenance/checklist/${editingItem.id}/reference-image`,
+            `${API_BASE_URL}/api/maintenance/checklist/${editingItem.id}/reference-image`,
             {
               method: 'POST',
               headers: {
@@ -448,13 +449,13 @@ export default function MaintenancePlanDetailPage() {
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referenzbild</h4>
             <a 
-              href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentPlan.reference_image}`}
+              href={`${API_BASE_URL}${currentPlan.reference_image}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
             >
               <img 
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${currentPlan.reference_image}`}
+                src={`${API_BASE_URL}${currentPlan.reference_image}`}
                 alt="Referenzbild" 
                 className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
               />
@@ -575,13 +576,13 @@ export default function MaintenancePlanDetailPage() {
                     {item.reference_image && (
                       <div className="mt-2">
                         <a 
-                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                          href={`${API_BASE_URL}${item.reference_image}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-block"
                         >
                           <img 
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.reference_image}`}
+                            src={`${API_BASE_URL}${item.reference_image}`}
                             alt="Referenzbild" 
                             className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
                           />
@@ -930,7 +931,7 @@ export default function MaintenancePlanDetailPage() {
                   {editingItem.reference_image && (
                     <div className="mb-3">
                       <img 
-                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${editingItem.reference_image}`}
+                        src={`${API_BASE_URL}${editingItem.reference_image}`}
                         alt="Referenzbild" 
                         className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
                       />

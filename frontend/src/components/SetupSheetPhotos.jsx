@@ -1,6 +1,7 @@
 // frontend/src/components/SetupSheetPhotos.jsx
 import { useState, useRef } from 'react';
 import { useSetupSheetsStore } from '../stores/setupSheetsStore';
+import API_BASE_URL from '../config/api';
 
 const PHOTO_TYPES = [
   { value: 'general', label: 'Allgemeines Foto' },
@@ -170,7 +171,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
                   onClick={() => setViewingPhoto(photo)}
                 >
                   <img
-                    src={`http://localhost:5000/${photo.file_path}`}
+                    src={`${API_BASE_URL}/${photo.file_path}`}
                     alt={photo.caption || 'Setup photo'}
                     className="w-full h-48 object-cover"
                   />
@@ -333,7 +334,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={`http://localhost:5000/${viewingPhoto.file_path}`}
+              src={`${API_BASE_URL}/${viewingPhoto.file_path}`}
               alt={viewingPhoto.caption || 'Setup photo'}
               className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg"
             />

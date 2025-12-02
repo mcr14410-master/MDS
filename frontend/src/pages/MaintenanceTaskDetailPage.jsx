@@ -14,6 +14,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import axios from '../utils/axios';
+import API_BASE_URL from '../config/api';
 
 export default function MaintenanceTaskDetailPage() {
   const { id } = useParams();
@@ -317,13 +318,13 @@ export default function MaintenanceTaskDetailPage() {
                     {item.photo_path && (
                       <div className="pt-2">
                         <a 
-                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`} 
+                          href={`${API_BASE_URL}${item.photo_path}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-block"
                         >
                           <img 
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${item.photo_path}`}
+                            src={`${API_BASE_URL}${item.photo_path}`}
                             alt="Wartungsfoto" 
                             className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
                           />
