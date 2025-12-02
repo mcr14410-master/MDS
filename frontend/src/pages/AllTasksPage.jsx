@@ -35,11 +35,35 @@ function AllTasksPage() {
     location: '',
     priority: 'normal',
     due_date: '',
+    assignment_type: 'direct', // 'direct' oder 'skill_level'
     assigned_to: '',
+    required_skill_level: '',
     estimated_duration_minutes: '',
     machine_id: ''
   });
   const [savingTask, setSavingTask] = useState(false);
+
+  // Skill-Level Hierarchie: Wer kann welche Tasks ausführen
+  const canUserDoTask = (userSkillLevel, requiredSkillLevel) => {
+    const hierarchy = {
+      'helper': ['helper', 'operator', 'technician', 'specialist'],
+      'operator': ['operator', 'technician', 'specialist'],
+      'technician': ['technician', 'specialist'],
+      'specialist': ['specialist']
+    };
+    const allowedLevels = hierarchy[requiredSkillLevel || 'helper'] || hierarchy['helper'];
+    return allowedLevels.includes(userSkillLevel || 'helper');
+  };
+
+  const getSkillLevelLabel = (level) => {
+    const labels = {
+      'specialist': 'Spezialist',
+      'technician': 'Techniker', 
+      'operator': 'Bediener',
+      'helper': 'Helfer'
+    };
+    return labels[level] || level;
+  };
 
   // Lade ALLE Tasks einmal, filtere im Frontend
   useEffect(() => {
@@ -81,10 +105,15 @@ function AllTasksPage() {
     setSavingTask(true);
     try {
       await createStandaloneTask({
-        ...newTaskForm,
-        assigned_to: newTaskForm.assigned_to || null,
-        machine_id: newTaskForm.machine_id || null,
-        estimated_duration_minutes: newTaskForm.estimated_duration_minutes ? parseInt(newTaskForm.estimated_duration_minutes) : null
+        title: newTaskForm.title,
+        description: newTaskForm.description,
+        location: newTaskForm.location,
+        priority: newTaskForm.priority,
+        due_date: newTaskForm.due_date,
+        assigned_to: newTaskForm.assignment_type === 'direct' ? (newTaskForm.assigned_to || null) : null,
+        required_skill_level: newTaskForm.assignment_type === 'skill_level' ? (newTaskForm.required_skill_level || null) : null,
+        estimated_duration_minutes: newTaskForm.estimated_duration_minutes ? parseInt(newTaskForm.estimated_duration_minutes) : null,
+        machine_id: newTaskForm.machine_id || null
       });
       setShowNewTaskModal(false);
       setNewTaskForm({
@@ -93,7 +122,9 @@ function AllTasksPage() {
         location: '',
         priority: 'normal',
         due_date: '',
+        assignment_type: 'direct',
         assigned_to: '',
+        required_skill_level: '',
         estimated_duration_minutes: '',
         machine_id: ''
       });
@@ -488,17 +519,26 @@ function AllTasksPage() {
                           className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         >
                           <option value="">Nicht zugewiesen</option>
-                          {users.filter(u => u.is_active).map(user => (
-                            <option key={user.id} value={user.id}>
-                              {user.full_name || user.username}
-                            </option>
-                          ))}
+                          {users.filter(u => u.is_active).map(user => {
+                            const canDo = canUserDoTask(user.skill_level, task.required_skill_level);
+                            return (
+                              <option 
+                                key={user.id} 
+                                value={user.id}
+                                disabled={!canDo}
+                                className={!canDo ? 'text-gray-400' : ''}
+                              >
+                                {user.full_name || user.username}
+                                {!canDo ? ` (${getSkillLevelLabel(user.skill_level)})` : ''}
+                              </option>
+                            );
+                          })}
                         </select>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
-                        to={`/maintenance/tasks/${task.id}/execute`}
+                        to={`/maintenance/tasks/${task.id}/details`}
                         className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                       >
                         Details →
@@ -582,12 +622,13 @@ function AllTasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fällig am
+                    Fällig am <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
                     value={newTaskForm.due_date}
                     onChange={(e) => setNewTaskForm({ ...newTaskForm, due_date: e.target.value })}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
@@ -606,22 +647,71 @@ function AllTasksPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Zuweisen an
+              {/* Zuweisung */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Zuweisung
                 </label>
-                <select
-                  value={newTaskForm.assigned_to}
-                  onChange={(e) => setNewTaskForm({ ...newTaskForm, assigned_to: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Nicht zugewiesen</option>
-                  {users.filter(u => u.is_active).map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.full_name || user.username}
-                    </option>
-                  ))}
-                </select>
+                
+                {/* Radio Buttons */}
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="assignment_type"
+                      value="direct"
+                      checked={newTaskForm.assignment_type === 'direct'}
+                      onChange={(e) => setNewTaskForm({ ...newTaskForm, assignment_type: e.target.value, required_skill_level: '' })}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Direkt zuweisen</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="assignment_type"
+                      value="skill_level"
+                      checked={newTaskForm.assignment_type === 'skill_level'}
+                      onChange={(e) => setNewTaskForm({ ...newTaskForm, assignment_type: e.target.value, assigned_to: '' })}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Nach Skill-Level</span>
+                  </label>
+                </div>
+
+                {/* Dynamisches Dropdown */}
+                {newTaskForm.assignment_type === 'direct' ? (
+                  <select
+                    value={newTaskForm.assigned_to}
+                    onChange={(e) => setNewTaskForm({ ...newTaskForm, assigned_to: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Nicht zugewiesen (offen)</option>
+                    {users.filter(u => u.is_active).map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.full_name || user.username}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={newTaskForm.required_skill_level}
+                    onChange={(e) => setNewTaskForm({ ...newTaskForm, required_skill_level: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Skill-Level wählen...</option>
+                    <option value="helper">Helfer</option>
+                    <option value="operator">Bediener</option>
+                    <option value="technician">Techniker</option>
+                    <option value="specialist">Spezialist</option>
+                  </select>
+                )}
+                
+                {newTaskForm.assignment_type === 'skill_level' && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Die Aufgabe wird allen Mitarbeitern mit passendem Skill-Level angezeigt.
+                  </p>
+                )}
               </div>
 
               <div>

@@ -161,6 +161,9 @@ router.put('/tasks/:id/complete', maintenanceTasksController.completeTask);
 // Task abbrechen
 router.put('/tasks/:id/cancel', maintenanceTasksController.cancelTask);
 
+// Task zurücklegen (für andere freigeben)
+router.put('/tasks/:id/release', maintenanceTasksController.releaseTask);
+
 // ============================================================
 // OPERATING HOURS
 // ============================================================

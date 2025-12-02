@@ -6,6 +6,7 @@ import LowStockWidget from '../components/dashboard/LowStockWidget';
 import PurchaseOrdersWidget from '../components/dashboard/PurchaseOrdersWidget';
 import CalibrationAlertWidget from '../components/dashboard/CalibrationAlertWidget';
 import MaintenanceWidget from '../components/dashboard/MaintenanceWidget';
+import MaintenanceOverviewWidget from '../components/dashboard/MaintenanceOverviewWidget';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -241,9 +242,12 @@ export default function DashboardPage() {
           <PurchaseOrdersWidget />
         )}
 
-		{/* Maintenance Widget */}
+		{/* Maintenance Widgets - nebeneinander */}
 		{user?.permissions?.includes('maintenance.read') && (
-		  <MaintenanceWidget />
+		  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+		    <MaintenanceOverviewWidget />
+		    <MaintenanceWidget />
+		  </div>
 		)}		
 				
 		{/* Calibration Alert Widget */}

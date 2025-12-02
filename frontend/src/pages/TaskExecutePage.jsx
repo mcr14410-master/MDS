@@ -16,7 +16,10 @@ import {
   Gauge,
   MapPin,
   Clock,
-  Info
+  Info,
+  RotateCcw,
+  PauseCircle,
+  Users
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import API_BASE_URL from '../config/api';
@@ -33,6 +36,7 @@ export default function TaskExecutePage() {
     completeChecklistItem,
     completeTask,
     cancelTask,
+    releaseTask,
     createEscalation,
     clearCurrentTask,
     clearError 
@@ -172,6 +176,15 @@ export default function TaskExecutePage() {
     }
   };
 
+  const handleRelease = async (keepAssignment = false) => {
+    try {
+      await releaseTask(id, cancelReason, keepAssignment);
+      navigate('/maintenance/tasks/my');
+    } catch (err) {
+      console.error('Error releasing task:', err);
+    }
+  };
+
   const getProgress = () => {
     if (!currentTask?.checklist_items) return { completed: 0, total: 0, percentage: 0 };
     const total = currentTask.checklist_items.length;
@@ -218,7 +231,7 @@ export default function TaskExecutePage() {
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
               </Link>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                {currentTask.plan_title}
+                {currentTask.plan_title || currentTask.title}
               </h1>
               {currentTask.is_shift_critical && (
                 <span className="px-2 py-1 text-xs rounded-full bg-purple-500 text-white flex items-center gap-1">
@@ -229,13 +242,15 @@ export default function TaskExecutePage() {
             </div>
 
             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <Gauge className="w-4 h-4" />
-                {currentTask.machine_name}
-              </span>
+              {currentTask.machine_name && (
+                <span className="flex items-center gap-1">
+                  <Gauge className="w-4 h-4" />
+                  {currentTask.machine_name}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                {currentTask.machine_location || 'Kein Standort'}
+                {currentTask.machine_location || currentTask.location || 'Kein Standort'}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
@@ -256,23 +271,25 @@ export default function TaskExecutePage() {
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-gray-500">Fortschritt</span>
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              {progress.completed} / {progress.total} ({progress.percentage}%)
-            </span>
+        {/* Progress Bar - nur bei Tasks mit Checklist */}
+        {progress.total > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-gray-500">Fortschritt</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {progress.completed} / {progress.total} ({progress.percentage}%)
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div 
+                className={`h-3 rounded-full transition-all ${
+                  progress.percentage === 100 ? 'bg-green-500' : 'bg-blue-500'
+                }`}
+                style={{ width: `${progress.percentage}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-            <div 
-              className={`h-3 rounded-full transition-all ${
-                progress.percentage === 100 ? 'bg-green-500' : 'bg-blue-500'
-              }`}
-              style={{ width: `${progress.percentage}%` }}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Instructions & Safety Notes */}
         {(currentTask.instructions || currentTask.safety_notes) && (
@@ -327,6 +344,26 @@ export default function TaskExecutePage() {
         <div className="bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-lg flex items-center justify-between">
           <span>{error}</span>
           <button onClick={clearError} className="text-red-600 hover:text-red-800">×</button>
+        </div>
+      )}
+
+      {/* Standalone Task ohne Checklist */}
+      {(!currentTask.checklist_items || currentTask.checklist_items.length === 0) && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="text-center">
+            <ClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Allgemeine Aufgabe
+            </h3>
+            {currentTask.description && (
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                {currentTask.description}
+              </p>
+            )}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Diese Aufgabe hat keine Checkliste. Du kannst sie direkt als erledigt markieren.
+            </p>
+          </div>
         </div>
       )}
 
@@ -627,33 +664,37 @@ export default function TaskExecutePage() {
         ))}
       </div>
 
-      {/* Complete Button */}
-      {progress.total > 0 && (
+      {/* Complete Button - auch für standalone Tasks */}
+      {(progress.total > 0 || !currentTask.plan_id) && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">
-                {progress.percentage === 100 
-                  ? 'Alle Schritte erledigt!' 
-                  : allCriticalCompleted
-                    ? 'Kritische Schritte erledigt'
-                    : 'Noch nicht alle kritischen Schritte erledigt'}
+                {!currentTask.plan_id
+                  ? 'Aufgabe bereit zum Abschließen'
+                  : progress.percentage === 100 
+                    ? 'Alle Schritte erledigt!' 
+                    : allCriticalCompleted
+                      ? 'Kritische Schritte erledigt'
+                      : 'Noch nicht alle kritischen Schritte erledigt'}
               </h3>
               <p className="text-sm text-gray-500">
-                {progress.completed} von {progress.total} Schritten abgeschlossen
+                {!currentTask.plan_id
+                  ? 'Diese Aufgabe hat keine Checkliste'
+                  : `${progress.completed} von ${progress.total} Schritten abgeschlossen`}
               </p>
             </div>
             <button
               onClick={() => setShowCompleteModal(true)}
-              disabled={!allCriticalCompleted}
+              disabled={currentTask.plan_id && !allCriticalCompleted}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium ${
-                allCriticalCompleted
+                (!currentTask.plan_id || allCriticalCompleted)
                   ? 'bg-green-600 text-white hover:bg-green-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
               <CheckCircle className="w-5 h-5" />
-              Wartung abschließen
+              {currentTask.plan_id ? 'Wartung abschließen' : 'Aufgabe abschließen'}
             </button>
           </div>
         </div>
@@ -664,7 +705,7 @@ export default function TaskExecutePage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Wartung abschließen
+              {currentTask.plan_id ? 'Wartung abschließen' : 'Aufgabe abschließen'}
             </h3>
             <div className="space-y-4">
               <div>
@@ -704,35 +745,81 @@ export default function TaskExecutePage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Wartung abbrechen
+              Aufgabe beenden
             </h3>
-            <div className="space-y-4">
+            
+            <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Grund für Abbruch
+                  Grund (optional)
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Warum wird die Wartung abgebrochen?"
+                  placeholder="Warum wird die Aufgabe beendet?"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  rows={3}
+                  rows={2}
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end mt-6">
+
+            {/* Drei Optionen */}
+            <div className="space-y-3">
+              {/* Für mich behalten (pausieren) */}
               <button
-                onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => handleRelease(true)}
+                className="w-full p-4 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-left"
               >
-                Zurück
+                <div className="flex items-start gap-3">
+                  <PauseCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-blue-800 dark:text-blue-300">Für mich behalten</div>
+                    <div className="text-sm text-blue-600 dark:text-blue-400">
+                      Aufgabe pausieren, bleibt mir zugewiesen.
+                    </div>
+                  </div>
+                </div>
               </button>
+
+              {/* Für alle freigeben */}
+              <button
+                onClick={() => handleRelease(false)}
+                className="w-full p-4 rounded-lg border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <Users className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-yellow-800 dark:text-yellow-300">Für alle freigeben</div>
+                    <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Aufgabe zurücklegen, kann von anderen übernommen werden.
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Endgültig abbrechen */}
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                className="w-full p-4 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-left"
               >
-                <XCircle className="w-4 h-4" />
-                Abbrechen
+                <div className="flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-red-800 dark:text-red-300">Endgültig abbrechen</div>
+                    <div className="text-sm text-red-600 dark:text-red-400">
+                      Aufgabe wird dauerhaft abgebrochen und als storniert markiert.
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Zurück zur Aufgabe
               </button>
             </div>
           </div>

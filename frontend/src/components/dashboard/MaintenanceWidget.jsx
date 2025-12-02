@@ -94,7 +94,7 @@ export default function MaintenanceWidget() {
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Wrench className="w-5 h-5" />
-          Wartung
+          Meine Aufgaben
         </h2>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -109,7 +109,7 @@ export default function MaintenanceWidget() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
           <Wrench className="w-5 h-5" />
-          Wartung
+          Meine Aufgaben
         </h2>
         <Link 
           to="/maintenance/my-tasks"
@@ -254,7 +254,7 @@ export default function MaintenanceWidget() {
         <div className="text-center py-6">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Keine offenen Wartungsaufgaben
+            Keine offenen Aufgaben für dich
           </p>
         </div>
       )}
