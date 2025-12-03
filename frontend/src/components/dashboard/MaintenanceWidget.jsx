@@ -112,7 +112,7 @@ export default function MaintenanceWidget() {
           Meine Aufgaben
         </h2>
         <Link 
-          to="/maintenance/my-tasks"
+          to="/maintenance/tasks/my"
           className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
         >
           Alle anzeigen →
@@ -124,7 +124,7 @@ export default function MaintenanceWidget() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {/* Überfällig */}
           <Link 
-            to="/maintenance/my-tasks"
+            to="/maintenance/tasks/my"
             className={`p-3 rounded-lg border transition-all hover:shadow-md ${
               stats.overdue_count > 0 
                 ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
@@ -144,7 +144,7 @@ export default function MaintenanceWidget() {
 
           {/* Heute fällig */}
           <Link 
-            to="/maintenance/my-tasks"
+            to="/maintenance/tasks/my"
             className={`p-3 rounded-lg border transition-all hover:shadow-md ${
               stats.due_today_count > 0 
                 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' 
@@ -164,7 +164,7 @@ export default function MaintenanceWidget() {
 
           {/* In Arbeit */}
           <Link 
-            to="/maintenance/my-tasks"
+            to="/maintenance/tasks/my"
             className={`p-3 rounded-lg border transition-all hover:shadow-md ${
               stats.in_progress_count > 0 
                 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' 
@@ -206,16 +206,14 @@ export default function MaintenanceWidget() {
           {tasks.map((task) => (
             <Link
               key={task.id}
-              to={task.status === 'in_progress' 
-                ? `/maintenance/tasks/${task.id}/execute` 
-                : `/maintenance/my-tasks`}
+              to={`/maintenance/tasks/${task.id}/${task.status === 'in_progress' ? 'execute' : 'details'}`}
               className={`block p-3 rounded-lg border border-l-4 ${getPriorityColor(task.priority)} border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                      {task.plan_title}
+                      {task.plan_title || task.title}
                     </span>
                     {getStatusBadge(task.status)}
                     {task.is_shift_critical && (
@@ -226,7 +224,9 @@ export default function MaintenanceWidget() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    <span>{task.machine_name}</span>
+                    {(task.machine_name || task.machine_location || task.location) && (
+                      <span>{task.machine_name || task.machine_location || task.location}</span>
+                    )}
                     {task.due_date && (
                       <span className={`flex items-center gap-1 ${
                         isOverdue(task.due_date) ? 'text-red-500 font-medium' :
