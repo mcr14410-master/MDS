@@ -115,7 +115,7 @@ dist/
 
 # Gatsby
 .cache/
-public/
+/public/
 
 # Serverless directories
 .serverless/
