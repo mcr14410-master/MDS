@@ -83,6 +83,12 @@ const rolesRoutes = require('./routes/rolesRoutes');
 const permissionsRoutes = require('./routes/permissionsRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const wikiRoutes = require('./routes/wikiRoutes');
+const consumableCategoriesRoutes = require('./routes/consumableCategoriesRoutes');
+const consumablesRoutes = require('./routes/consumablesRoutes');
+// REMOVED after simplification - stock/transactions no longer needed
+// const consumableStockRoutes = require('./routes/consumableStockRoutes');
+// const consumableTransactionsRoutes = require('./routes/consumableTransactionsRoutes');
+const consumableDocumentsRoutes = require('./routes/consumableDocumentsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -127,6 +133,12 @@ app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/wiki', wikiRoutes);
+app.use('/api/consumable-categories', consumableCategoriesRoutes);
+app.use('/api/consumables', consumablesRoutes);
+// REMOVED after simplification
+// app.use('/api/consumable-stock', consumableStockRoutes);
+// app.use('/api/consumable-transactions', consumableTransactionsRoutes);
+app.use('/api/consumable-documents', consumableDocumentsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

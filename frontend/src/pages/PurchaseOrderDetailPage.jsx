@@ -444,7 +444,7 @@ export default function PurchaseOrderDetailPage() {
                     Pos.
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Werkzeug
+                    Artikel
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Bestellt
@@ -466,7 +466,15 @@ export default function PurchaseOrderDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {currentOrder.items?.map((item) => (
+                {/* Tools Section */}
+                {currentOrder.items?.filter(i => i.item_type === 'tool' || !i.item_type).length > 0 && (
+                  <tr className="bg-blue-50 dark:bg-blue-900/20">
+                    <td colSpan={canReceive(currentOrder) ? 7 : 6} className="px-4 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">
+                      🔧 Werkzeuge
+                    </td>
+                  </tr>
+                )}
+                {currentOrder.items?.filter(i => i.item_type === 'tool' || !i.item_type).map((item) => (
                   <tr key={item.id}>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       {item.line_number}
@@ -477,12 +485,75 @@ export default function PurchaseOrderDetailPage() {
                       </div>
                       {item.article_number && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.article_number}
+                          Art.-Nr.: {item.article_number}
                         </div>
                       )}
                       {item.location_name && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {item.location_name} / {item.compartment_name}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-900 dark:text-white">
+                      {item.quantity_ordered} {item.unit}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`text-sm ${
+                        item.quantity_received >= item.quantity_ordered
+                          ? 'text-green-600 dark:text-green-400'
+                          : item.quantity_received > 0
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-gray-900 dark:text-white'
+                      }`}>
+                        {item.quantity_received} {item.unit}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-900 dark:text-white">
+                      {formatCurrency(item.unit_price, currentOrder.currency)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-white">
+                      {formatCurrency(item.line_total, currentOrder.currency)}
+                    </td>
+                    {canReceive(currentOrder) && (
+                      <td className="px-4 py-3 text-center">
+                        {item.quantity_received < item.quantity_ordered && (
+                          <button
+                            onClick={() => handleReceivePartial(item)}
+                            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Buchen
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+
+                {/* Consumables Section */}
+                {currentOrder.items?.filter(i => i.item_type === 'consumable').length > 0 && (
+                  <tr className="bg-amber-50 dark:bg-amber-900/20">
+                    <td colSpan={canReceive(currentOrder) ? 7 : 6} className="px-4 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase">
+                      📦 Verbrauchsmaterial
+                    </td>
+                  </tr>
+                )}
+                {currentOrder.items?.filter(i => i.item_type === 'consumable').map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                      {item.line_number}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {item.consumable_name || 'Unbekannt'}
+                      </div>
+                      {item.consumable_article_number && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Art.-Nr.: {item.consumable_article_number}
+                        </div>
+                      )}
+                      {item.consumable_category_name && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.consumable_category_name}
                         </div>
                       )}
                     </td>

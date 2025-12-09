@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, Search } from 'lucide-react';
+import { X, Plus, Trash2, Save, Search, Wrench, Package } from 'lucide-react';
 import { useSuppliersStore } from '../../stores/suppliersStore';
 import { useStorageItemsStore } from '../../stores/storageItemsStore';
 import { usePurchaseOrdersStore } from '../../stores/purchaseOrdersStore';
+import { useConsumablesStore } from '../../stores/consumablesStore';
 
 export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
   const { suppliers, fetchSuppliers, getSupplierItems } = useSuppliersStore();
   const { storageItems, fetchStorageItems } = useStorageItemsStore();
   const { createOrder, updateOrder } = usePurchaseOrdersStore();
+  const { consumables, fetchConsumables } = useConsumablesStore();
   
   const [loading, setLoading] = useState(false);
   const [supplierItems, setSupplierItems] = useState([]);
@@ -23,6 +25,7 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
     if (isOpen) {
       fetchSuppliers({ is_active: true });
       fetchStorageItems();
+      fetchConsumables({ is_active: true });
       
       if (order) {
         // Edit mode: Populate form with existing order
@@ -31,9 +34,12 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
           notes: order.notes || '',
           items: order.items?.map(item => ({
             id: item.id, // Keep item ID for updates
-            storage_item_id: item.storage_item_id,
+            item_type: item.item_type || 'tool',
+            storage_item_id: item.storage_item_id || null,
+            consumable_id: item.consumable_id || null,
             quantity: item.quantity_ordered || item.quantity || 0,
-            unit_price: item.unit_price
+            unit_price: item.unit_price,
+            unit: item.unit || 'pieces'
           })) || []
         });
         
@@ -127,7 +133,7 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
       const newItems = [...prev.items];
       newItems[index] = { ...newItems[index], [field]: value };
       
-      // Auto-fill price when storage item is selected
+      // Auto-fill price when storage item is selected (Tools)
       if (field === 'storage_item_id' && value) {
         const supplierItem = supplierItems.find(
           si => si.storage_item_id === parseInt(value)
@@ -137,14 +143,35 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
         }
       }
       
+      // Auto-fill price and unit when consumable is selected
+      if (field === 'consumable_id' && value) {
+        const consumable = consumables.find(c => c.id === parseInt(value));
+        if (consumable) {
+          // Preis pro Basiseinheit oder Gebindepreis/Gebindegröße
+          if (consumable.unit_price) {
+            newItems[index].unit_price = consumable.unit_price;
+          } else if (consumable.package_price && consumable.package_size) {
+            newItems[index].unit_price = consumable.package_price / consumable.package_size;
+          }
+          newItems[index].unit = consumable.base_unit || 'pieces';
+        }
+      }
+      
       return { ...prev, items: newItems };
     });
   };
 
-  const addItem = () => {
+  const addItem = (itemType = 'tool') => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { storage_item_id: '', quantity: 1, unit_price: 0 }]
+      items: [...prev.items, { 
+        item_type: itemType,
+        storage_item_id: itemType === 'tool' ? '' : null,
+        consumable_id: itemType === 'consumable' ? '' : null,
+        quantity: 1, 
+        unit_price: 0,
+        unit: 'pieces'
+      }]
     }));
   };
 
@@ -171,6 +198,27 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
     const toolName = item.tool_name || item.tool_article_number || `ID ${item.tool_master_id}`;
     const location = item.location_name ? ` (${item.location_name})` : '';
     return `${toolName}${location}`;
+  };
+
+  const getConsumableName = (consumableId) => {
+    const item = consumables.find(c => c.id === parseInt(consumableId));
+    if (!item) return '';
+    return item.name + (item.article_number ? ` (${item.article_number})` : '');
+  };
+
+  const getItemDisplayName = (item) => {
+    if (item.item_type === 'consumable') {
+      return item.consumable_name || getConsumableName(item.consumable_id) || 'Unbekannt';
+    }
+    return item.tool_name || getStorageItemName(item.storage_item_id) || 'Unbekannt';
+  };
+
+  // Get consumables for this supplier
+  const getFilteredConsumables = () => {
+    if (!formData.supplier_id) return [];
+    return consumables.filter(c => 
+      c.supplier_id === parseInt(formData.supplier_id) && c.is_active
+    );
   };
 
   const getFilteredStorageItems = () => {
@@ -212,10 +260,15 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
       return;
     }
     
-    // Check all items have storage_item_id
-    const invalidItems = formData.items.filter(item => !item.storage_item_id);
+    // Check all items have either storage_item_id or consumable_id
+    const invalidItems = formData.items.filter(item => {
+      if (item.item_type === 'consumable') {
+        return !item.consumable_id;
+      }
+      return !item.storage_item_id;
+    });
     if (invalidItems.length > 0) {
-      alert('Bitte wählen Sie für alle Artikel einen Lagerartikel aus');
+      alert('Bitte wählen Sie für alle Artikel einen gültigen Artikel aus');
       return;
     }
 
@@ -224,15 +277,18 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
       // Calculate expected delivery date
       const deliveryInfo = calculateDeliveryInfo();
       
-      // Prepare data
+      // Prepare data - include item_type and consumable_id
       const submitData = {
         supplier_id: parseInt(formData.supplier_id),
-        expected_delivery_date: deliveryInfo.date || new Date().toISOString().split('T')[0], // Use calculated or today
+        expected_delivery_date: deliveryInfo.date || new Date().toISOString().split('T')[0],
         notes: formData.notes || null,
         items: formData.items.map(item => ({
-          storage_item_id: parseInt(item.storage_item_id),
+          item_type: item.item_type || 'tool',
+          storage_item_id: item.item_type === 'tool' ? parseInt(item.storage_item_id) : null,
+          consumable_id: item.item_type === 'consumable' ? parseInt(item.consumable_id) : null,
           quantity: parseFloat(item.quantity),
-          unit_price: parseFloat(item.unit_price)
+          unit_price: parseFloat(item.unit_price),
+          unit: item.unit || 'pieces'
         }))
       };
 
@@ -374,16 +430,28 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Bestellpositionen
               </h3>
-              <button
-                type="button"
-                onClick={addItem}
-                disabled={!formData.supplier_id}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                title={!formData.supplier_id ? "Bitte wählen Sie zuerst einen Lieferanten" : "Position hinzufügen"}
-              >
-                <Plus className="w-4 h-4" />
-                Position hinzufügen
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => addItem('tool')}
+                  disabled={!formData.supplier_id}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  title={!formData.supplier_id ? "Bitte wählen Sie zuerst einen Lieferanten" : "Werkzeug hinzufügen"}
+                >
+                  <Wrench className="w-4 h-4" />
+                  Werkzeug
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addItem('consumable')}
+                  disabled={!formData.supplier_id}
+                  className="flex items-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  title={!formData.supplier_id ? "Bitte wählen Sie zuerst einen Lieferanten" : "Verbrauchsmaterial hinzufügen"}
+                >
+                  <Package className="w-4 h-4" />
+                  Verbrauchsmat.
+                </button>
+              </div>
             </div>
 
             {!formData.supplier_id && (
@@ -430,7 +498,8 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
 
                 {/* Header Row */}
                 <div className="hidden md:grid grid-cols-12 gap-3 px-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <div className="col-span-5">Artikel</div>
+                  <div className="col-span-1">Typ</div>
+                  <div className="col-span-4">Artikel</div>
                   <div className="col-span-2">Menge</div>
                   <div className="col-span-2">Stückpreis (€)</div>
                   <div className="col-span-2 text-right">Gesamt (€)</div>
@@ -439,33 +508,68 @@ export default function OrderForm({ order, isOpen, onClose, onSuccess }) {
 
                 {/* Item Rows */}
                 {formData.items.map((item, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    {/* Storage Item Selector */}
-                    <div className="col-span-1 md:col-span-5">
+                  <div key={index} className={`grid grid-cols-1 md:grid-cols-12 gap-3 p-3 rounded-lg ${
+                    item.item_type === 'consumable' 
+                      ? 'bg-amber-50 dark:bg-amber-900/20' 
+                      : 'bg-blue-50 dark:bg-blue-900/20'
+                  }`}>
+                    {/* Item Type Badge */}
+                    <div className="col-span-1 md:col-span-1 flex items-center">
+                      {item.item_type === 'consumable' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded text-xs">
+                          <Package className="w-3 h-3" />
+                          VM
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded text-xs">
+                          <Wrench className="w-3 h-3" />
+                          WZ
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Item Selector - Tool or Consumable */}
+                    <div className="col-span-1 md:col-span-4">
                       <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Artikel
                       </label>
-                      <select
-                        value={item.storage_item_id}
-                        onChange={(e) => handleItemChange(index, 'storage_item_id', e.target.value)}
-                        required
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="">-- Artikel wählen --</option>
-                        {getFilteredStorageItems().map(storageItem => (
-                          <option key={storageItem.id} value={storageItem.id}>
-                            {getStorageItemName(storageItem.id)}
-                          </option>
-                        ))}
-                      </select>
-                      {storageItemSearch && getFilteredStorageItems().length === 0 && (
+                      {item.item_type === 'consumable' ? (
+                        <select
+                          value={item.consumable_id || ''}
+                          onChange={(e) => handleItemChange(index, 'consumable_id', e.target.value)}
+                          required
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        >
+                          <option value="">-- Verbrauchsmaterial wählen --</option>
+                          {getFilteredConsumables().map(c => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} {c.article_number ? `(${c.article_number})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select
+                          value={item.storage_item_id || ''}
+                          onChange={(e) => handleItemChange(index, 'storage_item_id', e.target.value)}
+                          required
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">-- Werkzeug wählen --</option>
+                          {getFilteredStorageItems().map(storageItem => (
+                            <option key={storageItem.id} value={storageItem.id}>
+                              {getStorageItemName(storageItem.id)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {item.item_type !== 'consumable' && !storageItemSearch && getFilteredStorageItems().length === 0 && (
                         <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                          Keine Artikel gefunden für "{storageItemSearch}"
+                          Dieser Lieferant hat keine konfigurierten Werkzeuge
                         </p>
                       )}
-                      {!storageItemSearch && getFilteredStorageItems().length === 0 && (
+                      {item.item_type === 'consumable' && getFilteredConsumables().length === 0 && (
                         <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                          Dieser Lieferant hat keine konfigurierten Artikel
+                          Kein Verbrauchsmaterial für diesen Lieferanten
                         </p>
                       )}
                     </div>

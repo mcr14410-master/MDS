@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Loader2, Package, MapPin, Phone, Mail, Globe, Calendar, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Loader2, Package, MapPin, Phone, Mail, Globe, Calendar, TrendingUp, Droplet } from 'lucide-react';
 import { useSuppliersStore } from '../stores/suppliersStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
+import axios from '../utils/axios';
 
 export default function SupplierDetailPage() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function SupplierDetailPage() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'items', 'statistics'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [supplierItems, setSupplierItems] = useState([]);
+  const [consumables, setConsumables] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function SupplierDetailPage() {
     try {
       await fetchSupplier(id);
       await loadSupplierItems();
+      await loadConsumables();
     } catch (err) {
       console.error('Error loading supplier:', err);
     }
@@ -48,6 +51,16 @@ export default function SupplierDetailPage() {
       setSupplierItems([]);
     } finally {
       setItemsLoading(false);
+    }
+  };
+
+  const loadConsumables = async () => {
+    try {
+      const response = await axios.get(`/api/consumables?supplier_id=${id}`);
+      setConsumables(response.data.data || []);
+    } catch (err) {
+      console.error('Error loading consumables:', err);
+      setConsumables([]);
     }
   };
 
@@ -530,6 +543,87 @@ export default function SupplierDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Consumables Section */}
+              {consumables.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Droplet className="w-5 h-5 text-amber-500" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Verbrauchsmaterial ({consumables.length})
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Artikel
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Lieferanten Art.-Nr.
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Kategorie
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Preis
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {consumables.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-6 py-4">
+                              <Link
+                                to={`/consumables/${item.id}`}
+                                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                              >
+                                {item.name}
+                              </Link>
+                              {item.article_number && (
+                                <div className="text-xs text-gray-500">{item.article_number}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-mono">
+                              {item.supplier_article_number || '-'}
+                            </td>
+                            <td className="px-6 py-4">
+                              {item.category_name && (
+                                <span className="inline-flex px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                  {item.category_name}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                              {item.unit_price ? (
+                                <>{parseFloat(item.unit_price).toFixed(2)} €/{item.base_unit}</>
+                              ) : item.package_price ? (
+                                <>{parseFloat(item.package_price).toFixed(2)} €/Geb.</>
+                              ) : '-'}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-2 py-0.5 text-xs rounded-full ${
+                                item.stock_status === 'reorder' 
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  : item.stock_status === 'low'
+                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                  : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              }`}>
+                                {item.stock_status === 'reorder' ? '! Nachbestellen' : 
+                                 item.stock_status === 'low' ? '⚠ Wird knapp' : '✓ OK'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

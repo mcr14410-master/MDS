@@ -1,10 +1,10 @@
-import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink, Grip, LayoutGrid } from 'lucide-react';
+import { Edit, Trash2, Box, Package, AlertCircle, Ruler, Wrench, CheckCircle, AlertTriangle, XCircle, Lock, ExternalLink, Grip, LayoutGrid, Droplet } from 'lucide-react';
 import { useStorageStore } from '../../stores/storageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { toast } from '../Toaster';
 import { useNavigate } from 'react-router-dom';
 
-export default function CompartmentCard({ compartment, items, itemsCount, onEdit }) {
+export default function CompartmentCard({ compartment, items, itemsCount, consumables = [], onEdit }) {
   const { user } = useAuthStore();
   const { deleteCompartment } = useStorageStore();
   const navigate = useNavigate();
@@ -15,10 +15,13 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
   const clampingDevices = items.filter(item => item.item_type === 'clamping_device');
   const fixtures = items.filter(item => item.item_type === 'fixture');
 
+  // Total items including consumables
+  const totalItemsCount = itemsCount + consumables.length;
+
   const handleDelete = async () => {
-    if (itemsCount > 0) {
+    if (totalItemsCount > 0) {
       toast.error(
-        `Dieses Fach kann nicht gelöscht werden, da es noch ${itemsCount} Lagerartikel enthält. Bitte zuerst alle Artikel umlagern oder löschen.`
+        `Dieses Fach kann nicht gelöscht werden, da es noch ${totalItemsCount} Artikel enthält. Bitte zuerst alle Artikel umlagern oder löschen.`
       );
       return;
     }
@@ -164,7 +167,13 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
                 <span>{fixtures.length} Vorrichtung{fixtures.length !== 1 ? 'en' : ''}</span>
               </div>
             )}
-            {itemsCount === 0 && (
+            {consumables.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Droplet className="w-4 h-4 text-amber-400" />
+                <span>{consumables.length} Verbrauchsmat.</span>
+              </div>
+            )}
+            {totalItemsCount === 0 && (
               <div className="flex items-center gap-1.5">
                 <Package className="w-4 h-4" />
                 <span>Leer</span>
@@ -292,6 +301,46 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
             </div>
           )}
 
+          {/* Consumables List */}
+          {consumables.length > 0 && (
+            <div className="space-y-1.5">
+              {consumables.slice(0, 4).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded cursor-pointer hover:bg-amber-500/20 transition-colors"
+                  onClick={() => navigate(`/consumables/${item.id}`)}
+                  title="Klicken für Details"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Droplet className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    <span className="text-xs font-medium text-amber-300 flex-shrink-0">
+                      {item.article_number || `#${item.id}`}
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">
+                      {item.name}
+                    </span>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span className={`inline-flex px-1.5 py-0.5 text-xs rounded ${
+                      item.stock_status === 'reorder' 
+                        ? 'bg-red-500/20 text-red-400'
+                        : item.stock_status === 'low'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-green-500/20 text-green-400'
+                    }`}>
+                      {item.stock_status === 'reorder' ? '!' : item.stock_status === 'low' ? '⚠' : '✓'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {consumables.length > 4 && (
+                <div className="text-xs text-gray-500 pl-2">
+                  +{consumables.length - 4} weitere Verbrauchsmaterialien
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Low Stock Warning (for tools) */}
           {tools.some((item) => item.is_low_stock) && (
             <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-400">
@@ -313,6 +362,14 @@ export default function CompartmentCard({ compartment, items, itemsCount, onEdit
             <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-400">
               <AlertTriangle className="w-3 h-3" />
               {measuringEquipment.filter((item) => item.equipment_calibration_status === 'due_soon').length} Messmittel mit bald fälliger Kalibrierung
+            </div>
+          )}
+
+          {/* Consumables Reorder Warning */}
+          {consumables.some((item) => item.stock_status === 'reorder') && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
+              <XCircle className="w-3 h-3" />
+              {consumables.filter((item) => item.stock_status === 'reorder').length} Verbrauchsmaterial nachbestellen
             </div>
           )}
         </div>

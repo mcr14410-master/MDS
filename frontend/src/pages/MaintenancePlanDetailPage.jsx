@@ -18,10 +18,13 @@ import {
   X,
   Save,
   Play,
-  MoreVertical
+  MoreVertical,
+  Droplet
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
+import { useConsumablesStore } from '../stores/consumablesStore';
 import API_BASE_URL from '../config/api';
+import axios from '../utils/axios';
 
 export default function MaintenancePlanDetailPage() {
   const { id } = useParams();
@@ -44,6 +47,7 @@ export default function MaintenancePlanDetailPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showAddConsumableModal, setShowAddConsumableModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [itemForm, setItemForm] = useState({
     title: '',
@@ -60,6 +64,12 @@ export default function MaintenancePlanDetailPage() {
     expected_answer: null
   });
   const [saving, setSaving] = useState(false);
+
+  // Consumables
+  const { consumables: allConsumables, fetchConsumables } = useConsumablesStore();
+  const [selectedConsumableId, setSelectedConsumableId] = useState('');
+  const [consumableQuantity, setConsumableQuantity] = useState('');
+  const [consumableNotes, setConsumableNotes] = useState('');
 
   useEffect(() => {
     loadPlan();
@@ -110,6 +120,47 @@ export default function MaintenancePlanDetailPage() {
       on_failure_action: 'continue',
       expected_answer: null
     });
+  };
+
+  // Consumables Handler
+  const handleOpenAddConsumable = async () => {
+    await fetchConsumables();
+    setSelectedConsumableId('');
+    setConsumableQuantity('');
+    setConsumableNotes('');
+    setShowAddConsumableModal(true);
+  };
+
+  const handleAddConsumable = async () => {
+    if (!selectedConsumableId) return;
+    
+    try {
+      setSaving(true);
+      await axios.post(`/api/maintenance/plans/${id}/consumables`, {
+        consumable_id: parseInt(selectedConsumableId),
+        quantity: consumableQuantity ? parseFloat(consumableQuantity) : null,
+        notes: consumableNotes || null
+      });
+      setShowAddConsumableModal(false);
+      await loadPlan();
+    } catch (err) {
+      console.error('Error adding consumable:', err);
+      alert(err.response?.data?.error || 'Fehler beim Hinzufügen');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveConsumable = async (linkId) => {
+    if (!confirm('Verbrauchsmaterial wirklich entfernen?')) return;
+    
+    try {
+      await axios.delete(`/api/maintenance/plans/${id}/consumables/${linkId}`);
+      await loadPlan();
+    } catch (err) {
+      console.error('Error removing consumable:', err);
+      alert('Fehler beim Entfernen');
+    }
   };
 
   const handleAddItem = async () => {
@@ -444,6 +495,69 @@ export default function MaintenancePlanDetailPage() {
           </div>
         )}
 
+        {/* Verbrauchsmaterial */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <Droplet className="w-4 h-4 text-amber-500" />
+              Benötigtes Verbrauchsmaterial
+            </h4>
+            <button
+              onClick={handleOpenAddConsumable}
+              className="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Hinzufügen
+            </button>
+          </div>
+          
+          {currentPlan.consumables?.length > 0 ? (
+            <div className="space-y-2">
+              {currentPlan.consumables.map((item) => (
+                <div
+                  key={item.link_id}
+                  className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to={`/consumables/${item.id}`}
+                      className="font-medium text-amber-800 dark:text-amber-300 hover:underline"
+                    >
+                      {item.name}
+                    </Link>
+                    {item.quantity && (
+                      <span className="text-sm text-amber-600 dark:text-amber-400">
+                        ({item.quantity} {item.base_unit})
+                      </span>
+                    )}
+                    {item.stock_status === 'reorder' && (
+                      <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 rounded-full">
+                        Nachbestellen!
+                      </span>
+                    )}
+                    {item.stock_status === 'low' && (
+                      <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 rounded-full">
+                        Wird knapp
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveConsumable(item.link_id)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                    title="Entfernen"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+              Kein Verbrauchsmaterial hinterlegt
+            </p>
+          )}
+        </div>
+
         {/* Referenzbild (nur Anzeige) */}
         {currentPlan.reference_image && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -720,6 +834,93 @@ export default function MaintenancePlanDetailPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Endgültig löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Consumable Modal */}
+      {showAddConsumableModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Droplet className="w-5 h-5 text-amber-500" />
+                Verbrauchsmaterial hinzufügen
+              </h3>
+              <button
+                onClick={() => setShowAddConsumableModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Verbrauchsmaterial *
+                </label>
+                <select
+                  value={selectedConsumableId}
+                  onChange={(e) => setSelectedConsumableId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Bitte wählen...</option>
+                  {allConsumables
+                    .filter(c => !currentPlan.consumables?.some(pc => pc.id === c.id))
+                    .map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.article_number && `(${c.article_number})`}
+                        {c.stock_status === 'reorder' ? ' ⚠️ Nachbestellen' : ''}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Menge pro Wartung (optional)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={consumableQuantity}
+                  onChange={(e) => setConsumableQuantity(e.target.value)}
+                  placeholder="z.B. 0.5"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Hinweis (optional)
+                </label>
+                <input
+                  type="text"
+                  value={consumableNotes}
+                  onChange={(e) => setConsumableNotes(e.target.value)}
+                  placeholder="z.B. Nach dem Wechsel auffüllen"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowAddConsumableModal(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleAddConsumable}
+                disabled={!selectedConsumableId || saving}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {saving ? 'Speichern...' : 'Hinzufügen'}
               </button>
             </div>
           </div>

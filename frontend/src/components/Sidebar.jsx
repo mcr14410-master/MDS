@@ -378,10 +378,11 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Lager & Einkauf" 
               icon={Icons.Storage}
-              routes={['/storage', '/suppliers', '/purchase-orders']}
+              routes={['/storage', '/consumables', '/suppliers', '/purchase-orders']}
               collapsed={collapsed}
             >
               <NavSubItem to="/storage" label="Lagerorte" />
+              <NavSubItem to="/consumables" label="Verbrauchsmaterial" />
               <NavSubItem to="/suppliers" label="Lieferanten" />
               <NavSubItem to="/purchase-orders" label="Bestellungen" />
             </NavGroup>

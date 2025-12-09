@@ -159,24 +159,32 @@ exports.getOrderById = async (req, res) => {
       WHERE po.id = $1
     `;
 
-    // Get order items with tool info
+    // Get order items with tool/consumable info
     const itemsQuery = `
       SELECT
         poi.*,
-        si.item_type,
+        poi.item_type,
+        -- Tool info
         tm.article_number,
         tm.tool_name,
         tm.manufacturer,
         tm.manufacturer_part_number,
         tc.name as tool_category_name,
         sc.name as compartment_name,
-        sl.name as location_name
+        sl.name as location_name,
+        -- Consumable info
+        c.name as consumable_name,
+        c.article_number as consumable_article_number,
+        c.manufacturer as consumable_manufacturer,
+        cc.name as consumable_category_name
       FROM purchase_order_items poi
       LEFT JOIN storage_items si ON si.id = poi.storage_item_id
       LEFT JOIN tool_master tm ON tm.id = si.tool_master_id
       LEFT JOIN tool_categories tc ON tc.id = tm.category_id
       LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
       LEFT JOIN storage_locations sl ON sl.id = sc.location_id
+      LEFT JOIN consumables c ON c.id = poi.consumable_id
+      LEFT JOIN consumable_categories cc ON cc.id = c.category_id
       WHERE poi.purchase_order_id = $1
       ORDER BY poi.line_number
     `;
@@ -280,11 +288,14 @@ exports.createOrder = async (req, res) => {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const line_total = parseFloat(item.quantity) * parseFloat(item.unit_price);
+      const itemType = item.item_type || 'tool';
 
       const itemQuery = `
         INSERT INTO purchase_order_items (
           purchase_order_id,
+          item_type,
           storage_item_id,
+          consumable_id,
           line_number,
           quantity_ordered,
           unit,
@@ -292,13 +303,15 @@ exports.createOrder = async (req, res) => {
           line_total,
           condition_received,
           notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `;
 
       const itemResult = await client.query(itemQuery, [
         order.id,
-        item.storage_item_id,
+        itemType,
+        itemType === 'tool' ? item.storage_item_id : null,
+        itemType === 'consumable' ? item.consumable_id : null,
         item.line_number || (i + 1),
         item.quantity,
         item.unit || 'pieces',
@@ -426,11 +439,14 @@ exports.updateOrder = async (req, res) => {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const line_total = parseFloat(item.quantity) * parseFloat(item.unit_price);
+        const itemType = item.item_type || 'tool';
 
         await client.query(`
           INSERT INTO purchase_order_items (
             purchase_order_id,
+            item_type,
             storage_item_id,
+            consumable_id,
             line_number,
             quantity_ordered,
             unit,
@@ -438,10 +454,12 @@ exports.updateOrder = async (req, res) => {
             line_total,
             condition_received,
             notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
           id,
-          item.storage_item_id,
+          itemType,
+          itemType === 'tool' ? item.storage_item_id : null,
+          itemType === 'consumable' ? item.consumable_id : null,
           item.line_number || (i + 1),
           item.quantity,
           item.unit || 'pieces',

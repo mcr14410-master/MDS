@@ -1,0 +1,277 @@
+### Consumables API Tests
+### Requires REST Client extension in VS Code
+
+@baseUrl = http://localhost:5000/api
+@token = {{$dotenv TOKEN}}
+
+### ============================================================================
+### CONSUMABLE CATEGORIES
+### ============================================================================
+
+### Get all categories
+GET {{baseUrl}}/consumable-categories
+Authorization: Bearer {{token}}
+
+### Get category by ID
+GET {{baseUrl}}/consumable-categories/1
+Authorization: Bearer {{token}}
+
+### Create category
+POST {{baseUrl}}/consumable-categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Testöle",
+  "description": "Test-Kategorie für Öle",
+  "icon": "oil-can",
+  "color": "yellow",
+  "sequence": 100
+}
+
+### Update category
+PUT {{baseUrl}}/consumable-categories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Updated description"
+}
+
+### Delete category
+DELETE {{baseUrl}}/consumable-categories/10
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### CONSUMABLES (Stammdaten)
+### ============================================================================
+
+### Get all consumables
+GET {{baseUrl}}/consumables
+Authorization: Bearer {{token}}
+
+### Get all consumables with filters
+GET {{baseUrl}}/consumables?category_id=1&is_active=true&search=öl
+Authorization: Bearer {{token}}
+
+### Get low stock items only
+GET {{baseUrl}}/consumables?low_stock_only=true
+Authorization: Bearer {{token}}
+
+### Get consumable by ID
+GET {{baseUrl}}/consumables/1
+Authorization: Bearer {{token}}
+
+### Create consumable
+POST {{baseUrl}}/consumables
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "article_number": "KSS-001",
+  "name": "Schneidöl Castrol Alusol",
+  "category_id": 1,
+  "description": "Wassermischbarer Kühlschmierstoff für Aluminium",
+  "base_unit": "Liter",
+  "package_type": "Kanister",
+  "package_size": 20,
+  "has_expiry": true,
+  "shelf_life_months": 24,
+  "is_hazardous": false,
+  "storage_requirements": "Kühl und trocken lagern",
+  "supplier_id": 1,
+  "supplier_article_number": "CAS-ALU-20L",
+  "manufacturer": "Castrol",
+  "unit_price": 8.50,
+  "package_price": 170.00
+}
+
+### Update consumable
+PUT {{baseUrl}}/consumables/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "unit_price": 9.00,
+  "notes": "Preis aktualisiert 2025"
+}
+
+### Delete consumable (soft delete)
+DELETE {{baseUrl}}/consumables/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### ALERTS
+### ============================================================================
+
+### Get low stock alerts
+GET {{baseUrl}}/consumables/alerts/low-stock
+Authorization: Bearer {{token}}
+
+### Get expiry alerts
+GET {{baseUrl}}/consumables/alerts/expiry
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### CONSUMABLE STOCK
+### ============================================================================
+
+### Get all stock entries
+GET {{baseUrl}}/consumable-stock
+Authorization: Bearer {{token}}
+
+### Get stock with filters
+GET {{baseUrl}}/consumable-stock?location_id=1&low_stock_only=true
+Authorization: Bearer {{token}}
+
+### Get stock for specific consumable
+GET {{baseUrl}}/consumable-stock?consumable_id=1
+Authorization: Bearer {{token}}
+
+### Get stock entry by ID
+GET {{baseUrl}}/consumable-stock/1
+Authorization: Bearer {{token}}
+
+### Create stock entry (initial stock)
+POST {{baseUrl}}/consumable-stock
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "consumable_id": 1,
+  "compartment_id": 5,
+  "quantity": 40,
+  "batch_number": "2025-001",
+  "expiry_date": "2027-01-15",
+  "min_quantity": 20,
+  "reorder_quantity": 40,
+  "enable_low_stock_alert": true,
+  "enable_expiry_alert": true,
+  "expiry_alert_days": 30
+}
+
+### Update stock entry settings
+PUT {{baseUrl}}/consumable-stock/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "min_quantity": 25,
+  "notes": "Mindestbestand erhöht"
+}
+
+### ============================================================================
+### STOCK TRANSACTIONS
+### ============================================================================
+
+### Book receipt (Wareneingang)
+POST {{baseUrl}}/consumable-stock/1/receipt
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 40,
+  "reason": "Lieferung eingetroffen",
+  "reference_type": "purchase_order",
+  "reference_id": 1
+}
+
+### Book issue (Entnahme)
+POST {{baseUrl}}/consumable-stock/1/issue
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 5,
+  "reason": "Verbrauch für Maschine DMU-50"
+}
+
+### Book adjustment (Korrektur)
+POST {{baseUrl}}/consumable-stock/1/adjustment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "new_quantity": 35,
+  "reason": "Inventur-Korrektur"
+}
+
+### Book maintenance consumption
+POST {{baseUrl}}/consumable-stock/1/maintenance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 2.5,
+  "maintenance_task_id": 1,
+  "notes": "Ölwechsel DMU-50"
+}
+
+### Get transactions for stock entry
+GET {{baseUrl}}/consumable-stock/1/transactions
+Authorization: Bearer {{token}}
+
+### Get all transactions with filters
+GET {{baseUrl}}/consumable-transactions?transaction_type=issue&limit=50
+Authorization: Bearer {{token}}
+
+### Get transactions for date range
+GET {{baseUrl}}/consumable-transactions?from_date=2025-01-01&to_date=2025-12-31
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### DOCUMENTS
+### ============================================================================
+
+### Get documents for consumable
+GET {{baseUrl}}/consumables/1/documents
+Authorization: Bearer {{token}}
+
+### Get only SDS documents
+GET {{baseUrl}}/consumables/1/documents?document_type=sds
+Authorization: Bearer {{token}}
+
+### Upload document (use multipart form)
+# POST {{baseUrl}}/consumables/1/documents
+# Authorization: Bearer {{token}}
+# Content-Type: multipart/form-data; boundary=----FormBoundary
+# 
+# ------FormBoundary
+# Content-Disposition: form-data; name="document_type"
+# 
+# sds
+# ------FormBoundary
+# Content-Disposition: form-data; name="title"
+# 
+# Sicherheitsdatenblatt Castrol Alusol
+# ------FormBoundary
+# Content-Disposition: form-data; name="file"; filename="sds_alusol.pdf"
+# Content-Type: application/pdf
+# 
+# < ./test-files/sds_alusol.pdf
+# ------FormBoundary--
+
+### Get document by ID
+GET {{baseUrl}}/consumable-documents/1
+Authorization: Bearer {{token}}
+
+### Update document metadata
+PUT {{baseUrl}}/consumable-documents/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "SDB Castrol Alusol v2.0"
+}
+
+### Set as primary image
+PUT {{baseUrl}}/consumable-documents/1/primary
+Authorization: Bearer {{token}}
+
+### Download document
+GET {{baseUrl}}/consumable-documents/1/download
+Authorization: Bearer {{token}}
+
+### Delete document
+DELETE {{baseUrl}}/consumable-documents/1
+Authorization: Bearer {{token}}
