@@ -378,10 +378,11 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Lager & Einkauf" 
               icon={Icons.Storage}
-              routes={['/storage', '/suppliers', '/purchase-orders']}
+              routes={['/storage', '/consumables', '/suppliers', '/purchase-orders']}
               collapsed={collapsed}
             >
               <NavSubItem to="/storage" label="Lagerorte" />
+              <NavSubItem to="/consumables" label="Verbrauchsmaterial" />
               <NavSubItem to="/suppliers" label="Lieferanten" />
               <NavSubItem to="/purchase-orders" label="Bestellungen" />
             </NavGroup>
@@ -559,7 +560,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
           {/* Version */}
           {!collapsed && (
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1.5 border-t border-gray-200 dark:border-gray-700">
-              MDS v2.1.0
+              MDS v2.2.1
             </p>
           )}
         </div>

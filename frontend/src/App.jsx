@@ -56,6 +56,10 @@ import EscalationsPage from './pages/EscalationsPage';
 import WikiPage from './pages/WikiPage';
 import WikiArticlePage from './pages/WikiArticlePage';
 
+// Consumables Pages
+import ConsumablesPage from './pages/ConsumablesPage';
+import ConsumableDetailPage from './pages/ConsumableDetailPage';
+
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -316,6 +320,24 @@ function App() {
 			     element={
 			       <ProtectedRoute requiredPermission="storage.view">
 			         <FixtureDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+
+			   {/* Consumables Routes */}
+			   <Route 
+			     path="/consumables" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ConsumablesPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+			   <Route 
+			     path="/consumables/:id" 
+			     element={
+			       <ProtectedRoute requiredPermission="storage.view">
+			         <ConsumableDetailPage />
 			       </ProtectedRoute>
 			     } 
 			   />

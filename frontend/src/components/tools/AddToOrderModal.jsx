@@ -76,7 +76,9 @@ export default function AddToOrderModal({
 
       // ALWAYS format all existing items correctly (quantity_ordered -> quantity)
       const formattedExistingItems = (order.items || []).map(item => ({
-        storage_item_id: item.storage_item_id,
+        item_type: item.item_type || 'tool',
+        storage_item_id: item.storage_item_id || null,
+        consumable_id: item.consumable_id || null,
         quantity: parseFloat(item.quantity_ordered || item.quantity || 0),
         unit_price: parseFloat(item.unit_price),
         line_number: item.line_number,
@@ -86,7 +88,7 @@ export default function AddToOrderModal({
 
       // Check if item already exists in order
       const existingItemIndex = formattedExistingItems.findIndex(
-        item => item.storage_item_id === storageItemId
+        item => item.item_type === 'tool' && item.storage_item_id === storageItemId
       );
 
       let updatedItems;
@@ -104,6 +106,7 @@ export default function AddToOrderModal({
         updatedItems = [
           ...formattedExistingItems,
           {
+            item_type: 'tool',
             storage_item_id: storageItemId,
             quantity: parseFloat(quantity),
             unit_price: parseFloat(unitPrice)
@@ -147,6 +150,7 @@ export default function AddToOrderModal({
         expected_delivery_date: expectedDeliveryDate,
         notes: notes || `Bestellung für ${toolName}`,
         items: [{
+          item_type: 'tool',
           storage_item_id: storageItemId,
           quantity: parseFloat(quantity),
           unit_price: parseFloat(unitPrice)

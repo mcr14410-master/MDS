@@ -8,6 +8,7 @@ import { toast } from '../components/Toaster';
 import CompartmentCard from '../components/storage/CompartmentCard';
 import CompartmentForm from '../components/storage/CompartmentForm';
 import LocationForm from '../components/storage/LocationForm';
+import axios from '../utils/axios';
 
 export default function StorageLocationDetailPage() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ export default function StorageLocationDetailPage() {
   const [showCompartmentForm, setShowCompartmentForm] = useState(false);
   const [editingCompartment, setEditingCompartment] = useState(null);
   const [sortBy, setSortBy] = useState('position'); // 'position' or 'name'
+  const [consumables, setConsumables] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -41,8 +43,20 @@ export default function StorageLocationDetailPage() {
       await fetchCompartmentsByLocation(id);
       // Load all storage items for this location to show contents
       await fetchStorageItems({ location_id: id });
+      // Load consumables for this location
+      await loadConsumables();
     } catch (err) {
       console.error('Error loading data:', err);
+    }
+  };
+
+  const loadConsumables = async () => {
+    try {
+      const response = await axios.get(`/api/consumables/by-storage-location/${id}`);
+      setConsumables(response.data || []);
+    } catch (err) {
+      console.error('Error loading consumables:', err);
+      setConsumables([]);
     }
   };
 
@@ -97,7 +111,7 @@ export default function StorageLocationDetailPage() {
     await fetchLocation(id);
   };
 
-  // Get storage items count per compartment
+  // Get storage items count per compartment (not including consumables - those are passed separately)
   const getCompartmentItemsCount = (compartmentId) => {
     return storageItems.filter((item) => item.compartment_id === compartmentId).length;
   };
@@ -105,6 +119,11 @@ export default function StorageLocationDetailPage() {
   // Get storage items for a compartment
   const getCompartmentItems = (compartmentId) => {
     return storageItems.filter((item) => item.compartment_id === compartmentId);
+  };
+
+  // Get consumables for a compartment
+  const getCompartmentConsumables = (compartmentId) => {
+    return consumables.filter((item) => item.compartment_id === compartmentId);
   };
 
   // Sort compartments
@@ -218,7 +237,7 @@ export default function StorageLocationDetailPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
             <div className="text-sm text-gray-400">Fächer/Schubladen</div>
             <div className="text-2xl font-bold text-white mt-1">{compartments.length}</div>
@@ -228,10 +247,14 @@ export default function StorageLocationDetailPage() {
             <div className="text-2xl font-bold text-white mt-1">{storageItems.length}</div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-sm text-gray-400">Verbrauchsmaterial</div>
+            <div className="text-2xl font-bold text-amber-400 mt-1">{consumables.length}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
             <div className="text-sm text-gray-400">Belegung</div>
             <div className="text-2xl font-bold text-white mt-1">
               {compartments.length > 0
-                ? `${Math.round((storageItems.length / compartments.length) * 10) / 10} Ø/Fach`
+                ? `${Math.round(((storageItems.length + consumables.length) / compartments.length) * 10) / 10} Ø/Fach`
                 : '0'}
             </div>
           </div>
@@ -299,6 +322,7 @@ export default function StorageLocationDetailPage() {
                     compartment={compartment}
                     items={getCompartmentItems(compartment.id)}
                     itemsCount={getCompartmentItemsCount(compartment.id)}
+                    consumables={getCompartmentConsumables(compartment.id)}
                     onEdit={handleEditCompartment}
                   />
                 ))}

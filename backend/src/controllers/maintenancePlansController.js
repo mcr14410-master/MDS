@@ -242,12 +242,36 @@ exports.getPlanById = async (req, res) => {
     `;
     const tasksResult = await pool.query(tasksQuery, [id]);
 
+    // Verknüpfte Consumables laden
+    const consumablesQuery = `
+      SELECT 
+        mpc.id AS link_id,
+        mpc.quantity,
+        mpc.notes AS link_notes,
+        c.id,
+        c.name,
+        c.article_number,
+        c.stock_status,
+        c.base_unit,
+        c.package_type,
+        c.package_size,
+        cc.name AS category_name,
+        cc.color AS category_color
+      FROM maintenance_plan_consumables mpc
+      JOIN consumables c ON mpc.consumable_id = c.id AND c.is_deleted = false
+      LEFT JOIN consumable_categories cc ON cc.id = c.category_id
+      WHERE mpc.maintenance_plan_id = $1
+      ORDER BY c.name
+    `;
+    const consumablesResult = await pool.query(consumablesQuery, [id]);
+
     res.json({
       success: true,
       data: {
         ...planResult.rows[0],
         checklist_items: checklistResult.rows,
-        recent_tasks: tasksResult.rows
+        recent_tasks: tasksResult.rows,
+        consumables: consumablesResult.rows
       }
     });
   } catch (error) {
@@ -1345,6 +1369,168 @@ exports.getDueOverview = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Fehler beim Laden der fälligen Wartungen',
+      message: error.message
+    });
+  }
+};
+
+// ============================================================================
+// MAINTENANCE PLAN CONSUMABLES
+// ============================================================================
+
+/**
+ * Add consumable to maintenance plan
+ * POST /api/maintenance/plans/:id/consumables
+ */
+exports.addConsumable = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { consumable_id, quantity, notes } = req.body;
+    const userId = req.user?.id;
+
+    if (!consumable_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'consumable_id ist erforderlich'
+      });
+    }
+
+    // Prüfen ob Plan existiert
+    const planCheck = await pool.query('SELECT id FROM maintenance_plans WHERE id = $1', [id]);
+    if (planCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Wartungsplan nicht gefunden'
+      });
+    }
+
+    // Prüfen ob Consumable existiert
+    const consumableCheck = await pool.query('SELECT id FROM consumables WHERE id = $1 AND is_deleted = false', [consumable_id]);
+    if (consumableCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Verbrauchsmaterial nicht gefunden'
+      });
+    }
+
+    // Prüfen ob bereits verknüpft
+    const existingCheck = await pool.query(
+      'SELECT id FROM maintenance_plan_consumables WHERE maintenance_plan_id = $1 AND consumable_id = $2',
+      [id, consumable_id]
+    );
+    if (existingCheck.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Dieses Verbrauchsmaterial ist bereits mit dem Wartungsplan verknüpft'
+      });
+    }
+
+    // Verknüpfung erstellen
+    const result = await pool.query(`
+      INSERT INTO maintenance_plan_consumables (maintenance_plan_id, consumable_id, quantity, notes, created_by)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [id, consumable_id, quantity || null, notes || null, userId]);
+
+    // Mit Details zurückgeben
+    const detailResult = await pool.query(`
+      SELECT 
+        mpc.id AS link_id,
+        mpc.quantity,
+        mpc.notes AS link_notes,
+        c.id,
+        c.name,
+        c.article_number,
+        c.stock_status,
+        c.base_unit,
+        cc.name AS category_name,
+        cc.color AS category_color
+      FROM maintenance_plan_consumables mpc
+      JOIN consumables c ON mpc.consumable_id = c.id
+      LEFT JOIN consumable_categories cc ON cc.id = c.category_id
+      WHERE mpc.id = $1
+    `, [result.rows[0].id]);
+
+    res.status(201).json({
+      success: true,
+      data: detailResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Fehler beim Hinzufügen des Verbrauchsmaterials:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Hinzufügen des Verbrauchsmaterials',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Update consumable link
+ * PUT /api/maintenance/plans/:id/consumables/:linkId
+ */
+exports.updateConsumable = async (req, res) => {
+  try {
+    const { id, linkId } = req.params;
+    const { quantity, notes } = req.body;
+
+    const result = await pool.query(`
+      UPDATE maintenance_plan_consumables 
+      SET quantity = $1, notes = $2
+      WHERE id = $3 AND maintenance_plan_id = $4
+      RETURNING *
+    `, [quantity || null, notes || null, linkId, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Verknüpfung nicht gefunden'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Fehler beim Aktualisieren:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Aktualisieren',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Remove consumable from maintenance plan
+ * DELETE /api/maintenance/plans/:id/consumables/:linkId
+ */
+exports.removeConsumable = async (req, res) => {
+  try {
+    const { id, linkId } = req.params;
+
+    const result = await pool.query(
+      'DELETE FROM maintenance_plan_consumables WHERE id = $1 AND maintenance_plan_id = $2 RETURNING id',
+      [linkId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Verknüpfung nicht gefunden'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Verbrauchsmaterial entfernt'
+    });
+  } catch (error) {
+    console.error('Fehler beim Entfernen:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Entfernen',
       message: error.message
     });
   }

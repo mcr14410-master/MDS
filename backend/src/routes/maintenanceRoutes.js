@@ -94,6 +94,19 @@ router.post(
 router.delete('/checklist/:itemId', maintenancePlansController.deleteChecklistItem);
 
 // ============================================================
+// PLAN CONSUMABLES
+// ============================================================
+
+// Consumable zum Plan hinzufügen
+router.post('/plans/:id/consumables', maintenancePlansController.addConsumable);
+
+// Consumable-Verknüpfung aktualisieren
+router.put('/plans/:id/consumables/:linkId', maintenancePlansController.updateConsumable);
+
+// Consumable vom Plan entfernen
+router.delete('/plans/:id/consumables/:linkId', maintenancePlansController.removeConsumable);
+
+// ============================================================
 // MAINTENANCE TASKS
 // ============================================================
 

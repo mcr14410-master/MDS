@@ -30,7 +30,7 @@ exports.getAllCustomers = async (req, res) => {
     let queryText = `
       SELECT 
         customers.*,
-        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id) as part_count
+        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id AND status != 'deleted') as part_count
       FROM customers
       WHERE 1=1
     `;
@@ -92,7 +92,7 @@ exports.getCustomerById = async (req, res) => {
     const queryText = `
       SELECT 
         customers.*,
-        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id) as part_count
+        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id AND status != 'deleted') as part_count
       FROM customers
       WHERE customers.id = $1
     `;
@@ -387,9 +387,9 @@ exports.deleteCustomer = async (req, res) => {
       });
     }
 
-    // Check if customer has linked parts
+    // Check if customer has linked parts (only active, non-deleted parts)
     const checkLinked = await pool.query(
-      'SELECT COUNT(*) as count FROM parts WHERE customer_id = $1',
+      "SELECT COUNT(*) as count FROM parts WHERE customer_id = $1 AND status != 'deleted'",
       [id]
     );
 
