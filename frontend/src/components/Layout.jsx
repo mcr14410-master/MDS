@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import Sidebar, { Icons } from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
+import GlobalSearch from './GlobalSearch';
 
 const SIDEBAR_COLLAPSED_KEY = 'mds-sidebar-collapsed';
 
@@ -48,19 +49,27 @@ export default function Layout({ children }) {
 
       {/* Main Content Area */}
       <div className={`${mainPadding} flex flex-col min-h-screen transition-all duration-300`}>
-        {/* Schmaler Header - nur Breadcrumbs */}
+        {/* Schmaler Header - Breadcrumbs links, Suche rechts */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center h-8 px-4">
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-1.5 mr-3 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Icons.Menu />
-            </button>
+          <div className="flex items-center justify-between h-10 px-4">
+            {/* Left: Mobile Menu + Breadcrumbs */}
+            <div className="flex items-center min-w-0 flex-1">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-1.5 mr-3 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <Icons.Menu />
+              </button>
 
-            {/* Breadcrumbs */}
-            <Breadcrumbs />
+              {/* Breadcrumbs */}
+              <Breadcrumbs />
+            </div>
+
+            {/* Right: Global Search */}
+            <div className="flex-shrink-0 ml-4">
+              <GlobalSearch />
+            </div>
           </div>
         </header>
 

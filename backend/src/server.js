@@ -89,6 +89,7 @@ const consumablesRoutes = require('./routes/consumablesRoutes');
 // const consumableStockRoutes = require('./routes/consumableStockRoutes');
 // const consumableTransactionsRoutes = require('./routes/consumableTransactionsRoutes');
 const consumableDocumentsRoutes = require('./routes/consumableDocumentsRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -139,6 +140,7 @@ app.use('/api/consumables', consumablesRoutes);
 // app.use('/api/consumable-stock', consumableStockRoutes);
 // app.use('/api/consumable-transactions', consumableTransactionsRoutes);
 app.use('/api/consumable-documents', consumableDocumentsRoutes);
+app.use('/api/search', searchRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {

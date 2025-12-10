@@ -2,24 +2,52 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
+import { useCustomersStore } from '../stores/customersStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 
 export default function PartsPage() {
   const { parts, loading, error, fetchParts, deletePart } = usePartsStore();
+  const { customers, fetchCustomers } = useCustomersStore();
   const { hasPermission } = useAuthStore();
+  
   const [filters, setFilters] = useState({
     search: '',
     status: '',
+    customer_id: '',
   });
+  const [searchInput, setSearchInput] = useState('');
 
+  // Kunden und Bauteile initial laden
   useEffect(() => {
-    fetchParts();
-  }, [fetchParts]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
+    fetchCustomers({ is_active: true });
     fetchParts(filters);
+  }, []);
+
+  // Live-Suche mit Debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        const newFilters = { ...filters, search: searchInput };
+        setFilters(newFilters);
+        fetchParts(newFilters);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Filter-Änderung (Status, Kunde)
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    fetchParts(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const newFilters = { search: '', status: '', customer_id: '' };
+    setFilters(newFilters);
+    setSearchInput('');
+    fetchParts(newFilters);
   };
 
   const handleDelete = async (id, partNumber) => {
@@ -38,15 +66,15 @@ export default function PartsPage() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'inactive':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
       case 'obsolete':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
@@ -65,6 +93,8 @@ export default function PartsPage() {
     }
   };
 
+  const hasActiveFilters = filters.search || filters.status || filters.customer_id;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,7 +102,7 @@ export default function PartsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bauteile</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Verwalten Sie alle Bauteile im System
+            {parts.length} {parts.length === 1 ? 'Bauteil' : 'Bauteile'} {hasActiveFilters ? 'gefunden' : 'im System'}
           </p>
         </div>
         {hasPermission('part.create') && (
@@ -88,38 +118,74 @@ export default function PartsPage() {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Filters - eine Zeile */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-        <form onSubmit={handleSearch} className="flex gap-4">
-          <div className="flex-1">
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Kunde */}
+          <select
+            value={filters.customer_id}
+            onChange={(e) => handleFilterChange('customer_id', e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="">Alle Kunden</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name} {customer.customer_number ? `(${customer.customer_number})` : ''}
+              </option>
+            ))}
+          </select>
+
+          {/* Status */}
+          <select
+            value={filters.status}
+            onChange={(e) => handleFilterChange('status', e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="">Alle Status</option>
+            <option value="draft">Entwurf</option>
+            <option value="active">Aktiv</option>
+            <option value="inactive">Inaktiv</option>
+            <option value="obsolete">Veraltet</option>
+          </select>
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             <input
               type="text"
-              placeholder="Suche nach Bauteilnummer, Bezeichnung..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Suche..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => { setSearchInput(''); handleFilterChange('search', ''); }}
+                className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
-          <div>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
-              <option value="">Alle Status</option>
-              <option value="draft">Entwurf</option>
-              <option value="active">Aktiv</option>
-              <option value="inactive">Inaktiv</option>
-              <option value="obsolete">Veraltet</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-          >
-            Suchen
-          </button>
-        </form>
+              Zurücksetzen
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Error Message */}
@@ -148,11 +214,11 @@ export default function PartsPage() {
             Keine Bauteile gefunden
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {filters.search || filters.status
+            {hasActiveFilters
               ? 'Versuchen Sie andere Filter-Einstellungen.'
               : 'Erstellen Sie Ihr erstes Bauteil.'}
           </p>
-          {hasPermission('part.create') && !filters.search && !filters.status && (
+          {hasPermission('part.create') && !hasActiveFilters && (
             <Link
               to="/parts/new"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -178,13 +244,13 @@ export default function PartsPage() {
                     Bezeichnung
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Kunde
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Revision
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Material
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Aktionen
@@ -203,7 +269,19 @@ export default function PartsPage() {
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{part.part_name}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{part.part_name || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {part.customer_name ? (
+                        <Link 
+                          to={`/customers/${part.customer_id}`}
+                          className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                        >
+                          {part.customer_name}
+                        </Link>
+                      ) : (
+                        <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-gray-100 font-mono">{part.revision || 'A'}</div>
@@ -216,9 +294,6 @@ export default function PartsPage() {
                       >
                         {getStatusText(part.status)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {part.material || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-3">
@@ -261,13 +336,6 @@ export default function PartsPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* Parts Count */}
-      {!loading && parts.length > 0 && (
-        <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
-          {parts.length} {parts.length === 1 ? 'Bauteil' : 'Bauteile'} gefunden
         </div>
       )}
     </div>

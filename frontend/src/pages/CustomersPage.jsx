@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomersStore } from '../stores/customersStore';
 import { useAuthStore } from '../stores/authStore';
+import { usePreferencesStore } from '../stores/preferencesStore';
 import { toast } from '../components/Toaster';
 import CustomerFormModal from '../components/customers/CustomerFormModal';
 
 export default function CustomersPage() {
   const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomersStore();
   const { hasPermission } = useAuthStore();
+  const { getViewMode, setViewMode } = usePreferencesStore();
+  
+  const viewMode = getViewMode('customers');
   
   const [filters, setFilters] = useState({
     search: '',
-    is_active: null,
+    is_active: true,
     sort_by: 'name',
     sort_order: 'asc',
   });
@@ -105,17 +109,50 @@ export default function CustomersPage() {
             </span>
           </div>
         </div>
-        {hasPermission('part.create') && (
-          <button
-            onClick={handleCreateNew}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Neuer Kunde
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+            <button
+              type="button"
+              onClick={() => setViewMode('customers', 'grid')}
+              className={`px-3 py-2 text-sm transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+              }`}
+              title="Kachelansicht"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('customers', 'list')}
+              className={`px-3 py-2 text-sm transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+              }`}
+              title="Listenansicht"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          {hasPermission('part.create') && (
+            <button
+              onClick={handleCreateNew}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Neuer Kunde
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -235,7 +272,7 @@ export default function CustomersPage() {
             </button>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {customers.map((customer) => (
             <CustomerCard
@@ -247,6 +284,32 @@ export default function CustomersPage() {
               canDelete={hasPermission('part.delete')}
             />
           ))}
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kunde</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kontakt</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Bauteile</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {customers.map((customer) => (
+                <CustomerRow
+                  key={customer.id}
+                  customer={customer}
+                  onEdit={() => handleEdit(customer)}
+                  onDelete={() => handleDelete(customer)}
+                  canEdit={hasPermission('part.update')}
+                  canDelete={hasPermission('part.delete')}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -351,5 +414,68 @@ function CustomerCard({ customer, onEdit, onDelete, canEdit, canDelete }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Customer Row Component (für Listenansicht)
+function CustomerRow({ customer, onEdit, onDelete, canEdit, canDelete }) {
+  return (
+    <tr className={`${!customer.is_active ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50' : ''}`}>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div>
+          <Link 
+            to={`/customers/${customer.id}`}
+            className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+          >
+            {customer.name}
+          </Link>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{customer.customer_number}</div>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-900 dark:text-white">{customer.contact_person || '-'}</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">{customer.email || '-'}</div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className="text-sm font-medium text-gray-900 dark:text-white">{customer.part_count || 0}</span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        {customer.is_active ? (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+            Aktiv
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+            Inaktiv
+          </span>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-right">
+        <div className="flex justify-end gap-2">
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+              title="Bearbeiten"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
+          {canDelete && customer.is_active && (
+            <button
+              onClick={onDelete}
+              className="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+              title="Deaktivieren"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }
