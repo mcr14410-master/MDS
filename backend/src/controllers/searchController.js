@@ -37,12 +37,12 @@ exports.search = async (req, res) => {
           'part' as type,
           id::text,
           part_number as title,
-          COALESCE(description, '') as subtitle,
+          COALESCE(part_name, '') as subtitle,
           '/parts/' || id as url,
           1 as priority
         FROM parts
         WHERE status != 'deleted'
-          AND (part_number ILIKE $1 OR description ILIKE $1)
+          AND (part_number ILIKE $1 OR part_name ILIKE $1 OR customer_part_number ILIKE $1 OR description ILIKE $1)
         
         UNION ALL
         

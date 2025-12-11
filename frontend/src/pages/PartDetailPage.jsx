@@ -1,17 +1,67 @@
 // frontend/src/pages/PartDetailPage.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import OperationsList from '../components/OperationsList';
+import StepViewer from '../components/StepViewer';
+import PartDocuments from '../components/PartDocuments';
+import API_BASE_URL from '../config/api';
+
+// Status-Konfiguration
+const STATUS_CONFIG = {
+  draft: { label: 'Entwurf', bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-300' },
+  active: { label: 'Aktiv', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300' },
+  inactive: { label: 'Inaktiv', bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300' },
+  obsolete: { label: 'Veraltet', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-300' }
+};
 
 export default function PartDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentPart, loading, error, fetchPart, deletePart } = usePartsStore();
+  const { currentPart, loading, error, fetchPart, deletePart, updatePart } = usePartsStore();
   const { hasPermission } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('details'); // 'details' or 'operations'
+  const [activeTab, setActiveTab] = useState('details'); // 'details', 'operations', 'documents'
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const statusDropdownRef = useRef(null);
+
+  // Bauteil neu laden wenn Dokumente geändert wurden
+  const handleDocumentChange = () => {
+    fetchPart(id);
+  };
+
+  // Dropdown schließen bei Klick außerhalb
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+        setStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Status direkt ändern
+  const handleStatusChange = async (newStatus) => {
+    if (newStatus === currentPart.status) {
+      setStatusDropdownOpen(false);
+      return;
+    }
+
+    setUpdatingStatus(true);
+    try {
+      await updatePart(id, { status: newStatus });
+      toast.success(`Status geändert: ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+      fetchPart(id); // Neu laden für aktuelle Daten
+    } catch (err) {
+      toast.error(err.message || 'Fehler beim Ändern des Status');
+    } finally {
+      setUpdatingStatus(false);
+      setStatusDropdownOpen(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -101,17 +151,54 @@ export default function PartDetailPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                part.status === 'active'
-                  ? 'bg-green-100 text-green-800'
-                  : part.status === 'draft'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-gray-100 text-gray-800'
-              }`}
-            >
-              {part.status === 'active' ? 'Aktiv' : part.status === 'draft' ? 'Entwurf' : part.status}
-            </span>
+            {/* Status Dropdown */}
+            <div className="relative" ref={statusDropdownRef}>
+              <button
+                onClick={() => hasPermission('part.update') && setStatusDropdownOpen(!statusDropdownOpen)}
+                disabled={updatingStatus}
+                className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-all ${
+                  STATUS_CONFIG[part.status]?.bg || 'bg-gray-100 dark:bg-gray-700'
+                } ${STATUS_CONFIG[part.status]?.text || 'text-gray-800 dark:text-gray-300'} ${
+                  hasPermission('part.update') ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 dark:hover:ring-gray-600' : 'cursor-default'
+                }`}
+                title={hasPermission('part.update') ? 'Klicken zum Ändern' : ''}
+              >
+                {updatingStatus ? (
+                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                ) : null}
+                {STATUS_CONFIG[part.status]?.label || part.status}
+                {hasPermission('part.update') && !updatingStatus && (
+                  <svg className={`w-3 h-3 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Dropdown Menu */}
+              {statusDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
+                        part.status === status ? 'font-medium' : ''
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${config.bg}`}></span>
+                      <span className={part.status === status ? config.text : 'text-gray-700 dark:text-gray-300'}>
+                        {config.label}
+                      </span>
+                      {part.status === status && (
+                        <svg className="w-4 h-4 ml-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             
             {hasPermission('part.update') && (
               <Link
@@ -148,6 +235,21 @@ export default function PartDetailPage() {
             Details
           </button>
           <button
+            onClick={() => setActiveTab('documents')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'documents'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            Dokumente
+            {part.document_counts?.total > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+                {part.document_counts.total}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab('operations')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'operations'
@@ -156,6 +258,23 @@ export default function PartDetailPage() {
             }`}
           >
             Arbeitsgänge
+          </button>
+          
+          {/* Historie Tab - rechts ausgerichtet */}
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ml-auto ${
+              activeTab === 'history'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Historie
+            </span>
           </button>
         </nav>
       </div>
@@ -187,7 +306,25 @@ export default function PartDetailPage() {
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Kunde
                   </label>
-                  <p className="text-gray-900 dark:text-gray-100">{part.customer_name || '-'}</p>
+                  {part.customer_id ? (
+                    <Link 
+                      to={`/customers/${part.customer_id}`}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline"
+                    >
+                      {part.customer_name}
+                    </Link>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">–</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Kunden-Zeichnungsnr.
+                  </label>
+                  <p className={part.customer_part_number ? "text-gray-900 dark:text-gray-100 font-mono" : "text-gray-500 dark:text-gray-400"}>
+                    {part.customer_part_number || '–'}
+                  </p>
                 </div>
                 
                 <div>
@@ -201,47 +338,211 @@ export default function PartDetailPage() {
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Material
                   </label>
-                  <p className="text-gray-900 dark:text-gray-100">{part.material || '-'}</p>
+                  <p className={part.material ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"}>
+                    {part.material || '–'}
+                  </p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Abmessungen
                   </label>
-                  <p className="text-gray-900 dark:text-gray-100">{part.dimensions || '-'}</p>
+                  <p className={part.dimensions ? "text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"}>
+                    {part.dimensions || '–'}
+                  </p>
                 </div>
               </div>
 
-              {part.description && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                    Beschreibung
-                  </label>
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{part.description}</p>
-                </div>
-              )}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                  Beschreibung
+                </label>
+                <p className={part.description ? "text-gray-700 dark:text-gray-300 whitespace-pre-wrap" : "text-gray-500 dark:text-gray-400"}>
+                  {part.description || '–'}
+                </p>
+              </div>
 
-              {part.notes && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                    Notizen
-                  </label>
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{part.notes}</p>
-                </div>
-              )}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                  Notizen
+                </label>
+                <p className={part.notes ? "text-gray-700 dark:text-gray-300 whitespace-pre-wrap" : "text-gray-500 dark:text-gray-400"}>
+                  {part.notes || '–'}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* 3D-Vorschau - ZUERST */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">3D-Vorschau</h3>
+              {part.primary_cad_file ? (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{part.primary_cad_file.original_filename}</span>
+                    </div>
+                    <a
+                      href={`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`}
+                      download={part.primary_cad_file.original_filename}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                      title="CAD-Datei herunterladen"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // Fetch mit Auth-Header
+                        const token = localStorage.getItem('token');
+                        fetch(`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        .then(res => res.blob())
+                        .then(blob => {
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = part.primary_cad_file.original_filename;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          a.remove();
+                        });
+                      }}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                  </div>
+                  <StepViewer 
+                    fileUrl={`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`}
+                    fileName={part.primary_cad_file.original_filename}
+                    className="h-48"
+                  />
+                </>
+              ) : (
+                <div className="h-48 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Kein 3D-Modell</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Im Tab "Dokumente" hochladen</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hauptdokumente Schnellzugriff */}
+            {(part.primary_cad_file || part.primary_drawing_file) && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Hauptdokumente
+                </h3>
+                <div className="space-y-2">
+                  {/* Hauptzeichnung */}
+                  {part.primary_drawing_file && (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const token = localStorage.getItem('token');
+                        fetch(`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        .then(res => res.blob())
+                        .then(blob => {
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = part.primary_drawing_file.original_filename;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          a.remove();
+                        });
+                      }}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          Hauptzeichnung
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {part.primary_drawing_file.original_filename}
+                        </p>
+                      </div>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                  )}
+
+                  {/* CAD-Modell */}
+                  {part.primary_cad_file && (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const token = localStorage.getItem('token');
+                        fetch(`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        .then(res => res.blob())
+                        .then(blob => {
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = part.primary_cad_file.original_filename;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          a.remove();
+                        });
+                      }}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          3D-Modell
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {part.primary_cad_file.original_filename}
+                        </p>
+                      </div>
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Meta Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Metadaten</h3>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Erstellt am
+                    Erstellt
                   </label>
                   <p className="text-gray-900 dark:text-gray-100 text-sm">
                     {new Date(part.created_at).toLocaleDateString('de-DE', {
@@ -251,12 +552,15 @@ export default function PartDetailPage() {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
+                    {part.created_by_username && (
+                      <span className="text-gray-500 dark:text-gray-400"> – {part.created_by_username}</span>
+                    )}
                   </p>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Zuletzt geändert
+                    Geändert
                   </label>
                   <p className="text-gray-900 dark:text-gray-100 text-sm">
                     {new Date(part.updated_at).toLocaleDateString('de-DE', {
@@ -266,68 +570,199 @@ export default function PartDetailPage() {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
+                    {part.updated_by_username && (
+                      <span className="text-gray-500 dark:text-gray-400"> – {part.updated_by_username}</span>
+                    )}
                   </p>
                 </div>
-                
-                {part.updated_by && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Geändert von
-                    </label>
-                    <p className="text-gray-900 dark:text-gray-100 text-sm">{part.updated_by}</p>
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* CAD File Card */}
-            {part.cad_file_path && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">CAD-Datei</h3>
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{part.cad_file_path}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Actions Card */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
-              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">Schnellaktionen</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => setActiveTab('operations')}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-left text-sm font-medium border border-gray-200 dark:border-gray-600"
-                >
-                  📋 Arbeitsgänge anzeigen
-                </button>
-                <button
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-left text-sm font-medium border border-gray-200 dark:border-gray-600"
-                  disabled
-                >
-                  💾 Programme anzeigen
-                </button>
-                <button
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-left text-sm font-medium border border-gray-200 dark:border-gray-600"
-                  disabled
-                >
-                  📝 Historie anzeigen
-                </button>
-              </div>
-              <p className="mt-3 text-xs text-blue-600 dark:text-blue-400">
-                Programme & Historie kommen in Woche 6+
-              </p>
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'documents' ? (
+        /* Documents Tab */
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Dokumente</h2>
+          <PartDocuments partId={id} onDocumentChange={handleDocumentChange} />
+        </div>
+      ) : activeTab === 'operations' ? (
         /* Operations Tab */
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <OperationsList partId={id} />
         </div>
-      )}
+      ) : activeTab === 'history' ? (
+        /* History Tab */
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Änderungshistorie</h2>
+          <PartHistory partId={id} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// PartHistory Komponente - Inline definiert
+function PartHistory({ partId }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/api/parts/${partId}/history`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setHistory(data.history || []);
+        } else {
+          throw new Error(data.error || 'Fehler beim Laden');
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (partId) {
+      fetchHistory();
+    }
+  }, [partId, token]);
+
+  // Action Labels
+  const ACTION_LABELS = {
+    CREATE: { label: 'Erstellt', icon: '➕', color: 'text-green-600 dark:text-green-400' },
+    UPDATE: { label: 'Geändert', icon: '✏️', color: 'text-blue-600 dark:text-blue-400' },
+    DELETE: { label: 'Gelöscht', icon: '🗑️', color: 'text-red-600 dark:text-red-400' },
+    STATUS_CHANGE: { label: 'Status geändert', icon: '🔄', color: 'text-yellow-600 dark:text-yellow-400' }
+  };
+
+  // Feld-Labels für bessere Lesbarkeit
+  const FIELD_LABELS = {
+    part_number: 'Bauteilnummer',
+    part_name: 'Bezeichnung',
+    customer_id: 'Kunde',
+    customer_part_number: 'Kunden-Zeichnungsnr.',
+    revision: 'Revision',
+    material: 'Material',
+    dimensions: 'Abmessungen',
+    description: 'Beschreibung',
+    notes: 'Notizen',
+    status: 'Status'
+  };
+
+  const STATUS_LABELS = {
+    draft: 'Entwurf',
+    active: 'Aktiv',
+    inactive: 'Inaktiv',
+    obsolete: 'Veraltet'
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <svg className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p>Noch keine Änderungen erfasst</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {history.map((entry, index) => {
+        const actionConfig = ACTION_LABELS[entry.action] || { label: entry.action, icon: '📝', color: 'text-gray-600' };
+        const changes = entry.changes || {};
+        
+        return (
+          <div 
+            key={entry.id || index}
+            className="relative pl-8 pb-4 border-l-2 border-gray-200 dark:border-gray-700 last:border-l-0 last:pb-0"
+          >
+            {/* Timeline Dot */}
+            <div className="absolute left-0 top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600"></div>
+            
+            {/* Content */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{actionConfig.icon}</span>
+                  <span className={`font-medium ${actionConfig.color}`}>{actionConfig.label}</span>
+                </div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(entry.created_at).toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              
+              {/* User */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                von <span className="font-medium text-gray-800 dark:text-gray-200">{entry.username || 'System'}</span>
+              </p>
+              
+              {/* Changes */}
+              {entry.action === 'UPDATE' && changes.old && changes.new && (
+                <div className="mt-3 space-y-2">
+                  {Object.keys(changes.new).filter(key => 
+                    JSON.stringify(changes.old[key]) !== JSON.stringify(changes.new[key])
+                  ).map(key => {
+                    const oldVal = changes.old[key];
+                    const newVal = changes.new[key];
+                    const fieldLabel = FIELD_LABELS[key] || key;
+                    
+                    // Status-Werte übersetzen
+                    const displayOld = key === 'status' ? (STATUS_LABELS[oldVal] || oldVal) : (oldVal || '–');
+                    const displayNew = key === 'status' ? (STATUS_LABELS[newVal] || newVal) : (newVal || '–');
+                    
+                    return (
+                      <div key={key} className="text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">{fieldLabel}:</span>
+                        <span className="ml-2 line-through text-red-500 dark:text-red-400">{displayOld}</span>
+                        <span className="mx-2 text-gray-400">→</span>
+                        <span className="text-green-600 dark:text-green-400">{displayNew}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* Reason if provided */}
+              {entry.reason && (
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
+                  Grund: {entry.reason}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
