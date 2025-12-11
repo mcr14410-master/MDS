@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import OperationsList from '../components/OperationsList';
 import StepViewer from '../components/StepViewer';
+import PdfViewer from '../components/PdfViewer';
 import PartDocuments from '../components/PartDocuments';
 import API_BASE_URL from '../config/api';
 
@@ -333,7 +334,10 @@ export default function PartDetailPage() {
                   </label>
                   <p className="text-gray-900 dark:text-gray-100 font-mono">{part.revision || 'A'}</p>
                 </div>
-                
+              </div>
+
+              {/* Material & Abmessungen */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Material
@@ -376,25 +380,21 @@ export default function PartDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* 3D-Vorschau - ZUERST */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">3D-Vorschau</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               {part.primary_cad_file ? (
                 <>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 truncate">{part.primary_cad_file.original_filename}</span>
-                    </div>
+                      3D-Vorschau
+                    </h3>
                     <a
-                      href={`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`}
-                      download={part.primary_cad_file.original_filename}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      title="CAD-Datei herunterladen"
+                      href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        // Fetch mit Auth-Header
+                        e.stopPropagation();
                         const token = localStorage.getItem('token');
                         fetch(`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, {
                           headers: { 'Authorization': `Bearer ${token}` }
@@ -411,8 +411,10 @@ export default function PartDetailPage() {
                           a.remove();
                         });
                       }}
+                      className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                      title="Herunterladen"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </a>
@@ -422,19 +424,80 @@ export default function PartDetailPage() {
                     fileName={part.primary_cad_file.original_filename}
                     className="h-48"
                   />
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {part.primary_cad_file.original_filename}
+                  </p>
                 </>
               ) : (
-                <div className="h-48 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <div className="text-center">
-                    <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Kein 3D-Modell</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Im Tab "Dokumente" hochladen</p>
+                    3D-Vorschau
+                  </h3>
+                  <div className="h-48 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <div className="text-center">
+                      <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Kein 3D-Modell</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Im Tab "Dokumente" hochladen</p>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
+
+            {/* Zeichnungs-Vorschau */}
+            {part.primary_drawing_file && part.primary_drawing_file.original_filename?.toLowerCase().endsWith('.pdf') && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Hauptzeichnung
+                  </h3>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const token = localStorage.getItem('token');
+                      fetch(`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      })
+                      .then(res => res.blob())
+                      .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = part.primary_drawing_file.original_filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                      });
+                    }}
+                    className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    title="Herunterladen"
+                  >
+                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </a>
+                </div>
+                <PdfViewer 
+                  fileUrl={`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`}
+                  fileName={part.primary_drawing_file.original_filename}
+                  className="h-48"
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {part.primary_drawing_file.original_filename}
+                </p>
+              </div>
+            )}
 
             {/* Hauptdokumente Schnellzugriff */}
             {(part.primary_cad_file || part.primary_drawing_file) && (
