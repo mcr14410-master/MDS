@@ -22,10 +22,14 @@ exports.getAllOperations = async (req, res) => {
         o.*,
         p.part_number,
         p.part_name,
-        m.name as machine_name
+        m.name as machine_name,
+        ot.name as operation_type_name,
+        ot.icon as operation_type_icon,
+        ot.color as operation_type_color
       FROM operations o
       LEFT JOIN parts p ON o.part_id = p.id
       LEFT JOIN machines m ON o.machine_id = m.id
+      LEFT JOIN operation_types ot ON o.operation_type_id = ot.id
       WHERE 1=1
     `;
     const params = [];
@@ -69,10 +73,15 @@ exports.getOperationById = async (req, res) => {
         o.*,
         p.part_number,
         p.part_name,
-        m.name as machine_name
+        m.name as machine_name,
+        ot.name as operation_type_name,
+        ot.icon as operation_type_icon,
+        ot.color as operation_type_color,
+        ot.default_features as operation_type_default_features
       FROM operations o
       LEFT JOIN parts p ON o.part_id = p.id
       LEFT JOIN machines m ON o.machine_id = m.id
+      LEFT JOIN operation_types ot ON o.operation_type_id = ot.id
       WHERE o.id = $1
     `;
     
@@ -114,7 +123,9 @@ exports.createOperation = async (req, res) => {
       cycle_time_seconds,
       description,
       notes,
-      sequence
+      sequence,
+      operation_type_id,
+      enabled_features
     } = req.body;
 
     // Validation
@@ -161,12 +172,25 @@ exports.createOperation = async (req, res) => {
       finalSequence = seqResult.rows[0].next_seq;
     }
 
+    // Wenn operation_type_id angegeben, aber keine enabled_features, hole die Default-Features
+    let finalEnabledFeatures = enabled_features;
+    if (operation_type_id && !enabled_features) {
+      const typeResult = await pool.query(
+        'SELECT default_features FROM operation_types WHERE id = $1',
+        [operation_type_id]
+      );
+      if (typeResult.rows.length > 0) {
+        finalEnabledFeatures = typeResult.rows[0].default_features;
+      }
+    }
+
     const query = `
       INSERT INTO operations (
         part_id, op_number, op_name, machine_id,
         setup_time_minutes, cycle_time_seconds,
-        description, notes, sequence, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        description, notes, sequence, created_by,
+        operation_type_id, enabled_features
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
@@ -180,7 +204,9 @@ exports.createOperation = async (req, res) => {
       description || null,
       notes || null,
       finalSequence,
-      req.user?.id || null
+      req.user?.id || null,
+      operation_type_id || null,
+      finalEnabledFeatures ? JSON.stringify(finalEnabledFeatures) : '["programs", "tools", "setup_sheet", "inspection"]'
     ];
 
     const result = await pool.query(query, values);
@@ -224,7 +250,9 @@ exports.updateOperation = async (req, res) => {
       cycle_time_seconds,
       description,
       notes,
-      sequence
+      sequence,
+      operation_type_id,
+      enabled_features
     } = req.body;
 
     // Check if operation exists
@@ -265,8 +293,10 @@ exports.updateOperation = async (req, res) => {
         description = $6,
         notes = $7,
         sequence = COALESCE($8, sequence),
+        operation_type_id = $9,
+        enabled_features = COALESCE($10, enabled_features),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $9
+      WHERE id = $11
       RETURNING *
     `;
 
@@ -279,6 +309,8 @@ exports.updateOperation = async (req, res) => {
       description !== undefined ? description : existingOp.rows[0].description,
       notes !== undefined ? notes : existingOp.rows[0].notes,
       sequence || null,
+      operation_type_id !== undefined ? operation_type_id : existingOp.rows[0].operation_type_id,
+      enabled_features ? JSON.stringify(enabled_features) : null,
       id
     ];
 

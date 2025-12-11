@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
-import OperationsList from '../components/OperationsList';
+import OperationsAccordion from '../components/OperationsAccordion';
 import StepViewer from '../components/StepViewer';
 import PdfViewer from '../components/PdfViewer';
 import PartDocuments from '../components/PartDocuments';
@@ -649,9 +649,9 @@ export default function PartDetailPage() {
           <PartDocuments partId={id} onDocumentChange={handleDocumentChange} />
         </div>
       ) : activeTab === 'operations' ? (
-        /* Operations Tab */
+        /* Operations Tab - Accordion */
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <OperationsList partId={id} />
+          <OperationsAccordion partId={id} />
         </div>
       ) : activeTab === 'history' ? (
         /* History Tab */
