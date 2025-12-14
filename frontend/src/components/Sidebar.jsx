@@ -434,11 +434,12 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Administration" 
               icon={Icons.Users}
-              routes={['/admin/users', '/admin/roles', '/profile']}
+              routes={['/admin/users', '/admin/roles', '/admin/operation-types', '/profile']}
               collapsed={collapsed}
             >
               <NavSubItem to="/admin/users" label="Benutzer" />
               <NavSubItem to="/admin/roles" label="Rollen & Berechtigungen" />
+              <NavSubItem to="/admin/operation-types" label="Operationstypen" />
               <NavSubItem to="/profile" label="Mein Profil" />
             </NavGroup>
           )}
@@ -560,7 +561,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
           {/* Version */}
           {!collapsed && (
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1.5 border-t border-gray-200 dark:border-gray-700">
-              MDS v2.2.1
+              MDS v2.1.0
             </p>
           )}
         </div>

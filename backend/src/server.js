@@ -91,6 +91,12 @@ const consumablesRoutes = require('./routes/consumablesRoutes');
 const consumableDocumentsRoutes = require('./routes/consumableDocumentsRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const operationTypesRoutes = require('./routes/operationTypes');
+const workInstructionsRoutes = require('./routes/workInstructionsRoutes');
+const checklistsRoutes = require('./routes/checklistsRoutes');
+const operationDocumentsRoutes = require('./routes/operationDocumentsRoutes');
+const operationMeasuringEquipmentRoutes = require('./routes/operationMeasuringEquipmentRoutes');
+const operationConsumablesRoutes = require('./routes/operationConsumablesRoutes');
+const operationRawMaterialsRoutes = require('./routes/operationRawMaterialsRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -143,6 +149,12 @@ app.use('/api/consumables', consumablesRoutes);
 app.use('/api/consumable-documents', consumableDocumentsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/operation-types', operationTypesRoutes);
+app.use('/api/work-instructions', workInstructionsRoutes);
+app.use('/api/checklists', checklistsRoutes);
+app.use('/api/operation-documents', operationDocumentsRoutes);
+app.use('/api/operation-measuring-equipment', operationMeasuringEquipmentRoutes);
+app.use('/api/operation-consumables', operationConsumablesRoutes);
+app.use('/api/operation-raw-materials', operationRawMaterialsRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
