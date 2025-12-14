@@ -58,15 +58,15 @@ const getTypeById = async (req, res) => {
 // Neuen Operation Type erstellen (Admin)
 const createType = async (req, res) => {
   try {
-    const { name, description, icon, color, default_features, sort_order } = req.body;
+    const { name, description, icon, color, default_features, sort_order, op_code } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
     }
     
     const result = await pool.query(
-      `INSERT INTO operation_types (name, description, icon, color, default_features, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO operation_types (name, description, icon, color, default_features, sort_order, op_code)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
       [
         name,
@@ -74,7 +74,8 @@ const createType = async (req, res) => {
         icon || 'generic',
         color || 'gray',
         JSON.stringify(default_features || []),
-        sort_order || 0
+        sort_order || 0,
+        op_code || null
       ]
     );
     
@@ -89,7 +90,7 @@ const createType = async (req, res) => {
 const updateType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, icon, color, default_features, sort_order, is_active } = req.body;
+    const { name, description, icon, color, default_features, sort_order, is_active, op_code } = req.body;
     
     const result = await pool.query(
       `UPDATE operation_types 
@@ -99,8 +100,9 @@ const updateType = async (req, res) => {
            color = COALESCE($4, color),
            default_features = COALESCE($5, default_features),
            sort_order = COALESCE($6, sort_order),
-           is_active = COALESCE($7, is_active)
-       WHERE id = $8
+           is_active = COALESCE($7, is_active),
+           op_code = COALESCE($8, op_code)
+       WHERE id = $9
        RETURNING *`,
       [
         name,
@@ -110,6 +112,7 @@ const updateType = async (req, res) => {
         default_features ? JSON.stringify(default_features) : null,
         sort_order,
         is_active,
+        op_code,
         id
       ]
     );
@@ -172,6 +175,8 @@ const getFeatureDefinitions = async (req, res) => {
       { id: 'checklist', label: 'Checkliste', icon: 'list-check', description: 'Abhak-Listen für Prozessschritte' },
       { id: 'documents', label: 'Dokumente', icon: 'folder', description: 'Zusätzliche Dokumente und Anhänge' },
       { id: 'measuring_equipment', label: 'Messmittel', icon: 'calculator', description: 'Benötigte Messmittel und Prüfgeräte' },
+      { id: 'raw_material', label: 'Rohmaterial', icon: 'cube', description: 'Halbzeug, Zuschnitt, Werkstoff' },
+      { id: 'consumables', label: 'Verbrauchsmaterial', icon: 'beaker', description: 'Kühlmittel, Schmierstoffe, etc.' },
     ];
     
     res.json(features);

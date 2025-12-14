@@ -13,12 +13,16 @@ export const useOperationTypesStore = create((set, get) => ({
   error: null,
 
   // Alle Operation Types laden
-  fetchTypes: async () => {
+  fetchTypes: async (includeInactive = false) => {
     const token = localStorage.getItem('token');
     set({ loading: true, error: null });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/operation-types`, {
+      const url = includeInactive 
+        ? `${API_BASE_URL}/api/operation-types?includeInactive=true`
+        : `${API_BASE_URL}/api/operation-types`;
+        
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -55,6 +59,75 @@ export const useOperationTypesStore = create((set, get) => ({
     } catch (error) {
       console.error('fetchFeatures error:', error);
     }
+  },
+
+  // Neuen Typ erstellen
+  createType: async (typeData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/api/operation-types`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(typeData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Fehler beim Erstellen');
+    }
+
+    const newType = await response.json();
+    set(state => ({ types: [...state.types, newType] }));
+    return newType;
+  },
+
+  // Typ aktualisieren
+  updateType: async (id, typeData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/api/operation-types/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(typeData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Fehler beim Aktualisieren');
+    }
+
+    const updatedType = await response.json();
+    set(state => ({
+      types: state.types.map(t => t.id === id ? updatedType : t)
+    }));
+    return updatedType;
+  },
+
+  // Typ löschen
+  deleteType: async (id) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/api/operation-types/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Fehler beim Löschen');
+    }
+
+    set(state => ({
+      types: state.types.filter(t => t.id !== id)
+    }));
   },
 
   // Type by ID holen (aus lokalem Cache)

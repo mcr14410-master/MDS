@@ -26,6 +26,33 @@ router.get('/:id',
 );
 
 /**
+ * GET /api/operations/:id/variants - Get all variants for an operation
+ * Permission: part.read
+ */
+router.get('/:id/variants', 
+  requirePermission('part.read'),
+  operationsController.getVariants
+);
+
+/**
+ * POST /api/operations/:id/create-variant - Create a variant of an operation
+ * Permission: part.create
+ */
+router.post('/:id/create-variant', 
+  requirePermission('part.create'),
+  operationsController.createVariant
+);
+
+/**
+ * PUT /api/operations/:id/set-primary - Set a variant as primary
+ * Permission: part.update
+ */
+router.put('/:id/set-primary', 
+  requirePermission('part.update'),
+  operationsController.setPrimary
+);
+
+/**
  * POST /api/operations - Create new operation
  * Permission: part.create
  */

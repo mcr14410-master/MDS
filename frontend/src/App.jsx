@@ -10,7 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import PartsPage from './pages/PartsPage';
 import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
-import OperationDetailPage from './pages/OperationDetailPage';
+
 import MachinesPage from './pages/MachinesPage';
 import MachineDetailPage from './pages/MachineDetailPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
@@ -37,6 +37,7 @@ import ProfilePage from './pages/ProfilePage';
 import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
 import RolesPage from './pages/admin/RolesPage';
+import OperationTypesPage from './pages/admin/OperationTypesPage';
 
 // Maintenance Pages
 import MaintenanceDashboardPage from './pages/MaintenanceDashboardPage';
@@ -138,16 +139,6 @@ function App() {
             } 
           />
           
-          {/* Operation Detail Route */}
-          <Route 
-            path="/parts/:partId/operations/:operationId" 
-            element={
-              <ProtectedRoute requiredPermission="part.read">
-                <OperationDetailPage />
-              </ProtectedRoute>
-            } 
-          />
-
           {/* Machines Routes */}
           <Route
             path="/machines"
@@ -367,6 +358,14 @@ function App() {
 				     element={
 				       <ProtectedRoute requiredPermission="user.read">
 				         <RolesPage />
+				       </ProtectedRoute>
+				     } 
+				   />
+				   <Route 
+				     path="/admin/operation-types" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <OperationTypesPage />
 				       </ProtectedRoute>
 				     } 
 				   />

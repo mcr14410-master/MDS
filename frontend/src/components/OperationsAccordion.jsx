@@ -7,27 +7,38 @@
  * - Drag & Drop Sortierung
  * - Alle auf-/zuklappen
  * - Animierte Übergänge
+ * - Maschinen-Varianten
  */
 
 import { useEffect, useState } from 'react';
 import { useOperationsStore } from '../stores/operationsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
+import API_BASE_URL from '../config/api';
 import OperationForm from './OperationForm';
+import CreateVariantModal from './CreateVariantModal';
 import ProgramsList from './ProgramsList';
 import ToolListsOverview from './ToolListsOverview';
 import SetupSheetsList from './SetupSheetsList';
 import InspectionPlanTab from './InspectionPlanTab';
+import WorkInstructionsTab from './WorkInstructionsTab';
+import ChecklistsTab from './ChecklistsTab';
+import OperationDocumentsTab from './OperationDocumentsTab';
+import MeasuringEquipmentTab from './MeasuringEquipmentTab';
+import RawMaterialTab from './RawMaterialTab';
+import ConsumablesTab from './ConsumablesTab';
 
 export default function OperationsAccordion({ partId }) {
   const { operations, loading, error, fetchOperations, deleteOperation, updateOperation } = useOperationsStore();
   const { hasPermission } = useAuthStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [activeTab, setActiveTab] = useState({});
+  const [activeVariant, setActiveVariant] = useState({}); // { [opId]: selectedVariantId }
   const [showForm, setShowForm] = useState(false);
   const [editingOperation, setEditingOperation] = useState(null);
   const [draggedId, setDraggedId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
+  const [variantModal, setVariantModal] = useState({ show: false, operation: null });
 
   useEffect(() => {
     if (partId) {
@@ -35,13 +46,30 @@ export default function OperationsAccordion({ partId }) {
     }
   }, [partId, fetchOperations]);
 
-  // Sortierte Operationen
+  // Sortierte Operationen - Primäre OPs, Varianten werden gruppiert
   const sortedOperations = [...operations].sort((a, b) => a.sequence - b.sequence);
+  
+  // Gruppiere nach variant_group_id: Alle Varianten zusammen (inkl. primäre)
+  const groupedOperations = sortedOperations.reduce((acc, op) => {
+    if (op.is_variant_primary || op.is_variant_primary === null || !op.variant_group_id) {
+      // Primäre Operation oder Operation ohne Varianten-Gruppe
+      const allVariants = op.variant_group_id 
+        ? sortedOperations.filter(v => v.variant_group_id === op.variant_group_id)
+        : [op]; // Nur sich selbst wenn keine Gruppe
+      
+      acc.push({
+        ...op,
+        allVariants: allVariants, // Alle Varianten inkl. primäre
+        variants: allVariants.filter(v => v.id !== op.id) // Nur die anderen (für Badge-Anzeige)
+      });
+    }
+    return acc;
+  }, []);
 
   // Hilfsfunktion: Ersten verfügbaren Tab für eine Operation ermitteln
   const getFirstAvailableTab = (operation) => {
     const enabledFeatures = operation.enabled_features || ['programs', 'tools', 'setup_sheet', 'inspection'];
-    const tabOrder = ['programs', 'tools', 'setup_sheet', 'inspection', 'work_instruction', 'checklist', 'documents', 'measuring_equipment'];
+    const tabOrder = ['programs', 'tools', 'setup_sheet', 'inspection', 'work_instruction', 'checklist', 'documents', 'measuring_equipment', 'raw_material', 'consumables'];
     // Feature-ID zu Tab-ID Mapping (setup_sheet -> setup)
     const featureToTab = {
       'programs': 'programs',
@@ -51,7 +79,9 @@ export default function OperationsAccordion({ partId }) {
       'work_instruction': 'work_instruction',
       'checklist': 'checklist',
       'documents': 'documents',
-      'measuring_equipment': 'measuring_equipment'
+      'measuring_equipment': 'measuring_equipment',
+      'raw_material': 'raw_material',
+      'consumables': 'consumables'
     };
     
     for (const feature of tabOrder) {
@@ -179,7 +209,7 @@ export default function OperationsAccordion({ partId }) {
   // Delete
   const handleDelete = async (e, operation) => {
     e.stopPropagation();
-    if (!window.confirm(`Arbeitsgang ${operation.op_number} wirklich löschen?`)) {
+    if (!window.confirm(`Arbeitsgang "${operation.op_name}" (${operation.op_number}) wirklich löschen?`)) {
       return;
     }
     try {
@@ -192,6 +222,31 @@ export default function OperationsAccordion({ partId }) {
       });
     } catch (err) {
       toast.error(err.message || 'Fehler beim Löschen');
+    }
+  };
+
+  // Set Primary Variant
+  const handleSetPrimary = async (e, variant) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/operations/${variant.id}/set-primary`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Fehler beim Setzen der primären Variante');
+      }
+
+      toast.success('Primäre Variante gesetzt');
+      fetchOperations(partId);
+    } catch (err) {
+      toast.error(err.message || 'Fehler beim Setzen der primären Variante');
     }
   };
 
@@ -306,7 +361,7 @@ export default function OperationsAccordion({ partId }) {
       </div>
 
       {/* Empty State */}
-      {sortedOperations.length === 0 ? (
+      {groupedOperations.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
           <svg className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -332,22 +387,32 @@ export default function OperationsAccordion({ partId }) {
       ) : (
         /* Accordion List */
         <div className="space-y-3">
-          {sortedOperations.map((operation) => {
+          {groupedOperations.map((operation) => {
             const isExpanded = expandedIds.has(operation.id);
-            const currentTab = activeTab[operation.id] || 'programs';
             const isDragging = draggedId === operation.id;
             const isDragOver = dragOverId === operation.id;
+            const hasVariants = operation.allVariants && operation.allVariants.length > 1;
+            
+            // Aktive Variante bestimmen (Default: primäre Operation selbst)
+            const selectedVariantId = activeVariant[operation.id] || operation.id;
+            const selectedVariant = hasVariants 
+              ? operation.allVariants.find(v => v.id === selectedVariantId) || operation
+              : operation;
+            
+            // Tab für die aktive Variante
+            const currentTab = activeTab[selectedVariantId] || 'programs';
 
             return (
-              <div
-                key={operation.id}
-                draggable={hasPermission('part.update')}
-                onDragStart={(e) => handleDragStart(e, operation.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, operation.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, operation.id)}
-                className={`bg-white dark:bg-gray-800 border rounded-lg overflow-hidden transition-all duration-200 ${
+              <div key={operation.id} className="space-y-1">
+                {/* Primäre Operation */}
+                <div
+                  draggable={hasPermission('part.update')}
+                  onDragStart={(e) => handleDragStart(e, operation.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, operation.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, operation.id)}
+                  className={`bg-white dark:bg-gray-800 border rounded-lg overflow-hidden transition-all duration-200 ${
                   isDragOver 
                     ? 'border-blue-500 border-2 shadow-lg scale-[1.01]' 
                     : isDragging
@@ -388,8 +453,13 @@ export default function OperationsAccordion({ partId }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
 
-                    {/* OP Number Badge */}
-                    <span className="text-xl font-bold text-blue-600 dark:text-blue-400 min-w-[60px]">
+                    {/* Sequence Number */}
+                    <span className="text-sm font-medium text-gray-400 dark:text-gray-500 min-w-[28px] text-right">
+                      {operation.sequence}
+                    </span>
+
+                    {/* OP Code Badge */}
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400 min-w-[70px] font-mono">
                       {operation.op_number}
                     </span>
 
@@ -416,57 +486,98 @@ export default function OperationsAccordion({ partId }) {
                           </span>
                         )}
                       </div>
-                      {operation.machine_name && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                          </svg>
-                          {operation.machine_name}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Right: Times + Actions */}
-                  <div className="flex items-center gap-6">
-                    {/* Times */}
-                    <div className="hidden sm:flex items-center gap-6 text-sm">
-                      <div className="text-center">
-                        <p className="text-gray-500 dark:text-gray-400 text-xs">Rüstzeit</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {formatSetupTime(operation.setup_time_minutes)}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-gray-500 dark:text-gray-400 text-xs">Zykluszeit</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {formatCycleTime(operation.cycle_time_seconds)}
-                        </p>
-                      </div>
+                  {/* Right: Machine + Times + Actions */}
+                  <div className="flex items-center gap-4">
+                    {/* Maschine(n) + Zeiten - einheitliche Darstellung */}
+                    <div className="hidden sm:flex flex-col gap-0.5 text-xs">
+                      {hasVariants ? (
+                        /* Mit Varianten: Liste aller Maschinen */
+                        [...operation.allVariants]
+                          .sort((a, b) => (b.is_variant_primary ? 1 : 0) - (a.is_variant_primary ? 1 : 0))
+                          .map((variant) => (
+                          <div 
+                            key={variant.id} 
+                            className={`flex items-center gap-3 px-2 py-0.5 rounded ${
+                              variant.is_variant_primary ? 'bg-purple-50 dark:bg-purple-900/20' : ''
+                            }`}
+                          >
+                            <span className={`w-24 truncate font-medium ${
+                              variant.is_variant_primary 
+                                ? 'text-purple-700 dark:text-purple-300' 
+                                : 'text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {variant.machine_name || '–'}
+                              {variant.is_variant_primary && ' ★'}
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400 w-16 text-right">
+                              {formatSetupTime(variant.setup_time_minutes)}
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400 w-16 text-right">
+                              {formatCycleTime(variant.cycle_time_seconds)}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        /* Keine Varianten: einzelne Zeile */
+                        <div className="flex items-center gap-3 px-2 py-0.5">
+                          <span className="w-24 truncate font-medium text-gray-600 dark:text-gray-400">
+                            {operation.machine_name || '–'}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 w-16 text-right">
+                            {formatSetupTime(operation.setup_time_minutes)}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 w-16 text-right">
+                            {formatCycleTime(operation.cycle_time_seconds)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
                     {hasPermission('part.update') && (
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => handleEdit(e, operation)}
-                          className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Bearbeiten"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        {hasPermission('part.delete') && (
+                        {/* Variante erstellen - nur wenn Maschine zugewiesen und nicht schon Varianten vorhanden */}
+                        {operation.machine_id && !hasVariants && (
                           <button
-                            onClick={(e) => handleDelete(e, operation)}
-                            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                            title="Löschen"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVariantModal({ show: true, operation });
+                            }}
+                            className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                            title="Variante für andere Maschine erstellen"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
                           </button>
+                        )}
+                        {/* Edit/Delete nur wenn KEINE Varianten - sonst sind die Buttons im Content */}
+                        {!hasVariants && (
+                          <>
+                            <button
+                              onClick={(e) => handleEdit(e, operation)}
+                              className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                              title="Bearbeiten"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            {hasPermission('part.delete') && (
+                              <button
+                                onClick={(e) => handleDelete(e, operation)}
+                                className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                title="Löschen"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
@@ -480,30 +591,127 @@ export default function OperationsAccordion({ partId }) {
                   }`}
                 >
                   <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                    {/* Description */}
-                    {operation.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    {/* Mobile Times - nur bei Operationen ohne Varianten */}
+                    {!hasVariants && (
+                      <div className="sm:hidden grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Rüstzeit</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {formatSetupTime(operation.setup_time_minutes)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Zykluszeit</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {formatCycleTime(operation.cycle_time_seconds)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Beschreibung bei Operationen ohne Varianten */}
+                    {!hasVariants && operation.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 italic mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                         {operation.description}
                       </p>
                     )}
 
-                    {/* Mobile Times */}
-                    <div className="sm:hidden grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Rüstzeit</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {formatSetupTime(operation.setup_time_minutes)}
-                        </p>
+                    {/* Maschinen-Auswahl (wenn Varianten vorhanden) */}
+                    {hasVariants && (
+                      <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Maschine auswählen:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[...operation.allVariants]
+                            .sort((a, b) => (b.is_variant_primary ? 1 : 0) - (a.is_variant_primary ? 1 : 0))
+                            .map((variant) => {
+                            const isActive = selectedVariantId === variant.id;
+                            return (
+                              <button
+                                key={variant.id}
+                                onClick={() => setActiveVariant(prev => ({ ...prev, [operation.id]: variant.id }))}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                  isActive
+                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 ring-2 ring-purple-500 ring-offset-1'
+                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                <svg className={`w-4 h-4 ${isActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                </svg>
+                                {variant.machine_name || 'Keine Maschine'}
+                                {variant.is_variant_primary && (
+                                  <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                          {/* Variante hinzufügen Button */}
+                          {hasPermission('part.create') && (
+                            <button
+                              onClick={() => setVariantModal({ show: true, operation: selectedVariant })}
+                              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-purple-400 hover:text-purple-600 dark:hover:border-purple-500 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+                              title="Weitere Variante hinzufügen"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                        {/* Zeiten der aktiven Variante */}
+                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                          <span>Rüstzeit: <strong className="text-gray-900 dark:text-white">{formatSetupTime(selectedVariant.setup_time_minutes)}</strong></span>
+                          <span>Zykluszeit: <strong className="text-gray-900 dark:text-white">{formatCycleTime(selectedVariant.cycle_time_seconds)}</strong></span>
+                          <div className="ml-auto flex items-center gap-3">
+                            {/* Als Primär setzen - nur wenn nicht bereits primär */}
+                            {hasPermission('part.update') && !selectedVariant.is_variant_primary && (
+                              <button
+                                onClick={(e) => handleSetPrimary(e, selectedVariant)}
+                                className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                                title="Diese Variante als Hauptvariante setzen"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                                Als Primär
+                              </button>
+                            )}
+                            {hasPermission('part.update') && (
+                              <button
+                                onClick={(e) => handleEdit(e, selectedVariant)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Bearbeiten
+                              </button>
+                            )}
+                            {hasPermission('part.delete') && (
+                              <button
+                                onClick={(e) => handleDelete(e, selectedVariant)}
+                                className="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Löschen
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {/* Beschreibung der aktiven Variante */}
+                        {selectedVariant.description && (
+                          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 italic">
+                            {selectedVariant.description}
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Zykluszeit</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {formatCycleTime(operation.cycle_time_seconds)}
-                        </p>
-                      </div>
-                    </div>
+                    )}
 
-                    {/* Inner Tabs - dynamisch basierend auf enabled_features */}
+                    {/* Inner Tabs - dynamisch basierend auf enabled_features der aktiven Variante */}
                     <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
                       <nav className="flex gap-4 -mb-px overflow-x-auto">
                         {(() => {
@@ -517,16 +725,18 @@ export default function OperationsAccordion({ partId }) {
                             { id: 'checklist', featureId: 'checklist', label: 'Checkliste', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
                             { id: 'documents', featureId: 'documents', label: 'Dokumente', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
                             { id: 'measuring_equipment', featureId: 'measuring_equipment', label: 'Messmittel', icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3' },
+                            { id: 'raw_material', featureId: 'raw_material', label: 'Rohmaterial', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+                            { id: 'consumables', featureId: 'consumables', label: 'Verbrauchsmaterial', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
                           ];
                           
-                          // Filtern nach enabled_features
-                          const enabledFeatures = operation.enabled_features || ['programs', 'tools', 'setup_sheet', 'inspection'];
+                          // Filtern nach enabled_features der aktiven Variante
+                          const enabledFeatures = selectedVariant.enabled_features || ['programs', 'tools', 'setup_sheet', 'inspection'];
                           const visibleTabs = allTabs.filter(tab => enabledFeatures.includes(tab.featureId));
                           
                           return visibleTabs.map((tab) => (
                             <button
                               key={tab.id}
-                              onClick={() => handleTabChange(operation.id, tab.id)}
+                              onClick={() => handleTabChange(selectedVariantId, tab.id)}
                               className={`flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                                 currentTab === tab.id
                                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -543,55 +753,42 @@ export default function OperationsAccordion({ partId }) {
                       </nav>
                     </div>
 
-                    {/* Tab Content - dynamisch */}
+                    {/* Tab Content - für aktive Variante */}
                     <div className="min-h-[200px]">
                       {currentTab === 'programs' && (
-                        <ProgramsList operationId={operation.id} />
+                        <ProgramsList operationId={selectedVariantId} />
                       )}
                       {currentTab === 'tools' && (
-                        <ToolListsOverview operationId={operation.id} />
+                        <ToolListsOverview operationId={selectedVariantId} />
                       )}
                       {currentTab === 'setup' && (
-                        <SetupSheetsList operationId={operation.id} />
+                        <SetupSheetsList operationId={selectedVariantId} />
                       )}
                       {currentTab === 'inspection' && (
-                        <InspectionPlanTab operationId={operation.id} />
+                        <InspectionPlanTab operationId={selectedVariantId} />
                       )}
                       {currentTab === 'work_instruction' && (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <p className="text-gray-500 dark:text-gray-400">Arbeitsanweisungen - kommt bald</p>
-                        </div>
+                        <WorkInstructionsTab operationId={selectedVariantId} />
                       )}
                       {currentTab === 'checklist' && (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                          <p className="text-gray-500 dark:text-gray-400">Checklisten - kommt bald</p>
-                        </div>
+                        <ChecklistsTab operationId={selectedVariantId} />
                       )}
                       {currentTab === 'documents' && (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                          </svg>
-                          <p className="text-gray-500 dark:text-gray-400">Dokumente - kommt bald</p>
-                        </div>
+                        <OperationDocumentsTab operationId={selectedVariantId} />
                       )}
                       {currentTab === 'measuring_equipment' && (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                          </svg>
-                          <p className="text-gray-500 dark:text-gray-400">Messmittel - kommt bald</p>
-                        </div>
+                        <MeasuringEquipmentTab operationId={selectedVariantId} />
+                      )}
+                      {currentTab === 'raw_material' && (
+                        <RawMaterialTab operationId={selectedVariantId} />
+                      )}
+                      {currentTab === 'consumables' && (
+                        <ConsumablesTab operationId={selectedVariantId} />
                       )}
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             );
           })}
@@ -605,6 +802,18 @@ export default function OperationsAccordion({ partId }) {
           operation={editingOperation}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {/* Create Variant Modal */}
+      {variantModal.show && (
+        <CreateVariantModal
+          operation={variantModal.operation}
+          onClose={() => setVariantModal({ show: false, operation: null })}
+          onSuccess={() => {
+            setVariantModal({ show: false, operation: null });
+            fetchOperations(partId);
+          }}
         />
       )}
     </div>
