@@ -382,36 +382,68 @@ exports.updateOperation = async (req, res) => {
  * DELETE /api/operations/:id
  */
 exports.deleteOperation = async (req, res) => {
+  const client = await pool.connect();
+  
   try {
     const { id } = req.params;
 
+    await client.query('BEGIN');
+
     // Check if operation exists
-    const existingOp = await pool.query(
+    const existingOp = await client.query(
       'SELECT * FROM operations WHERE id = $1',
       [id]
     );
     
     if (existingOp.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
         message: 'Arbeitsgang nicht gefunden'
       });
     }
 
+    const operation = existingOp.rows[0];
+
+    // Wenn primäre Variante gelöscht wird: andere Variante zur Primären machen
+    if (operation.is_variant_primary && operation.variant_group_id) {
+      // Gibt es andere Varianten in der Gruppe?
+      const otherVariants = await client.query(
+        `SELECT id FROM operations 
+         WHERE variant_group_id = $1 AND id != $2 
+         ORDER BY created_at ASC 
+         LIMIT 1`,
+        [operation.variant_group_id, id]
+      );
+
+      if (otherVariants.rows.length > 0) {
+        // Erste andere Variante zur neuen Primären machen
+        await client.query(
+          'UPDATE operations SET is_variant_primary = true WHERE id = $1',
+          [otherVariants.rows[0].id]
+        );
+      }
+    }
+
     // Hard delete (CASCADE will handle related records)
-    await pool.query('DELETE FROM operations WHERE id = $1', [id]);
+    await client.query('DELETE FROM operations WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
 
     res.json({
       success: true,
       message: 'Arbeitsgang erfolgreich gelöscht'
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error deleting operation:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Löschen des Arbeitsgangs',
       error: error.message
     });
+  } finally {
+    client.release();
   }
 };
 
