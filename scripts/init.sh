@@ -9,6 +9,15 @@ echo "======================="
 
 cd ~/mds
 
+# Verzeichnisse erstellen
+echo ""
+echo "📁 Erstelle Verzeichnisse..."
+sudo mkdir -p /srv/mds/postgres
+sudo mkdir -p /srv/mds/uploads
+sudo mkdir -p /srv/mds/pgadmin
+sudo chown -R 5050:5050 /srv/mds/pgadmin
+echo "✅ Verzeichnisse erstellt"
+
 # Prüfen ob Container laufen
 if ! docker compose ps | grep -q "backend.*Up"; then
     echo "⚠️  Container starten..."
@@ -166,4 +175,6 @@ fi
 echo ""
 echo "✅ Installation abgeschlossen!"
 echo ""
-echo "🌐 MDS erreichbar unter: http://$(hostname -I | awk '{print $1}'):81"
+echo "🌐 MDS erreichbar unter:     http://$(hostname -I | awk '{print $1}'):81"
+echo "🗄️  pgAdmin erreichbar unter: http://$(hostname -I | awk '{print $1}'):5050"
+echo "   (Login: admin@mds.local / admin)"
