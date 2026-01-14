@@ -220,6 +220,8 @@ export default function OperationsAccordion({ partId }) {
         next.delete(operation.id);
         return next;
       });
+      // Liste neu laden (wichtig für Varianten-Übernahme)
+      fetchOperations(partId);
     } catch (err) {
       toast.error(err.message || 'Fehler beim Löschen');
     }
