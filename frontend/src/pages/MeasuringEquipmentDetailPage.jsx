@@ -6,6 +6,7 @@ import { useStorageStore } from '../stores/storageStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import CalibrationFormModal from '../components/measuringEquipment/CalibrationFormModal';
+import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentStorageSection from '../components/measuringEquipment/MeasuringEquipmentStorageSection';
 import API_BASE_URL from '../config/api';
 
@@ -43,6 +44,12 @@ const calibrationResultLabels = {
   limited: 'Eingeschränkt',
 };
 
+// Trailing zeros entfernen (0.0100 → 0.01, 150.0000 → 150)
+const formatNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  return parseFloat(value).toString();
+};
+
 export default function MeasuringEquipmentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,11 +63,14 @@ export default function MeasuringEquipmentDetailPage() {
     clearCurrentEquipment,
     checkoutEquipment,
     returnEquipment,
-    fetchEquipmentCheckouts
+    fetchEquipmentCheckouts,
+    types,
+    fetchTypes
   } = useMeasuringEquipmentStore();
 
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
   const [editingCalibration, setEditingCalibration] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [lockReason, setLockReason] = useState('');
@@ -78,6 +88,7 @@ export default function MeasuringEquipmentDetailPage() {
 
   useEffect(() => {
     fetchEquipmentById(id);
+    fetchTypes({ is_active: true });
     loadCheckoutHistory();
     return () => clearCurrentEquipment();
   }, [id]);
@@ -224,6 +235,18 @@ export default function MeasuringEquipmentDetailPage() {
           <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${statusColors[eq.calibration_status] || 'bg-gray-100 text-gray-800'}`}>
             {statusLabels[eq.calibration_status] || eq.calibration_status}
           </span>
+          {hasPermission('storage.edit') && (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="px-3 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors inline-flex items-center gap-1"
+              title="Messmittel bearbeiten"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Bearbeiten
+            </button>
+          )}
           <button
             onClick={async () => {
               const token = localStorage.getItem('token');
@@ -373,19 +396,19 @@ export default function MeasuringEquipmentDetailPage() {
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Messbereich</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {eq.measuring_range_min} - {eq.measuring_range_max} {eq.unit}
+                      {formatNumber(eq.measuring_range_min)} - {formatNumber(eq.measuring_range_max)} {eq.unit}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Auflösung</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {eq.resolution ? `${eq.resolution} ${eq.unit}` : '-'}
+                      {eq.resolution ? `${formatNumber(eq.resolution)} ${eq.unit}` : '-'}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Genauigkeit</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {eq.accuracy ? `±${eq.accuracy} ${eq.unit}` : '-'}
+                      {eq.accuracy ? `±${formatNumber(eq.accuracy)} ${eq.unit}` : '-'}
                     </dd>
                   </div>
                 </>
@@ -394,7 +417,7 @@ export default function MeasuringEquipmentDetailPage() {
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Nennmaß</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      Ø{eq.nominal_value} {eq.unit}
+                      Ø{formatNumber(eq.nominal_value)} {eq.unit}
                     </dd>
                   </div>
                   <div>
@@ -925,10 +948,23 @@ export default function MeasuringEquipmentDetailPage() {
       {showCalibrationModal && (
         <CalibrationFormModal
           equipmentId={eq.id}
+          calibrationIntervalMonths={eq.calibration_interval_months}
           calibration={editingCalibration}
           onClose={(success) => {
             setShowCalibrationModal(false);
             setEditingCalibration(null);
+            if (success) fetchEquipmentById(id);
+          }}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <MeasuringEquipmentFormModal
+          equipment={eq}
+          types={types}
+          onClose={(success) => {
+            setShowEditModal(false);
             if (success) fetchEquipmentById(id);
           }}
         />

@@ -3,6 +3,12 @@ import { useMeasuringEquipmentStore } from '../../stores/measuringEquipmentStore
 import { useSuppliersStore } from '../../stores/suppliersStore';
 import { toast } from '../Toaster';
 
+// Trailing zeros entfernen für Anzeige (0.0100 → 0.01)
+const formatNumber = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  return parseFloat(value).toString();
+};
+
 export default function MeasuringEquipmentFormModal({ equipment, types, onClose }) {
   const { createEquipment, updateEquipment, getNextInventoryNumber } = useMeasuringEquipmentStore();
   const { suppliers, fetchSuppliers } = useSuppliersStore();
@@ -44,12 +50,12 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
         manufacturer: equipment.manufacturer || '',
         model: equipment.model || '',
         serial_number: equipment.serial_number || '',
-        measuring_range_min: equipment.measuring_range_min || '',
-        measuring_range_max: equipment.measuring_range_max || '',
-        resolution: equipment.resolution || '',
-        accuracy: equipment.accuracy || '',
+        measuring_range_min: formatNumber(equipment.measuring_range_min),
+        measuring_range_max: formatNumber(equipment.measuring_range_max),
+        resolution: formatNumber(equipment.resolution),
+        accuracy: formatNumber(equipment.accuracy),
         unit: equipment.unit || 'mm',
-        nominal_value: equipment.nominal_value || '',
+        nominal_value: formatNumber(equipment.nominal_value),
         tolerance_class: equipment.tolerance_class || '',
         calibration_interval_months: equipment.calibration_interval_months || 12,
         last_calibration_date: equipment.last_calibration_date?.split('T')[0] || '',

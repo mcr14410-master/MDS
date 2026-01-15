@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMeasuringEquipmentStore } from '../stores/measuringEquipmentStore';
+import { usePreferencesStore } from '../stores/preferencesStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import MeasuringEquipmentCard from '../components/measuringEquipment/MeasuringEquipmentCard';
@@ -54,8 +55,10 @@ export default function MeasuringEquipmentPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState(null);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const [showTypesModal, setShowTypesModal] = useState(false);
+  
+  const { getViewMode, setViewMode } = usePreferencesStore();
+  const viewMode = getViewMode('measuringEquipment');
 
   useEffect(() => {
     fetchTypes({ is_active: true });
@@ -171,7 +174,7 @@ export default function MeasuringEquipmentPage() {
           {/* View Mode Toggle */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => setViewMode('measuringEquipment', 'grid')}
               className={`p-2 transition-colors ${
                 viewMode === 'grid'
                   ? 'bg-blue-600 text-white'
@@ -184,7 +187,7 @@ export default function MeasuringEquipmentPage() {
               </svg>
             </button>
             <button
-              onClick={() => setViewMode('table')}
+              onClick={() => setViewMode('measuringEquipment', 'table')}
               className={`p-2 transition-colors ${
                 viewMode === 'table'
                   ? 'bg-blue-600 text-white'

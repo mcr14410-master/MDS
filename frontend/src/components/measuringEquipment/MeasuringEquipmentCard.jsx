@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 
+// Trailing zeros entfernen (0.0100 → 0.01, 150.0000 → 150)
+const formatNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  return parseFloat(value).toString();
+};
+
 export default function MeasuringEquipmentCard({ 
   equipment, 
   onEdit, 
@@ -60,10 +66,10 @@ export default function MeasuringEquipmentCard({
 
   const formatMeasuringRange = () => {
     if (equipment.measuring_range_min !== null && equipment.measuring_range_max !== null) {
-      return `${equipment.measuring_range_min} - ${equipment.measuring_range_max} ${equipment.unit || 'mm'}`;
+      return `${formatNumber(equipment.measuring_range_min)} - ${formatNumber(equipment.measuring_range_max)} ${equipment.unit || 'mm'}`;
     }
     if (equipment.nominal_value) {
-      return `Ø${equipment.nominal_value} ${equipment.tolerance_class || ''}`;
+      return `Ø${formatNumber(equipment.nominal_value)} ${equipment.tolerance_class || ''}`;
     }
     return '-';
   };
@@ -144,7 +150,7 @@ export default function MeasuringEquipmentCard({
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 dark:text-gray-400">Auflösung</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {equipment.resolution} {equipment.unit || 'mm'}
+              {formatNumber(equipment.resolution)} {equipment.unit || 'mm'}
             </span>
           </div>
         )}
