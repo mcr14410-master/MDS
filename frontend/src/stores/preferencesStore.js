@@ -10,6 +10,7 @@ const defaultPreferences = {
     tools: 'grid',
     consumables: 'grid',
     suppliers: 'grid',
+    measuringEquipment: 'grid',
     // Weitere Seiten hier hinzufügen
   },
   // Später erweiterbar:

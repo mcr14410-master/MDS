@@ -20,6 +20,12 @@ const statusLabels = {
   repair: 'Reparatur',
 };
 
+// Trailing zeros entfernen (0.0100 → 0.01, 150.0000 → 150)
+const formatNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  return parseFloat(value).toString();
+};
+
 export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete }) {
   const { hasPermission } = useAuthStore();
   const [sortColumn, setSortColumn] = useState('inventory_number');
@@ -76,10 +82,10 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
 
   const formatRange = (eq) => {
     if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
-      return `${eq.measuring_range_min}-${eq.measuring_range_max}`;
+      return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)}`;
     }
     if (eq.nominal_value) {
-      return `Ø${eq.nominal_value}`;
+      return `Ø${formatNumber(eq.nominal_value)}`;
     }
     return '-';
   };
@@ -213,19 +219,19 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {eq.storage_location_name || eq.location_name 
-                      ? (
-                        <>
-                          {eq.storage_location_name || eq.location_name}
-                          {eq.compartment_name && (
-                            <span className="text-gray-400 dark:text-gray-500"> → {eq.compartment_name}</span>
-                          )}
-                        </>
-                      )
-                      : '-'
-                    }
-                  </span>
+                  {eq.location_code || eq.storage_location_name || eq.location_name ? (
+                    <span 
+                      className="text-sm text-gray-600 dark:text-gray-400 cursor-help"
+                      title={`${eq.storage_location_name || eq.location_name || ''}${eq.compartment_name ? ` → ${eq.compartment_name}` : ''}`}
+                    >
+                      {eq.location_code || eq.storage_location_name || eq.location_name}
+                      {(eq.compartment_code || eq.compartment_name) && (
+                        <span className="text-gray-400 dark:text-gray-500"> → {eq.compartment_code || eq.compartment_name}</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-1">

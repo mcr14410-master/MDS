@@ -302,6 +302,7 @@ exports.getAllEquipment = async (req, res) => {
         -- Lagerort aus Storage-System
         si.compartment_id,
         sc.name as compartment_name,
+        sc.code as compartment_code,
         sl.name as location_name,
         sl.code as location_code
       FROM measuring_equipment_with_status me

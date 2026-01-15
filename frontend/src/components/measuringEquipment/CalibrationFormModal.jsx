@@ -3,11 +3,12 @@ import { useMeasuringEquipmentStore } from '../../stores/measuringEquipmentStore
 import { toast } from '../Toaster';
 import API_BASE_URL from '../../config/api';
 
-export default function CalibrationFormModal({ equipmentId, calibration, onClose }) {
+export default function CalibrationFormModal({ equipmentId, calibrationIntervalMonths, calibration, onClose }) {
   const { createCalibration, updateCalibration, uploadCertificate, deleteCertificate } = useMeasuringEquipmentStore();
   const [loading, setLoading] = useState(false);
   const [certificateFile, setCertificateFile] = useState(null);
   const [existingCertificates, setExistingCertificates] = useState(calibration?.certificates || []);
+  const [autoCalculated, setAutoCalculated] = useState(false);
   const fileInputRef = useRef(null);
   
   const isEditMode = !!calibration;
@@ -50,10 +51,29 @@ export default function CalibrationFormModal({ equipmentId, calibration, onClose
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
-    setFormData(f => ({
-      ...f,
-      [name]: type === 'number' ? (value === '' ? '' : parseFloat(value)) : value
-    }));
+    
+    if (name === 'calibration_date' && value && calibrationIntervalMonths) {
+      // Auto-calculate valid_until
+      const calibDate = new Date(value);
+      calibDate.setMonth(calibDate.getMonth() + calibrationIntervalMonths);
+      const newValidUntil = calibDate.toISOString().split('T')[0];
+      
+      setFormData(f => ({
+        ...f,
+        calibration_date: value,
+        valid_until: newValidUntil
+      }));
+      setAutoCalculated(true);
+    } else if (name === 'valid_until') {
+      // Manual change - clear auto hint
+      setFormData(f => ({ ...f, [name]: value }));
+      setAutoCalculated(false);
+    } else {
+      setFormData(f => ({
+        ...f,
+        [name]: type === 'number' ? (value === '' ? '' : parseFloat(value)) : value
+      }));
+    }
   };
 
   const handleDeleteCertificate = async (certId) => {
@@ -211,6 +231,16 @@ export default function CalibrationFormModal({ equipmentId, calibration, onClose
                 />
               </div>
             </div>
+
+            {/* Auto-calculation hint */}
+            {autoCalculated && calibrationIntervalMonths && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 -mt-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Automatisch berechnet ({calibrationIntervalMonths} Monate Intervall)
+              </p>
+            )}
 
             {/* Result */}
             <div>
