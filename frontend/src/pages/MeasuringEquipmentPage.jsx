@@ -8,6 +8,7 @@ import MeasuringEquipmentCard from '../components/measuringEquipment/MeasuringEq
 import MeasuringEquipmentTable from '../components/measuringEquipment/MeasuringEquipmentTable';
 import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentTypesModal from '../components/measuringEquipment/MeasuringEquipmentTypesModal';
+import MeasuringEquipmentCheckoutModal from '../components/measuringEquipment/MeasuringEquipmentCheckoutModal';
 import API_BASE_URL from '../config/api';
 
 // Kalibrierungsstatus-Farben
@@ -57,6 +58,11 @@ export default function MeasuringEquipmentPage() {
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [showTypesModal, setShowTypesModal] = useState(false);
   
+  // Checkout Modal State
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutEquipmentItem, setCheckoutEquipmentItem] = useState(null);
+  const [checkoutMode, setCheckoutMode] = useState('checkout'); // 'checkout' oder 'return'
+  
   const { getViewMode, setViewMode } = usePreferencesStore();
   const viewMode = getViewMode('measuringEquipment');
 
@@ -105,6 +111,22 @@ export default function MeasuringEquipmentPage() {
   const handleModalClose = (success) => {
     setIsModalOpen(false);
     setEditingEquipment(null);
+    if (success) {
+      fetchEquipment(filters);
+      fetchStats();
+    }
+  };
+
+  // Checkout/Return Handler
+  const handleCheckout = (item, mode) => {
+    setCheckoutEquipmentItem(item);
+    setCheckoutMode(mode);
+    setCheckoutModalOpen(true);
+  };
+
+  const handleCheckoutModalClose = (success) => {
+    setCheckoutModalOpen(false);
+    setCheckoutEquipmentItem(null);
     if (success) {
       fetchEquipment(filters);
       fetchStats();
@@ -241,7 +263,7 @@ export default function MeasuringEquipmentPage() {
           </div>
 
           {/* Types Management */}
-          {hasPermission('storage.edit') && (
+          {hasPermission('measuring.edit') && (
             <button
               onClick={() => setShowTypesModal(true)}
               className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -255,7 +277,7 @@ export default function MeasuringEquipmentPage() {
           )}
 
           {/* Create New */}
-          {hasPermission('storage.create') && (
+          {hasPermission('measuring.create') && (
             <button
               onClick={handleCreateNew}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -493,6 +515,7 @@ export default function MeasuringEquipmentPage() {
           equipment={equipment}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onCheckout={handleCheckout}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -502,6 +525,7 @@ export default function MeasuringEquipmentPage() {
               equipment={item}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onCheckout={handleCheckout}
               statusColors={calibrationStatusColors}
               statusLabels={calibrationStatusLabels}
             />
@@ -525,6 +549,15 @@ export default function MeasuringEquipmentPage() {
             setShowTypesModal(false);
             fetchTypes({ is_active: true });
           }}
+        />
+      )}
+
+      {/* Checkout/Return Modal */}
+      {checkoutModalOpen && checkoutEquipmentItem && (
+        <MeasuringEquipmentCheckoutModal
+          equipment={checkoutEquipmentItem}
+          mode={checkoutMode}
+          onClose={handleCheckoutModalClose}
         />
       )}
     </div>

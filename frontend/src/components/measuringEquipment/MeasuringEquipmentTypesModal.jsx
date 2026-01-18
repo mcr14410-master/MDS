@@ -14,7 +14,19 @@ export default function MeasuringEquipmentTypesModal({ onClose }) {
     default_calibration_interval_months: 12,
     sort_order: 0,
     is_active: true,
+    field_category: 'measuring_instrument',
   });
+
+  // Feld-Kategorien
+  const fieldCategoryOptions = [
+    { value: 'measuring_instrument', label: 'Messinstrument', hint: 'Messbereich, Auflösung, Genauigkeit' },
+    { value: 'gauge', label: 'Lehre', hint: 'Nennmaß, Toleranzklasse' },
+    { value: 'thread_gauge', label: 'Gewindelehre', hint: 'Gewindenorm, Größe, Steigung, Toleranz' },
+    { value: 'gauge_block', label: 'Endmaß', hint: 'Nennmaß, Genauigkeitsklasse' },
+    { value: 'angle_gauge', label: 'Winkelmesser', hint: 'Nennwinkel, Toleranz' },
+    { value: 'surface_tester', label: 'Rauheitsmesser', hint: 'Messparameter (Ra, Rz)' },
+    { value: 'other', label: 'Sonstiges', hint: 'Nur Basisfelder' },
+  ];
 
   useEffect(() => {
     fetchTypes();
@@ -28,6 +40,7 @@ export default function MeasuringEquipmentTypesModal({ onClose }) {
       default_calibration_interval_months: 12,
       sort_order: 0,
       is_active: true,
+      field_category: 'measuring_instrument',
     });
     setEditingType(null);
     setShowForm(false);
@@ -41,6 +54,7 @@ export default function MeasuringEquipmentTypesModal({ onClose }) {
       default_calibration_interval_months: type.default_calibration_interval_months || 12,
       sort_order: type.sort_order || 0,
       is_active: type.is_active,
+      field_category: type.field_category || 'measuring_instrument',
     });
     setEditingType(type);
     setShowForm(true);
@@ -158,6 +172,23 @@ export default function MeasuringEquipmentTypesModal({ onClose }) {
                       placeholder="z.B. Koordinatenmessgerät"
                     />
                   </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Feld-Kategorie
+                    </label>
+                    <select
+                      value={formData.field_category}
+                      onChange={(e) => setFormData({ ...formData, field_category: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                    >
+                      {fieldCategoryOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {fieldCategoryOptions.find(o => o.value === formData.field_category)?.hint}
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Icon
@@ -253,11 +284,16 @@ export default function MeasuringEquipmentTypesModal({ onClose }) {
                       {iconOptions.find(i => i.value === type.icon)?.label.split(' ')[0] || '🔧'}
                     </span>
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {type.name}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {type.name}
+                        </span>
                         {!type.is_active && (
-                          <span className="ml-2 text-xs text-gray-500">(inaktiv)</span>
+                          <span className="text-xs text-gray-500">(inaktiv)</span>
                         )}
+                        <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                          {fieldCategoryOptions.find(c => c.value === type.field_category)?.label || type.field_category}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {type.default_calibration_interval_months} Mon. · {type.equipment_count || 0} Messmittel

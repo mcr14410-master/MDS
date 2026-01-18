@@ -8,6 +8,7 @@ import { toast } from '../components/Toaster';
 import CalibrationFormModal from '../components/measuringEquipment/CalibrationFormModal';
 import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentStorageSection from '../components/measuringEquipment/MeasuringEquipmentStorageSection';
+import MeasuringEquipmentCheckoutModal from '../components/measuringEquipment/MeasuringEquipmentCheckoutModal';
 import API_BASE_URL from '../config/api';
 
 const statusColors = {
@@ -61,8 +62,6 @@ export default function MeasuringEquipmentDetailPage() {
     updateEquipmentStatus,
     deleteCalibration,
     clearCurrentEquipment,
-    checkoutEquipment,
-    returnEquipment,
     fetchEquipmentCheckouts,
     types,
     fetchTypes
@@ -76,13 +75,8 @@ export default function MeasuringEquipmentDetailPage() {
   const [lockReason, setLockReason] = useState('');
   
   // Checkout states
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [showReturnModal, setShowReturnModal] = useState(false);
-  const [checkoutPurpose, setCheckoutPurpose] = useState('');
-  const [checkoutWorkOrder, setCheckoutWorkOrder] = useState('');
-  const [checkoutExpectedReturn, setCheckoutExpectedReturn] = useState('');
-  const [returnCondition, setReturnCondition] = useState('ok');
-  const [returnNotes, setReturnNotes] = useState('');
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutMode, setCheckoutMode] = useState('checkout'); // 'checkout' oder 'return'
   const [checkoutHistory, setCheckoutHistory] = useState([]);
   const [currentCheckout, setCurrentCheckout] = useState(null);
 
@@ -116,38 +110,16 @@ export default function MeasuringEquipmentDetailPage() {
     }
   };
 
-  const handleCheckout = async () => {
-    try {
-      await checkoutEquipment(id, {
-        purpose: checkoutPurpose,
-        work_order_number: checkoutWorkOrder || null,
-        expected_return_date: checkoutExpectedReturn || null
-      });
-      toast.success('Messmittel entnommen');
-      setShowCheckoutModal(false);
-      setCheckoutPurpose('');
-      setCheckoutWorkOrder('');
-      setCheckoutExpectedReturn('');
-      loadCheckoutHistory();
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Fehler bei der Entnahme');
-    }
+  const openCheckoutModal = (mode) => {
+    setCheckoutMode(mode);
+    setCheckoutModalOpen(true);
   };
 
-  const handleReturn = async () => {
-    try {
-      await returnEquipment(id, {
-        return_condition: returnCondition,
-        return_notes: returnNotes || null
-      });
-      toast.success('Messmittel zurückgegeben');
-      setShowReturnModal(false);
-      setReturnCondition('ok');
-      setReturnNotes('');
+  const handleCheckoutModalClose = (success) => {
+    setCheckoutModalOpen(false);
+    if (success) {
       loadCheckoutHistory();
-      fetchEquipmentById(id); // Status könnte sich geändert haben
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Fehler bei der Rückgabe');
+      fetchEquipmentById(id);
     }
   };
 
@@ -235,7 +207,7 @@ export default function MeasuringEquipmentDetailPage() {
           <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${statusColors[eq.calibration_status] || 'bg-gray-100 text-gray-800'}`}>
             {statusLabels[eq.calibration_status] || eq.calibration_status}
           </span>
-          {hasPermission('storage.edit') && (
+          {hasPermission('measuring.edit') && (
             <button
               onClick={() => setShowEditModal(true)}
               className="px-3 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors inline-flex items-center gap-1"
@@ -277,7 +249,7 @@ export default function MeasuringEquipmentDetailPage() {
             </svg>
             PDF
           </button>
-          {hasPermission('storage.edit') && (
+          {hasPermission('measuring.edit') && (
             <button
               onClick={() => setShowStatusModal(true)}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
@@ -327,9 +299,9 @@ export default function MeasuringEquipmentDetailPage() {
                 )}
               </div>
             </div>
-            {hasPermission('storage.edit') && (
+            {hasPermission('measuring.checkout') && (
               <button
-                onClick={() => setShowReturnModal(true)}
+                onClick={() => openCheckoutModal('return')}
                 className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
               >
                 Zurückgeben
@@ -338,7 +310,7 @@ export default function MeasuringEquipmentDetailPage() {
           </div>
         </div>
       ) : (
-        eq.status === 'active' && eq.calibration_status !== 'overdue' && hasPermission('storage.edit') && (
+        eq.status === 'active' && eq.calibration_status !== 'overdue' && hasPermission('measuring.checkout') && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -348,7 +320,7 @@ export default function MeasuringEquipmentDetailPage() {
                 <span className="text-green-800 dark:text-green-200 font-medium">Verfügbar</span>
               </div>
               <button
-                onClick={() => setShowCheckoutModal(true)}
+                onClick={() => openCheckoutModal('checkout')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
               >
                 Entnehmen
@@ -391,33 +363,39 @@ export default function MeasuringEquipmentDetailPage() {
               Technische Daten
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {eq.measuring_range_min !== null && eq.measuring_range_max !== null ? (
+              {/* Messinstrument: Messbereich, Auflösung, Genauigkeit */}
+              {eq.type_field_category === 'measuring_instrument' && (
                 <>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Messbereich</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {formatNumber(eq.measuring_range_min)} - {formatNumber(eq.measuring_range_max)} {eq.unit}
+                      {eq.measuring_range_min !== null && eq.measuring_range_max !== null 
+                        ? `${formatNumber(eq.measuring_range_min)} - ${formatNumber(eq.measuring_range_max)} ${eq.unit || 'mm'}`
+                        : '-'}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Auflösung</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {eq.resolution ? `${formatNumber(eq.resolution)} ${eq.unit}` : '-'}
+                      {eq.resolution ? `${formatNumber(eq.resolution)} ${eq.unit || 'mm'}` : '-'}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Genauigkeit</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      {eq.accuracy ? `±${formatNumber(eq.accuracy)} ${eq.unit}` : '-'}
+                      {eq.accuracy ? `±${formatNumber(eq.accuracy)} ${eq.unit || 'mm'}` : '-'}
                     </dd>
                   </div>
                 </>
-              ) : eq.nominal_value ? (
+              )}
+
+              {/* Lehre: Nennmaß, Toleranzklasse */}
+              {eq.type_field_category === 'gauge' && (
                 <>
                   <div>
                     <dt className="text-sm text-gray-500 dark:text-gray-400">Nennmaß</dt>
                     <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                      Ø{formatNumber(eq.nominal_value)} {eq.unit}
+                      {eq.nominal_value ? `Ø${formatNumber(eq.nominal_value)} ${eq.unit || 'mm'}` : '-'}
                     </dd>
                   </div>
                   <div>
@@ -427,9 +405,131 @@ export default function MeasuringEquipmentDetailPage() {
                     </dd>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {/* Gewindelehre: Norm, Größe, Steigung, Toleranz */}
+              {eq.type_field_category === 'thread_gauge' && (
+                <>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Gewindenorm</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.thread_standard || '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Gewindegröße</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.thread_size || '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Steigung</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.thread_pitch || '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Toleranzklasse</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.tolerance_class || '-'}
+                    </dd>
+                  </div>
+                </>
+              )}
+
+              {/* Endmaß: Nennmaß, Genauigkeitsklasse */}
+              {eq.type_field_category === 'gauge_block' && (
+                <>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Nennmaß</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.nominal_value ? `${formatNumber(eq.nominal_value)} ${eq.unit || 'mm'}` : '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Genauigkeitsklasse</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.accuracy_class || '-'}
+                    </dd>
+                  </div>
+                </>
+              )}
+
+              {/* Winkelmesser: Nennwinkel, Toleranz, Auflösung */}
+              {eq.type_field_category === 'angle_gauge' && (
+                <>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Nennwinkel</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.nominal_value ? `${formatNumber(eq.nominal_value)}°` : '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Toleranz</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.tolerance_class || '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Auflösung</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.resolution ? `${formatNumber(eq.resolution)}°` : '-'}
+                    </dd>
+                  </div>
+                </>
+              )}
+
+              {/* Rauheitsmesser: Messbereich, Auflösung, Parameter */}
+              {eq.type_field_category === 'surface_tester' && (
+                <>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Messbereich</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.measuring_range_min !== null && eq.measuring_range_max !== null 
+                        ? `${formatNumber(eq.measuring_range_min)} - ${formatNumber(eq.measuring_range_max)} µm`
+                        : '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Auflösung</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.resolution ? `${formatNumber(eq.resolution)} µm` : '-'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500 dark:text-gray-400">Messparameter</dt>
+                    <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                      {eq.tolerance_class || '-'}
+                    </dd>
+                  </div>
+                </>
+              )}
+
+              {/* Sonstiges oder unbekannt: Fallback */}
+              {(eq.type_field_category === 'other' || !eq.type_field_category) && (
                 <div className="col-span-4 text-sm text-gray-500 dark:text-gray-400">
-                  Keine technischen Daten hinterlegt
+                  {eq.measuring_range_min !== null || eq.nominal_value !== null ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {eq.measuring_range_min !== null && eq.measuring_range_max !== null && (
+                        <div>
+                          <dt className="text-sm text-gray-500 dark:text-gray-400">Messbereich</dt>
+                          <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatNumber(eq.measuring_range_min)} - {formatNumber(eq.measuring_range_max)} {eq.unit}
+                          </dd>
+                        </div>
+                      )}
+                      {eq.nominal_value && (
+                        <div>
+                          <dt className="text-sm text-gray-500 dark:text-gray-400">Nennmaß</dt>
+                          <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatNumber(eq.nominal_value)} {eq.unit}
+                          </dd>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    'Keine technischen Daten hinterlegt'
+                  )}
                 </div>
               )}
             </div>
@@ -447,7 +547,7 @@ export default function MeasuringEquipmentDetailPage() {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Kalibrierungshistorie ({eq.calibration_count || 0})
               </h2>
-              {hasPermission('storage.edit') && (
+              {hasPermission('measuring.calibrate') && (
                 <button
                   onClick={() => {
                     setEditingCalibration(null);
@@ -485,7 +585,7 @@ export default function MeasuringEquipmentDetailPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPermission('storage.edit') && (
+                        {hasPermission('measuring.calibrate') && (
                           <button
                             onClick={() => handleEditCalibration(cal)}
                             className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
@@ -496,7 +596,7 @@ export default function MeasuringEquipmentDetailPage() {
                             </svg>
                           </button>
                         )}
-                        {hasPermission('storage.delete') && (
+                        {hasPermission('measuring.calibrate') && (
                           <button
                             onClick={() => handleDeleteCalibration(cal.id)}
                             className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
@@ -811,137 +911,13 @@ export default function MeasuringEquipmentDetailPage() {
         </div>
       )}
 
-      {/* Checkout Modal */}
-      {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75" onClick={() => setShowCheckoutModal(false)} />
-            <div className="relative bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Messmittel entnehmen
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Verwendungszweck *
-                  </label>
-                  <input
-                    type="text"
-                    value={checkoutPurpose}
-                    onChange={(e) => setCheckoutPurpose(e.target.value)}
-                    placeholder="z.B. Qualitätsprüfung, Serienfertigung..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Auftragsnummer (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={checkoutWorkOrder}
-                    onChange={(e) => setCheckoutWorkOrder(e.target.value)}
-                    placeholder="z.B. A-2025-042"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Geplante Rückgabe (optional)
-                  </label>
-                  <input
-                    type="date"
-                    value={checkoutExpectedReturn}
-                    onChange={(e) => setCheckoutExpectedReturn(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setShowCheckoutModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={handleCheckout}
-                  disabled={!checkoutPurpose.trim()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Entnehmen
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Return Modal */}
-      {showReturnModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75" onClick={() => setShowReturnModal(false)} />
-            <div className="relative bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Messmittel zurückgeben
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Zustand bei Rückgabe
-                  </label>
-                  <select
-                    value={returnCondition}
-                    onChange={(e) => setReturnCondition(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="ok">In Ordnung</option>
-                    <option value="damaged">Beschädigt</option>
-                    <option value="needs_calibration">Kalibrierung erforderlich</option>
-                  </select>
-                  {returnCondition === 'damaged' && (
-                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                      Das Messmittel wird automatisch gesperrt
-                    </p>
-                  )}
-                  {returnCondition === 'needs_calibration' && (
-                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                      Status wird auf "In Kalibrierung" gesetzt
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Bemerkungen (optional)
-                  </label>
-                  <textarea
-                    value={returnNotes}
-                    onChange={(e) => setReturnNotes(e.target.value)}
-                    rows={3}
-                    placeholder="z.B. Schäden, Auffälligkeiten..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setShowReturnModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={handleReturn}
-                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                >
-                  Zurückgeben
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Checkout/Return Modal */}
+      {checkoutModalOpen && eq && (
+        <MeasuringEquipmentCheckoutModal
+          equipment={eq}
+          mode={checkoutMode}
+          onClose={handleCheckoutModalClose}
+        />
       )}
 
       {/* Calibration Modal */}

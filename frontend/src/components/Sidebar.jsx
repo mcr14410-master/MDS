@@ -363,9 +363,11 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             >
               <NavSubItem to="/tools" label="Werkzeuge" />
               <NavSubItem to="/tool-number-lists" label="T-Nummern Listen" />
+              {hasPermission('measuring.view') && (
+                <NavSubItem to="/measuring-equipment" label="Messmittel" />
+              )}
               {hasPermission('storage.view') && (
                 <>
-                  <NavSubItem to="/measuring-equipment" label="Messmittel" />
                   <NavSubItem to="/clamping-devices" label="Spannmittel" />
                   <NavSubItem to="/fixtures" label="Vorrichtungen" />
                 </>

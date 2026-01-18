@@ -26,7 +26,7 @@ const formatNumber = (value) => {
   return parseFloat(value).toString();
 };
 
-export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete }) {
+export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete, onCheckout }) {
   const { hasPermission } = useAuthStore();
   const [sortColumn, setSortColumn] = useState('inventory_number');
   const [sortDirection, setSortDirection] = useState('asc');
@@ -80,13 +80,64 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
     return new Date(dateStr).toLocaleDateString('de-DE');
   };
 
-  const formatRange = (eq) => {
+  // Spezifikation basierend auf Typ-Kategorie (kompakt für Tabelle)
+  const getSpecification = (eq) => {
+    const category = eq.type_field_category;
+    
+    switch (category) {
+      case 'measuring_instrument':
+        if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
+          return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} ${eq.unit || 'mm'}`;
+        }
+        break;
+      
+      case 'gauge':
+        if (eq.nominal_value) {
+          return `Ø${formatNumber(eq.nominal_value)} ${eq.tolerance_class || ''}`.trim();
+        }
+        break;
+      
+      case 'thread_gauge':
+        if (eq.thread_size) {
+          const parts = [
+            eq.thread_standard || '',
+            eq.thread_size || ''
+          ].filter(Boolean).join('');
+          const pitch = eq.thread_pitch ? `x${eq.thread_pitch}` : '';
+          const tolerance = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+          return `${parts}${pitch}${tolerance}`.trim() || '-';
+        }
+        break;
+      
+      case 'gauge_block':
+        if (eq.nominal_value) {
+          const klass = eq.accuracy_class ? ` Kl.${eq.accuracy_class}` : '';
+          return `${formatNumber(eq.nominal_value)} ${eq.unit || 'mm'}${klass}`;
+        }
+        break;
+      
+      case 'angle_gauge':
+        if (eq.nominal_value) {
+          const tol = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+          return `${formatNumber(eq.nominal_value)}°${tol}`;
+        }
+        break;
+      
+      case 'surface_tester':
+        if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
+          return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} µm`;
+        }
+        break;
+    }
+    
+    // Fallback für alte Daten ohne Kategorie
     if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
-      return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)}`;
+      return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} ${eq.unit || 'mm'}`;
     }
     if (eq.nominal_value) {
-      return `Ø${formatNumber(eq.nominal_value)}`;
+      return `Ø${formatNumber(eq.nominal_value)} ${eq.tolerance_class || ''}`.trim();
     }
+    
     return '-';
   };
 
@@ -124,7 +175,7 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                 </div>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Messbereich
+                Spezifikation
               </th>
               <th 
                 onClick={() => handleSort('manufacturer')}
@@ -194,7 +245,7 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {formatRange(eq)} {eq.unit || 'mm'}
+                    {getSpecification(eq)}
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -245,7 +296,33 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </Link>
-                    {hasPermission('storage.edit') && (
+                    {/* Checkout/Return Button */}
+                    {hasPermission('measuring.checkout') && (
+                      eq.checkout_id ? (
+                        // Zurückgeben
+                        <button
+                          onClick={() => onCheckout(eq, 'return')}
+                          className="p-1.5 text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                          title="Zurückgeben"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+                      ) : eq.status === 'active' && eq.calibration_status !== 'overdue' ? (
+                        // Entnehmen
+                        <button
+                          onClick={() => onCheckout(eq, 'checkout')}
+                          className="p-1.5 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="Entnehmen"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                          </svg>
+                        </button>
+                      ) : null
+                    )}
+                    {hasPermission('measuring.edit') && (
                       <button
                         onClick={() => onEdit(eq)}
                         className="p-1.5 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
@@ -256,7 +333,7 @@ export default function MeasuringEquipmentTable({ equipment, onEdit, onDelete })
                         </svg>
                       </button>
                     )}
-                    {hasPermission('storage.delete') && (
+                    {hasPermission('measuring.delete') && (
                       <button
                         onClick={() => onDelete(eq)}
                         className="p-1.5 text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"

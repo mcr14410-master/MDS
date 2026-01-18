@@ -28,6 +28,12 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
     unit: 'mm',
     nominal_value: '',
     tolerance_class: '',
+    // Neue Felder
+    thread_standard: '',
+    thread_size: '',
+    thread_pitch: '',
+    accuracy_class: '',
+    // Ende neue Felder
     calibration_interval_months: 12,
     last_calibration_date: '',
     calibration_provider: '',
@@ -36,6 +42,35 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
     supplier_id: '',
     notes: '',
   });
+
+  // Gewindenormen
+  const threadStandardOptions = [
+    { value: '', label: '-- Auswählen --' },
+    { value: 'M', label: 'M - Metrisch ISO' },
+    { value: 'MF', label: 'MF - Metrisch Fein' },
+    { value: 'UNC', label: 'UNC - Unified Coarse' },
+    { value: 'UNF', label: 'UNF - Unified Fine' },
+    { value: 'UNEF', label: 'UNEF - Unified Extra Fine' },
+    { value: 'UN', label: 'UN - Unified Special' },
+    { value: 'G', label: 'G - Whitworth Rohr (zyl.)' },
+    { value: 'R', label: 'R - Whitworth Rohr (kon.)' },
+    { value: 'Rp', label: 'Rp - Whitworth Rohr Innen' },
+    { value: 'NPT', label: 'NPT - National Pipe Thread' },
+    { value: 'NPTF', label: 'NPTF - NPT Dryseal' },
+    { value: 'Tr', label: 'Tr - Trapezgewinde' },
+    { value: 'ACME', label: 'ACME - Trapezgewinde' },
+    { value: 'Pg', label: 'Pg - Panzergewinde' },
+    { value: 'Rd', label: 'Rd - Rundgewinde' },
+  ];
+
+  // Genauigkeitsklassen für Endmaße
+  const accuracyClassOptions = [
+    { value: '', label: '-- Auswählen --' },
+    { value: 'K', label: 'K - Kalibrier' },
+    { value: '0', label: '0 - Höchste Genauigkeit' },
+    { value: '1', label: '1 - Hohe Genauigkeit' },
+    { value: '2', label: '2 - Werkstattgenauigkeit' },
+  ];
 
   const isEditing = Boolean(equipment);
 
@@ -57,6 +92,12 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
         unit: equipment.unit || 'mm',
         nominal_value: formatNumber(equipment.nominal_value),
         tolerance_class: equipment.tolerance_class || '',
+        // Neue Felder
+        thread_standard: equipment.thread_standard || '',
+        thread_size: equipment.thread_size || '',
+        thread_pitch: equipment.thread_pitch || '',
+        accuracy_class: equipment.accuracy_class || '',
+        // Ende neue Felder
         calibration_interval_months: equipment.calibration_interval_months || 12,
         last_calibration_date: equipment.last_calibration_date?.split('T')[0] || '',
         calibration_provider: equipment.calibration_provider || '',
@@ -127,10 +168,10 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
     }
   };
 
-  // Check if type is a gauge (Lehre)
-  const isGaugeType = () => {
-    const typeName = types.find(t => t.id === parseInt(formData.type_id))?.name || '';
-    return typeName.toLowerCase().includes('lehr') || typeName.toLowerCase().includes('ring');
+  // Get field category from selected type
+  const getFieldCategory = () => {
+    const selectedType = types.find(t => t.id === parseInt(formData.type_id));
+    return selectedType?.field_category || 'measuring_instrument';
   };
 
   return (
@@ -174,7 +215,7 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
                   onChange={handleChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                  placeholder="MM-2024-001"
+                  placeholder="MM-1000"
                 />
               </div>
               <div>
@@ -252,60 +293,14 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
               </div>
             </div>
 
-            {/* Technical Data - conditional based on type */}
+            {/* Technical Data - conditional based on field category */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                 Technische Daten
               </h4>
               
-              {isGaugeType() ? (
-                // Gauge fields
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Nennmaß (mm)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.0001"
-                      name="nominal_value"
-                      value={formData.nominal_value}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                      placeholder="z.B. 20.000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Toleranzklasse
-                    </label>
-                    <input
-                      type="text"
-                      name="tolerance_class"
-                      value={formData.tolerance_class}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                      placeholder="z.B. H7, 6H"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Einheit
-                    </label>
-                    <select
-                      name="unit"
-                      value={formData.unit}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="mm">mm</option>
-                      <option value="µm">µm</option>
-                      <option value="°">°</option>
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                // Normal measuring instrument fields
+              {/* Messinstrument: Messbereich, Auflösung, Genauigkeit */}
+              {getFieldCategory() === 'measuring_instrument' && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -364,6 +359,277 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
                     />
                   </div>
                 </div>
+              )}
+
+              {/* Lehre: Nennmaß, Toleranzklasse */}
+              {getFieldCategory() === 'gauge' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nennmaß (mm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="nominal_value"
+                      value={formData.nominal_value}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 20.000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Toleranzklasse
+                    </label>
+                    <input
+                      type="text"
+                      name="tolerance_class"
+                      value={formData.tolerance_class}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. H7, 6g"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Einheit
+                    </label>
+                    <select
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="mm">mm</option>
+                      <option value="µm">µm</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Gewindelehre: Gewindenorm, Größe, Steigung, Toleranz */}
+              {getFieldCategory() === 'thread_gauge' && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Gewindenorm
+                    </label>
+                    <select
+                      name="thread_standard"
+                      value={formData.thread_standard}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                    >
+                      {threadStandardOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Gewindegröße
+                    </label>
+                    <input
+                      type="text"
+                      name="thread_size"
+                      value={formData.thread_size}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. M8, 1/4, G1/2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Steigung
+                    </label>
+                    <input
+                      type="text"
+                      name="thread_pitch"
+                      value={formData.thread_pitch}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 1.0, 1.25, 20 TPI"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Toleranzklasse
+                    </label>
+                    <input
+                      type="text"
+                      name="tolerance_class"
+                      value={formData.tolerance_class}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 6H, 6g, 2B"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Endmaß: Nennmaß, Genauigkeitsklasse */}
+              {getFieldCategory() === 'gauge_block' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nennmaß (mm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="nominal_value"
+                      value={formData.nominal_value}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 25.000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Genauigkeitsklasse
+                    </label>
+                    <select
+                      name="accuracy_class"
+                      value={formData.accuracy_class}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                    >
+                      {accuracyClassOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Einheit
+                    </label>
+                    <select
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="mm">mm</option>
+                      <option value="µm">µm</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Winkelmesser: Nennwinkel, Toleranz */}
+              {getFieldCategory() === 'angle_gauge' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nennwinkel (°)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="nominal_value"
+                      value={formData.nominal_value}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 90"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Toleranz
+                    </label>
+                    <input
+                      type="text"
+                      name="tolerance_class"
+                      value={formData.tolerance_class}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. ±0.01°"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Auflösung
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="resolution"
+                      value={formData.resolution}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="z.B. 0.01"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Rauheitsmesser: Messbereich, Auflösung, Parameter */}
+              {getFieldCategory() === 'surface_tester' && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Messbereich von (µm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      name="measuring_range_min"
+                      value={formData.measuring_range_min}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.01"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Messbereich bis (µm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      name="measuring_range_max"
+                      value={formData.measuring_range_max}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="16"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Auflösung (µm)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      name="resolution"
+                      value={formData.resolution}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.001"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Messparameter
+                    </label>
+                    <input
+                      type="text"
+                      name="tolerance_class"
+                      value={formData.tolerance_class}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ra, Rz, Rmax"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Sonstiges: Keine speziellen technischen Felder */}
+              {getFieldCategory() === 'other' && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  Für diesen Typ sind keine spezifischen technischen Daten erforderlich.
+                </p>
               )}
             </div>
 

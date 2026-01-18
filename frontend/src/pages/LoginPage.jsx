@@ -81,7 +81,7 @@ export default function LoginPage() {
                 value={credentials.username}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin oder admin@example.com"
+                placeholder="Benutzername"
               />
             </div>
 
