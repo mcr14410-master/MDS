@@ -123,7 +123,8 @@ exports.createType = async (req, res) => {
       icon, 
       default_calibration_interval_months = 12,
       sort_order = 0,
-      is_active = true 
+      is_active = true,
+      field_category = 'measuring_instrument'
     } = req.body;
 
     if (!name) {
@@ -135,10 +136,10 @@ exports.createType = async (req, res) => {
 
     const result = await pool.query(`
       INSERT INTO measuring_equipment_types 
-        (name, description, icon, default_calibration_interval_months, sort_order, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6)
+        (name, description, icon, default_calibration_interval_months, sort_order, is_active, field_category)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
-    `, [name, description, icon, default_calibration_interval_months, sort_order, is_active]);
+    `, [name, description, icon, default_calibration_interval_months, sort_order, is_active, field_category]);
 
     res.status(201).json({
       success: true,
@@ -175,7 +176,8 @@ exports.updateType = async (req, res) => {
       icon, 
       default_calibration_interval_months,
       sort_order,
-      is_active 
+      is_active,
+      field_category
     } = req.body;
 
     const result = await pool.query(`
@@ -186,10 +188,11 @@ exports.updateType = async (req, res) => {
         default_calibration_interval_months = COALESCE($4, default_calibration_interval_months),
         sort_order = COALESCE($5, sort_order),
         is_active = COALESCE($6, is_active),
+        field_category = COALESCE($7, field_category),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $7
+      WHERE id = $8
       RETURNING *
-    `, [name, description, icon, default_calibration_interval_months, sort_order, is_active, id]);
+    `, [name, description, icon, default_calibration_interval_months, sort_order, is_active, field_category, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -559,6 +562,12 @@ exports.createEquipment = async (req, res) => {
       unit = 'mm',
       nominal_value,
       tolerance_class,
+      // Neue Felder
+      thread_standard,
+      thread_size,
+      thread_pitch,
+      accuracy_class,
+      // Ende neue Felder
       calibration_interval_months,
       last_calibration_date,
       next_calibration_date,
@@ -607,19 +616,24 @@ exports.createEquipment = async (req, res) => {
       INSERT INTO measuring_equipment (
         inventory_number, name, type_id, manufacturer, model, serial_number,
         measuring_range_min, measuring_range_max, resolution, accuracy, unit,
-        nominal_value, tolerance_class, calibration_interval_months,
+        nominal_value, tolerance_class,
+        thread_standard, thread_size, thread_pitch, accuracy_class,
+        calibration_interval_months,
         last_calibration_date, next_calibration_date, calibration_provider,
         status, storage_location_id, purchase_date, purchase_price, supplier_id,
         notes, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18,
+        $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
       )
       RETURNING *
     `, [
       inventory_number, name, type_id, manufacturer, model, serial_number,
       measuring_range_min, measuring_range_max, resolution, accuracy, unit,
-      nominal_value, tolerance_class, interval,
+      nominal_value, tolerance_class,
+      thread_standard, thread_size, thread_pitch, accuracy_class,
+      interval,
       last_calibration_date, nextCalDate, calibration_provider,
       status, storage_location_id, purchase_date, purchase_price, supplier_id,
       notes, req.user?.id
@@ -679,6 +693,12 @@ exports.updateEquipment = async (req, res) => {
       unit,
       nominal_value,
       tolerance_class,
+      // Neue Felder
+      thread_standard,
+      thread_size,
+      thread_pitch,
+      accuracy_class,
+      // Ende neue Felder
       calibration_interval_months,
       calibration_provider,
       status,
@@ -706,24 +726,30 @@ exports.updateEquipment = async (req, res) => {
         unit = COALESCE($11, unit),
         nominal_value = COALESCE($12, nominal_value),
         tolerance_class = COALESCE($13, tolerance_class),
-        calibration_interval_months = COALESCE($14, calibration_interval_months),
-        calibration_provider = COALESCE($15, calibration_provider),
-        status = COALESCE($16, status),
-        lock_reason = $17,
-        storage_location_id = COALESCE($18, storage_location_id),
-        purchase_date = COALESCE($19, purchase_date),
-        purchase_price = COALESCE($20, purchase_price),
-        supplier_id = COALESCE($21, supplier_id),
-        notes = COALESCE($22, notes),
-        image_path = COALESCE($23, image_path),
-        updated_by = $24,
+        thread_standard = COALESCE($14, thread_standard),
+        thread_size = COALESCE($15, thread_size),
+        thread_pitch = COALESCE($16, thread_pitch),
+        accuracy_class = COALESCE($17, accuracy_class),
+        calibration_interval_months = COALESCE($18, calibration_interval_months),
+        calibration_provider = COALESCE($19, calibration_provider),
+        status = COALESCE($20, status),
+        lock_reason = $21,
+        storage_location_id = COALESCE($22, storage_location_id),
+        purchase_date = COALESCE($23, purchase_date),
+        purchase_price = COALESCE($24, purchase_price),
+        supplier_id = COALESCE($25, supplier_id),
+        notes = COALESCE($26, notes),
+        image_path = COALESCE($27, image_path),
+        updated_by = $28,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $25 AND deleted_at IS NULL
+      WHERE id = $29 AND deleted_at IS NULL
       RETURNING *
     `, [
       inventory_number, name, type_id, manufacturer, model, serial_number,
       measuring_range_min, measuring_range_max, resolution, accuracy, unit,
-      nominal_value, tolerance_class, calibration_interval_months,
+      nominal_value, tolerance_class,
+      thread_standard, thread_size, thread_pitch, accuracy_class,
+      calibration_interval_months,
       calibration_provider, status, lock_reason, storage_location_id,
       purchase_date, purchase_price, supplier_id, notes, image_path,
       req.user?.id, id
@@ -863,26 +889,27 @@ exports.updateEquipmentStatus = async (req, res) => {
  */
 exports.getNextInventoryNumber = async (req, res) => {
   try {
-    const year = new Date().getFullYear();
-    const prefix = `MM-${year}-`;
+    const prefix = 'MM-';
+    const startNumber = 1000;
 
     const result = await pool.query(`
       SELECT inventory_number FROM measuring_equipment
-      WHERE inventory_number LIKE $1
-      ORDER BY inventory_number DESC
+      WHERE inventory_number ~ '^MM-[0-9]+$'
+      ORDER BY CAST(SUBSTRING(inventory_number FROM 4) AS INTEGER) DESC
       LIMIT 1
-    `, [prefix + '%']);
+    `);
 
-    let nextNumber = 1;
+    let nextNumber = startNumber;
     if (result.rows.length > 0) {
       const lastNumber = result.rows[0].inventory_number;
-      const match = lastNumber.match(/MM-\d{4}-(\d+)/);
+      const match = lastNumber.match(/^MM-(\d+)$/);
       if (match) {
-        nextNumber = parseInt(match[1]) + 1;
+        const lastNum = parseInt(match[1]);
+        nextNumber = Math.max(lastNum + 1, startNumber);
       }
     }
 
-    const nextInventoryNumber = `${prefix}${nextNumber.toString().padStart(3, '0')}`;
+    const nextInventoryNumber = `${prefix}${nextNumber}`;
 
     res.json({
       success: true,

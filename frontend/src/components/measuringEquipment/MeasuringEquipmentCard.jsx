@@ -7,10 +7,30 @@ const formatNumber = (value) => {
   return parseFloat(value).toString();
 };
 
+// Gewindenorm-Labels für Anzeige
+const threadStandardLabels = {
+  'M': 'M (Metrisch ISO)',
+  'MF': 'MF (Metrisch Fein)',
+  'UNC': 'UNC (Unified Coarse)',
+  'UNF': 'UNF (Unified Fine)',
+  'UNEF': 'UNEF (Unified Extra Fine)',
+  'UN': 'UN (Unified Special)',
+  'G': 'G (Whitworth Rohr zyl.)',
+  'R': 'R (Whitworth Rohr kon.)',
+  'Rp': 'Rp (Whitworth Rohr Innen)',
+  'NPT': 'NPT (National Pipe Thread)',
+  'NPTF': 'NPTF (NPT Dryseal)',
+  'Tr': 'Tr (Trapezgewinde)',
+  'ACME': 'ACME (Trapezgewinde)',
+  'Pg': 'Pg (Panzergewinde)',
+  'Rd': 'Rd (Rundgewinde)',
+};
+
 export default function MeasuringEquipmentCard({ 
   equipment, 
   onEdit, 
   onDelete,
+  onCheckout,
   statusColors,
   statusLabels 
 }) {
@@ -64,18 +84,93 @@ export default function MeasuringEquipmentCard({
     return new Date(dateStr).toLocaleDateString('de-DE');
   };
 
-  const formatMeasuringRange = () => {
-    if (equipment.measuring_range_min !== null && equipment.measuring_range_max !== null) {
-      return `${formatNumber(equipment.measuring_range_min)} - ${formatNumber(equipment.measuring_range_max)} ${equipment.unit || 'mm'}`;
+  // Kategorie-basierte Spezifikation: { label, value }
+  const getSpecification = () => {
+    const category = equipment.type_field_category;
+    
+    switch (category) {
+      case 'measuring_instrument':
+        if (equipment.measuring_range_min !== null && equipment.measuring_range_max !== null) {
+          return {
+            label: 'Messbereich',
+            value: `${formatNumber(equipment.measuring_range_min)}-${formatNumber(equipment.measuring_range_max)} ${equipment.unit || 'mm'}`
+          };
+        }
+        return { label: 'Messbereich', value: '-' };
+        
+      case 'gauge':
+        if (equipment.nominal_value) {
+          return {
+            label: 'Nennmaß',
+            value: `Ø${formatNumber(equipment.nominal_value)} ${equipment.tolerance_class || ''}`.trim()
+          };
+        }
+        return { label: 'Nennmaß', value: '-' };
+        
+      case 'thread_gauge':
+        if (equipment.thread_size) {
+          const prefix = equipment.thread_standard || '';
+          const size = equipment.thread_size || '';
+          const pitch = equipment.thread_pitch ? `x${equipment.thread_pitch}` : '';
+          const tolerance = equipment.tolerance_class ? ` ${equipment.tolerance_class}` : '';
+          return {
+            label: 'Gewinde',
+            value: `${prefix}${size}${pitch}${tolerance}`.trim() || '-'
+          };
+        }
+        return { label: 'Gewinde', value: '-' };
+        
+      case 'gauge_block':
+        if (equipment.nominal_value) {
+          const klass = equipment.accuracy_class ? ` Kl.${equipment.accuracy_class}` : '';
+          return {
+            label: 'Nennmaß',
+            value: `${formatNumber(equipment.nominal_value)} ${equipment.unit || 'mm'}${klass}`
+          };
+        }
+        return { label: 'Nennmaß', value: '-' };
+        
+      case 'angle_gauge':
+        if (equipment.nominal_value) {
+          const tol = equipment.tolerance_class ? ` ${equipment.tolerance_class}` : '';
+          return {
+            label: 'Winkel',
+            value: `${formatNumber(equipment.nominal_value)}°${tol}`
+          };
+        }
+        return { label: 'Winkel', value: '-' };
+        
+      case 'surface_tester':
+        if (equipment.measuring_range_min !== null && equipment.measuring_range_max !== null) {
+          return {
+            label: 'Messbereich',
+            value: `${formatNumber(equipment.measuring_range_min)}-${formatNumber(equipment.measuring_range_max)} µm`
+          };
+        }
+        return { label: 'Messbereich', value: '-' };
+        
+      default:
+        // Fallback für alte Daten ohne type_field_category
+        if (equipment.measuring_range_min !== null && equipment.measuring_range_max !== null) {
+          return {
+            label: 'Messbereich',
+            value: `${formatNumber(equipment.measuring_range_min)}-${formatNumber(equipment.measuring_range_max)} ${equipment.unit || 'mm'}`
+          };
+        }
+        if (equipment.nominal_value) {
+          return {
+            label: 'Nennmaß',
+            value: `Ø${formatNumber(equipment.nominal_value)} ${equipment.tolerance_class || ''}`.trim()
+          };
+        }
+        return { label: 'Spezifikation', value: '-' };
     }
-    if (equipment.nominal_value) {
-      return `Ø${formatNumber(equipment.nominal_value)} ${equipment.tolerance_class || ''}`;
-    }
-    return '-';
   };
 
+  const spec = getSpecification();
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-start">
@@ -98,7 +193,7 @@ export default function MeasuringEquipmentCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 flex-grow">
         {/* Checkout Badge */}
         {equipment.checkout_id && (
           <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -137,20 +232,50 @@ export default function MeasuringEquipmentCard({
           </div>
         )}
 
-        {/* Measuring Range */}
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Messbereich</span>
-          <span className="text-gray-900 dark:text-gray-100">
-            {formatMeasuringRange()}
-          </span>
-        </div>
+        {/* Gewindelehren: Separate Zeilen für Gewinde, Norm, Steigung */}
+        {equipment.type_field_category === 'thread_gauge' ? (
+          <>
+            {equipment.thread_size && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Gewinde</span>
+                <span className="text-gray-900 dark:text-gray-100">
+                  {equipment.thread_standard || ''}{equipment.thread_size}{equipment.tolerance_class ? ` ${equipment.tolerance_class}` : ''}
+                </span>
+              </div>
+            )}
+            {equipment.thread_standard && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Gewindenorm</span>
+                <span className="text-gray-900 dark:text-gray-100">
+                  {threadStandardLabels[equipment.thread_standard] || equipment.thread_standard}
+                </span>
+              </div>
+            )}
+            {equipment.thread_pitch && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Steigung</span>
+                <span className="text-gray-900 dark:text-gray-100">
+                  {equipment.thread_pitch}
+                </span>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Andere Kategorien: Normale Spezifikation */
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500 dark:text-gray-400">{spec.label}</span>
+            <span className="text-gray-900 dark:text-gray-100">
+              {spec.value}
+            </span>
+          </div>
+        )}
 
-        {/* Resolution */}
-        {equipment.resolution && (
+        {/* Resolution - nur für Messinstrumente und Rauheitsmesser */}
+        {equipment.resolution && ['measuring_instrument', 'surface_tester', 'angle_gauge'].includes(equipment.type_field_category) && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 dark:text-gray-400">Auflösung</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {formatNumber(equipment.resolution)} {equipment.unit || 'mm'}
+              {formatNumber(equipment.resolution)} {equipment.type_field_category === 'surface_tester' ? 'µm' : (equipment.type_field_category === 'angle_gauge' ? '°' : equipment.unit || 'mm')}
             </span>
           </div>
         )}
@@ -207,7 +332,33 @@ export default function MeasuringEquipmentCard({
           Details →
         </Link>
         <div className="flex gap-2">
-          {hasPermission('storage.edit') && (
+          {/* Checkout/Return Button */}
+          {hasPermission('measuring.checkout') && (
+            equipment.checkout_id ? (
+              // Zurückgeben
+              <button
+                onClick={() => onCheckout(equipment, 'return')}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="Zurückgeben"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+            ) : equipment.status === 'active' && equipment.calibration_status !== 'overdue' ? (
+              // Entnehmen
+              <button
+                onClick={() => onCheckout(equipment, 'checkout')}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Entnehmen"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              </button>
+            ) : null
+          )}
+          {hasPermission('measuring.edit') && (
             <button
               onClick={() => onEdit(equipment)}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -218,7 +369,7 @@ export default function MeasuringEquipmentCard({
               </svg>
             </button>
           )}
-          {hasPermission('storage.delete') && (
+          {hasPermission('measuring.delete') && (
             <button
               onClick={() => onDelete(equipment)}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"

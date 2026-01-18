@@ -152,7 +152,7 @@ export default function MeasuringEquipmentStorageSection({ equipmentId, hasPermi
           Lagerort
         </h2>
         
-        {hasPermission('storage.edit') && (
+        {hasPermission('measuring.edit') && (
           <div className="flex items-center gap-2">
             {storageInfo ? (
               <>
@@ -224,7 +224,7 @@ export default function MeasuringEquipmentStorageSection({ equipmentId, hasPermi
         <div className="text-center py-6 text-gray-500 dark:text-gray-400">
           <Warehouse className="w-10 h-10 mx-auto mb-2 opacity-50" />
           <p>Nicht eingelagert</p>
-          {hasPermission('storage.edit') && (
+          {hasPermission('measuring.edit') && (
             <p className="text-sm mt-1">
               Klicken Sie auf "Einlagern" um das Messmittel einem Lagerort zuzuweisen
             </p>
