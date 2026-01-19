@@ -939,9 +939,9 @@ export default function MeasuringEquipmentDetailPage() {
         <MeasuringEquipmentFormModal
           equipment={eq}
           types={types}
-          onClose={(success) => {
+          onClose={(result) => {
             setShowEditModal(false);
-            if (success) fetchEquipmentById(id);
+            if (result?.success) fetchEquipmentById(id);
           }}
         />
       )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMeasuringEquipmentStore } from '../stores/measuringEquipmentStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
 import { useAuthStore } from '../stores/authStore';
@@ -33,6 +33,7 @@ const calibrationStatusLabels = {
 };
 
 export default function MeasuringEquipmentPage() {
+  const navigate = useNavigate();
   const { 
     equipment, 
     types,
@@ -108,10 +109,15 @@ export default function MeasuringEquipmentPage() {
     }
   };
 
-  const handleModalClose = (success) => {
+  const handleModalClose = (result) => {
     setIsModalOpen(false);
     setEditingEquipment(null);
-    if (success) {
+    
+    // Bei neuem Messmittel zur Detailseite navigieren
+    if (result?.newId) {
+      navigate(`/measuring-equipment/${result.newId}`);
+    } else if (result?.success) {
+      // Bei Edit nur Liste aktualisieren
       fetchEquipment(filters);
       fetchStats();
     }

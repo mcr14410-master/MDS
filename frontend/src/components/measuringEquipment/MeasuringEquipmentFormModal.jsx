@@ -156,11 +156,12 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
       if (isEditing) {
         await updateEquipment(equipment.id, submitData);
         toast.success('Messmittel aktualisiert');
+        onClose({ success: true });
       } else {
-        await createEquipment(submitData);
+        const newEquipment = await createEquipment(submitData);
         toast.success('Messmittel erstellt');
+        onClose({ success: true, newId: newEquipment.id });
       }
-      onClose(true);
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Fehler beim Speichern');
     } finally {

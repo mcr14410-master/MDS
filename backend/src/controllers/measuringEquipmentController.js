@@ -716,29 +716,29 @@ exports.updateEquipment = async (req, res) => {
         inventory_number = COALESCE($1, inventory_number),
         name = COALESCE($2, name),
         type_id = COALESCE($3, type_id),
-        manufacturer = COALESCE($4, manufacturer),
-        model = COALESCE($5, model),
-        serial_number = COALESCE($6, serial_number),
-        measuring_range_min = COALESCE($7, measuring_range_min),
-        measuring_range_max = COALESCE($8, measuring_range_max),
-        resolution = COALESCE($9, resolution),
-        accuracy = COALESCE($10, accuracy),
+        manufacturer = $4,
+        model = $5,
+        serial_number = $6,
+        measuring_range_min = $7,
+        measuring_range_max = $8,
+        resolution = $9,
+        accuracy = $10,
         unit = COALESCE($11, unit),
-        nominal_value = COALESCE($12, nominal_value),
-        tolerance_class = COALESCE($13, tolerance_class),
-        thread_standard = COALESCE($14, thread_standard),
-        thread_size = COALESCE($15, thread_size),
-        thread_pitch = COALESCE($16, thread_pitch),
-        accuracy_class = COALESCE($17, accuracy_class),
-        calibration_interval_months = COALESCE($18, calibration_interval_months),
-        calibration_provider = COALESCE($19, calibration_provider),
+        nominal_value = $12,
+        tolerance_class = $13,
+        thread_standard = $14,
+        thread_size = $15,
+        thread_pitch = $16,
+        accuracy_class = $17,
+        calibration_interval_months = $18,
+        calibration_provider = $19,
         status = COALESCE($20, status),
         lock_reason = $21,
-        storage_location_id = COALESCE($22, storage_location_id),
-        purchase_date = COALESCE($23, purchase_date),
-        purchase_price = COALESCE($24, purchase_price),
-        supplier_id = COALESCE($25, supplier_id),
-        notes = COALESCE($26, notes),
+        storage_location_id = $22,
+        purchase_date = $23,
+        purchase_price = $24,
+        supplier_id = $25,
+        notes = $26,
         image_path = COALESCE($27, image_path),
         updated_by = $28,
         updated_at = CURRENT_TIMESTAMP
@@ -885,28 +885,29 @@ exports.updateEquipmentStatus = async (req, res) => {
 
 /**
  * Generate next inventory number
- * Format: MM-YYYY-NNN
+ * Format: MM-NNNN (findet erste freie Lücke ab 1000)
  */
 exports.getNextInventoryNumber = async (req, res) => {
   try {
     const prefix = 'MM-';
     const startNumber = 1000;
 
+    // Alle existierenden Nummern holen (nur nicht-gelöschte)
     const result = await pool.query(`
-      SELECT inventory_number FROM measuring_equipment
+      SELECT CAST(SUBSTRING(inventory_number FROM 4) AS INTEGER) as num
+      FROM measuring_equipment
       WHERE inventory_number ~ '^MM-[0-9]+$'
-      ORDER BY CAST(SUBSTRING(inventory_number FROM 4) AS INTEGER) DESC
-      LIMIT 1
+        AND deleted_at IS NULL
+      ORDER BY num ASC
     `);
 
+    // Set für schnelle Lookup
+    const existingNumbers = new Set(result.rows.map(r => r.num));
+
+    // Erste freie Nummer ab startNumber finden
     let nextNumber = startNumber;
-    if (result.rows.length > 0) {
-      const lastNumber = result.rows[0].inventory_number;
-      const match = lastNumber.match(/^MM-(\d+)$/);
-      if (match) {
-        const lastNum = parseInt(match[1]);
-        nextNumber = Math.max(lastNum + 1, startNumber);
-      }
+    while (existingNumbers.has(nextNumber)) {
+      nextNumber++;
     }
 
     const nextInventoryNumber = `${prefix}${nextNumber}`;
