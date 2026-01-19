@@ -61,6 +61,9 @@ import WikiArticlePage from './pages/WikiArticlePage';
 import ConsumablesPage from './pages/ConsumablesPage';
 import ConsumableDetailPage from './pages/ConsumableDetailPage';
 
+// Vacations Pages
+import VacationsPage from './pages/VacationsPage';
+
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -492,8 +495,19 @@ function App() {
                </ProtectedRoute>
              } 
            />
+
+           {/* Vacations */}
+           <Route 
+             path="/vacations" 
+             element={
+               <ProtectedRoute requiredPermission="vacations.read">
+                 <VacationsPage />
+               </ProtectedRoute>
+             } 
+           />
         </Route>
 		
+			
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

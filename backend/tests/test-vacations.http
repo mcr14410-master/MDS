@@ -1,0 +1,273 @@
+### ============================================
+### Vacation Management API Tests
+### ============================================
+### Requires VS Code REST Client Extension
+
+@baseUrl = http://localhost:3001/api
+@contentType = application/json
+
+### Login as Admin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Set token from login response
+@token = {{login.response.body.token}}
+
+### ============================================
+### VACATION TYPES
+### ============================================
+
+### Get all vacation types
+GET {{baseUrl}}/vacation-types
+Authorization: Bearer {{token}}
+
+### Get single type
+GET {{baseUrl}}/vacation-types/1
+Authorization: Bearer {{token}}
+
+### Create vacation type
+POST {{baseUrl}}/vacation-types
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Elternzeit",
+  "color": "#EC4899",
+  "affects_balance": false,
+  "allows_partial_day": false,
+  "sort_order": 8
+}
+
+### Update vacation type
+PUT {{baseUrl}}/vacation-types/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "color": "#10B981"
+}
+
+### ============================================
+### HOLIDAYS
+### ============================================
+
+### Get holidays for current year (auto-generates if needed)
+GET {{baseUrl}}/holidays?year=2025
+Authorization: Bearer {{token}}
+
+### Get holidays for 2026
+GET {{baseUrl}}/holidays?year=2026
+Authorization: Bearer {{token}}
+
+### Check if date is a holiday
+GET {{baseUrl}}/holidays/check?date=2025-12-25
+Authorization: Bearer {{token}}
+
+### Get holidays in date range
+GET {{baseUrl}}/holidays/range?startDate=2025-01-01&endDate=2025-06-30
+Authorization: Bearer {{token}}
+
+### Manually generate holidays for a year
+POST {{baseUrl}}/holidays/generate
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "year": 2027
+}
+
+### Add custom holiday (Betriebsferien)
+POST {{baseUrl}}/holidays
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "date": "2025-12-24",
+  "name": "Betriebsferien"
+}
+
+### Add bridge day
+POST {{baseUrl}}/holidays
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "date": "2025-05-02",
+  "name": "Brückentag"
+}
+
+### Delete holiday
+DELETE {{baseUrl}}/holidays/15
+Authorization: Bearer {{token}}
+
+### ============================================
+### VACATION ENTITLEMENTS
+### ============================================
+
+### Get all entitlements for a year
+GET {{baseUrl}}/vacation-entitlements?year=2025
+Authorization: Bearer {{token}}
+
+### Get vacation balances (with used/remaining calculated)
+GET {{baseUrl}}/vacation-entitlements/balances?year=2025
+Authorization: Bearer {{token}}
+
+### Get single user's balance
+GET {{baseUrl}}/vacation-entitlements/balance/2?year=2025
+Authorization: Bearer {{token}}
+
+### Create entitlement for a user
+POST {{baseUrl}}/vacation-entitlements
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "year": 2025,
+  "total_days": 30,
+  "carried_over": 5,
+  "note": "5 Tage Resturlaub 2024"
+}
+
+### Initialize entitlements for all users for a year
+POST {{baseUrl}}/vacation-entitlements/initialize
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "year": 2025
+}
+
+### Update entitlement
+PUT {{baseUrl}}/vacation-entitlements/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adjustment": 2,
+  "note": "2 Tage Sonderurlaub Hochzeit"
+}
+
+### ============================================
+### VACATIONS (Absences)
+### ============================================
+
+### Get all vacations
+GET {{baseUrl}}/vacations?year=2025
+Authorization: Bearer {{token}}
+
+### Get vacations for calendar (month view)
+GET {{baseUrl}}/vacations/calendar?month=1&year=2025
+Authorization: Bearer {{token}}
+
+### Get vacations for calendar (year view)
+GET {{baseUrl}}/vacations/calendar?year=2025
+Authorization: Bearer {{token}}
+
+### Check overlap before creating
+POST {{baseUrl}}/vacations/check-overlap
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "start_date": "2025-02-10",
+  "end_date": "2025-02-14"
+}
+
+### Create vacation (Urlaub - full days)
+POST {{baseUrl}}/vacations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "type_id": 1,
+  "start_date": "2025-02-10",
+  "end_date": "2025-02-14",
+  "note": "Skiurlaub"
+}
+
+### Create sick leave
+POST {{baseUrl}}/vacations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "type_id": 2,
+  "start_date": "2025-01-20",
+  "end_date": "2025-01-22",
+  "note": "Erkältung"
+}
+
+### Create Zeitausgleich (partial day with times)
+POST {{baseUrl}}/vacations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "type_id": 4,
+  "start_date": "2025-01-24",
+  "end_date": "2025-01-24",
+  "start_time": "14:00",
+  "end_time": "17:00",
+  "note": "Arzttermin"
+}
+
+### Get single vacation
+GET {{baseUrl}}/vacations/1
+Authorization: Bearer {{token}}
+
+### Update vacation
+PUT {{baseUrl}}/vacations/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "end_date": "2025-02-16",
+  "note": "Verlängert um 2 Tage"
+}
+
+### Delete vacation
+DELETE {{baseUrl}}/vacations/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### VACATION SETTINGS
+### ============================================
+
+### Get all settings
+GET {{baseUrl}}/vacation-settings
+Authorization: Bearer {{token}}
+
+### Get single setting
+GET {{baseUrl}}/vacation-settings/default_vacation_days
+Authorization: Bearer {{token}}
+
+### Update single setting
+PUT {{baseUrl}}/vacation-settings/max_concurrent_helper
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "value": "2"
+}
+
+### Update multiple settings at once
+PUT {{baseUrl}}/vacation-settings
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "default_vacation_days": "30",
+  "max_concurrent_helper": "1",
+  "max_concurrent_operator": "2"
+}
