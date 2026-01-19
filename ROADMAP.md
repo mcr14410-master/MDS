@@ -16,7 +16,7 @@
 | Phase 4-6 | W13-20 | ✅ 100% | Werkzeuge, Messmittel, Spannmittel |
 | Phase 7 | W21-23 | ✅ 100% | UI, User-Verwaltung, Wartungssystem |
 | Phase 8 | W24-34 | 🔄 65% | Kunden ✅, Wiki ✅, PWA ✅, Verbrauchsmaterial 🔄 |
-| Phase 9 | W35-48 | 📋 Geplant | Roboter, Urlaub, Revisionen, Admin, Benachrichtigungen |
+| Phase 9 | W35-48 | 🔄 15% | Urlaub ✅, Roboter, Revisionen, Admin, Benachrichtigungen |
 | Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
 | Phase 11 | W57-68 | 📋 Geplant | Shopfloor-Terminals |
 | Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
@@ -225,22 +225,35 @@ purchase_order_items (
 
 ---
 
-### 📋 Woche 37-38: Urlaubsplanung
-**Status:** 📋 Geplant
+### ✅ Woche 37-38: Urlaubsplanung
+**Status:** ✅ Abgeschlossen
 **Ziel:** Urlaub/Abwesenheiten im Kalender verwalten
 
-- [ ] DB: `vacations` Tabelle (user_id, start_date, end_date, type, status)
-- [ ] DB: `vacation_types` Tabelle (Urlaub, Krank, Schulung, etc.)
-- [ ] Backend: Vacations CRUD API
-- [ ] Backend: Überschneidungs-Check (max. X Mitarbeiter gleichzeitig)
-- [ ] Backend: Jahresübersicht API
-- [ ] Frontend: Kalender-Ansicht (Monat/Jahr)
-- [ ] Frontend: Urlaub eintragen (Formular)
-- [ ] Frontend: Überschneidungs-Warnung
-- [ ] Frontend: Mitarbeiter-Filter
-- [ ] Später: Antrags-Workflow (beantragen → genehmigen)
+- [x] DB: `vacations` Tabelle (user_id, start_date, end_date, type, status)
+- [x] DB: `vacation_types` Tabelle (Urlaub, Krank, Schulung, etc.)
+- [x] DB: `vacation_entitlements` Tabelle (Jahres-Urlaubsansprüche)
+- [x] DB: `vacation_settings` Tabelle (Standard-Urlaubstage, Bundesland)
+- [x] DB: `vacation_role_limits` Tabelle (dynamische Limits pro Rolle)
+- [x] DB: `holidays` Tabelle (Feiertage alle Bundesländer, halbe Tage)
+- [x] Backend: Vacations CRUD API mit Status-Workflow
+- [x] Backend: Vacation Types CRUD API
+- [x] Backend: Entitlements CRUD API + Jahr initialisieren
+- [x] Backend: Role Limits CRUD API (dynamische Überschneidungs-Prüfung)
+- [x] Backend: Holidays API (alle 16 Bundesländer, bewegliche Feiertage)
+- [x] Backend: Überschneidungs-Check (Warnung statt Blockade)
+- [x] Backend: Jahresübersicht/Kalender API
+- [x] Frontend: VacationsPage mit Kalender-Ansicht (Monat/Jahr)
+- [x] Frontend: VacationCalendar Komponente (visuelle Darstellung)
+- [x] Frontend: VacationFormModal (Urlaub erstellen/bearbeiten)
+- [x] Frontend: VacationSettingsModal (4 Tabs)
+- [x] Frontend: Überschneidungs-Warnung mit überlappenden Tagen
+- [x] Frontend: Kalender-Markierung bei Überschreitung (orange Ecke)
+- [x] Frontend: Mitarbeiter-Filter
+- [x] Frontend: Bundesland-Auswahl für Feiertage
+- [x] Frontend: Dynamisches Jahr-Dropdown (-1 bis +5 Jahre)
+- [x] Frontend: Halbe Feiertage (Heiligabend, Silvester)
 
-**Deliverable:** Urlaubskalender mit Überschneidungs-Check
+**Deliverable:** ✅ Urlaubskalender mit Überschneidungs-Check, Feiertage für alle Bundesländer
 
 ---
 
@@ -704,7 +717,13 @@ Phase 8 (Erweiterungen):  █████████████░░░░░
   └─ Rohmaterial:         ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Normteile:           ░░░░░░░░░░░░░░░░░░░░ 0%
 
-Phase 9 (Erweiterungen):  ░░░░░░░░░░░░░░░░░░░░ 0%
+Phase 9 (Erweiterungen):  ███░░░░░░░░░░░░░░░░░ 15%
+  └─ Urlaubsplanung:      ████████████████████ 100% ✅
+  └─ Beladeroboter:       ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Revisionen:          ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Admin-Konfig:        ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Benachrichtigungen:  ░░░░░░░░░░░░░░░░░░░░ 0%
+
 Phase 10 (Aufträge):      ░░░░░░░░░░░░░░░░░░░░ 0%
 Phase 11 (Shopfloor):     ░░░░░░░░░░░░░░░░░░░░ 0%
 ```
@@ -739,4 +758,4 @@ Bevor Rohmaterial/Normteile gestartet werden:
 
 ---
 
-**Letzte Aktualisierung:** 2025-12-04
+**Letzte Aktualisierung:** 2026-01-20
