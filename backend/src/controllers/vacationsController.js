@@ -71,17 +71,18 @@ function calculateHours(startTime, endTime) {
 }
 
 /**
- * Check for concurrent absences
+ * Check for concurrent absences based on role limits
  * Uses vacation_role_limits table for dynamic role-based limits
+ * Now checks ALL roles of a user
  * 
  * @param {number} userId 
  * @param {string} startDate 
  * @param {string} endDate 
  * @param {number} excludeId - Exclude this vacation ID (for updates)
- * @returns {Promise<{allowed: boolean, message: string, concurrent: Array}>}
+ * @returns {Promise<{allowed: boolean, message: string, concurrent: Array, warnings: Array}>}
  */
 async function checkConcurrentAbsences(userId, startDate, endDate, excludeId = null) {
-  // Get user's role
+  // Get ALL user's roles
   const userResult = await pool.query(
     `SELECT u.id, ur.role_id, r.name as role_name 
      FROM users u 
@@ -92,61 +93,107 @@ async function checkConcurrentAbsences(userId, startDate, endDate, excludeId = n
   );
   
   if (userResult.rows.length === 0) {
-    return { allowed: false, message: 'Benutzer nicht gefunden', concurrent: [] };
+    return { allowed: false, message: 'Benutzer nicht gefunden', concurrent: [], warnings: [] };
   }
   
-  const roleId = userResult.rows[0].role_id;
-  const roleName = userResult.rows[0].role_name;
+  // Get all role IDs for this user
+  const userRoles = userResult.rows.filter(r => r.role_id != null);
   
-  // Check if this role has a limit configured
+  if (userRoles.length === 0) {
+    return { allowed: true, message: 'Benutzer hat keine Rolle zugewiesen', concurrent: [], warnings: [] };
+  }
+  
+  // Get limits for all roles
+  const roleIds = userRoles.map(r => r.role_id);
   const limitResult = await pool.query(
-    'SELECT max_concurrent FROM vacation_role_limits WHERE role_id = $1',
-    [roleId]
+    `SELECT vrl.role_id, vrl.max_concurrent, r.name as role_name
+     FROM vacation_role_limits vrl
+     JOIN roles r ON r.id = vrl.role_id
+     WHERE vrl.role_id = ANY($1)`,
+    [roleIds]
   );
   
-  // If role doesn't have restrictions configured, allow
+  // If no roles have restrictions configured, allow
   if (limitResult.rows.length === 0) {
-    return { allowed: true, message: 'Keine Einschränkung für diese Rolle', concurrent: [] };
+    return { allowed: true, message: 'Keine Einschränkung für diese Rollen', concurrent: [], warnings: [] };
   }
   
-  const maxConcurrent = limitResult.rows[0].max_concurrent;
+  const warnings = [];
+  let allConcurrent = [];
+  let overallAllowed = true;
   
-  // Find overlapping absences for same role
-  let query = `
-    SELECT 
-      v.id, v.start_date, v.end_date,
-      u.id as user_id, COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
-      vt.name as type_name
-    FROM vacations v
-    JOIN users u ON u.id = v.user_id
-    JOIN user_roles ur ON ur.user_id = u.id
-    JOIN vacation_types vt ON vt.id = v.type_id
-    WHERE ur.role_id = $1
-      AND v.status IN ('approved', 'pending')
-      AND v.start_date <= $3
-      AND v.end_date >= $2
-      AND v.user_id != $4
-  `;
-  const params = [roleId, startDate, endDate, userId];
-  
-  if (excludeId) {
-    params.push(excludeId);
-    query += ` AND v.id != $${params.length}`;
+  // Check each role that has a limit
+  for (const limit of limitResult.rows) {
+    const { role_id, max_concurrent, role_name } = limit;
+    
+    // Find overlapping absences for this role
+    let query = `
+      SELECT DISTINCT
+        v.id, v.start_date, v.end_date,
+        u.id as user_id, COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name,
+        $5::text as role_name
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN user_roles ur ON ur.user_id = u.id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      WHERE ur.role_id = $1
+        AND v.status IN ('approved', 'pending')
+        AND v.start_date <= $3
+        AND v.end_date >= $2
+        AND v.user_id != $4
+    `;
+    const params = [role_id, startDate, endDate, userId, role_name];
+    
+    if (excludeId) {
+      params.push(excludeId);
+      query += ` AND v.id != $${params.length}`;
+    }
+    
+    const overlapResult = await pool.query(query, params);
+    const concurrent = overlapResult.rows;
+    const allowed = concurrent.length < max_concurrent;
+    
+    if (!allowed) {
+      overallAllowed = false;
+    }
+    
+    // Add warning for this role
+    warnings.push({
+      role_id,
+      role_name,
+      max_concurrent,
+      current_count: concurrent.length,
+      allowed,
+      message: allowed 
+        ? `${concurrent.length} von max. ${max_concurrent} ${role_name} bereits abwesend`
+        : `Maximum erreicht: ${max_concurrent} ${role_name} dürfen gleichzeitig abwesend sein`
+    });
+    
+    // Collect all concurrent absences (avoid duplicates)
+    concurrent.forEach(c => {
+      if (!allConcurrent.find(ac => ac.id === c.id)) {
+        allConcurrent.push(c);
+      }
+    });
   }
   
-  const overlapResult = await pool.query(query, params);
-  
-  const concurrent = overlapResult.rows;
-  const allowed = concurrent.length < maxConcurrent;
+  // Build overall message
+  const exceededRoles = warnings.filter(w => !w.allowed);
+  let message;
+  if (exceededRoles.length === 0) {
+    message = warnings.map(w => w.message).join('; ');
+  } else {
+    message = exceededRoles.map(w => w.message).join('; ');
+  }
   
   return {
-    allowed,
-    message: allowed 
-      ? `${concurrent.length} von max. ${maxConcurrent} ${roleName} bereits abwesend`
-      : `Maximum erreicht: ${maxConcurrent} ${roleName} dürfen gleichzeitig abwesend sein`,
-    concurrent,
-    maxConcurrent,
-    currentCount: concurrent.length
+    allowed: overallAllowed,
+    message,
+    concurrent: allConcurrent,
+    warnings,
+    maxConcurrent: warnings.length > 0 ? Math.min(...warnings.map(w => w.max_concurrent)) : null,
+    currentCount: allConcurrent.length
   };
 }
 
@@ -165,16 +212,20 @@ const getVacations = async (req, res) => {
     let query = `
       SELECT 
         v.*,
-        u.username, COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
-        ur.role_id,
-        r.name as role_name,
+        u.username, 
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        COALESCE(
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id
+           WHERE ur.user_id = v.user_id),
+          '[]'::json
+        ) as roles,
         vt.name as type_name, vt.color as type_color,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         approver.first_name || ' ' || approver.last_name as approved_by_name
       FROM vacations v
       JOIN users u ON u.id = v.user_id
-      LEFT JOIN user_roles ur ON ur.user_id = u.id
-      LEFT JOIN roles r ON r.id = ur.role_id
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users creator ON creator.id = v.created_by
       LEFT JOIN users approver ON approver.id = v.approved_by
@@ -239,17 +290,22 @@ const getVacationsCalendar = async (req, res) => {
       endDate = `${year}-12-31`;
     }
     
+    // Get vacations with all roles as JSON array (no duplicates)
     const result = await pool.query(
       `SELECT 
         v.*,
-        u.username, COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
-        ur.role_id,
-        r.name as role_name,
+        u.username, 
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        COALESCE(
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id
+           WHERE ur.user_id = v.user_id),
+          '[]'::json
+        ) as roles,
         vt.name as type_name, vt.color as type_color
       FROM vacations v
       JOIN users u ON u.id = v.user_id
-      LEFT JOIN user_roles ur ON ur.user_id = u.id
-      LEFT JOIN roles r ON r.id = ur.role_id
       JOIN vacation_types vt ON vt.id = v.type_id
       WHERE v.status IN ('approved', 'pending')
         AND v.start_date <= $2

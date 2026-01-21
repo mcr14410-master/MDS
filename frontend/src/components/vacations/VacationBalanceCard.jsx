@@ -1,7 +1,23 @@
 import { Pencil } from 'lucide-react';
 
+// Role badge colors (same as UserDetailPage)
+const getRoleBadgeColor = (roleName) => {
+  const colors = {
+    admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    programmer: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    reviewer: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    operator: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    helper: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    supervisor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  };
+  return colors[roleName?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+};
+
 export default function VacationBalanceCard({ balance, onClick }) {
-  const { display_name, total_days, carried_over, used_days, remaining_days, role_name } = balance;
+  const { display_name, total_days, carried_over, used_days, remaining_days, roles } = balance;
+
+  // Parse roles - can be JSON array or string (for backwards compatibility)
+  const roleList = Array.isArray(roles) ? roles : [];
 
   // Calculate percentage
   const available = parseFloat(total_days) + parseFloat(carried_over || 0);
@@ -46,10 +62,17 @@ export default function VacationBalanceCard({ balance, onClick }) {
             {display_name}
             <Pencil className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
-          {role_name && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {role_name}
-            </p>
+          {roleList.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {roleList.map(role => (
+                <span 
+                  key={role.id}
+                  className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(role.name)}`}
+                >
+                  {role.name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
         <div className={`text-lg font-bold ${colorClasses[color].text}`}>

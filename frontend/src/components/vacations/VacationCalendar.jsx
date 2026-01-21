@@ -17,6 +17,7 @@ function formatShortName(displayName) {
 /**
  * Check for role-based overlaps on a specific day
  * Uses roleLimits from DB (role_id -> max_concurrent)
+ * Now supports vacations with multiple roles
  */
 function checkDayOverlaps(dayVacations, roleLimits) {
   if (!roleLimits || roleLimits.length === 0) return [];
@@ -30,14 +31,21 @@ function checkDayOverlaps(dayVacations, roleLimits) {
     };
   });
   
-  // Group vacations by role_id
+  // Group vacations by role_id (a vacation can belong to multiple roles)
   const byRoleId = {};
   dayVacations.forEach(v => {
-    const roleId = v.role_id;
-    if (roleId && limitsByRoleId[roleId]) {
-      if (!byRoleId[roleId]) byRoleId[roleId] = [];
-      byRoleId[roleId].push(v);
-    }
+    // v.roles is an array of { role_id, role_name }
+    const roles = Array.isArray(v.roles) ? v.roles : [];
+    roles.forEach(role => {
+      const roleId = role.role_id;
+      if (roleId && limitsByRoleId[roleId]) {
+        if (!byRoleId[roleId]) byRoleId[roleId] = [];
+        // Avoid counting same vacation twice for same role
+        if (!byRoleId[roleId].find(existing => existing.id === v.id)) {
+          byRoleId[roleId].push({ ...v, role_name: role.role_name });
+        }
+      }
+    });
   });
   
   const overlaps = [];
@@ -86,12 +94,15 @@ function getDaysInMonth(year, month) {
 }
 
 /**
- * Format date as YYYY-MM-DD
+ * Format date as YYYY-MM-DD (local timezone, not UTC!)
  */
 function formatDate(date) {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -254,7 +265,7 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
                       color: v.type_color,
                       borderLeft: `3px solid ${v.type_color}`
                     }}
-                    title={`${v.display_name}: ${v.type_name}`}
+                    title={`${v.display_name}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
                   >
                     {formatShortName(v.display_name)}
                   </div>
@@ -268,6 +279,19 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
             </div>
           );
         })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-4">
+        {vacationTypes.filter(t => t.is_active).map(type => (
+          <div key={type.id} className="flex items-center gap-2 text-sm">
+            <div 
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: type.color }}
+            />
+            <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
