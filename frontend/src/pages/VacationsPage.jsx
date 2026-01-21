@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import axios from '../utils/axios';
 import { 
   Calendar, ChevronLeft, ChevronRight, Plus, Settings, 
-  Users, Sun, AlertTriangle, User
+  Sun, AlertTriangle, User
 } from 'lucide-react';
 import { useVacationsStore } from '../stores/vacationsStore';
 import { useUsersStore } from '../stores/usersStore';
@@ -27,7 +28,6 @@ export default function VacationsPage() {
     loading,
     error,
     initialize,
-    fetchBalances,
     setFilters,
     setView,
     navigateMonth,
@@ -47,6 +47,8 @@ export default function VacationsPage() {
   // Year selector for "Mein Urlaub"
   const currentYear = new Date().getFullYear();
   const [myVacationYear, setMyVacationYear] = useState(currentYear);
+  const [myVacations, setMyVacations] = useState([]);
+  const [myBalance, setMyBalance] = useState(null);
   
   // Dynamic year range
   const yearOptions = useMemo(() => {
@@ -62,24 +64,38 @@ export default function VacationsPage() {
     fetchUsers();
   }, []);
 
-  // Fetch balances when myVacationYear changes
+  // Fetch my balance and vacations when myVacationYear changes
   useEffect(() => {
-    if (myVacationYear !== filters.year) {
-      fetchBalances(myVacationYear);
-    }
-  }, [myVacationYear]);
-
-  // Get current user's balance
-  const myBalance = useMemo(() => {
-    if (!user) return null;
-    return balances.find(b => b.user_id === user.id);
-  }, [balances, user]);
-
-  // Get current user's vacations for the year
-  const myVacations = useMemo(() => {
-    if (!user || !calendarData.vacations) return [];
-    return calendarData.vacations.filter(v => v.user_id === user.id);
-  }, [calendarData.vacations, user]);
+    if (!user) return;
+    
+    // Fetch my balance for the selected year
+    axios.get(`/api/vacation-entitlements/balance/${user.id}?year=${myVacationYear}`)
+      .then(response => {
+        setMyBalance(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching my balance:', error);
+        // Create empty balance placeholder if not found
+        setMyBalance({
+          total_days: 0,
+          carried_over: 0,
+          available_days: 0,
+          used_days: 0,
+          remaining_days: 0,
+          notFound: true
+        });
+      });
+    
+    // Fetch my vacations for the selected year
+    axios.get(`/api/vacations?year=${myVacationYear}&user_id=${user.id}`)
+      .then(response => {
+        setMyVacations(Array.isArray(response.data) ? response.data : []);
+      })
+      .catch(error => {
+        console.error('Error fetching my vacations:', error);
+        setMyVacations([]);
+      });
+  }, [myVacationYear, user]);
 
   // Handle vacation click in calendar
   const handleVacationClick = (vacation) => {
@@ -93,10 +109,21 @@ export default function VacationsPage() {
     setShowFormModal(true);
   };
 
-  // Close form modal
+  // Close form modal and refresh data
   const handleCloseForm = () => {
     setShowFormModal(false);
     setEditingVacation(null);
+    
+    // Refresh my data
+    if (user) {
+      axios.get(`/api/vacation-entitlements/balance/${user.id}?year=${myVacationYear}`)
+        .then(response => setMyBalance(response.data))
+        .catch(error => console.error('Error refreshing my balance:', error));
+      
+      axios.get(`/api/vacations?year=${myVacationYear}&user_id=${user.id}`)
+        .then(response => setMyVacations(Array.isArray(response.data) ? response.data : []))
+        .catch(error => console.error('Error refreshing my vacations:', error));
+    }
   };
 
   // Filter balances by search (for all employees section)
@@ -270,50 +297,59 @@ export default function VacationsPage() {
         </div>
 
         {myBalance ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {myBalance.total_days}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Anspruch</div>
+          myBalance.notFound ? (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                ⚠️ Kein Urlaubsanspruch für {myVacationYear} gefunden. 
+                Bitte wenden Sie sich an die Personalabteilung.
+              </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {myBalance.carried_over > 0 ? `+${myBalance.carried_over}` : myBalance.carried_over}
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {myBalance.total_days}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Anspruch</div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Übertrag</div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {myBalance.available_days}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {myBalance.carried_over > 0 ? `+${myBalance.carried_over}` : myBalance.carried_over}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Übertrag</div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Verfügbar</div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {myBalance.used_days}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {myBalance.available_days}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Verfügbar</div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Genommen</div>
-            </div>
-            <div className={`rounded-lg p-3 text-center ${
-              myBalance.remaining_days < 0
-                ? 'bg-red-100 dark:bg-red-900/30'
-                : myBalance.remaining_days < 5
-                  ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                  : 'bg-green-100 dark:bg-green-900/30'
-            }`}>
-              <div className={`text-2xl font-bold ${
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {myBalance.used_days}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Genommen</div>
+              </div>
+              <div className={`rounded-lg p-3 text-center ${
                 myBalance.remaining_days < 0
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'bg-red-100 dark:bg-red-900/30'
                   : myBalance.remaining_days < 5
-                    ? 'text-yellow-600 dark:text-yellow-400'
-                    : 'text-green-600 dark:text-green-400'
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                    : 'bg-green-100 dark:bg-green-900/30'
               }`}>
-                {myBalance.remaining_days}
+                <div className={`text-2xl font-bold ${
+                  myBalance.remaining_days < 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : myBalance.remaining_days < 5
+                      ? 'text-yellow-600 dark:text-yellow-400'
+                      : 'text-green-600 dark:text-green-400'
+                }`}>
+                  {myBalance.remaining_days}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Rest</div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Rest</div>
             </div>
-          </div>
+          )
         ) : (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
             Keine Urlaubsdaten für {myVacationYear}
@@ -321,10 +357,10 @@ export default function VacationsPage() {
         )}
 
         {/* My Vacations List */}
-        {myVacations.length > 0 && (
+        {Array.isArray(myVacations) && myVacations.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Meine Abwesenheiten {filters.year}
+              Meine Abwesenheiten {myVacationYear}
             </h4>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {myVacations.map(v => (
@@ -393,24 +429,6 @@ export default function VacationsPage() {
                 />
               ))
             )}
-          </div>
-
-          {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Abwesenheitstypen
-            </h4>
-            <div className="flex flex-wrap gap-4">
-              {vacationTypes.filter(t => t.is_active).map(type => (
-                <div key={type.id} className="flex items-center gap-2 text-xs">
-                  <div 
-                    className="w-3 h-3 rounded"
-                    style={{ backgroundColor: type.color }}
-                  />
-                  <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}

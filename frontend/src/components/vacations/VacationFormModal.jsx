@@ -216,7 +216,8 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                 <option value="">-- Auswählen --</option>
                 {activeUsers.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.username})
+                    {user.first_name} {user.last_name}
+                    {user.roles?.length > 0 && ` (${user.roles.map(r => r.name).join(', ')})`}
                   </option>
                 ))}
               </select>
