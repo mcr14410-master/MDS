@@ -16,7 +16,7 @@
 | Phase 4-6 | W13-20 | ✅ 100% | Werkzeuge, Messmittel, Spannmittel |
 | Phase 7 | W21-23 | ✅ 100% | UI, User-Verwaltung, Wartungssystem |
 | Phase 8 | W24-34 | 🔄 65% | Kunden ✅, Wiki ✅, PWA ✅, Verbrauchsmaterial 🔄 |
-| Phase 9 | W35-48 | 🔄 15% | Urlaub ✅, Roboter, Revisionen, Admin, Benachrichtigungen |
+| Phase 9 | W35-48 | 🔄 12% | Urlaub 🔄, Roboter, Revisionen, Admin, Benachrichtigungen |
 | Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
 | Phase 11 | W57-68 | 📋 Geplant | Shopfloor-Terminals |
 | Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
@@ -225,16 +225,18 @@ purchase_order_items (
 
 ---
 
-### ✅ Woche 37-38: Urlaubsplanung
-**Status:** ✅ Abgeschlossen
+### 🔄 Woche 37-38: Urlaubsplanung
+**Status:** 🔄 85% abgeschlossen
 **Ziel:** Urlaub/Abwesenheiten im Kalender verwalten
 
+**Erledigt:**
 - [x] DB: `vacations` Tabelle (user_id, start_date, end_date, type, status)
 - [x] DB: `vacation_types` Tabelle (Urlaub, Krank, Schulung, etc.)
 - [x] DB: `vacation_entitlements` Tabelle (Jahres-Urlaubsansprüche)
 - [x] DB: `vacation_settings` Tabelle (Standard-Urlaubstage, Bundesland)
 - [x] DB: `vacation_role_limits` Tabelle (dynamische Limits pro Rolle)
 - [x] DB: `holidays` Tabelle (Feiertage alle Bundesländer, halbe Tage)
+- [x] DB: `users.vacation_tracking_enabled` (User aus Urlaubsverwaltung ausschließen)
 - [x] Backend: Vacations CRUD API mit Status-Workflow
 - [x] Backend: Vacation Types CRUD API
 - [x] Backend: Entitlements CRUD API + Jahr initialisieren
@@ -252,8 +254,15 @@ purchase_order_items (
 - [x] Frontend: Bundesland-Auswahl für Feiertage
 - [x] Frontend: Dynamisches Jahr-Dropdown (-1 bis +5 Jahre)
 - [x] Frontend: Halbe Feiertage (Heiligabend, Silvester)
+- [x] Frontend: "Mein Urlaub" Bereich mit eigenen Daten
+- [x] Frontend: Resturlaub nur mit vacations.manage sichtbar
+- [x] Frontend: User-Einstellung "Urlaubsverwaltung aktiviert"
 
-**Deliverable:** ✅ Urlaubskalender mit Überschneidungs-Check, Feiertage für alle Bundesländer
+**Offen:**
+- [ ] Antrags-Workflow (beantragen → genehmigen/ablehnen)
+- [ ] Integration Wartungssystem: User mit aktivem Urlaub/Krank automatisch ausblenden
+
+**Deliverable:** Urlaubskalender mit Überschneidungs-Check, Feiertage für alle Bundesländer
 
 ---
 
@@ -717,8 +726,8 @@ Phase 8 (Erweiterungen):  █████████████░░░░░
   └─ Rohmaterial:         ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Normteile:           ░░░░░░░░░░░░░░░░░░░░ 0%
 
-Phase 9 (Erweiterungen):  ███░░░░░░░░░░░░░░░░░ 15%
-  └─ Urlaubsplanung:      ████████████████████ 100% ✅
+Phase 9 (Erweiterungen):  ██░░░░░░░░░░░░░░░░░░ 12%
+  └─ Urlaubsplanung:      █████████████████░░░ 85% 🔄
   └─ Beladeroboter:       ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Revisionen:          ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Admin-Konfig:        ░░░░░░░░░░░░░░░░░░░░ 0%

@@ -224,6 +224,7 @@ const initializeYear = async (req, res) => {
        FROM users u
        LEFT JOIN vacation_balances vb ON vb.user_id = u.id AND vb.year = $3
        WHERE u.is_active = true
+         AND u.vacation_tracking_enabled = true
        ON CONFLICT (user_id, year) DO NOTHING
        RETURNING *`,
       [year, defaultDays, previousYear]

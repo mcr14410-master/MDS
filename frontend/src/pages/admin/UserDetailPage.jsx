@@ -37,6 +37,7 @@ function UserDetailPage() {
     is_active: true,
     skill_level: 'operator',
     is_available: true,
+    vacation_tracking_enabled: true,
     role_ids: []
   });
   const [formError, setFormError] = useState('');
@@ -58,6 +59,7 @@ function UserDetailPage() {
         is_active: userData.is_active,
         skill_level: userData.skill_level || 'operator',
         is_available: userData.is_available !== false,
+        vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
         role_ids: userData.roles?.map(r => r.id) || []
       });
     }
@@ -435,6 +437,23 @@ function UserDetailPage() {
                       ⚠️ Nicht verfügbare Benutzer (Urlaub/Krank) sehen keine neuen Wartungsaufgaben
                     </p>
                   )}
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="vacation_tracking_enabled"
+                      checked={formData.vacation_tracking_enabled}
+                      onChange={(e) => setFormData({ ...formData, vacation_tracking_enabled: e.target.checked })}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                    <label htmlFor="vacation_tracking_enabled" className="text-sm text-gray-700 dark:text-gray-300">
+                      Urlaubsverwaltung aktiviert
+                    </label>
+                  </div>
+                  {!formData.vacation_tracking_enabled && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 ml-6">
+                      ⚠️ Benutzer wird nicht in der Urlaubsverwaltung geführt (z.B. externe Mitarbeiter)
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
@@ -452,6 +471,7 @@ function UserDetailPage() {
                         is_active: userData.is_active,
                         skill_level: userData.skill_level || 'operator',
                         is_available: userData.is_available !== false,
+                        vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
                         role_ids: userData.roles?.map(r => r.id) || []
                       });
                     }}

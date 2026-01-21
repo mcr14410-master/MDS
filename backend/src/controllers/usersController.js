@@ -32,6 +32,7 @@ async function getAll(req, res) {
         u.is_active,
         u.skill_level,
         u.is_available,
+        u.vacation_tracking_enabled,
         u.last_login,
         u.created_at,
         u.updated_at,
@@ -123,6 +124,7 @@ async function getById(req, res) {
         u.is_active,
         u.skill_level,
         u.is_available,
+        u.vacation_tracking_enabled,
         u.last_login,
         u.created_at,
         u.updated_at,
@@ -303,7 +305,7 @@ async function create(req, res) {
 async function update(req, res) {
   try {
     const { id } = req.params;
-    const { username, email, first_name, last_name, is_active, skill_level, is_available, role_ids } = req.body;
+    const { username, email, first_name, last_name, is_active, skill_level, is_available, vacation_tracking_enabled, role_ids } = req.body;
 
     // Check if user exists
     const existingUser = await pool.query('SELECT id FROM users WHERE id = $1', [id]);
@@ -397,6 +399,10 @@ async function update(req, res) {
       if (is_available !== undefined) {
         updates.push(`is_available = $${paramIndex++}`);
         values.push(is_available);
+      }
+      if (vacation_tracking_enabled !== undefined) {
+        updates.push(`vacation_tracking_enabled = $${paramIndex++}`);
+        values.push(vacation_tracking_enabled);
       }
 
       if (updates.length > 0) {
