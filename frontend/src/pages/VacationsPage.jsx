@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, ChevronLeft, ChevronRight, Plus, Settings, 
-  Users, Sun, AlertTriangle, Filter
+  Users, Sun, AlertTriangle, User
 } from 'lucide-react';
 import { useVacationsStore } from '../stores/vacationsStore';
 import { useUsersStore } from '../stores/usersStore';
+import { useAuthStore } from '../stores/authStore';
 import VacationCalendar from '../components/vacations/VacationCalendar';
 import VacationFormModal from '../components/vacations/VacationFormModal';
 import VacationSettingsModal from '../components/vacations/VacationSettingsModal';
@@ -26,6 +27,7 @@ export default function VacationsPage() {
     loading,
     error,
     initialize,
+    fetchBalances,
     setFilters,
     setView,
     navigateMonth,
@@ -34,18 +36,50 @@ export default function VacationsPage() {
   } = useVacationsStore();
 
   const { users, fetchUsers } = useUsersStore();
+  const { user, hasPermission } = useAuthStore();
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editingVacation, setEditingVacation] = useState(null);
   const [editingEntitlement, setEditingEntitlement] = useState(null);
-  const [showBalances, setShowBalances] = useState(true);
   const [userFilter, setUserFilter] = useState('');
+  
+  // Year selector for "Mein Urlaub"
+  const currentYear = new Date().getFullYear();
+  const [myVacationYear, setMyVacationYear] = useState(currentYear);
+  
+  // Dynamic year range
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let y = currentYear - 1; y <= currentYear + 5; y++) {
+      years.push(y);
+    }
+    return years;
+  }, [currentYear]);
 
   useEffect(() => {
     initialize();
     fetchUsers();
   }, []);
+
+  // Fetch balances when myVacationYear changes
+  useEffect(() => {
+    if (myVacationYear !== filters.year) {
+      fetchBalances(myVacationYear);
+    }
+  }, [myVacationYear]);
+
+  // Get current user's balance
+  const myBalance = useMemo(() => {
+    if (!user) return null;
+    return balances.find(b => b.user_id === user.id);
+  }, [balances, user]);
+
+  // Get current user's vacations for the year
+  const myVacations = useMemo(() => {
+    if (!user || !calendarData.vacations) return [];
+    return calendarData.vacations.filter(v => v.user_id === user.id);
+  }, [calendarData.vacations, user]);
 
   // Handle vacation click in calendar
   const handleVacationClick = (vacation) => {
@@ -65,12 +99,15 @@ export default function VacationsPage() {
     setEditingVacation(null);
   };
 
-  // Filter balances by search
+  // Filter balances by search (for all employees section)
   const filteredBalances = balances.filter(b => 
     !userFilter || 
     b.display_name?.toLowerCase().includes(userFilter.toLowerCase()) ||
     b.username?.toLowerCase().includes(userFilter.toLowerCase())
   );
+
+  // Check permission for viewing all balances
+  const canManageVacations = hasPermission('vacations.manage');
 
   return (
     <div className="p-6">
@@ -87,27 +124,17 @@ export default function VacationsPage() {
         </div>
         
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowBalances(!showBalances)}
-            className={`p-2 rounded-lg border transition-colors ${
-              showBalances 
-                ? 'bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300'
-                : 'bg-white border-gray-300 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300'
-            }`}
-            title="Resturlaub anzeigen"
-          >
-            <Users className="h-5 w-5" />
-          </button>
-          
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 
-                       hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 
-                       dark:text-gray-300 dark:hover:bg-gray-700"
-            title="Einstellungen"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
+          {canManageVacations && (
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 
+                         hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 
+                         dark:text-gray-300 dark:hover:bg-gray-700"
+              title="Einstellungen"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+          )}
           
           <button
             onClick={() => handleNewVacation()}
@@ -203,91 +230,190 @@ export default function VacationsPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className={`grid gap-4 ${showBalances ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1'}`}>
-        {/* Calendar */}
-        <div className={showBalances ? 'lg:col-span-3' : ''}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-            {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-              </div>
-            ) : (
-              <VacationCalendar
-                data={calendarData}
-                view={filters.view}
-                year={filters.year}
-                month={filters.month}
-                vacationTypes={vacationTypes}
-                roleLimits={roleLimits}
-                onVacationClick={handleVacationClick}
-                onDayClick={handleNewVacation}
-              />
-            )}
+      {/* Calendar */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
           </div>
+        ) : (
+          <VacationCalendar
+            data={calendarData}
+            view={filters.view}
+            year={filters.year}
+            month={filters.month}
+            vacationTypes={vacationTypes}
+            roleLimits={roleLimits}
+            onVacationClick={handleVacationClick}
+            onDayClick={handleNewVacation}
+          />
+        )}
+      </div>
+
+      {/* Mein Urlaub */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-500" />
+            Mein Urlaub
+          </h3>
+          <select
+            value={myVacationYear}
+            onChange={(e) => setMyVacationYear(parseInt(e.target.value))}
+            className="px-3 py-1 text-sm border border-gray-300 rounded-lg 
+                       dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            {yearOptions.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Balances Sidebar */}
-        {showBalances && (
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Sun className="h-5 w-5 text-yellow-500" />
-                  Resturlaub {filters.year}
-                </h3>
+        {myBalance ? (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {myBalance.total_days}
               </div>
-
-              {/* Search */}
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Mitarbeiter suchen..."
-                  value={userFilter}
-                  onChange={(e) => setUserFilter(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg 
-                             dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
+              <div className="text-xs text-gray-500 dark:text-gray-400">Anspruch</div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {myBalance.carried_over > 0 ? `+${myBalance.carried_over}` : myBalance.carried_over}
               </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Übertrag</div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {myBalance.available_days}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Verfügbar</div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {myBalance.used_days}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Genommen</div>
+            </div>
+            <div className={`rounded-lg p-3 text-center ${
+              myBalance.remaining_days < 0
+                ? 'bg-red-100 dark:bg-red-900/30'
+                : myBalance.remaining_days < 5
+                  ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                  : 'bg-green-100 dark:bg-green-900/30'
+            }`}>
+              <div className={`text-2xl font-bold ${
+                myBalance.remaining_days < 0
+                  ? 'text-red-600 dark:text-red-400'
+                  : myBalance.remaining_days < 5
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-green-600 dark:text-green-400'
+              }`}>
+                {myBalance.remaining_days}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Rest</div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            Keine Urlaubsdaten für {myVacationYear}
+          </p>
+        )}
 
-              {/* Balance List */}
-              <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
-                {filteredBalances.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                    Keine Urlaubsansprüche für {filters.year}
-                  </p>
-                ) : (
-                  filteredBalances.map((balance, index) => (
-                    <VacationBalanceCard 
-                      key={`${balance.user_id}-${index}`} 
-                      balance={balance} 
-                      onClick={() => setEditingEntitlement(balance)}
+        {/* My Vacations List */}
+        {myVacations.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Meine Abwesenheiten {filters.year}
+            </h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {myVacations.map(v => (
+                <div 
+                  key={v.id}
+                  onClick={() => handleVacationClick(v)}
+                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 
+                             rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded"
+                      style={{ backgroundColor: v.type_color }}
                     />
-                  ))
-                )}
-              </div>
-
-              {/* Legend */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Abwesenheitstypen
-                </h4>
-                <div className="space-y-1">
-                  {vacationTypes.filter(t => t.is_active).map(type => (
-                    <div key={type.id} className="flex items-center gap-2 text-xs">
-                      <div 
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: type.color }}
-                      />
-                      <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
-                    </div>
-                  ))}
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {v.type_name}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(v.start_date).toLocaleDateString('de-DE')}
+                    {v.start_date !== v.end_date && (
+                      <> - {new Date(v.end_date).toLocaleDateString('de-DE')}</>
+                    )}
+                  </span>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Resturlaub aller Mitarbeiter (nur mit vacations.manage) */}
+      {canManageVacations && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Sun className="h-5 w-5 text-yellow-500" />
+              Resturlaub {filters.year}
+            </h3>
+          </div>
+
+          {/* Search */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Mitarbeiter suchen..."
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+              className="w-full max-w-xs px-3 py-2 text-sm border border-gray-300 rounded-lg 
+                         dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          {/* Balance Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {filteredBalances.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full text-center py-4">
+                Keine Urlaubsansprüche für {filters.year}
+              </p>
+            ) : (
+              filteredBalances.map((balance, index) => (
+                <VacationBalanceCard 
+                  key={`${balance.user_id}-${index}`} 
+                  balance={balance} 
+                  onClick={() => setEditingEntitlement(balance)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Abwesenheitstypen
+            </h4>
+            <div className="flex flex-wrap gap-4">
+              {vacationTypes.filter(t => t.is_active).map(type => (
+                <div key={type.id} className="flex items-center gap-2 text-xs">
+                  <div 
+                    className="w-3 h-3 rounded"
+                    style={{ backgroundColor: type.color }}
+                  />
+                  <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
       {showFormModal && (
