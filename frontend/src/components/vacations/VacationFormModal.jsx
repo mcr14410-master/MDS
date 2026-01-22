@@ -42,9 +42,10 @@ function formatOverlapDates(dates) {
 }
 
 export default function VacationFormModal({ vacation, vacationTypes, users, onClose }) {
-  const { createVacation, updateVacation, deleteVacation, checkOverlap } = useVacationsStore();
+  const { createVacation, requestVacation, updateVacation, deleteVacation, checkOverlap } = useVacationsStore();
 
   const isEditing = vacation?.id;
+  const isRequest = vacation?.isRequest; // Flag for self-request mode
 
   const [formData, setFormData] = useState({
     user_id: vacation?.user_id || '',
@@ -138,6 +139,8 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
 
       if (isEditing) {
         await updateVacation(vacation.id, data);
+      } else if (isRequest) {
+        await requestVacation(data);
       } else {
         await createVacation(data);
       }
@@ -145,7 +148,8 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
       onClose();
     } catch (err) {
       console.error('Submit error:', err);
-      setError(err.response?.data?.message || err.response?.data?.error || 'Fehler beim Speichern');
+      const defaultMsg = isRequest ? 'Fehler beim Beantragen' : 'Fehler beim Speichern';
+      setError(err.response?.data?.message || err.response?.data?.error || defaultMsg);
     } finally {
       setLoading(false);
     }
@@ -179,8 +183,8 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-green-600" />
-              {isEditing ? 'Abwesenheit bearbeiten' : 'Neue Abwesenheit'}
+              <Calendar className={`h-5 w-5 ${isRequest ? 'text-blue-600' : 'text-green-600'}`} />
+              {isEditing ? 'Abwesenheit bearbeiten' : isRequest ? 'Urlaub beantragen' : 'Neue Abwesenheit'}
             </h2>
             <button
               onClick={onClose}
@@ -200,28 +204,30 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
               </div>
             )}
 
-            {/* User Select */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Mitarbeiter *
-              </label>
-              <select
-                name="user_id"
-                value={formData.user_id}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg 
-                           dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">-- Auswählen --</option>
-                {activeUsers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                    {user.roles?.length > 0 && ` (${user.roles.map(r => r.name).join(', ')})`}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* User Select - hidden for requests */}
+            {!isRequest && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Mitarbeiter *
+                </label>
+                <select
+                  name="user_id"
+                  value={formData.user_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                             dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="">-- Auswählen --</option>
+                  {activeUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name}
+                      {user.roles?.length > 0 && ` (${user.roles.map(r => r.name).join(', ')})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Type Select */}
             <div>
@@ -237,12 +243,22 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                            dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">-- Auswählen --</option>
-                {vacationTypes.filter(t => t.is_active).map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                    {type.affects_balance ? ' (zählt als Urlaub)' : ''}
-                  </option>
-                ))}
+                {vacationTypes
+                  .filter(t => t.is_active)
+                  .filter(t => {
+                    // Bei Beantragen: Krank und Schulung ausschließen
+                    if (isRequest) {
+                      const excludedTypes = ['krank', 'schulung'];
+                      return !excludedTypes.includes(t.name.toLowerCase());
+                    }
+                    return true;
+                  })
+                  .map(type => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                      {type.affects_balance ? ' (zählt als Urlaub)' : ''}
+                    </option>
+                  ))}
               </select>
               {selectedType && (
                 <div className="mt-1 flex items-center gap-2">
@@ -442,10 +458,16 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 
-                             disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isRequest 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
-                  {loading ? 'Speichern...' : 'Speichern'}
+                  {loading 
+                    ? (isRequest ? 'Wird beantragt...' : 'Speichern...') 
+                    : (isRequest ? 'Beantragen' : 'Speichern')
+                  }
                 </button>
               </div>
             </div>
