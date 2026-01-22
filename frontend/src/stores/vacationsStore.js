@@ -332,6 +332,25 @@ export const useVacationsStore = create((set, get) => ({
     }
   },
 
+  requestVacation: async (data) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.post('/api/vacations/request', data);
+      
+      // Refresh calendar
+      const { year, month, view } = get().filters;
+      await get().fetchCalendar(year, view === 'month' ? month : null);
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('requestVacation error:', error);
+      const message = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Beantragen';
+      set({ loading: false, error: message });
+      throw error;
+    }
+  },
+
   updateVacation: async (id, data) => {
     try {
       set({ loading: true, error: null });
@@ -498,6 +517,79 @@ export const useVacationsStore = create((set, get) => ({
   clearError: () => set({ error: null }),
   
   clearCurrentVacation: () => set({ currentVacation: null }),
+
+  // ============================================
+  // APPROVAL WORKFLOW
+  // ============================================
+
+  fetchPendingRequests: async () => {
+    try {
+      const response = await axios.get('/api/vacations/pending');
+      return response.data;
+    } catch (error) {
+      console.error('fetchPendingRequests error:', error);
+      // Return empty array if no permission (403)
+      if (error.response?.status === 403) return [];
+      throw error;
+    }
+  },
+
+  fetchMyRequests: async (year) => {
+    try {
+      const response = await axios.get(`/api/vacations/my-requests?year=${year}`);
+      return response.data;
+    } catch (error) {
+      console.error('fetchMyRequests error:', error);
+      throw error;
+    }
+  },
+
+  approveVacation: async (id) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.post(`/api/vacations/${id}/approve`);
+      
+      // Refresh calendar
+      const { year, month, view } = get().filters;
+      await get().fetchCalendar(year, view === 'month' ? month : null);
+      await get().fetchBalances(year);
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('approveVacation error:', error);
+      set({ loading: false, error: error.response?.data?.error || 'Fehler beim Genehmigen' });
+      throw error;
+    }
+  },
+
+  rejectVacation: async (id, reason) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.post(`/api/vacations/${id}/reject`, { reason });
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('rejectVacation error:', error);
+      set({ loading: false, error: error.response?.data?.error || 'Fehler beim Ablehnen' });
+      throw error;
+    }
+  },
+
+  resubmitVacation: async (id, data) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.post(`/api/vacations/${id}/resubmit`, data);
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('resubmitVacation error:', error);
+      set({ loading: false, error: error.response?.data?.error || 'Fehler beim erneuten Einreichen' });
+      throw error;
+    }
+  },
 
   // ============================================
   // INITIALIZATION

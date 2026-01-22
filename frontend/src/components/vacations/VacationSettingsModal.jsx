@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Settings, Calendar, Plus, Trash2, RefreshCw, Users, Save, Shield, MapPin } from 'lucide-react';
+import { X, Settings, Calendar, Plus, Trash2, RefreshCw, Users, Save, Shield, MapPin, ClipboardList } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
 
 export default function VacationSettingsModal({ onClose }) {
@@ -206,6 +206,7 @@ export default function VacationSettingsModal({ onClose }) {
   const tabs = [
     { id: 'holidays', label: 'Feiertage', icon: Calendar },
     { id: 'rolelimits', label: 'Rollen-Limits', icon: Shield },
+    { id: 'requesttypes', label: 'Antragstypen', icon: ClipboardList },
     { id: 'settings', label: 'Einstellungen', icon: Settings },
     { id: 'entitlements', label: 'Urlaubsansprüche', icon: Users }
   ];
@@ -509,6 +510,30 @@ export default function VacationSettingsModal({ onClose }) {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* REQUEST TYPES TAB (Placeholder) */}
+            {activeTab === 'requesttypes' && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                    🚧 In Entwicklung
+                  </h4>
+                  <p className="text-sm text-blue-700 dark:text-blue-400">
+                    Hier können später die Abwesenheitstypen konfiguriert werden, 
+                    die Mitarbeiter selbst beantragen können.
+                  </p>
+                </div>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-medium mb-2">Geplante Funktionen:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Typen für Beantragung aktivieren/deaktivieren</li>
+                    <li>Typen nur für direktes Eintragen markieren (z.B. Krank, Schulung)</li>
+                    <li>Genehmigungspflichtige Typen festlegen</li>
+                  </ul>
                 </div>
               </div>
             )}

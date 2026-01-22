@@ -57,9 +57,15 @@ router.delete('/vacation-entitlements/:id', requirePermission('vacations.setting
 // ============================================
 router.get('/vacations', requirePermission('vacations.read'), vacationsController.getVacations);
 router.get('/vacations/calendar', requirePermission('vacations.read'), vacationsController.getVacationsCalendar);
+router.get('/vacations/pending', requirePermission('vacations.approve'), vacationsController.getPendingRequests);
+router.get('/vacations/my-requests', requirePermission('vacations.read'), vacationsController.getMyRequests);
 router.get('/vacations/:id', requirePermission('vacations.read'), vacationsController.getVacation);
 router.post('/vacations', requirePermission('vacations.manage'), vacationsController.createVacation);
-router.post('/vacations/check-overlap', requirePermission('vacations.manage'), vacationsController.checkOverlap);
+router.post('/vacations/request', requirePermission('vacations.read'), vacationsController.requestVacation); // For self-requests (always pending)
+router.post('/vacations/check-overlap', requirePermission('vacations.read'), vacationsController.checkOverlap);
+router.post('/vacations/:id/approve', requirePermission('vacations.approve'), vacationsController.approveVacation);
+router.post('/vacations/:id/reject', requirePermission('vacations.approve'), vacationsController.rejectVacation);
+router.post('/vacations/:id/resubmit', requirePermission('vacations.read'), vacationsController.resubmitVacation);
 router.put('/vacations/:id', requirePermission('vacations.manage'), vacationsController.updateVacation);
 router.delete('/vacations/:id', requirePermission('vacations.manage'), vacationsController.deleteVacation);
 

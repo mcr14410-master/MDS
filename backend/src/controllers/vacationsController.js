@@ -5,6 +5,7 @@
  * - Automatic day calculation (excluding weekends and holidays)
  * - Concurrent absence checks per role
  * - Partial day support (time entries)
+ * - Approval workflow for requests
  */
 
 const pool = require('../config/db');
@@ -12,6 +13,23 @@ const pool = require('../config/db');
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+/**
+ * Check if user has a specific permission
+ * @param {number} userId 
+ * @param {string} permission 
+ * @returns {Promise<boolean>}
+ */
+async function userHasPermission(userId, permission) {
+  const result = await pool.query(`
+    SELECT p.name
+    FROM permissions p
+    JOIN role_permissions rp ON p.id = rp.permission_id
+    JOIN user_roles ur ON rp.role_id = ur.role_id
+    WHERE ur.user_id = $1 AND p.name = $2
+  `, [userId, permission]);
+  return result.rows.length > 0;
+}
 
 /**
  * Calculate working days between two dates (excluding weekends and holidays)
@@ -397,6 +415,17 @@ const createVacation = async (req, res) => {
       return res.status(400).json({ error: 'Enddatum muss >= Startdatum sein' });
     }
     
+    // Check permissions
+    const canManage = await userHasPermission(req.user.id, 'vacations.manage');
+    const isOwnRequest = parseInt(user_id) === req.user.id;
+    
+    // If creating for someone else, must have manage permission
+    if (!isOwnRequest && !canManage) {
+      return res.status(403).json({ 
+        error: 'Keine Berechtigung, Abwesenheiten für andere Mitarbeiter anzulegen' 
+      });
+    }
+    
     // Check for concurrent absences (warning only, don't block)
     let concurrentWarning = null;
     if (!skip_overlap_check) {
@@ -414,18 +443,23 @@ const createVacation = async (req, res) => {
     const calculatedDays = await calculateWorkingDays(start_date, end_date);
     const calculatedHours = calculateHours(start_time, end_time);
     
+    // Determine status:
+    // - Users with vacations.manage can create approved entries directly
+    // - Others create pending requests (canManage already checked above)
+    const status = canManage ? 'approved' : 'pending';
+    
     const result = await pool.query(
       `INSERT INTO vacations (
         user_id, type_id, start_date, end_date, 
         start_time, end_time, calculated_days, calculated_hours,
         note, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         user_id, type_id, start_date, end_date,
         start_time || null, end_time || null, 
         calculatedDays, calculatedHours,
-        note, req.user?.id || null
+        note, status, req.user?.id || null
       ]
     );
     
@@ -597,6 +631,355 @@ const checkOverlap = async (req, res) => {
   }
 };
 
+// ============================================
+// APPROVAL WORKFLOW
+// ============================================
+
+/**
+ * Approve a vacation request
+ * POST /api/vacations/:id/approve
+ */
+const approveVacation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const approverId = req.user.id;
+    
+    // Check if vacation exists and is pending
+    const checkResult = await pool.query(
+      'SELECT * FROM vacations WHERE id = $1',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Abwesenheit nicht gefunden' });
+    }
+    
+    const vacation = checkResult.rows[0];
+    
+    if (vacation.status !== 'pending') {
+      return res.status(400).json({ 
+        error: 'Nur ausstehende Anträge können genehmigt werden',
+        currentStatus: vacation.status
+      });
+    }
+    
+    // Update status
+    const result = await pool.query(
+      `UPDATE vacations 
+       SET status = 'approved', approved_by = $1, approved_at = NOW(), rejection_reason = NULL
+       WHERE id = $2
+       RETURNING *`,
+      [approverId, id]
+    );
+    
+    // Fetch full data
+    const fullResult = await pool.query(
+      `SELECT 
+        v.*,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name, vt.color as type_color,
+        approver.first_name || ' ' || approver.last_name as approved_by_name
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      LEFT JOIN users approver ON approver.id = v.approved_by
+      WHERE v.id = $1`,
+      [id]
+    );
+    
+    res.json(fullResult.rows[0]);
+  } catch (error) {
+    console.error('Error approving vacation:', error);
+    res.status(500).json({ error: 'Fehler beim Genehmigen der Abwesenheit' });
+  }
+};
+
+/**
+ * Request vacation for self (always creates pending request)
+ * POST /api/vacations/request
+ * This is for users to request their own vacation - always creates pending status
+ */
+const requestVacation = async (req, res) => {
+  try {
+    const { 
+      type_id, 
+      start_date, 
+      end_date, 
+      start_time, 
+      end_time,
+      note
+    } = req.body;
+    
+    const user_id = req.user.id; // Always for self
+    
+    // Validation
+    if (!type_id || !start_date || !end_date) {
+      return res.status(400).json({ 
+        error: 'type_id, start_date und end_date sind erforderlich' 
+      });
+    }
+    
+    if (new Date(end_date) < new Date(start_date)) {
+      return res.status(400).json({ error: 'Enddatum muss >= Startdatum sein' });
+    }
+    
+    // Check vacation type exists and is active
+    const typeResult = await pool.query(
+      'SELECT * FROM vacation_types WHERE id = $1 AND is_active = true',
+      [type_id]
+    );
+    
+    if (typeResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Ungültiger Abwesenheitstyp' });
+    }
+    
+    // Calculate working days
+    const calculatedDays = await calculateWorkingDays(start_date, end_date);
+    const calculatedHours = calculateHours(start_time, end_time);
+    
+    // Always create as pending - this is a request, not direct entry
+    const status = 'pending';
+    
+    const result = await pool.query(
+      `INSERT INTO vacations (
+        user_id, type_id, start_date, end_date, 
+        start_time, end_time, calculated_days, calculated_hours,
+        note, status, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *`,
+      [
+        user_id, type_id, start_date, end_date,
+        start_time || null, end_time || null, 
+        calculatedDays, calculatedHours,
+        note, status, req.user.id
+      ]
+    );
+    
+    // Fetch full vacation data
+    const fullResult = await pool.query(
+      `SELECT 
+        v.*,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name, vt.color as type_color
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      WHERE v.id = $1`,
+      [result.rows[0].id]
+    );
+    
+    res.status(201).json({
+      ...fullResult.rows[0],
+      message: 'Urlaubsantrag wurde eingereicht'
+    });
+  } catch (error) {
+    console.error('Request vacation error:', error);
+    res.status(500).json({ error: 'Fehler beim Einreichen des Antrags' });
+  }
+};
+
+/**
+ * Reject a vacation request
+ * POST /api/vacations/:id/reject
+ */
+const rejectVacation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const approverId = req.user.id;
+    
+    // Check if vacation exists and is pending
+    const checkResult = await pool.query(
+      'SELECT * FROM vacations WHERE id = $1',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Abwesenheit nicht gefunden' });
+    }
+    
+    const vacation = checkResult.rows[0];
+    
+    if (vacation.status !== 'pending') {
+      return res.status(400).json({ 
+        error: 'Nur ausstehende Anträge können abgelehnt werden',
+        currentStatus: vacation.status
+      });
+    }
+    
+    // Update status
+    const result = await pool.query(
+      `UPDATE vacations 
+       SET status = 'rejected', approved_by = $1, approved_at = NOW(), rejection_reason = $2
+       WHERE id = $3
+       RETURNING *`,
+      [approverId, reason || null, id]
+    );
+    
+    // Fetch full data
+    const fullResult = await pool.query(
+      `SELECT 
+        v.*,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name, vt.color as type_color,
+        approver.first_name || ' ' || approver.last_name as approved_by_name
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      LEFT JOIN users approver ON approver.id = v.approved_by
+      WHERE v.id = $1`,
+      [id]
+    );
+    
+    res.json(fullResult.rows[0]);
+  } catch (error) {
+    console.error('Error rejecting vacation:', error);
+    res.status(500).json({ error: 'Fehler beim Ablehnen der Abwesenheit' });
+  }
+};
+
+/**
+ * Get pending requests (for approvers)
+ * GET /api/vacations/pending
+ */
+const getPendingRequests = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        v.*,
+        u.username,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        COALESCE(
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id
+           WHERE ur.user_id = v.user_id),
+          '[]'::json
+        ) as user_roles,
+        vt.name as type_name, vt.color as type_color,
+        creator.first_name || ' ' || creator.last_name as created_by_name
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      LEFT JOIN users creator ON creator.id = v.created_by
+      WHERE v.status = 'pending'
+      ORDER BY v.created_at ASC`
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching pending requests:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der ausstehenden Anträge' });
+  }
+};
+
+/**
+ * Get my requests (for current user)
+ * GET /api/vacations/my-requests?year=2026
+ */
+const getMyRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    
+    const result = await pool.query(
+      `SELECT 
+        v.*,
+        vt.name as type_name, vt.color as type_color,
+        approver.first_name || ' ' || approver.last_name as approved_by_name
+      FROM vacations v
+      JOIN vacation_types vt ON vt.id = v.type_id
+      LEFT JOIN users approver ON approver.id = v.approved_by
+      WHERE v.user_id = $1 
+        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.status IN ('pending', 'rejected')
+      ORDER BY v.created_at DESC`,
+      [userId, year]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching my requests:', error);
+    res.status(500).json({ error: 'Fehler beim Laden meiner Anträge' });
+  }
+};
+
+/**
+ * Resubmit a rejected request (creates new pending entry)
+ * POST /api/vacations/:id/resubmit
+ */
+const resubmitVacation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { start_date, end_date, note } = req.body;
+    
+    // Check if vacation exists and is rejected
+    const checkResult = await pool.query(
+      'SELECT * FROM vacations WHERE id = $1',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Abwesenheit nicht gefunden' });
+    }
+    
+    const vacation = checkResult.rows[0];
+    
+    // Verify ownership
+    if (vacation.user_id !== userId) {
+      return res.status(403).json({ error: 'Nicht berechtigt' });
+    }
+    
+    if (vacation.status !== 'rejected') {
+      return res.status(400).json({ 
+        error: 'Nur abgelehnte Anträge können erneut eingereicht werden',
+        currentStatus: vacation.status
+      });
+    }
+    
+    // Calculate working days for new dates
+    const newStartDate = start_date || vacation.start_date;
+    const newEndDate = end_date || vacation.end_date;
+    const calculatedDays = await calculateWorkingDays(newStartDate, newEndDate);
+    
+    // Update the vacation
+    const result = await pool.query(
+      `UPDATE vacations 
+       SET status = 'pending', 
+           start_date = $1,
+           end_date = $2,
+           calculated_days = $3,
+           note = $4,
+           rejection_reason = NULL,
+           approved_by = NULL,
+           approved_at = NULL,
+           updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [newStartDate, newEndDate, calculatedDays, note || vacation.note, id]
+    );
+    
+    // Fetch full data
+    const fullResult = await pool.query(
+      `SELECT 
+        v.*,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name, vt.color as type_color
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      WHERE v.id = $1`,
+      [id]
+    );
+    
+    res.json(fullResult.rows[0]);
+  } catch (error) {
+    console.error('Error resubmitting vacation:', error);
+    res.status(500).json({ error: 'Fehler beim erneuten Einreichen' });
+  }
+};
+
 module.exports = {
   getVacations,
   getVacationsCalendar,
@@ -605,6 +988,13 @@ module.exports = {
   updateVacation,
   deleteVacation,
   checkOverlap,
+  // Approval workflow
+  approveVacation,
+  rejectVacation,
+  getPendingRequests,
+  getMyRequests,
+  resubmitVacation,
+  requestVacation,
   // Export helpers for testing
   calculateWorkingDays,
   checkConcurrentAbsences
