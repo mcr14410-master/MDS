@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Settings, 
-  Sun, AlertTriangle, User, Send, Check
+  Sun, AlertTriangle, User, Send, Check, FileDown, Clock, BarChart3, Cog
 } from 'lucide-react';
 import { useVacationsStore } from '../stores/vacationsStore';
 import { useUsersStore } from '../stores/usersStore';
 import { useAuthStore } from '../stores/authStore';
 import VacationCalendar from '../components/vacations/VacationCalendar';
 import VacationFormModal from '../components/vacations/VacationFormModal';
-import VacationSettingsModal from '../components/vacations/VacationSettingsModal';
+import VacationSettingsPanel from '../components/vacations/VacationSettingsPanel';
 import VacationBalanceCard from '../components/vacations/VacationBalanceCard';
 import EntitlementEditModal from '../components/vacations/EntitlementEditModal';
 import MyRequestsPanel from '../components/vacations/MyRequestsPanel';
@@ -20,7 +21,17 @@ const MONTHS = [
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
 ];
 
-export default function VacationsPage() {
+export default function VacationsPage({ view: propView }) {
+  const location = useLocation();
+  
+  // Determine active view from route or prop
+  const activeView = useMemo(() => {
+    if (propView) return propView;
+    if (location.pathname === '/vacations/my') return 'my';
+    if (location.pathname === '/vacations/admin') return 'admin';
+    return 'calendar'; // default
+  }, [propView, location.pathname]);
+
   const {
     calendarData,
     vacationTypes,
@@ -43,11 +54,14 @@ export default function VacationsPage() {
   const { user, hasPermission } = useAuthStore();
 
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editingVacation, setEditingVacation] = useState(null);
   const [editingEntitlement, setEditingEntitlement] = useState(null);
   const [userFilter, setUserFilter] = useState('');
   
+  // Tab states for different views
+  const [myTab, setMyTab] = useState('vacation'); // vacation | timetracking
+  const [adminTab, setAdminTab] = useState('overview'); // overview | vacation | timetracking | settings
+  const [settingsSection, setSettingsSection] = useState('holidays'); // holidays | role-limits | request-types | entitlements
   // Year selector for "Mein Urlaub"
   const currentYear = new Date().getFullYear();
   const [myVacationYear, setMyVacationYear] = useState(currentYear);
@@ -138,6 +152,48 @@ export default function VacationsPage() {
     }
   };
 
+  // Export my year as PDF
+  const handleExportMyYear = async () => {
+    try {
+      const response = await axios.get(`/api/vacations/export/my-year?year=${myVacationYear}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Urlaubsuebersicht_${myVacationYear}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
+  };
+
+  // Export all employees as PDF (for personnel)
+  const handleExportAll = async () => {
+    try {
+      const response = await axios.get(`/api/vacations/export/all?year=${filters.year}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Urlaubsuebersicht_Gesamt_${filters.year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
+  };
+
   // Handle vacation click in calendar
   const handleVacationClick = (vacation) => {
     if (!canManage) return; // Only managers can edit
@@ -188,6 +244,24 @@ export default function VacationsPage() {
     b.username?.toLowerCase().includes(userFilter.toLowerCase())
   );
 
+  // View-specific titles and descriptions
+  const viewConfig = {
+    calendar: {
+      title: 'Kalender',
+      description: 'Abwesenheiten im Überblick'
+    },
+    my: {
+      title: 'Mein Bereich',
+      description: 'Meine Abwesenheiten und Anträge'
+    },
+    admin: {
+      title: 'Verwaltung',
+      description: 'Urlaubsansprüche und Genehmigungen verwalten'
+    }
+  };
+
+  const currentViewConfig = viewConfig[activeView] || viewConfig.calendar;
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -195,26 +269,14 @@ export default function VacationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Calendar className="h-7 w-7 text-green-600" />
-            Urlaubsplanung
+            Urlaub & Arbeitszeit - {currentViewConfig.title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Abwesenheiten verwalten und planen
+            {currentViewConfig.description}
           </p>
         </div>
         
         <div className="flex gap-2">
-          {canManage && (
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="p-2 rounded-lg border border-gray-300 bg-white text-gray-700 
-                         hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 
-                         dark:text-gray-300 dark:hover:bg-gray-700"
-              title="Einstellungen"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
-          )}
-          
           {/* Request vacation - for all users (including managers for their own vacation) */}
           <button
             onClick={handleRequestVacation}
@@ -252,115 +314,159 @@ export default function VacationsPage() {
         </div>
       )}
 
-      {/* Navigation & View Toggle */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
-        <div className="flex items-center justify-between">
-          {/* Left: Navigation */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => filters.view === 'month' ? navigateMonth(-1) : navigateYear(-1)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              
-              <div className="min-w-[200px] text-center">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {filters.view === 'month' 
-                    ? `${MONTHS[filters.month - 1]} ${filters.year}`
-                    : filters.year
-                  }
-                </h2>
+      {/* Navigation & View Toggle + Calendar - nur bei Kalender-Ansicht */}
+      {activeView === 'calendar' && (
+        <>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+            <div className="flex items-center justify-between">
+              {/* Left: Navigation */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => filters.view === 'month' ? navigateMonth(-1) : navigateYear(-1)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  
+                  <div className="min-w-[200px] text-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {filters.view === 'month' 
+                        ? `${MONTHS[filters.month - 1]} ${filters.year}`
+                        : filters.year
+                      }
+                    </h2>
+                  </div>
+                  
+                  <button
+                    onClick={() => filters.view === 'month' ? navigateMonth(1) : navigateYear(1)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setFilters({ 
+                    year: new Date().getFullYear(), 
+                    month: new Date().getMonth() + 1 
+                  })}
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg 
+                             hover:bg-gray-200 dark:hover:bg-gray-600"
+                >
+                  Heute
+                </button>
               </div>
-              
-              <button
-                onClick={() => filters.view === 'month' ? navigateMonth(1) : navigateYear(1)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
 
-            <button
-              onClick={() => setFilters({ 
-                year: new Date().getFullYear(), 
-                month: new Date().getMonth() + 1 
-              })}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg 
-                         hover:bg-gray-200 dark:hover:bg-gray-600"
-            >
-              Heute
-            </button>
-          </div>
-
-          {/* Right: View Toggle */}
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-              <button
-                onClick={() => setView('month')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  filters.view === 'month'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                Monat
-              </button>
-              <button
-                onClick={() => setView('year')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  filters.view === 'year'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                Jahr
-              </button>
+              {/* Right: View Toggle */}
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                  <button
+                    onClick={() => setView('month')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      filters.view === 'month'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    Monat
+                  </button>
+                  <button
+                    onClick={() => setView('year')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      filters.view === 'year'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    Jahr
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Calendar */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          {/* Calendar */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-4">
+            {loading ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              </div>
+            ) : (
+              <VacationCalendar
+                data={calendarData}
+                view={filters.view}
+                year={filters.year}
+                month={filters.month}
+                vacationTypes={vacationTypes}
+                roleLimits={roleLimits}
+                onVacationClick={canManage ? handleVacationClick : undefined}
+                onDayClick={canManage ? handleNewVacation : undefined}
+              />
+            )}
           </div>
-        ) : (
-          <VacationCalendar
-            data={calendarData}
-            view={filters.view}
-            year={filters.year}
-            month={filters.month}
-            vacationTypes={vacationTypes}
-            roleLimits={roleLimits}
-            onVacationClick={canManage ? handleVacationClick : undefined}
-            onDayClick={canManage ? handleNewVacation : undefined}
-          />
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Mein Urlaub + Meine Anträge (60:40 Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-        {/* Mein Urlaub (60%) */}
-        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-500" />
-              Mein Urlaub
-            </h3>
-            <select
-              value={myVacationYear}
-              onChange={(e) => setMyVacationYear(parseInt(e.target.value))}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg 
-                         dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              {yearOptions.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+      {/* ============ MEIN BEREICH ============ */}
+      {activeView === 'my' && (
+        <div className="space-y-4">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="flex gap-4">
+              <button
+                onClick={() => setMyTab('vacation')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  myTab === 'vacation'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Urlaub
+              </button>
+              <button
+                onClick={() => setMyTab('timetracking')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  myTab === 'timetracking'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Arbeitszeit
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab: Urlaub */}
+          {myTab === 'vacation' && (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+              {/* Mein Urlaub (60%) */}
+              <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <User className="h-5 w-5 text-blue-500" />
+                    Mein Urlaub
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={myVacationYear}
+                      onChange={(e) => setMyVacationYear(parseInt(e.target.value))}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-lg 
+                                 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                      {yearOptions.map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleExportMyYear}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 
+                                 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      title="Als PDF exportieren"
+                    >
+                      <FileDown className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {myBalance ? (
@@ -542,65 +648,247 @@ export default function VacationsPage() {
         </div>
 
         {/* Meine Anträge (40%) */}
-        <div className="lg:col-span-2">
-          <MyRequestsPanel 
-            requests={myRequests} 
-            year={myVacationYear}
-            onRefresh={refreshRequests}
-          />
-        </div>
-      </div>
+            <div className="lg:col-span-2">
+              <MyRequestsPanel 
+                requests={myRequests} 
+                year={myVacationYear}
+                onRefresh={refreshRequests}
+              />
+            </div>
+          </div>
+          )}
 
-      {/* Resturlaub + Offene Anträge (60:40 Layout) */}
-      {(canManage || canApprove) && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          {/* Resturlaub aller Mitarbeiter (60%) - nur mit vacations.manage */}
-          {canManage && (
-            <div className={`${canApprove ? 'lg:col-span-3' : 'lg:col-span-5'} bg-white dark:bg-gray-800 rounded-lg shadow p-4`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Sun className="h-5 w-5 text-yellow-500" />
-                  Resturlaub {filters.year}
+          {/* Tab: Arbeitszeit */}
+          {myTab === 'timetracking' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Zeiterfassung
                 </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  Die Zeiterfassung befindet sich in Entwicklung. Hier werden Sie zukünftig Ihre 
+                  Arbeitszeiten einsehen, Stempelungen vornehmen und Korrekturen beantragen können.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
+                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+                  <span>🚧</span>
+                  <span>Geplant für Phase 11</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============ VERWALTUNG ============ */}
+      {activeView === 'admin' && (canManage || canApprove) && (
+        <div className="space-y-4">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="flex gap-4">
+              <button
+                onClick={() => setAdminTab('overview')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  adminTab === 'overview'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Übersicht
+                </span>
+              </button>
+              <button
+                onClick={() => setAdminTab('vacation')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  adminTab === 'vacation'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Urlaub
+              </button>
+              <button
+                onClick={() => setAdminTab('timetracking')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  adminTab === 'timetracking'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Arbeitszeit
+              </button>
+              <button
+                onClick={() => setAdminTab('settings')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  adminTab === 'settings'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Cog className="h-4 w-4" />
+                  Einstellungen
+                </span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab: Übersicht */}
+          {adminTab === 'overview' && (
+            <>
+              {/* Schnellübersicht */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Heute abwesend</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {calendarData.vacations?.filter(v => {
+                      const today = new Date().toISOString().split('T')[0];
+                      return v.start_date <= today && v.end_date >= today && v.status === 'approved';
+                    }).length || 0}
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Offene Anträge</div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+                    {pendingRequests.length}
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Mitarbeiter gesamt</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {balances.length}
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Resturlaub gesamt</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                    {balances.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0)} Tage
+                  </div>
+                </div>
               </div>
 
-              {/* Search */}
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Mitarbeiter suchen..."
-                  value={userFilter}
-                  onChange={(e) => setUserFilter(e.target.value)}
-                  className="w-full max-w-xs px-3 py-2 text-sm border border-gray-300 rounded-lg 
-                             dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
+              {/* Resturlaub + Offene Anträge */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                {/* Resturlaub aller Mitarbeiter (60%) */}
+                {canManage && (
+                  <div className={`${canApprove ? 'lg:col-span-3' : 'lg:col-span-5'} bg-white dark:bg-gray-800 rounded-lg shadow p-4`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Sun className="h-5 w-5 text-yellow-500" />
+                        Resturlaub {filters.year}
+                      </h3>
+                      <button
+                        onClick={handleExportAll}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 
+                                   hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 
+                                   hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border 
+                                   border-gray-300 dark:border-gray-600"
+                        title="Gesamtübersicht als PDF exportieren"
+                      >
+                        <FileDown className="h-4 w-4" />
+                        Export
+                      </button>
+                    </div>
 
-              {/* Balance Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
-                {filteredBalances.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full text-center py-4">
-                    Keine Urlaubsansprüche für {filters.year}
-                  </p>
-                ) : (
-                  filteredBalances.map((balance, index) => (
-                    <VacationBalanceCard 
-                      key={`${balance.user_id}-${index}`} 
-                      balance={balance} 
-                      onClick={() => setEditingEntitlement(balance)}
-                    />
-                  ))
+                    {/* Search */}
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Mitarbeiter suchen..."
+                        value={userFilter}
+                        onChange={(e) => setUserFilter(e.target.value)}
+                        className="w-full max-w-xs px-3 py-2 text-sm border border-gray-300 rounded-lg 
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    {/* Balance Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
+                      {filteredBalances.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full text-center py-4">
+                          Keine Urlaubsansprüche für {filters.year}
+                        </p>
+                      ) : (
+                        filteredBalances.map((balance, index) => (
+                          <VacationBalanceCard 
+                            key={`${balance.user_id}-${index}`} 
+                            balance={balance} 
+                            onClick={() => setEditingEntitlement(balance)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
                 )}
+
+                {/* Offene Anträge (40%) */}
+                {canApprove && (
+                  <div className={`${canManage ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
+                    <PendingRequestsPanel 
+                      requests={pendingRequests}
+                      onRefresh={refreshRequests}
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Tab: Urlaub */}
+          {adminTab === 'vacation' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Urlaubsverwaltung
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  Detaillierte Urlaubsverwaltung mit Berichten, Auswertungen und erweiterten Funktionen.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
+                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+                  <span>🚧</span>
+                  <span>In Entwicklung</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Offene Anträge (40%) - nur mit vacations.approve */}
-          {canApprove && (
-            <div className={`${canManage ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
-              <PendingRequestsPanel 
-                requests={pendingRequests}
-                onRefresh={refreshRequests}
+          {/* Tab: Arbeitszeit */}
+          {adminTab === 'timetracking' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Arbeitszeitverwaltung
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  Verwaltung von Arbeitszeiten, Zeitkonten, Korrekturen und Auswertungen für alle Mitarbeiter.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
+                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+                  <span>🚧</span>
+                  <span>Geplant für Phase 11</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Einstellungen */}
+          {adminTab === 'settings' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <VacationSettingsPanel 
+                activeSection={settingsSection}
+                onSectionChange={setSettingsSection}
               />
             </div>
           )}
@@ -614,13 +902,6 @@ export default function VacationsPage() {
           vacationTypes={vacationTypes}
           users={users}
           onClose={handleCloseForm}
-        />
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <VacationSettingsModal
-          onClose={() => setShowSettingsModal(false)}
         />
       )}
 

@@ -138,6 +138,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   ),
+  Clock: () => (
+    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
 };
 
 // Einzelner Menüpunkt
@@ -424,15 +429,20 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             />
           )}
 
-          {/* Urlaubsplanung */}
+          {/* Urlaub & Arbeitszeit */}
           {hasPermission('vacations.read') && (
-            <NavItem 
-              to="/vacations" 
-              icon={Icons.Calendar} 
-              label="Urlaubsplanung" 
-              isActive={location.pathname.startsWith('/vacations')}
+            <NavGroup 
+              title="Urlaub & Arbeitszeit" 
+              icon={Icons.Calendar}
+              routes={['/vacations', '/vacations/calendar', '/vacations/my', '/vacations/admin']}
               collapsed={collapsed}
-            />
+            >
+              <NavSubItem to="/vacations/calendar" label="Kalender" />
+              <NavSubItem to="/vacations/my" label="Mein Bereich" />
+              {hasPermission('vacations.manage') && (
+                <NavSubItem to="/vacations/admin" label="Verwaltung" />
+              )}
+            </NavGroup>
           )}
 
           {/* Kategorien (Admin-Bereich) */}

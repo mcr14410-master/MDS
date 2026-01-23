@@ -18,7 +18,7 @@
 | Phase 8 | W24-34 | 🔄 65% | Kunden ✅, Wiki ✅, PWA ✅, Verbrauchsmaterial 🔄 |
 | Phase 9 | W35-48 | 🔄 12% | Urlaub 🔄, Roboter, Revisionen, Admin, Benachrichtigungen |
 | Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
-| Phase 11 | W57-68 | 📋 Geplant | Shopfloor-Terminals |
+| Phase 11 | W57-70 | 📋 Geplant | Shopfloor-Terminals + Zeiterfassung |
 | Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
 
 ---
@@ -451,7 +451,7 @@ purchase_order_items (
 
 ---
 
-## 📱 Phase 11: Shopfloor-Terminals (Wochen 57-68)
+## 📱 Phase 11: Shopfloor-Terminals + Zeiterfassung (Wochen 57-70)
 
 > **Fokus: Usability** - Die Terminals sollen den Bedienern helfen, nicht zusätzlich belasten.
 > Große Touch-Buttons, wenig Text, schnelle Workflows, minimale Eingaben.
@@ -604,12 +604,71 @@ purchase_order_items (
 
 ---
 
+### 📋 Woche 69-70: Zeiterfassungs-Terminal ⏱️
+**Status:** 📋 Geplant
+**Ziel:** Stempelterminal für Mitarbeiter-Zeiterfassung (Testbetrieb)
+
+**Schnell-Workflow (Primär):**
+```
+[KOMMEN] → Badge/NFC → ✓ "Guten Morgen Max, 07:32"
+[GEHEN]  → Badge/NFC → ✓ "Schönen Feierabend, 8:15h heute"
+[PAUSE]  → Badge/NFC → ✓ "Pause gestartet" / "Pause beendet (32 Min)"
+[INFO]   → Badge/NFC → Zeitkonto-Übersicht anzeigen
+```
+> 2 Sekunden pro Buchung - kein PIN, keine Auswahl
+
+**Badge/NFC Login:**
+- [ ] NFC-Reader Integration (USB HID)
+- [ ] DB: `users.badge_id` Feld (eindeutige Badge-Nummer)
+- [ ] Badge-Zuweisung in User-Verwaltung
+- [ ] Fallback: PIN-Eingabe wenn kein Badge
+
+**Hauptfunktionen:**
+- [ ] Kommen-Stempeln (Arbeitsbeginn)
+- [ ] Gehen-Stempeln (Arbeitsende)
+- [ ] Pause-Stempeln (Toggle: Start/Ende)
+- [ ] Info-Button → Zeitkonto ohne Buchung anzeigen
+- [ ] Aktueller Status nach Buchung (Anwesend seit X:XX)
+- [ ] Visuelles + akustisches Feedback (Erfolg/Fehler)
+
+**Zeitkonto-Anzeige (Info-Screen):**
+- [ ] Aktuelles Saldo (Über-/Unterstunden)
+- [ ] Soll-Stunden heute/Woche/Monat
+- [ ] Ist-Stunden heute/Woche/Monat
+- [ ] Urlaubstage-Rest (Verknüpfung mit Urlaubsplanung)
+- [ ] Letzte Buchungen (Historie)
+
+**Korrekturen (nur mit Berechtigung):**
+- [ ] Vergessenes Stempeln nachtragen
+- [ ] Fehlerhafte Buchung korrigieren
+- [ ] Korrektur-Grund erforderlich
+
+**DB-Erweiterungen:**
+- [ ] `users.badge_id` (NFC Badge-Nummer)
+- [ ] `time_entries` Tabelle (user_id, type [kommen/gehen/pause_start/pause_ende], timestamp, manual, correction_reason)
+- [ ] `time_settings` (Soll-Stunden pro Tag, Pausenregelung, Kernzeit)
+- [ ] `time_balances` View (berechnetes Saldo pro User)
+
+**Verknüpfungen:**
+- [ ] Urlaubsplanung: Abwesenheiten berücksichtigen
+- [ ] Maschinen-Terminal: Arbeitszeit vs. Produktionszeit
+- [ ] Feiertage: Automatisch berücksichtigt
+
+**Testbetrieb:**
+- [ ] Aktivierbar pro User (Einstellung in User-Verwaltung)
+- [ ] Erstmal nur ausgewählte User (Admin, Chef)
+- [ ] Langzeit-Testdaten sammeln (3-6 Monate)
+- [ ] Auswertungen für Validierung
+
+**Deliverable:** Funktionsfähiges Stempel-Terminal für Pilotphase
+
+---
+
 ## 📋 Phase 12+: Optionale Features
 
 ### Shopfloor-UI Erweiterungen
 - [ ] Weitere Terminal-Typen (Lager, Versand, QS)
 - [ ] Offline-Modus (Service Worker)
-- [ ] Badge/NFC Login
 - [ ] Externe Barcode-Scanner Integration
 - [ ] Schichtübergabe-Funktion
 
