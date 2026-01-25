@@ -15,6 +15,7 @@ const vacationEntitlementsController = require('../controllers/vacationEntitleme
 const vacationSettingsController = require('../controllers/vacationSettingsController');
 const holidaysController = require('../controllers/holidaysController');
 const vacationRoleLimitsController = require('../controllers/vacationRoleLimitsController');
+const vacationReportsController = require('../controllers/vacationReportsController');
 
 // All routes require authentication
 router.use(authenticateToken);
@@ -59,6 +60,8 @@ router.get('/vacations', requirePermission('vacations.read'), vacationsControlle
 router.get('/vacations/calendar', requirePermission('vacations.read'), vacationsController.getVacationsCalendar);
 router.get('/vacations/pending', requirePermission('vacations.approve'), vacationsController.getPendingRequests);
 router.get('/vacations/my-requests', requirePermission('vacations.read'), vacationsController.getMyRequests);
+router.get('/vacations/export/my-year', requirePermission('vacations.read'), vacationReportsController.exportMyYear);
+router.get('/vacations/export/all', requirePermission('vacations.manage'), vacationReportsController.exportAll);
 router.get('/vacations/:id', requirePermission('vacations.read'), vacationsController.getVacation);
 router.post('/vacations', requirePermission('vacations.manage'), vacationsController.createVacation);
 router.post('/vacations/request', requirePermission('vacations.read'), vacationsController.requestVacation); // For self-requests (always pending)

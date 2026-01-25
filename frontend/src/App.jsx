@@ -61,7 +61,7 @@ import WikiArticlePage from './pages/WikiArticlePage';
 import ConsumablesPage from './pages/ConsumablesPage';
 import ConsumableDetailPage from './pages/ConsumableDetailPage';
 
-// Vacations Pages
+// Vacation Pages
 import VacationsPage from './pages/VacationsPage';
 
 // Components
@@ -496,18 +496,37 @@ function App() {
              } 
            />
 
-           {/* Vacations */}
+           {/* Vacation Routes */}
            <Route 
              path="/vacations" 
+             element={<Navigate to="/vacations/calendar" replace />}
+           />
+           <Route 
+             path="/vacations/calendar" 
              element={
                <ProtectedRoute requiredPermission="vacations.read">
                  <VacationsPage />
                </ProtectedRoute>
              } 
            />
+           <Route 
+             path="/vacations/my" 
+             element={
+               <ProtectedRoute requiredPermission="vacations.read">
+                 <VacationsPage view="my" />
+               </ProtectedRoute>
+             } 
+           />
+           <Route 
+             path="/vacations/admin" 
+             element={
+               <ProtectedRoute requiredPermission="vacations.manage">
+                 <VacationsPage view="admin" />
+               </ProtectedRoute>
+             } 
+           />
         </Route>
 		
-			
         {/* Catch-all redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
