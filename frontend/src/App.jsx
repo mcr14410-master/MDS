@@ -33,6 +33,7 @@ import ClampingDevicesPage from './pages/ClampingDevicesPage';
 import ClampingDeviceDetailPage from './pages/ClampingDeviceDetailPage';
 import FixturesPage from './pages/FixturesPage';
 import FixtureDetailPage from './pages/FixtureDetailPage';
+import ZerobotPage from './pages/ZerobotPage';
 import ProfilePage from './pages/ProfilePage';
 import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
@@ -314,6 +315,16 @@ function App() {
 			     element={
 			       <ProtectedRoute requiredPermission="storage.view">
 			         <FixtureDetailPage />
+			       </ProtectedRoute>
+			     } 
+			   />
+
+			   {/* Zerobot Route */}
+			   <Route 
+			     path="/zerobot" 
+			     element={
+			       <ProtectedRoute requiredPermission="tools.view">
+			         <ZerobotPage />
 			       </ProtectedRoute>
 			     } 
 			   />

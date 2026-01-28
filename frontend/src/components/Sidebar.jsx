@@ -143,6 +143,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   ),
+  Robot: () => (
+    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
 };
 
 // Einzelner Menüpunkt
@@ -368,7 +373,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Werkzeuge & Equipment" 
               icon={Icons.Tools}
-              routes={['/tools', '/tool-number-lists', '/measuring-equipment', '/clamping-devices', '/fixtures']}
+              routes={['/tools', '/tool-number-lists', '/measuring-equipment', '/clamping-devices', '/fixtures', '/zerobot']}
               collapsed={collapsed}
             >
               <NavSubItem to="/tools" label="Werkzeuge" />
@@ -382,6 +387,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
                   <NavSubItem to="/fixtures" label="Vorrichtungen" />
                 </>
               )}
+              <NavSubItem to="/zerobot" label="Zerobot Rechner" />
             </NavGroup>
           )}
 
