@@ -98,6 +98,7 @@ const operationMeasuringEquipmentRoutes = require('./routes/operationMeasuringEq
 const operationConsumablesRoutes = require('./routes/operationConsumablesRoutes');
 const operationRawMaterialsRoutes = require('./routes/operationRawMaterialsRoutes');
 const vacationRoutes = require('./routes/vacationRoutes');
+const zerobotRoutes = require('./routes/zerobotRoutes');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -157,6 +158,7 @@ app.use('/api/operation-measuring-equipment', operationMeasuringEquipmentRoutes)
 app.use('/api/operation-consumables', operationConsumablesRoutes);
 app.use('/api/operation-raw-materials', operationRawMaterialsRoutes);
 app.use('/api', vacationRoutes);
+app.use('/api/zerobot', zerobotRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
