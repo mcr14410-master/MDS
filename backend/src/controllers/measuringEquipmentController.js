@@ -18,9 +18,12 @@
  * - PUT    /api/measuring-equipment/:id          - Update equipment
  * - DELETE /api/measuring-equipment/:id          - Soft delete equipment
  * - PATCH  /api/measuring-equipment/:id/status   - Update status
+ * - GET    /api/measuring-equipment/:id/label    - Generate label PDF
  */
 
 const pool = require('../config/db');
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
 
 // ============================================================================
 // TYPES
@@ -406,6 +409,7 @@ exports.getEquipmentStats = async (req, res) => {
         COUNT(*) FILTER (WHERE calibration_status = 'overdue') as overdue_count,
         COUNT(*) FILTER (WHERE calibration_status = 'locked') as locked_count,
         COUNT(*) FILTER (WHERE calibration_status IN ('in_calibration', 'repair')) as in_service_count,
+        COUNT(*) FILTER (WHERE calibration_status = 'unknown') as unknown_count,
         COUNT(*) as total_count
       FROM measuring_equipment_with_status
     `);
@@ -417,15 +421,21 @@ exports.getEquipmentStats = async (req, res) => {
       WHERE returned_at IS NULL
     `);
 
-    // Equipment due in next 30 days
+    // Equipment due in next 30 days + unknown (keine Kalibrierung)
     const upcomingResult = await pool.query(`
       SELECT 
         id, inventory_number, name, type_name, 
-        next_calibration_date, days_until_calibration
+        next_calibration_date, days_until_calibration, calibration_status
       FROM measuring_equipment_with_status
-      WHERE calibration_status IN ('due_soon', 'overdue')
-      ORDER BY next_calibration_date ASC
-      LIMIT 10
+      WHERE calibration_status IN ('due_soon', 'overdue', 'unknown')
+      ORDER BY 
+        CASE calibration_status 
+          WHEN 'overdue' THEN 1 
+          WHEN 'due_soon' THEN 2 
+          WHEN 'unknown' THEN 3 
+        END,
+        next_calibration_date ASC NULLS LAST
+      LIMIT 15
     `);
 
     res.json({
@@ -1277,6 +1287,271 @@ exports.checkAvailability = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Fehler bei der Verfügbarkeitsprüfung',
+      error: error.message
+    });
+  }
+};
+
+// ============================================================================
+// LABEL GENERATOR
+// ============================================================================
+
+/**
+ * GET /api/measuring-equipment/:id/label
+ * Generate label PDF for printing
+ * 
+ * Query params:
+ * - preset: 'multi' | 'qr-large' | 'qr-small' | 'compact' | 'full' (default: 'multi')
+ * 
+ * Presets:
+ * - multi: 4 Labels auf 103mm Rolle (QR groß, QR klein, Typ/Spec, Inv/Lager)
+ * - qr-large: Nur QR-Code groß (30x30mm)
+ * - qr-small: Nur QR-Code klein (15x15mm)
+ * - compact: QR + Inv.Nr + Lagerort (40x20mm)
+ * - full: Alles (QR, Typ, Spec, Inv, Lager) (60x35mm)
+ */
+exports.generateLabel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { preset = 'multi' } = req.query;
+
+    // Get equipment with storage location
+    const result = await pool.query(`
+      SELECT 
+        me.*,
+        met.name as type_name,
+        met.field_category as type_field_category,
+        sl.name as location_name,
+        sl.code as location_code,
+        sc.name as compartment_name,
+        sc.code as compartment_code
+      FROM measuring_equipment me
+      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id 
+        AND si.deleted_at IS NULL AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
+      WHERE me.id = $1 AND me.deleted_at IS NULL
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Messmittel nicht gefunden'
+      });
+    }
+
+    const eq = result.rows[0];
+
+    // QR code content - Inventarnummer für Stabilität
+    const qrContent = `ME:${eq.inventory_number}`;
+
+    // mm to points conversion (1mm = 2.834645669 pt)
+    const mm = (val) => val * 2.834645669;
+
+    // Helper: Dezimalstellen nur wenn nötig
+    const formatNumber = (num) => {
+      if (num === null || num === undefined) return '';
+      const n = parseFloat(num);
+      return Number.isInteger(n) ? n.toString() : n.toString().replace(/\.?0+$/, '');
+    };
+    
+    // Spezifikation basierend auf Typ-Kategorie
+    const getSpecification = () => {
+      const category = eq.type_field_category;
+      
+      switch (category) {
+        case 'measuring_instrument':
+          if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
+            return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} ${eq.unit || 'mm'}`;
+          }
+          break;
+        case 'gauge':
+          if (eq.nominal_value) {
+            return `Ø${formatNumber(eq.nominal_value)} ${eq.tolerance_class || ''}`.trim();
+          }
+          break;
+        case 'thread_gauge':
+          if (eq.thread_size) {
+            const parts = [eq.thread_standard || '', eq.thread_size || ''].filter(Boolean).join('');
+            const pitch = eq.thread_pitch ? `x${eq.thread_pitch}` : '';
+            const tolerance = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+            return `${parts}${pitch}${tolerance}`.trim() || '-';
+          }
+          break;
+        case 'gauge_block':
+          if (eq.nominal_value) {
+            const klass = eq.accuracy_class ? ` Kl.${eq.accuracy_class}` : '';
+            return `${formatNumber(eq.nominal_value)} ${eq.unit || 'mm'}${klass}`;
+          }
+          break;
+        case 'angle_gauge':
+          if (eq.nominal_value) {
+            const tol = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+            return `${formatNumber(eq.nominal_value)}°${tol}`;
+          }
+          break;
+        case 'surface_tester':
+          if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
+            return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} µm`;
+          }
+          break;
+      }
+      
+      // Fallback
+      if (eq.measuring_range_min !== null && eq.measuring_range_max !== null) {
+        return `${formatNumber(eq.measuring_range_min)}-${formatNumber(eq.measuring_range_max)} ${eq.unit || 'mm'}`;
+      }
+      if (eq.nominal_value) {
+        return `Ø${formatNumber(eq.nominal_value)} ${eq.tolerance_class || ''}`.trim();
+      }
+      
+      return '';
+    };
+
+    // Location code helper
+    const getLocationCode = () => {
+      return eq.compartment_code 
+        ? `${eq.location_code || ''}${eq.compartment_code}`
+        : (eq.location_code || '-');
+    };
+
+    // Generate label based on preset
+    let doc;
+    
+    switch (preset) {
+      case 'qr-large': {
+        // Nur QR-Code groß (30x30mm)
+        const qrImage = await QRCode.toDataURL(qrContent, { width: 300, margin: 0, errorCorrectionLevel: 'M' });
+        doc = new PDFDocument({ size: [mm(30), mm(30)], margin: 0 });
+        doc.image(qrImage, mm(1), mm(1), { width: mm(28), height: mm(28) });
+        break;
+      }
+      
+      case 'qr-small': {
+        // Nur QR-Code klein (15x15mm)
+        const qrImage = await QRCode.toDataURL(qrContent, { width: 150, margin: 0, errorCorrectionLevel: 'M' });
+        doc = new PDFDocument({ size: [mm(15), mm(15)], margin: 0 });
+        doc.image(qrImage, mm(0.5), mm(0.5), { width: mm(14), height: mm(14) });
+        break;
+      }
+      
+      case 'compact': {
+        // QR + Inv.Nr + Lagerort (40x20mm)
+        const qrImage = await QRCode.toDataURL(qrContent, { width: 150, margin: 0, errorCorrectionLevel: 'M' });
+        doc = new PDFDocument({ size: [mm(40), mm(20)], margin: 0 });
+        
+        // QR links
+        doc.image(qrImage, mm(1), mm(1), { width: mm(18), height: mm(18) });
+        
+        // Inventarnummer rechts oben
+        doc.fontSize(12)
+           .font('Helvetica-Bold')
+           .text(eq.inventory_number, mm(21), mm(4), { width: mm(17), align: 'center' });
+        
+        // Lagerort rechts unten
+        doc.fontSize(10)
+           .font('Helvetica')
+           .text(getLocationCode(), mm(21), mm(12), { width: mm(17), align: 'center' });
+        break;
+      }
+      
+      case 'full': {
+        // Alles (QR, Typ, Spec, Inv, Lager) (60x35mm)
+        const qrImage = await QRCode.toDataURL(qrContent, { width: 200, margin: 0, errorCorrectionLevel: 'M' });
+        doc = new PDFDocument({ size: [mm(60), mm(35)], margin: 0 });
+        
+        // QR links
+        doc.image(qrImage, mm(2), mm(2), { width: mm(20), height: mm(20) });
+        
+        // Inventarnummer groß rechts oben
+        doc.fontSize(14)
+           .font('Helvetica-Bold')
+           .text(eq.inventory_number, mm(25), mm(3), { width: mm(33), align: 'center' });
+        
+        // Typ
+        doc.fontSize(9)
+           .font('Helvetica-Bold')
+           .text(eq.type_name || '', mm(25), mm(11), { width: mm(33), align: 'center' });
+        
+        // Spezifikation
+        doc.fontSize(9)
+           .font('Helvetica')
+           .text(getSpecification(), mm(25), mm(17), { width: mm(33), align: 'center' });
+        
+        // Trennlinie
+        doc.moveTo(mm(2), mm(25)).lineTo(mm(58), mm(25)).lineWidth(0.5).stroke();
+        
+        // Lagerort unten
+        doc.fontSize(10)
+           .font('Helvetica')
+           .text(`Lagerort: ${getLocationCode()}`, mm(2), mm(28), { width: mm(56), align: 'center' });
+        break;
+      }
+      
+      case 'multi':
+      default: {
+        // Multi-Label: 4 Labels auf 103mm Rolle
+        const qrLarge = await QRCode.toDataURL(qrContent, { width: 200, margin: 0, errorCorrectionLevel: 'M' });
+        const qrSmall = await QRCode.toDataURL(qrContent, { width: 100, margin: 0, errorCorrectionLevel: 'M' });
+        
+        doc = new PDFDocument({ size: [mm(103), mm(25)], margin: 0 });
+        
+        const margin = mm(2.5);
+        const gap = mm(2);
+
+        // Label 1: QR Large (20x20mm)
+        const l1x = margin, l1y = margin, l1w = mm(20), l1h = mm(20);
+        // Label 2: QR Small (10x10mm)
+        const l2x = l1x + l1w + gap, l2y = margin + mm(5), l2w = mm(10), l2h = mm(10);
+        // Label 3: Specification (35x10mm)
+        const l3x = l2x + l2w + gap, l3y = margin + mm(5), l3w = mm(35), l3h = mm(10);
+        // Label 4: Inv + Location (20x10mm)
+        const l4x = l3x + l3w + gap, l4y = margin + mm(5), l4w = mm(20), l4h = mm(10);
+
+        // Schnittlinien (gestrichelt)
+        doc.strokeColor('#cccccc').lineWidth(0.5).dash(2, { space: 2 });
+        [l1x + l1w + gap/2, l2x + l2w + gap/2, l3x + l3w + gap/2].forEach(x => {
+          doc.moveTo(x, 0).lineTo(x, mm(25)).stroke();
+        });
+        doc.undash().strokeColor('#000000');
+
+        // Label 1: QR groß
+        doc.rect(l1x, l1y, l1w, l1h).lineWidth(0.25).stroke();
+        doc.image(qrLarge, l1x + mm(1), l1y + mm(1), { width: mm(18), height: mm(18) });
+
+        // Label 2: QR klein
+        doc.rect(l2x, l2y, l2w, l2h).lineWidth(0.25).stroke();
+        doc.image(qrSmall, l2x + mm(0.5), l2y + mm(0.5), { width: mm(9), height: mm(9) });
+
+        // Label 3: Typ + Spec
+        doc.rect(l3x, l3y, l3w, l3h).lineWidth(0.25).stroke();
+        doc.fontSize(10).font('Helvetica-Bold')
+           .text(eq.type_name || '', l3x + mm(1), l3y + mm(2), { width: l3w - mm(2), align: 'center', lineBreak: false });
+        doc.fontSize(10).font('Helvetica')
+           .text(getSpecification(), l3x + mm(1), l3y + mm(6), { width: l3w - mm(2), align: 'center', lineBreak: false });
+
+        // Label 4: Inv + Lagerort
+        doc.rect(l4x, l4y, l4w, l4h).lineWidth(0.25).stroke();
+        doc.fontSize(10).font('Helvetica-Bold')
+           .text(eq.inventory_number, l4x + mm(1), l4y + mm(2), { width: l4w - mm(2), align: 'center', lineBreak: false });
+        doc.fontSize(10).font('Helvetica')
+           .text(getLocationCode(), l4x + mm(1), l4y + mm(6), { width: l4w - mm(2), align: 'center', lineBreak: false });
+        break;
+      }
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=Label_${eq.inventory_number}_${preset}.pdf`);
+    
+    doc.pipe(res);
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating label:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Erstellen des Labels',
       error: error.message
     });
   }

@@ -9,6 +9,7 @@ import CalibrationFormModal from '../components/measuringEquipment/CalibrationFo
 import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentStorageSection from '../components/measuringEquipment/MeasuringEquipmentStorageSection';
 import MeasuringEquipmentCheckoutModal from '../components/measuringEquipment/MeasuringEquipmentCheckoutModal';
+import MeasuringEquipmentLabelModal from '../components/measuringEquipment/MeasuringEquipmentLabelModal';
 import API_BASE_URL from '../config/api';
 
 const statusColors = {
@@ -71,6 +72,7 @@ export default function MeasuringEquipmentDetailPage() {
   const [editingCalibration, setEditingCalibration] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showLabelModal, setShowLabelModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [lockReason, setLockReason] = useState('');
   
@@ -248,6 +250,16 @@ export default function MeasuringEquipmentDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             PDF
+          </button>
+          <button
+            onClick={() => setShowLabelModal(true)}
+            className="px-3 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors inline-flex items-center gap-1"
+            title="Etikett drucken"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Etikett
           </button>
           {hasPermission('measuring.edit') && (
             <button
@@ -943,6 +955,14 @@ export default function MeasuringEquipmentDetailPage() {
             setShowEditModal(false);
             if (result?.success) fetchEquipmentById(id);
           }}
+        />
+      )}
+
+      {/* Label Modal */}
+      {showLabelModal && (
+        <MeasuringEquipmentLabelModal
+          equipment={eq}
+          onClose={() => setShowLabelModal(false)}
         />
       )}
     </div>

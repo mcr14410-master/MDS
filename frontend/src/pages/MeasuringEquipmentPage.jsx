@@ -299,7 +299,7 @@ export default function MeasuringEquipmentPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${parseInt(stats.counts.unknown_count) > 0 ? 'lg:grid-cols-8' : 'lg:grid-cols-7'}`}>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.counts.total_count}
@@ -333,6 +333,17 @@ export default function MeasuringEquipmentPage() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Überfällig</div>
           </div>
+          {parseInt(stats.counts.unknown_count) > 0 && (
+            <div 
+              className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-500 transition-colors"
+              onClick={() => handleFilterChange('calibration_status', 'unknown')}
+            >
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {stats.counts.unknown_count}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Unbekannt</div>
+            </div>
+          )}
           <div 
             className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-gray-500 transition-colors"
             onClick={() => handleFilterChange('calibration_status', 'locked')}
@@ -364,38 +375,59 @@ export default function MeasuringEquipmentPage() {
       )}
 
       {/* Upcoming Calibrations Warning */}
-      {stats?.upcoming_calibrations?.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-          <div className="flex items-start">
-            <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <h3 className="font-medium text-yellow-800 dark:text-yellow-200">
-                Kalibrierung fällig
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                {stats.upcoming_calibrations.slice(0, 5).map(eq => (
-                  <div key={eq.id} className="flex justify-between">
-                    <Link 
-                      to={`/measuring-equipment/${eq.id}`}
-                      className="hover:underline"
-                    >
-                      {eq.inventory_number} - {eq.name}
-                    </Link>
-                    <span className={eq.days_until_calibration < 0 ? 'text-red-600 dark:text-red-400 font-medium' : ''}>
-                      {eq.days_until_calibration < 0 
-                        ? `${Math.abs(eq.days_until_calibration)} Tage überfällig`
-                        : `in ${eq.days_until_calibration} Tagen`
-                      }
-                    </span>
-                  </div>
-                ))}
+      {stats?.upcoming_calibrations?.length > 0 && (() => {
+        const dueItems = stats.upcoming_calibrations.filter(eq => eq.calibration_status !== 'unknown');
+        const unknownItems = stats.upcoming_calibrations.filter(eq => eq.calibration_status === 'unknown');
+        const allItems = [...dueItems, ...unknownItems];
+        
+        return (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-medium text-yellow-800 dark:text-yellow-200">
+                  {dueItems.length > 0 && `Kalibrierung fällig (${dueItems.length})`}
+                  {dueItems.length > 0 && unknownItems.length > 0 && ' · '}
+                  {unknownItems.length > 0 && <span className="text-purple-700 dark:text-purple-400">unbekannt ({unknownItems.length})</span>}
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                  {allItems.slice(0, 5).map(eq => (
+                    <div key={eq.id} className="flex justify-between">
+                      <Link 
+                        to={`/measuring-equipment/${eq.id}`}
+                        className="hover:underline"
+                      >
+                        {eq.inventory_number} - {eq.name}
+                      </Link>
+                      <span className={
+                        eq.calibration_status === 'unknown' 
+                          ? 'text-purple-600 dark:text-purple-400' 
+                          : eq.days_until_calibration < 0 
+                            ? 'text-red-600 dark:text-red-400 font-medium' 
+                            : ''
+                      }>
+                        {eq.calibration_status === 'unknown'
+                          ? 'Keine Kalibrierung'
+                          : eq.days_until_calibration < 0 
+                            ? `${Math.abs(eq.days_until_calibration)} Tage überfällig`
+                            : `in ${eq.days_until_calibration} Tagen`
+                        }
+                      </span>
+                    </div>
+                  ))}
+                  {allItems.length > 5 && (
+                    <div className="pt-1 text-yellow-600 dark:text-yellow-400 font-medium">
+                      ... und {allItems.length - 5} weitere
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Filter & Search */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -438,6 +470,7 @@ export default function MeasuringEquipmentPage() {
             <option value="ok">✓ OK</option>
             <option value="due_soon">⏰ Fällig</option>
             <option value="overdue">❌ Überfällig</option>
+            <option value="unknown">❓ Unbekannt</option>
             <option value="locked">🔒 Gesperrt</option>
             <option value="in_calibration">🔧 In Kalibrierung</option>
           </select>

@@ -19,6 +19,7 @@ import ToolCategoriesPage from './pages/ToolCategoriesPage';
 import ToolsPage from './pages/ToolsPage';
 import ToolDetailPage from './pages/ToolDetailPage';
 import QRScanPage from './pages/QRScanPage';
+import ScannerPage from './pages/ScannerPage';
 import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailPage from './pages/SupplierDetailPage';
 import CustomersPage from './pages/CustomersPage';
@@ -206,6 +207,12 @@ function App() {
               </ProtectedRoute>
             }
           />
+		  <Route 
+		    path="/scanner" 
+		    element={
+		  	<ScannerPage />
+			} 
+		  />
 		  <Route 
 		    path="/qr/:code" 
 		    element={

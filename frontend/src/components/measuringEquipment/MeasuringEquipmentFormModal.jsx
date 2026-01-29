@@ -35,7 +35,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
     accuracy_class: '',
     // Ende neue Felder
     calibration_interval_months: 12,
-    last_calibration_date: '',
     calibration_provider: '',
     purchase_date: '',
     purchase_price: '',
@@ -99,7 +98,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
         accuracy_class: equipment.accuracy_class || '',
         // Ende neue Felder
         calibration_interval_months: equipment.calibration_interval_months || 12,
-        last_calibration_date: equipment.last_calibration_date?.split('T')[0] || '',
         calibration_provider: equipment.calibration_provider || '',
         purchase_date: equipment.purchase_date?.split('T')[0] || '',
         purchase_price: equipment.purchase_price || '',
@@ -639,7 +637,7 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                 Kalibrierung
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Intervall (Monate)
@@ -650,18 +648,6 @@ export default function MeasuringEquipmentFormModal({ equipment, types, onClose 
                     value={formData.calibration_interval_months}
                     onChange={handleChange}
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Letzte Kalibrierung
-                  </label>
-                  <input
-                    type="date"
-                    name="last_calibration_date"
-                    value={formData.last_calibration_date}
-                    onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
