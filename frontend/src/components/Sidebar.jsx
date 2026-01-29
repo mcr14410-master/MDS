@@ -595,7 +595,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
           {/* Version */}
           {!collapsed && (
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1.5 border-t border-gray-200 dark:border-gray-700">
-              MDS v2.1.0
+              MDS v2.3.3-dev
             </p>
           )}
         </div>

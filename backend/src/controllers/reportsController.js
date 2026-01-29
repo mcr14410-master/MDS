@@ -59,9 +59,16 @@ const setupPDF = (doc, title) => {
 };
 
 const addFooter = (doc, pageNum) => {
-  doc.fontSize(8).font('Helvetica')
-    .text(`Seite ${pageNum}`, 50, 780, { align: 'center', width: 495 });
-  doc.text('MDS - Manufacturing Data System', 50, 790, { align: 'center', width: 495 });
+  // Save current position
+  const savedY = doc.y;
+  // Write footer at fixed position
+  doc.fontSize(8).font('Helvetica');
+  doc.text(`Seite ${pageNum} - MDS Manufacturing Data System`, 50, 760, { 
+    align: 'center', 
+    width: 495
+  });
+  // Reset cursor to prevent auto page break
+  doc.y = savedY;
 };
 
 // ============================================================================
@@ -76,13 +83,8 @@ exports.getCalibrationOverview = async (req, res) => {
   try {
     // Fetch all equipment
     const result = await pool.query(`
-      SELECT 
-        me.*,
-        met.name as type_name,
-        sl.name as storage_location_name
+      SELECT me.*
       FROM measuring_equipment_with_status me
-      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
-      LEFT JOIN storage_locations sl ON me.storage_location_id = sl.id
       ORDER BY 
         CASE me.calibration_status 
           WHEN 'overdue' THEN 1 
@@ -202,13 +204,15 @@ exports.getCalibrationDueReport = async (req, res) => {
     const result = await pool.query(`
       SELECT 
         me.*,
-        met.name as type_name,
-        sl.name as storage_location_name,
         c.id as checkout_id,
-        u.username as checked_out_by_name
+        u.username as checked_out_by_name,
+        sl.name as location_name,
+        sc.name as compartment_name
       FROM measuring_equipment_with_status me
-      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
-      LEFT JOIN storage_locations sl ON me.storage_location_id = sl.id
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id 
+        AND si.deleted_at IS NULL AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
       LEFT JOIN measuring_equipment_checkouts c ON me.id = c.equipment_id AND c.returned_at IS NULL
       LEFT JOIN users u ON c.checked_out_by = u.id
       WHERE me.calibration_status IN ('overdue', 'due_soon')
@@ -275,7 +279,10 @@ exports.getCalibrationDueReport = async (req, res) => {
       doc.fillColor('#6b7280').fontSize(9).font('Helvetica');
       doc.text(`Typ: ${eq.type_name || '-'}`, 60, y + 25);
       doc.text(`Nächste Kalibrierung: ${formatDate(eq.next_calibration_date)}`, 200, y + 25);
-      doc.text(`Kalibrierlabor: ${eq.calibration_provider || '-'}`, 60, y + 38);
+      const storageDisplay = eq.location_name 
+        ? (eq.compartment_name ? `${eq.location_name} / ${eq.compartment_name}` : eq.location_name)
+        : '-';
+      doc.text(`Lagerort: ${storageDisplay}`, 60, y + 38);
       
       if (eq.checkout_id) {
         doc.fillColor('#ca8a04').text(`Entnommen: ${eq.checked_out_by_name}`, 300, y + 38);
@@ -310,17 +317,17 @@ exports.getEquipmentHistoryReport = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get equipment details
+    // Get equipment details with storage location
     const eqResult = await pool.query(`
       SELECT 
         me.*,
-        met.name as type_name,
-        sl.name as storage_location_name,
-        s.name as supplier_name
+        sl.name as location_name,
+        sc.name as compartment_name
       FROM measuring_equipment_with_status me
-      LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
-      LEFT JOIN storage_locations sl ON me.storage_location_id = sl.id
-      LEFT JOIN suppliers s ON me.supplier_id = s.id
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id 
+        AND si.deleted_at IS NULL AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
       WHERE me.id = $1
     `, [id]);
 
@@ -388,7 +395,10 @@ exports.getEquipmentHistoryReport = async (req, res) => {
     infoY += 15;
     
     doc.text(`Seriennummer: ${eq.serial_number || '-'}`, col1, infoY);
-    doc.text(`Lagerort: ${eq.storage_location_name || '-'}`, col2, infoY);
+    const storageDisplay = eq.location_name 
+      ? (eq.compartment_name ? `${eq.location_name} / ${eq.compartment_name}` : eq.location_name)
+      : '-';
+    doc.text(`Lagerort: ${storageDisplay}`, col2, infoY);
     infoY += 15;
     
     const range = eq.measuring_range_min !== null && eq.measuring_range_max !== null

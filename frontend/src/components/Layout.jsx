@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import Sidebar, { Icons } from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
@@ -66,8 +66,17 @@ export default function Layout({ children }) {
               <Breadcrumbs />
             </div>
 
-            {/* Right: Global Search */}
-            <div className="flex-shrink-0 ml-4">
+            {/* Right: Scanner + Global Search */}
+            <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+              <Link
+                to="/scanner"
+                className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                title="QR-Scanner"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+              </Link>
               <GlobalSearch />
             </div>
           </div>

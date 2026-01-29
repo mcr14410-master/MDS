@@ -46,4 +46,9 @@ router.get('/:id/availability', controller.checkAvailability);
 router.post('/:id/checkout', controller.checkoutEquipment);
 router.post('/:id/return', controller.returnEquipment);
 
+// ============================================================================
+// LABEL GENERATOR
+// ============================================================================
+router.get('/:id/label', controller.generateLabel);
+
 module.exports = router;
