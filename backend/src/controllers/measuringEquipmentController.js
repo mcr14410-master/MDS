@@ -467,15 +467,21 @@ exports.getEquipmentById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Equipment mit User-Namen für created_by und updated_by
+    // Equipment mit User-Namen und Lagerort-Codes
     const result = await pool.query(`
       SELECT 
         mews.*,
         uc.username as created_by_name,
-        uu.username as updated_by_name
+        uu.username as updated_by_name,
+        sc.code as compartment_code,
+        sl.code as location_code
       FROM measuring_equipment_with_status mews
       LEFT JOIN users uc ON mews.created_by = uc.id
       LEFT JOIN users uu ON mews.updated_by = uu.id
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = mews.id 
+        AND si.is_deleted = false AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
       WHERE mews.id = $1
     `, [id]);
 
@@ -1328,7 +1334,7 @@ exports.generateLabel = async (req, res) => {
       FROM measuring_equipment me
       LEFT JOIN measuring_equipment_types met ON me.type_id = met.id
       LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id 
-        AND si.deleted_at IS NULL AND si.is_active = true
+        AND si.is_deleted = false AND si.is_active = true
       LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
       LEFT JOIN storage_locations sl ON sl.id = sc.location_id
       WHERE me.id = $1 AND me.deleted_at IS NULL
