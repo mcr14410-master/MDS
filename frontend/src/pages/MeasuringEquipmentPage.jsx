@@ -380,6 +380,11 @@ export default function MeasuringEquipmentPage() {
         const unknownItems = stats.upcoming_calibrations.filter(eq => eq.calibration_status === 'unknown');
         const allItems = [...dueItems, ...unknownItems];
         
+        // Echte Counts aus Stats verwenden (nicht aus der limitierten Liste)
+        const dueCount = parseInt(stats.counts.due_soon_count || 0) + parseInt(stats.counts.overdue_count || 0);
+        const unknownCount = parseInt(stats.counts.unknown_count || 0);
+        const totalCount = dueCount + unknownCount;
+        
         return (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <div className="flex items-start">
@@ -388,9 +393,9 @@ export default function MeasuringEquipmentPage() {
               </svg>
               <div className="flex-1">
                 <h3 className="font-medium text-yellow-800 dark:text-yellow-200">
-                  {dueItems.length > 0 && `Kalibrierung fällig (${dueItems.length})`}
-                  {dueItems.length > 0 && unknownItems.length > 0 && ' · '}
-                  {unknownItems.length > 0 && <span className="text-purple-700 dark:text-purple-400">unbekannt ({unknownItems.length})</span>}
+                  {dueCount > 0 && `Kalibrierung fällig (${dueCount})`}
+                  {dueCount > 0 && unknownCount > 0 && ' · '}
+                  {unknownCount > 0 && <span className="text-purple-700 dark:text-purple-400">unbekannt ({unknownCount})</span>}
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
                   {allItems.slice(0, 5).map(eq => (
@@ -417,9 +422,9 @@ export default function MeasuringEquipmentPage() {
                       </span>
                     </div>
                   ))}
-                  {allItems.length > 5 && (
+                  {totalCount > 5 && (
                     <div className="pt-1 text-yellow-600 dark:text-yellow-400 font-medium">
-                      ... und {allItems.length - 5} weitere
+                      ... und {totalCount - 5} weitere
                     </div>
                   )}
                 </div>
