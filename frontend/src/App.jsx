@@ -40,6 +40,7 @@ import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
 import RolesPage from './pages/admin/RolesPage';
 import OperationTypesPage from './pages/admin/OperationTypesPage';
+import CronJobsPage from './pages/admin/CronJobsPage';
 
 // Maintenance Pages
 import MaintenanceDashboardPage from './pages/MaintenanceDashboardPage';
@@ -65,6 +66,7 @@ import ConsumableDetailPage from './pages/ConsumableDetailPage';
 
 // Vacation Pages
 import VacationsPage from './pages/VacationsPage';
+import TimeTrackingUserDetailPage from './pages/TimeTrackingUserDetailPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -390,6 +392,14 @@ function App() {
 				       </ProtectedRoute>
 				     } 
 				   />
+				   <Route 
+				     path="/admin/cron-jobs" 
+				     element={
+				       <ProtectedRoute requiredPermission="user.read">
+				         <CronJobsPage />
+				       </ProtectedRoute>
+				     } 
+				   />
 				   {/* Maintenance Routes */}
 				   <Route 
 				     path="/maintenance" 
@@ -540,6 +550,14 @@ function App() {
              element={
                <ProtectedRoute requiredPermission="vacations.manage">
                  <VacationsPage view="admin" />
+               </ProtectedRoute>
+             } 
+           />
+           <Route 
+             path="/time-tracking/user/:userId" 
+             element={
+               <ProtectedRoute requiredPermission="time_tracking.manage">
+                 <TimeTrackingUserDetailPage />
                </ProtectedRoute>
              } 
            />

@@ -1,0 +1,263 @@
+### Zeiterfassung API Tests
+### Basis-URL und Auth-Token setzen
+
+@baseUrl = http://localhost:3001/api
+@token = {{loginResponse.response.body.token}}
+
+### ========================================
+### Authentication
+### ========================================
+
+# @name loginResponse
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ========================================
+### ZEITMODELLE
+### ========================================
+
+### Alle Zeitmodelle abrufen
+GET {{baseUrl}}/time-tracking/models
+Authorization: Bearer {{token}}
+
+### Standard-Zeitmodell abrufen
+GET {{baseUrl}}/time-tracking/models/default
+Authorization: Bearer {{token}}
+
+### Einzelnes Zeitmodell abrufen
+GET {{baseUrl}}/time-tracking/models/1
+Authorization: Bearer {{token}}
+
+### Neues Zeitmodell erstellen (Teilzeit 50%)
+POST {{baseUrl}}/time-tracking/models
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Teilzeit 50%",
+  "description": "20h pro Woche",
+  "monday_minutes": 240,
+  "tuesday_minutes": 240,
+  "wednesday_minutes": 240,
+  "thursday_minutes": 240,
+  "friday_minutes": 240,
+  "saturday_minutes": null,
+  "sunday_minutes": null,
+  "default_break_minutes": 30,
+  "min_break_minutes": 30,
+  "is_default": false
+}
+
+### Zeitmodell aktualisieren
+PUT {{baseUrl}}/time-tracking/models/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Vollzeit 40h (aktualisiert)",
+  "friday_minutes": 360
+}
+
+### ========================================
+### STEMPELUNGEN
+### ========================================
+
+### Stempeln (Web) - Kommen
+POST {{baseUrl}}/time-tracking/entries/stamp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entry_type": "clock_in"
+}
+
+### Stempeln (Web) - Pause Start
+POST {{baseUrl}}/time-tracking/entries/stamp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entry_type": "break_start"
+}
+
+### Stempeln (Web) - Pause Ende
+POST {{baseUrl}}/time-tracking/entries/stamp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entry_type": "break_end"
+}
+
+### Stempeln (Web) - Gehen
+POST {{baseUrl}}/time-tracking/entries/stamp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entry_type": "clock_out"
+}
+
+### Stempeln (Terminal) - per RFID
+POST {{baseUrl}}/time-tracking/entries/stamp-terminal
+Content-Type: application/json
+
+{
+  "rfid_chip_id": "ABC123",
+  "entry_type": "clock_in",
+  "terminal_id": 1
+}
+
+### Stempeln (Terminal) - per PIN
+POST {{baseUrl}}/time-tracking/entries/stamp-terminal
+Content-Type: application/json
+
+{
+  "pin_code": "1234",
+  "entry_type": "clock_out"
+}
+
+### User-Info am Terminal abrufen (RFID)
+GET {{baseUrl}}/time-tracking/entries/user-info?rfid_chip_id=ABC123
+
+### User-Info am Terminal abrufen (PIN)
+GET {{baseUrl}}/time-tracking/entries/user-info?pin_code=1234
+
+### Aktuelle Anwesenheit (alle User)
+GET {{baseUrl}}/time-tracking/entries/presence
+Authorization: Bearer {{token}}
+
+### Fehlbuchungen abrufen
+GET {{baseUrl}}/time-tracking/entries/missing
+Authorization: Bearer {{token}}
+
+### Fehlbuchungen mit Filter
+GET {{baseUrl}}/time-tracking/entries/missing?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{token}}
+
+### Buchungen eines Benutzers (heute)
+GET {{baseUrl}}/time-tracking/entries/user/1?date=2026-02-02
+Authorization: Bearer {{token}}
+
+### Buchungen eines Benutzers (Zeitraum)
+GET {{baseUrl}}/time-tracking/entries/user/1?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{token}}
+
+### Korrektur erstellen
+POST {{baseUrl}}/time-tracking/entries/correction
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "entry_type": "clock_out",
+  "timestamp": "2026-01-31T16:30:00Z",
+  "correction_reason": "Vergessen zu stempeln"
+}
+
+### Buchung löschen
+DELETE {{baseUrl}}/time-tracking/entries/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Fehlbuchung korrigiert"
+}
+
+### ========================================
+### ZEITKONTEN / SALDEN
+### ========================================
+
+### Alle Zeitkonten (Übersicht)
+GET {{baseUrl}}/time-tracking/balances?year=2026&month=1
+Authorization: Bearer {{token}}
+
+### Zeitkonto eines Benutzers
+GET {{baseUrl}}/time-tracking/balances/user/1?year=2026
+Authorization: Bearer {{token}}
+
+### Tagesübersichten eines Benutzers (Monat)
+GET {{baseUrl}}/time-tracking/balances/user/1/daily?year=2026&month=1
+Authorization: Bearer {{token}}
+
+### Tagesübersichten eines Benutzers (Zeitraum)
+GET {{baseUrl}}/time-tracking/balances/user/1/daily?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{token}}
+
+### Wochenübersicht
+GET {{baseUrl}}/time-tracking/balances/user/1/week?date=2026-01-27
+Authorization: Bearer {{token}}
+
+### Monat neu berechnen
+POST {{baseUrl}}/time-tracking/balances/calculate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "year": 2026,
+  "month": 1
+}
+
+### Manuelle Anpassung (Korrektur)
+POST {{baseUrl}}/time-tracking/balances/user/1/adjustment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "month": 1,
+  "adjustment_minutes": 60,
+  "reason": "Nachträgliche Korrektur für Dienstreise"
+}
+
+### Auszahlung erfassen
+POST {{baseUrl}}/time-tracking/balances/user/1/payout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "month": 1,
+  "payout_minutes": 480,
+  "payout_date": "2026-01-31"
+}
+
+### ========================================
+### EINSTELLUNGEN
+### ========================================
+
+### Alle Einstellungen abrufen
+GET {{baseUrl}}/time-tracking/settings
+Authorization: Bearer {{token}}
+
+### Einzelne Einstellung abrufen
+GET {{baseUrl}}/time-tracking/settings/overtime_limit_enabled
+Authorization: Bearer {{token}}
+
+### Einstellung aktualisieren
+PUT {{baseUrl}}/time-tracking/settings/overtime_limit_enabled
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "value": "true"
+}
+
+### Mehrere Einstellungen gleichzeitig
+PUT {{baseUrl}}/time-tracking/settings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "settings": {
+    "overtime_limit_enabled": "true",
+    "overtime_limit_minutes": "3000",
+    "terminal_sound_enabled": "true"
+  }
+}

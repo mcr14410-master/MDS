@@ -15,6 +15,9 @@ import VacationBalanceCard from '../components/vacations/VacationBalanceCard';
 import EntitlementEditModal from '../components/vacations/EntitlementEditModal';
 import MyRequestsPanel from '../components/vacations/MyRequestsPanel';
 import PendingRequestsPanel from '../components/vacations/PendingRequestsPanel';
+import MyTimeTrackingPanel from '../components/timeTracking/MyTimeTrackingPanel';
+import TimeTrackingAdminPanel from '../components/timeTracking/TimeTrackingAdminPanel';
+import TimeTrackingSettingsPanel from '../components/timeTracking/TimeTrackingSettingsPanel';
 
 const MONTHS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -62,6 +65,7 @@ export default function VacationsPage({ view: propView }) {
   const [myTab, setMyTab] = useState('vacation'); // vacation | timetracking
   const [adminTab, setAdminTab] = useState('overview'); // overview | vacation | timetracking | settings
   const [settingsSection, setSettingsSection] = useState('holidays'); // holidays | role-limits | request-types | entitlements
+  const [settingsCategory, setSettingsCategory] = useState('vacation'); // vacation | timetracking
   // Year selector for "Mein Urlaub"
   const currentYear = new Date().getFullYear();
   const [myVacationYear, setMyVacationYear] = useState(currentYear);
@@ -660,25 +664,7 @@ export default function VacationsPage({ view: propView }) {
 
           {/* Tab: Arbeitszeit */}
           {myTab === 'timetracking' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Zeiterfassung
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Die Zeiterfassung befindet sich in Entwicklung. Hier werden Sie zukünftig Ihre 
-                  Arbeitszeiten einsehen, Stempelungen vornehmen und Korrekturen beantragen können.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
-                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
-                  <span>🚧</span>
-                  <span>Geplant für Phase 11</span>
-                </div>
-              </div>
-            </div>
+            <MyTimeTrackingPanel />
           )}
         </div>
       )}
@@ -863,33 +849,54 @@ export default function VacationsPage({ view: propView }) {
 
           {/* Tab: Arbeitszeit */}
           {adminTab === 'timetracking' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Arbeitszeitverwaltung
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Verwaltung von Arbeitszeiten, Zeitkonten, Korrekturen und Auswertungen für alle Mitarbeiter.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
-                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
-                  <span>🚧</span>
-                  <span>Geplant für Phase 11</span>
-                </div>
-              </div>
-            </div>
+            <TimeTrackingAdminPanel />
           )}
 
           {/* Tab: Einstellungen */}
           {adminTab === 'settings' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <VacationSettingsPanel 
-                activeSection={settingsSection}
-                onSectionChange={setSettingsSection}
-              />
+            <div className="space-y-4">
+              {/* Sub-Tabs für Urlaub/Zeiterfassung */}
+              <div className="flex gap-2 bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
+                <button
+                  onClick={() => setSettingsCategory('vacation')}
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    settingsCategory === 'vacation'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Sun className="h-4 w-4 inline-block mr-2" />
+                  Urlaub
+                </button>
+                <button
+                  onClick={() => setSettingsCategory('timetracking')}
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    settingsCategory === 'timetracking'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Clock className="h-4 w-4 inline-block mr-2" />
+                  Zeiterfassung
+                </button>
+              </div>
+
+              {/* Urlaub-Einstellungen */}
+              {settingsCategory === 'vacation' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <VacationSettingsPanel 
+                    activeSection={settingsSection}
+                    onSectionChange={setSettingsSection}
+                  />
+                </div>
+              )}
+
+              {/* Zeiterfassungs-Einstellungen */}
+              {settingsCategory === 'timetracking' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <TimeTrackingSettingsPanel />
+                </div>
+              )}
             </div>
           )}
         </div>

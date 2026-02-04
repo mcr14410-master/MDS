@@ -4,7 +4,11 @@
  */
 
 const { Pool } = require('pg');
+const pg = require('pg');
 require('dotenv').config();
+
+// DATE als 'YYYY-MM-DD' String belassen, nicht in JS Date-Objekt konvertieren
+pg.types.setTypeParser(1082, val => val);
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -14,9 +18,10 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-// Test connection on startup
-pool.on('connect', () => {
-  console.log('✅ Database pool connected');
+// Set timezone for correct CURRENT_DATE/DATE() in CET/CEST
+pool.on('connect', (client) => {
+  client.query("SET timezone = 'Europe/Berlin'");
+  console.log('✅ Database pool connected (timezone: Europe/Berlin)');
 });
 
 pool.on('error', (err) => {

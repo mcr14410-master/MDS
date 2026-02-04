@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useUsersStore } from '../../stores/usersStore';
 import { useRolesStore } from '../../stores/rolesStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useTimeTrackingStore } from '../../stores/timeTrackingStore';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 function UserDetailPage() {
@@ -24,6 +25,7 @@ function UserDetailPage() {
   
   const { roles, fetchRoles } = useRolesStore();
   const { hasPermission, user: loggedInUser } = useAuthStore();
+  const { timeModels, fetchTimeModels } = useTimeTrackingStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
@@ -38,6 +40,10 @@ function UserDetailPage() {
     skill_level: 'operator',
     is_available: true,
     vacation_tracking_enabled: true,
+    time_tracking_enabled: false,
+    time_model_id: null,
+    rfid_chip_id: '',
+    pin_code: '',
     role_ids: []
   });
   const [formError, setFormError] = useState('');
@@ -46,6 +52,7 @@ function UserDetailPage() {
   useEffect(() => {
     fetchUser(id);
     fetchRoles();
+    fetchTimeModels();
     return () => clearCurrentUser();
   }, [id]);
 
@@ -60,6 +67,10 @@ function UserDetailPage() {
         skill_level: userData.skill_level || 'operator',
         is_available: userData.is_available !== false,
         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
+        time_tracking_enabled: userData.time_tracking_enabled || false,
+        time_model_id: userData.time_model_id || null,
+        rfid_chip_id: userData.rfid_chip_id || '',
+        pin_code: userData.pin_code || '',
         role_ids: userData.roles?.map(r => r.id) || []
       });
     }
@@ -455,6 +466,85 @@ function UserDetailPage() {
                     </p>
                   )}
                 </div>
+
+                {/* Zeiterfassung */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Zeiterfassung</h4>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <input
+                      type="checkbox"
+                      id="time_tracking_enabled"
+                      checked={formData.time_tracking_enabled}
+                      onChange={(e) => setFormData({ ...formData, time_tracking_enabled: e.target.checked })}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                    <label htmlFor="time_tracking_enabled" className="text-sm text-gray-700 dark:text-gray-300">
+                      Zeiterfassung aktiviert
+                    </label>
+                  </div>
+                  
+                  {formData.time_tracking_enabled && (
+                    <div className="ml-6 space-y-3">
+                      <div>
+                        <label className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 mb-1">
+                          Zeitmodell
+                          <span className="relative group">
+                            <svg className="h-3.5 w-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 16v-4M12 8h.01" />
+                            </svg>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                              Eine Änderung des Zeitmodells wirkt sich nur auf zukünftige Stempelungen aus. Bereits erfasste Tage behalten ihr bisheriges Soll. Nachträgliche Änderungen werden mit neuem Zeitmodell verrechnet. (TODO:time_model_id direkt in time_daily_summary mitspeichern – als Referenz welches Modell an dem Tag galt)
+                            </span>
+                          </span>
+                        </label>
+                        <select
+                          value={formData.time_model_id || ''}
+                          onChange={(e) => setFormData({ ...formData, time_model_id: e.target.value ? parseInt(e.target.value) : null })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option value="">-- Kein Zeitmodell --</option>
+                          {timeModels.map(model => (
+                            <option key={model.id} value={model.id}>
+                              {model.name} ({(model.weekly_minutes / 60).toFixed(1)}h/Woche)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">RFID-Chip ID</label>
+                          <input
+                            type="text"
+                            value={formData.rfid_chip_id}
+                            onChange={(e) => setFormData({ ...formData, rfid_chip_id: e.target.value })}
+                            placeholder="z.B. ABC123456"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">PIN-Code</label>
+                          <input
+                            type="text"
+                            value={formData.pin_code}
+                            onChange={(e) => setFormData({ ...formData, pin_code: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                            placeholder="4-6 Ziffern"
+                            maxLength={6}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        RFID und PIN werden für die Terminal-Stempelung benötigt
+                      </p>
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -472,6 +562,10 @@ function UserDetailPage() {
                         skill_level: userData.skill_level || 'operator',
                         is_available: userData.is_available !== false,
                         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
+                        time_tracking_enabled: userData.time_tracking_enabled || false,
+                        time_model_id: userData.time_model_id || null,
+                        rfid_chip_id: userData.rfid_chip_id || '',
+                        pin_code: userData.pin_code || '',
                         role_ids: userData.roles?.map(r => r.id) || []
                       });
                     }}

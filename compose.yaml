@@ -54,6 +54,7 @@ services:
       CORS_ORIGIN: "*"
     volumes:
       - /srv/mds/uploads:/app/uploads
+      - /srv/mds/backups:/app/backups:ro
     depends_on:
       db:
         condition: service_healthy

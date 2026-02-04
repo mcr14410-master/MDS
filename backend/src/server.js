@@ -99,6 +99,9 @@ const operationConsumablesRoutes = require('./routes/operationConsumablesRoutes'
 const operationRawMaterialsRoutes = require('./routes/operationRawMaterialsRoutes');
 const vacationRoutes = require('./routes/vacationRoutes');
 const zerobotRoutes = require('./routes/zerobotRoutes');
+const timeTrackingRoutes = require('./routes/timeTrackingRoutes');
+const cronRoutes = require('./routes/cronRoutes');
+const cronService = require('./services/cronService');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
@@ -159,6 +162,8 @@ app.use('/api/operation-consumables', operationConsumablesRoutes);
 app.use('/api/operation-raw-materials', operationRawMaterialsRoutes);
 app.use('/api', vacationRoutes);
 app.use('/api/zerobot', zerobotRoutes);
+app.use('/api/time-tracking', timeTrackingRoutes);
+app.use('/api/system/cron', cronRoutes);
 
 // TEST: File Upload Endpoint (Woche 6 - Testing)
 app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
@@ -445,12 +450,18 @@ app.listen(PORT, () => {
   console.log('   ✅ Prüfpläne/Messanweisungen (CRUD komplett)');
   console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
   console.log('   📋 Backend Week 12 Backend ✅ | Frontend folgt');
+  console.log('   ========================================');
+  
+  // Cron-Jobs starten
+  console.log('   ⏰ Cron-Jobs:');
+  cronService.startAll();
   console.log('   ========================================\n');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  cronService.stopAll();
   pool.end(() => {
     console.log('Database pool closed');
   });

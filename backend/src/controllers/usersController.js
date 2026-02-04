@@ -125,9 +125,14 @@ async function getById(req, res) {
         u.skill_level,
         u.is_available,
         u.vacation_tracking_enabled,
+        u.time_tracking_enabled,
+        u.time_model_id,
+        u.rfid_chip_id,
+        u.pin_code,
         u.last_login,
         u.created_at,
         u.updated_at,
+        tm.name as time_model_name,
         COALESCE(
           json_agg(
             json_build_object('id', r.id, 'name', r.name, 'description', r.description)
@@ -137,8 +142,9 @@ async function getById(req, res) {
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id
+      LEFT JOIN time_models tm ON u.time_model_id = tm.id
       WHERE u.id = $1
-      GROUP BY u.id
+      GROUP BY u.id, tm.name
     `, [id]);
 
     if (result.rows.length === 0) {
@@ -305,7 +311,11 @@ async function create(req, res) {
 async function update(req, res) {
   try {
     const { id } = req.params;
-    const { username, email, first_name, last_name, is_active, skill_level, is_available, vacation_tracking_enabled, role_ids } = req.body;
+    const { 
+      username, email, first_name, last_name, is_active, skill_level, is_available, 
+      vacation_tracking_enabled, time_tracking_enabled, time_model_id, rfid_chip_id, pin_code,
+      role_ids 
+    } = req.body;
 
     // Check if user exists
     const existingUser = await pool.query('SELECT id FROM users WHERE id = $1', [id]);
@@ -403,6 +413,22 @@ async function update(req, res) {
       if (vacation_tracking_enabled !== undefined) {
         updates.push(`vacation_tracking_enabled = $${paramIndex++}`);
         values.push(vacation_tracking_enabled);
+      }
+      if (time_tracking_enabled !== undefined) {
+        updates.push(`time_tracking_enabled = $${paramIndex++}`);
+        values.push(time_tracking_enabled);
+      }
+      if (time_model_id !== undefined) {
+        updates.push(`time_model_id = $${paramIndex++}`);
+        values.push(time_model_id);
+      }
+      if (rfid_chip_id !== undefined) {
+        updates.push(`rfid_chip_id = $${paramIndex++}`);
+        values.push(rfid_chip_id || null);
+      }
+      if (pin_code !== undefined) {
+        updates.push(`pin_code = $${paramIndex++}`);
+        values.push(pin_code || null);
       }
 
       if (updates.length > 0) {
