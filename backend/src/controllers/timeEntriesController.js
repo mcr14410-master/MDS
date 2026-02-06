@@ -994,31 +994,31 @@ async function updateDailySummary(userId, date) {
   );
   const targetOverride = existingOverride.rows[0]?.target_override_minutes;
 
+  // Zeitmodell immer laden (für Soll-Stunden und Pausen-Einstellungen)
+  const userModel = await pool.query(`
+    SELECT tm.* FROM users u
+    JOIN time_models tm ON u.time_model_id = tm.id
+    WHERE u.id = $1
+  `, [userId]);
+
+  const model = userModel.rows[0] || null;
+
   let targetMinutes = 0;
   if (targetOverride !== null && targetOverride !== undefined) {
     // Manueller Override hat Vorrang
     targetMinutes = targetOverride;
-  } else {
-    const userModel = await pool.query(`
-      SELECT tm.* FROM users u
-      JOIN time_models tm ON u.time_model_id = tm.id
-      WHERE u.id = $1
-    `, [userId]);
-
-    if (userModel.rows.length > 0) {
-      const model = userModel.rows[0];
-      const dayOfWeek = new Date(date).getDay();
-      const dayMap = {
-        0: model.sunday_minutes,
-        1: model.monday_minutes,
-        2: model.tuesday_minutes,
-        3: model.wednesday_minutes,
-        4: model.thursday_minutes,
-        5: model.friday_minutes,
-        6: model.saturday_minutes
-      };
-      targetMinutes = dayMap[dayOfWeek] || 0;
-    }
+  } else if (model) {
+    const dayOfWeek = new Date(date).getDay();
+    const dayMap = {
+      0: model.sunday_minutes,
+      1: model.monday_minutes,
+      2: model.tuesday_minutes,
+      3: model.wednesday_minutes,
+      4: model.thursday_minutes,
+      5: model.friday_minutes,
+      6: model.saturday_minutes
+    };
+    targetMinutes = dayMap[dayOfWeek] || 0;
   }
 
   // Fehlende Buchungen prüfen
@@ -1048,14 +1048,22 @@ async function updateDailySummary(userId, date) {
     if (breakStartCount > breakEndCount) missingTypes.push('break_end');
   }
 
-  // Pausenwarnung
-  const minBreakSetting = await pool.query(
-    "SELECT value FROM time_settings WHERE key = 'min_break_minutes'"
-  );
-  const minBreak = parseInt(minBreakSetting.rows[0]?.value || '30');
-  
-  if (dayStats.gross_minutes > 360 && dayStats.break_minutes < minBreak) {
-    missingTypes.push('break_short');
+  // Pausenwarnung (aus Zeitmodell)
+  if (model) {
+    const breakThreshold = model.break_threshold_minutes || 360;        // Default: 6h
+    const minBreak = model.min_break_minutes || 30;                     // Default: 30 Min
+    const breakTolerance = model.break_tolerance_minutes || 5;          // Default: 5 Min
+    const breakBuffer = model.break_threshold_buffer_minutes || 30;     // Default: 30 Min
+    
+    // Pausenpflicht greift nur wenn BEIDE Bedingungen erfüllt:
+    // 1. Brutto > Schwellwert (z.B. 6h)
+    // 2. Brutto > Soll + Puffer (z.B. bei Freitag 6h Soll + 30 Min Puffer = 6:30h)
+    const pausePflicht = dayStats.gross_minutes > breakThreshold && 
+                         dayStats.gross_minutes > (targetMinutes + breakBuffer);
+    
+    if (pausePflicht && dayStats.break_minutes < (minBreak - breakTolerance)) {
+      missingTypes.push('break_short');
+    }
   }
 
   // Status bestimmen

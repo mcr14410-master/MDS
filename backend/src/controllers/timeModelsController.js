@@ -73,8 +73,10 @@ const create = async (req, res) => {
       friday_minutes,
       saturday_minutes,
       sunday_minutes,
-      default_break_minutes,
+      break_threshold_minutes,
       min_break_minutes,
+      break_tolerance_minutes,
+      break_threshold_buffer_minutes,
       core_time_start,
       core_time_end,
       flex_time_start,
@@ -92,16 +94,16 @@ const create = async (req, res) => {
         name, description,
         monday_minutes, tuesday_minutes, wednesday_minutes, thursday_minutes,
         friday_minutes, saturday_minutes, sunday_minutes,
-        default_break_minutes, min_break_minutes,
+        break_threshold_minutes, min_break_minutes, break_tolerance_minutes, break_threshold_buffer_minutes,
         core_time_start, core_time_end, flex_time_start, flex_time_end,
         is_default
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *
     `, [
       name, description,
       monday_minutes, tuesday_minutes, wednesday_minutes, thursday_minutes,
       friday_minutes, saturday_minutes, sunday_minutes,
-      default_break_minutes || 30, min_break_minutes || 30,
+      break_threshold_minutes || 360, min_break_minutes || 30, break_tolerance_minutes || 5, break_threshold_buffer_minutes || 30,
       core_time_start || null, core_time_end || null,
       flex_time_start || null, flex_time_end || null,
       is_default || false
@@ -128,8 +130,10 @@ const update = async (req, res) => {
       friday_minutes,
       saturday_minutes,
       sunday_minutes,
-      default_break_minutes,
+      break_threshold_minutes,
       min_break_minutes,
+      break_tolerance_minutes,
+      break_threshold_buffer_minutes,
       core_time_start,
       core_time_end,
       flex_time_start,
@@ -154,22 +158,24 @@ const update = async (req, res) => {
         friday_minutes = $7,
         saturday_minutes = $8,
         sunday_minutes = $9,
-        default_break_minutes = COALESCE($10, default_break_minutes),
+        break_threshold_minutes = COALESCE($10, break_threshold_minutes),
         min_break_minutes = COALESCE($11, min_break_minutes),
-        core_time_start = $12,
-        core_time_end = $13,
-        flex_time_start = $14,
-        flex_time_end = $15,
-        is_default = COALESCE($16, is_default),
-        is_active = COALESCE($17, is_active),
+        break_tolerance_minutes = COALESCE($12, break_tolerance_minutes),
+        break_threshold_buffer_minutes = COALESCE($13, break_threshold_buffer_minutes),
+        core_time_start = $14,
+        core_time_end = $15,
+        flex_time_start = $16,
+        flex_time_end = $17,
+        is_default = COALESCE($18, is_default),
+        is_active = COALESCE($19, is_active),
         updated_at = NOW()
-      WHERE id = $18
+      WHERE id = $20
       RETURNING *
     `, [
       name, description,
       monday_minutes, tuesday_minutes, wednesday_minutes, thursday_minutes,
       friday_minutes, saturday_minutes, sunday_minutes,
-      default_break_minutes, min_break_minutes,
+      break_threshold_minutes, min_break_minutes, break_tolerance_minutes, break_threshold_buffer_minutes,
       core_time_start, core_time_end,
       flex_time_start, flex_time_end,
       is_default, is_active,

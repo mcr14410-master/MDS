@@ -50,8 +50,10 @@ export default function TimeTrackingSettingsPanel() {
     friday_minutes: 360,
     saturday_minutes: null,
     sunday_minutes: null,
-    default_break_minutes: 30,
+    break_threshold_minutes: 360,
     min_break_minutes: 30,
+    break_tolerance_minutes: 5,
+    break_threshold_buffer_minutes: 30,
     is_default: false
   });
 
@@ -83,8 +85,10 @@ export default function TimeTrackingSettingsPanel() {
       friday_minutes: 360,
       saturday_minutes: null,
       sunday_minutes: null,
-      default_break_minutes: 30,
+      break_threshold_minutes: 360,
       min_break_minutes: 30,
+      break_tolerance_minutes: 5,
+      break_threshold_buffer_minutes: 30,
       is_default: false
     });
     setEditingModel(null);
@@ -102,8 +106,10 @@ export default function TimeTrackingSettingsPanel() {
       friday_minutes: model.friday_minutes,
       saturday_minutes: model.saturday_minutes,
       sunday_minutes: model.sunday_minutes,
-      default_break_minutes: model.default_break_minutes || 30,
+      break_threshold_minutes: model.break_threshold_minutes || 360,
       min_break_minutes: model.min_break_minutes || 30,
+      break_tolerance_minutes: model.break_tolerance_minutes || 5,
+      break_threshold_buffer_minutes: model.break_threshold_buffer_minutes || 30,
       is_default: model.is_default
     });
     setEditingModel(model);
@@ -315,42 +321,72 @@ export default function TimeTrackingSettingsPanel() {
               </div>
 
               {/* Pausen */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Standard-Pause (Min)
-                  </label>
-                  <input
-                    type="number"
-                    value={modelForm.default_break_minutes}
-                    onChange={(e) => setModelForm(f => ({ ...f, default_break_minutes: parseInt(e.target.value) || 30 }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Mindest-Pause (Min)
-                  </label>
-                  <input
-                    type="number"
-                    value={modelForm.min_break_minutes}
-                    onChange={(e) => setModelForm(f => ({ ...f, min_break_minutes: parseInt(e.target.value) || 30 }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2 cursor-pointer">
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Pausen-Einstellungen</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Pause ab (Std Arbeitszeit)
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={modelForm.is_default}
-                      onChange={(e) => setModelForm(f => ({ ...f, is_default: e.target.checked }))}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      type="number"
+                      step="0.5"
+                      value={(modelForm.break_threshold_minutes / 60).toFixed(1)}
+                      onChange={(e) => setModelForm(f => ({ ...f, break_threshold_minutes: Math.round(parseFloat(e.target.value) * 60) || 360 }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Als Standard</span>
-                  </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Brutto-Arbeitszeit ab der Pause geprüft wird</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Soll+Puffer (Min)
+                    </label>
+                    <input
+                      type="number"
+                      value={modelForm.break_threshold_buffer_minutes}
+                      onChange={(e) => setModelForm(f => ({ ...f, break_threshold_buffer_minutes: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Pause erst prüfen wenn Brutto {">"} Soll + Puffer</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Mindestpause (Min)
+                    </label>
+                    <input
+                      type="number"
+                      value={modelForm.min_break_minutes}
+                      onChange={(e) => setModelForm(f => ({ ...f, min_break_minutes: parseInt(e.target.value) || 30 }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Geforderte Pausenlänge</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Toleranz (Min)
+                    </label>
+                    <input
+                      type="number"
+                      value={modelForm.break_tolerance_minutes}
+                      onChange={(e) => setModelForm(f => ({ ...f, break_tolerance_minutes: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                               bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Erlaubte Unterschreitung der Mindestpause</p>
+                  </div>
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={modelForm.is_default}
+                    onChange={(e) => setModelForm(f => ({ ...f, is_default: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Als Standard-Zeitmodell festlegen</span>
+                </label>
               </div>
 
               {/* Buttons */}
@@ -404,7 +440,7 @@ export default function TimeTrackingSettingsPanel() {
                           <strong>Woche:</strong> {formatMinutes(model.weekly_minutes)} ({(model.weekly_minutes / 60).toFixed(1)}h)
                         </span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          <strong>Pause:</strong> {model.default_break_minutes} Min
+                          <strong>Pause:</strong> ab {(model.break_threshold_minutes / 60).toFixed(1)}h (Soll+{model.break_threshold_buffer_minutes || 30}min) → min. {model.min_break_minutes}min (±{model.break_tolerance_minutes || 0})
                         </span>
                         {model.user_count > 0 && (
                           <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
@@ -498,41 +534,24 @@ export default function TimeTrackingSettingsPanel() {
               </div>
             </div>
 
-            {/* Pausen */}
+            {/* Pausen - Hinweis */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <h4 className="font-medium text-gray-900 dark:text-white mb-4">Pausen</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Pause ab (Std Arbeitszeit)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={((parseInt(settingsForm.min_break_threshold_minutes) || 0) / 60).toFixed(1)}
-                    onChange={(e) => setSettingsForm(f => ({ ...f, min_break_threshold_minutes: String(Math.round(parseFloat(e.target.value) * 60)) }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Mindestpause (Min)</label>
-                  <input
-                    type="number"
-                    value={settingsForm.min_break_minutes || '30'}
-                    onChange={(e) => setSettingsForm(f => ({ ...f, min_break_minutes: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
-                </div>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settingsForm.auto_break_deduct === 'true'}
-                    onChange={(e) => setSettingsForm(f => ({ ...f, auto_break_deduct: e.target.checked ? 'true' : 'false' }))}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Pause automatisch abziehen</span>
-                </label>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Pausen-Einstellungen (Pause ab, Mindestpause, Toleranz) werden pro Zeitmodell konfiguriert.
+                  Wechsle zum Tab "Zeitmodelle" um diese anzupassen.
+                </p>
               </div>
+              <label className="flex items-center gap-3 cursor-pointer mt-4">
+                <input
+                  type="checkbox"
+                  checked={settingsForm.auto_break_deduct === 'true'}
+                  onChange={(e) => setSettingsForm(f => ({ ...f, auto_break_deduct: e.target.checked ? 'true' : 'false' }))}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">Pause automatisch abziehen (wenn keine gestempelt)</span>
+              </label>
             </div>
 
             {/* Feiertage */}
