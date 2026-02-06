@@ -63,6 +63,10 @@ const createVacationType = async (req, res) => {
       color = '#3B82F6', 
       affects_balance = true, 
       allows_partial_day = false,
+      single_day_only = false,
+      credits_target_hours = true,
+      requires_approval = false,
+      direct_entry_only = false,
       sort_order = 0
     } = req.body;
     
@@ -71,10 +75,10 @@ const createVacationType = async (req, res) => {
     }
     
     const result = await pool.query(
-      `INSERT INTO vacation_types (name, color, affects_balance, allows_partial_day, sort_order)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO vacation_types (name, color, affects_balance, allows_partial_day, single_day_only, credits_target_hours, requires_approval, direct_entry_only, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [name, color, affects_balance, allows_partial_day, sort_order]
+      [name, color, affects_balance, allows_partial_day, single_day_only, credits_target_hours, requires_approval, direct_entry_only, sort_order]
     );
     
     res.status(201).json(result.rows[0]);
@@ -94,7 +98,18 @@ const createVacationType = async (req, res) => {
 const updateVacationType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, color, affects_balance, allows_partial_day, is_active, sort_order } = req.body;
+    const { 
+      name, 
+      color, 
+      affects_balance, 
+      allows_partial_day, 
+      single_day_only,
+      credits_target_hours,
+      requires_approval,
+      direct_entry_only,
+      is_active, 
+      sort_order 
+    } = req.body;
     
     const result = await pool.query(
       `UPDATE vacation_types SET
@@ -102,12 +117,16 @@ const updateVacationType = async (req, res) => {
          color = COALESCE($2, color),
          affects_balance = COALESCE($3, affects_balance),
          allows_partial_day = COALESCE($4, allows_partial_day),
-         is_active = COALESCE($5, is_active),
-         sort_order = COALESCE($6, sort_order),
+         single_day_only = COALESCE($5, single_day_only),
+         credits_target_hours = COALESCE($6, credits_target_hours),
+         requires_approval = COALESCE($7, requires_approval),
+         direct_entry_only = COALESCE($8, direct_entry_only),
+         is_active = COALESCE($9, is_active),
+         sort_order = COALESCE($10, sort_order),
          updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+       WHERE id = $11
        RETURNING *`,
-      [name, color, affects_balance, allows_partial_day, is_active, sort_order, id]
+      [name, color, affects_balance, allows_partial_day, single_day_only, credits_target_hours, requires_approval, direct_entry_only, is_active, sort_order, id]
     );
     
     if (result.rows.length === 0) {

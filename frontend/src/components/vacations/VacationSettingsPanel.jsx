@@ -18,6 +18,7 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
     roleLimits,
     availableRoles,
     germanStates,
+    vacationTypes,
     filters,
     fetchSettings,
     updateSettings,
@@ -31,7 +32,10 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
     fetchAvailableRoles,
     upsertRoleLimit,
     deleteRoleLimit,
-    fetchBalances
+    fetchBalances,
+    fetchVacationTypes,
+    updateVacationType,
+    createVacationType
   } = useVacationsStore();
 
   const [loading, setLoading] = useState(false);
@@ -67,6 +71,10 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
 
   const [selectedYear, setSelectedYear] = useState(filters.year);
 
+  // State for editing vacation types
+  const [editingTypeId, setEditingTypeId] = useState(null);
+  const [typesSaving, setTypesSaving] = useState({});
+
   // Current region
   const currentRegion = settings.default_region?.value || 'BY';
   const currentRegionName = germanStates.find(s => s.code === currentRegion)?.name || currentRegion;
@@ -87,6 +95,9 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
     }
     if (activeSection === 'entitlements') {
       fetchBalances(selectedYear);
+    }
+    if (activeSection === 'requesttypes') {
+      fetchVacationTypes();
     }
   }, [activeSection, selectedYear]);
 
@@ -423,6 +434,25 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
         );
 
       case 'requesttypes':
+        const handleTypeToggle = async (typeId, field, currentValue) => {
+          setTypesSaving(prev => ({ ...prev, [typeId]: true }));
+          try {
+            await updateVacationType(typeId, { [field]: !currentValue });
+          } catch (err) {
+            setError('Fehler beim Speichern');
+          } finally {
+            setTypesSaving(prev => ({ ...prev, [typeId]: false }));
+          }
+        };
+
+        const handleColorChange = async (typeId, color) => {
+          try {
+            await updateVacationType(typeId, { color });
+          } catch (err) {
+            setError('Fehler beim Speichern');
+          }
+        };
+
         return (
           <div className="space-y-6">
             <div>
@@ -432,19 +462,163 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
               </p>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            {/* Legend */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-sm">
+              <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Einstellungen</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-600 dark:text-gray-400">
+                <div><span className="font-medium">Urlaub abziehen:</span> Zieht vom Urlaubskonto ab</div>
+                <div><span className="font-medium">Soll gutschreiben:</span> Soll-Stunden in Zeiterfassung</div>
+                <div><span className="font-medium">Genehmigung:</span> Muss vom Vorgesetzten genehmigt werden</div>
+                <div><span className="font-medium">Nur Admin:</span> Kann nicht vom MA beantragt werden</div>
+                <div><span className="font-medium">Halbe Tage:</span> Stundenweise Abwesenheit möglich</div>
+                <div><span className="font-medium">Nur Einzeltag:</span> Kein Zeitraum, nur ein Tag</div>
+              </div>
+            </div>
+
+            {/* Types Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b dark:border-gray-700">
+                    <th className="text-left py-3 px-2 font-medium text-gray-700 dark:text-gray-300">Typ</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Zieht vom Urlaubskonto ab">Urlaub</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Gutschrift Soll-Stunden">Soll</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Genehmigung erforderlich">Genehm.</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Nur Admin eintragen">Admin</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Halbe Tage erlaubt">Halbe</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Nur Einzeltag">1 Tag</th>
+                    <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300">Aktiv</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vacationTypes.map(type => (
+                    <tr key={type.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={type.color}
+                            onChange={(e) => handleColorChange(type.id, e.target.value)}
+                            className="w-6 h-6 rounded cursor-pointer border-0"
+                            title="Farbe ändern"
+                          />
+                          <span className="font-medium text-gray-900 dark:text-white">{type.name}</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'affects_balance', type.affects_balance)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.affects_balance 
+                              ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.affects_balance ? 'Zieht vom Urlaubskonto ab' : 'Kein Abzug'}
+                        >
+                          {type.affects_balance ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'credits_target_hours', type.credits_target_hours)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.credits_target_hours 
+                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.credits_target_hours ? 'Soll-Stunden werden gutgeschrieben' : 'Keine Gutschrift'}
+                        >
+                          {type.credits_target_hours ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'requires_approval', type.requires_approval)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.requires_approval 
+                              ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.requires_approval ? 'Genehmigung erforderlich' : 'Keine Genehmigung nötig'}
+                        >
+                          {type.requires_approval ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'direct_entry_only', type.direct_entry_only)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.direct_entry_only 
+                              ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.direct_entry_only ? 'Nur Admin kann eintragen' : 'Mitarbeiter kann beantragen'}
+                        >
+                          {type.direct_entry_only ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'allows_partial_day', type.allows_partial_day)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.allows_partial_day 
+                              ? 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.allows_partial_day ? 'Stundenweise möglich' : 'Nur ganze Tage'}
+                        >
+                          {type.allows_partial_day ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'single_day_only', type.single_day_only)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.single_day_only 
+                              ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' 
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          }`}
+                          title={type.single_day_only ? 'Nur einzelne Tage' : 'Zeiträume möglich'}
+                        >
+                          {type.single_day_only ? '✓' : '–'}
+                        </button>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <button
+                          onClick={() => handleTypeToggle(type.id, 'is_active', type.is_active)}
+                          disabled={typesSaving[type.id]}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            type.is_active 
+                              ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
+                              : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                          }`}
+                          title={type.is_active ? 'Aktiv' : 'Deaktiviert'}
+                        >
+                          {type.is_active ? '✓' : '✗'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">🚧</span>
-                <div>
-                  <h4 className="font-medium text-yellow-800 dark:text-yellow-200">In Entwicklung</h4>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                    Hier werden zukünftig folgende Funktionen verfügbar sein:
-                  </p>
-                  <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 space-y-1 list-disc list-inside">
-                    <li>Typen für Beantragung aktivieren/deaktivieren</li>
-                    <li>Typen nur für direktes Eintragen markieren</li>
-                    <li>Genehmigungspflichtige Typen festlegen</li>
-                    <li>Neue Antragstypen erstellen</li>
+                <span className="text-blue-500">ℹ️</span>
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <p className="font-medium mb-1">Hinweise zur Konfiguration:</p>
+                  <ul className="space-y-1 list-disc list-inside">
+                    <li><strong>Genehmigung + Nicht Admin</strong> = Typ erscheint in "Urlaub beantragen"</li>
+                    <li><strong>Nur Admin</strong> = Typ erscheint nur in "Abwesenheit eintragen"</li>
+                    <li><strong>Soll gutschreiben</strong> = Arbeitsstunden werden bei Abwesenheit angerechnet</li>
                   </ul>
                 </div>
               </div>

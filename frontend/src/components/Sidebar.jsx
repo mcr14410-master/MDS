@@ -468,12 +468,13 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Administration" 
               icon={Icons.Users}
-              routes={['/admin/users', '/admin/roles', '/admin/operation-types', '/profile']}
+              routes={['/admin/users', '/admin/roles', '/admin/operation-types', '/admin/cron-jobs', '/profile']}
               collapsed={collapsed}
             >
               <NavSubItem to="/admin/users" label="Benutzer" />
               <NavSubItem to="/admin/roles" label="Rollen & Berechtigungen" />
               <NavSubItem to="/admin/operation-types" label="Operationstypen" />
+              <NavSubItem to="/admin/cron-jobs" label="Automatische Aufgaben" />
               <NavSubItem to="/profile" label="Mein Profil" />
             </NavGroup>
           )}

@@ -38,6 +38,10 @@ function UserDetailPage() {
     skill_level: 'operator',
     is_available: true,
     vacation_tracking_enabled: true,
+    time_tracking_enabled: false,
+    time_model_id: null,
+    rfid_chip_id: '',
+    pin_code: '',
     role_ids: []
   });
   const [formError, setFormError] = useState('');
@@ -60,6 +64,10 @@ function UserDetailPage() {
         skill_level: userData.skill_level || 'operator',
         is_available: userData.is_available !== false,
         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
+        time_tracking_enabled: userData.time_tracking_enabled || false,
+        time_model_id: userData.time_model_id || null,
+        rfid_chip_id: userData.rfid_chip_id || '',
+        pin_code: userData.pin_code || '',
         role_ids: userData.roles?.map(r => r.id) || []
       });
     }
@@ -437,23 +445,30 @@ function UserDetailPage() {
                       ⚠️ Nicht verfügbare Benutzer (Urlaub/Krank) sehen keine neuen Wartungsaufgaben
                     </p>
                   )}
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="checkbox"
-                      id="vacation_tracking_enabled"
-                      checked={formData.vacation_tracking_enabled}
-                      onChange={(e) => setFormData({ ...formData, vacation_tracking_enabled: e.target.checked })}
-                      className="rounded border-gray-300 dark:border-gray-600"
-                    />
-                    <label htmlFor="vacation_tracking_enabled" className="text-sm text-gray-700 dark:text-gray-300">
-                      Urlaubsverwaltung aktiviert
-                    </label>
+                </div>
+
+                {/* Urlaub & Zeiterfassung - Hinweis */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-blue-500 text-lg">ℹ️</span>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                          Urlaub & Zeiterfassung
+                        </h4>
+                        <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+                          Einstellungen für Urlaubsverwaltung, Zeiterfassung, Zeitmodell, RFID-Chip und PIN werden zentral verwaltet.
+                        </p>
+                        <Link 
+                          to="/vacations/admin"
+                          className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-300 
+                                   hover:text-blue-800 dark:hover:text-blue-200"
+                        >
+                          Zur Mitarbeiter-Verwaltung →
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                  {!formData.vacation_tracking_enabled && (
-                    <p className="text-xs text-orange-600 dark:text-orange-400 ml-6">
-                      ⚠️ Benutzer wird nicht in der Urlaubsverwaltung geführt (z.B. externe Mitarbeiter)
-                    </p>
-                  )}
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
@@ -472,6 +487,10 @@ function UserDetailPage() {
                         skill_level: userData.skill_level || 'operator',
                         is_available: userData.is_available !== false,
                         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
+                        time_tracking_enabled: userData.time_tracking_enabled || false,
+                        time_model_id: userData.time_model_id || null,
+                        rfid_chip_id: userData.rfid_chip_id || '',
+                        pin_code: userData.pin_code || '',
                         role_ids: userData.roles?.map(r => r.id) || []
                       });
                     }}

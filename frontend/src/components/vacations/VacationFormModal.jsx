@@ -246,10 +246,9 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                 {vacationTypes
                   .filter(t => t.is_active)
                   .filter(t => {
-                    // Bei Beantragen: Krank und Schulung ausschließen
+                    // Bei Beantragen: nur Typen die beantragt werden können (nicht direct_entry_only)
                     if (isRequest) {
-                      const excludedTypes = ['krank', 'schulung'];
-                      return !excludedTypes.includes(t.name.toLowerCase());
+                      return !t.direct_entry_only;
                     }
                     return true;
                   })
@@ -257,6 +256,7 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                     <option key={type.id} value={type.id}>
                       {type.name}
                       {type.affects_balance ? ' (zählt als Urlaub)' : ''}
+                      {isRequest && type.requires_approval ? '' : ''}
                     </option>
                   ))}
               </select>

@@ -1,0 +1,54 @@
+### Cron-System API Tests
+### Basis-URL und Auth-Token setzen
+
+@baseUrl = http://localhost:3001/api
+@token = {{loginResponse.response.body.token}}
+
+### ========================================
+### Authentication
+### ========================================
+
+# @name loginResponse
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ========================================
+### CRON STATUS
+### ========================================
+
+### Alle Jobs mit Health-Status abrufen
+GET {{baseUrl}}/system/cron/status
+Authorization: Bearer {{token}}
+
+### ========================================
+### JOBS MANUELL AUSLÖSEN
+### ========================================
+
+### Auto-Abschluss offener Tage manuell triggern
+POST {{baseUrl}}/system/cron/trigger/auto_close_open_days
+Authorization: Bearer {{token}}
+
+### ========================================
+### JOB-HISTORIE
+### ========================================
+
+### Letzte 10 Läufe des Auto-Abschluss Jobs
+GET {{baseUrl}}/system/cron/history/auto_close_open_days
+Authorization: Bearer {{token}}
+
+### Letzte 50 Läufe
+GET {{baseUrl}}/system/cron/history/auto_close_open_days?limit=50
+Authorization: Bearer {{token}}
+
+### ========================================
+### FEHLERFALL TESTEN
+### ========================================
+
+### Nicht existierenden Job triggern (→ 404)
+POST {{baseUrl}}/system/cron/trigger/nicht_vorhanden
+Authorization: Bearer {{token}}
