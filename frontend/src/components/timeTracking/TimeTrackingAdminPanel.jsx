@@ -117,10 +117,15 @@ export default function TimeTrackingAdminPanel() {
     absent: presence.filter(p => p.status === 'absent' || p.status === 'unknown')
   };
 
+  // Monatssaldo aktueller Monat
+  const monthTarget = allBalances.reduce((sum, r) => sum + (r.target_minutes || 0), 0);
+  const monthWorked = allBalances.reduce((sum, r) => sum + (r.worked_minutes || 0), 0);
+  const monthDiff = monthWorked - monthTarget;
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -172,6 +177,23 @@ export default function TimeTrackingAdminPanel() {
               <p className="text-sm text-gray-500 dark:text-gray-400">Fehlbuchungen</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {missingEntries.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${monthDiff >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+              <TrendingUp className={`h-6 w-6 ${monthDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Monatssaldo</p>
+              <p className={`text-2xl font-bold ${monthDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {formatMinutes(monthDiff)}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {formatMinutes(monthWorked)} / {formatMinutes(monthTarget)}
               </p>
             </div>
           </div>
@@ -311,6 +333,7 @@ export default function TimeTrackingAdminPanel() {
                         {type === 'clock_out' && 'Gehen fehlt'}
                         {type === 'break_end' && 'Pausenende fehlt'}
                         {type === 'break_short' && 'Pause zu kurz'}
+                        {type === 'no_entries' && 'Keine Buchungen'}
                       </span>
                     ))}
                   </div>

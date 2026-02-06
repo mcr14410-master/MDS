@@ -172,46 +172,54 @@ export default function TimeTrackingSettingsPanel() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Messages */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">×</button>
-          </div>
-        </div>
-      )}
-      
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-            <Check className="h-5 w-5" />
-            <span>{success}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Section Navigation */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-4">
-        {SECTIONS.map(section => (
-          <button
-            key={section.id}
-            onClick={() => setActiveSection(section.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeSection === section.id
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
-            }`}
-          >
-            <section.icon className="h-4 w-4" />
-            {section.label}
-          </button>
-        ))}
+    <div className="flex gap-6">
+      {/* Left: Vertical Navigation */}
+      <div className="w-48 flex-shrink-0">
+        <nav className="space-y-1">
+          {SECTIONS.map(section => (
+            <button
+              key={section.id}
+              onClick={() => {
+                setActiveSection(section.id);
+                setError(null);
+                setSuccess(null);
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeSection === section.id
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+              }`}
+            >
+              <section.icon className="h-4 w-4" />
+              {section.label}
+            </button>
+          ))}
+        </nav>
       </div>
+
+      {/* Right: Content */}
+      <div className="flex-1 min-w-0 space-y-6">
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                <AlertTriangle className="h-5 w-5" />
+                <span>{error}</span>
+              </div>
+              <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">×</button>
+            </div>
+          </div>
+        )}
+        
+        {success && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <Check className="h-5 w-5" />
+              <span>{success}</span>
+            </div>
+          </div>
+        )}
 
       {/* ============================================ */}
       {/* ZEITMODELLE */}
@@ -527,9 +535,9 @@ export default function TimeTrackingSettingsPanel() {
               </div>
             </div>
 
-            {/* Abwesenheiten */}
+            {/* Feiertage */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-4">Abwesenheiten</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-4">Feiertage</h4>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -538,9 +546,12 @@ export default function TimeTrackingSettingsPanel() {
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Bei Urlaub/Krank Soll-Stunden gutschreiben
+                  Bei Feiertagen Soll-Stunden gutschreiben
                 </span>
               </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-7">
+                Für andere Abwesenheiten (Urlaub, Krank, etc.) wird die Gutschreibung pro Antragstyp in der Urlaubsverwaltung konfiguriert.
+              </p>
             </div>
 
             {/* Terminal */}
@@ -599,6 +610,7 @@ export default function TimeTrackingSettingsPanel() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

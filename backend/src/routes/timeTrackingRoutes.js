@@ -128,6 +128,13 @@ router.put('/daily-summary/:userId/:date',
   timeEntriesController.updateDayInfo
 );
 
+// Tag komplett zurücksetzen (Summary + Entries)
+router.delete('/daily-summary/:userId/:date', 
+  authenticateToken, 
+  requirePermission('time_tracking.manage'),
+  timeEntriesController.deleteDay
+);
+
 // ============================================
 // Zeitkonten / Salden
 // ============================================

@@ -46,6 +46,20 @@ function formatResult(jobName, result) {
     const latest = result.latest;
     return `${result.status === 'ok' ? '✓' : '⚠'} ${result.backup_count} Backups, neuestes: ${latest?.size_mb} MB (vor ${latest?.age_hours}h), gesamt: ${result.total_size_mb} MB`;
   }
+  if (jobName === 'generate_absence_entries') {
+    let text = `${result.processed || 0} User geprüft, ${result.created || 0} Einträge erstellt`;
+    if (result.created > 0 && result.details?.length > 0) {
+      const statusCounts = {};
+      result.details.forEach(d => d.entries?.forEach(e => {
+        statusCounts[e.status] = (statusCounts[e.status] || 0) + 1;
+      }));
+      const statusLabels = { holiday: 'Feiertag', absent: 'Abwesend', Urlaub: 'Urlaub', Krank: 'Krank', Schulung: 'Schulung', Sonderurlaub: 'Sonderurlaub' };
+      const parts = Object.entries(statusCounts).map(([s, c]) => `${c}× ${statusLabels[s] || s}`);
+      text += ` (${parts.join(', ')})`;
+    }
+    if (result.errors?.length > 0) text += ` ⚠ ${result.errors.length} Fehler`;
+    return text;
+  }
   return JSON.stringify(result);
 }
 

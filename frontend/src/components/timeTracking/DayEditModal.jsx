@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, RotateCcw, Info, CheckCircle } from 'lucide-react';
+import { X, Save, RotateCcw, Info, CheckCircle, Trash2 } from 'lucide-react';
 import axios from '../../utils/axios';
 
 function formatMinutes(minutes) {
@@ -28,6 +28,7 @@ export default function DayEditModal({ userId, date, dayData, userName, onClose 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validation, setValidation] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Validierung laden
   useEffect(() => {
@@ -74,6 +75,19 @@ export default function DayEditModal({ userId, date, dayData, userName, onClose 
       onClose(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Fehler beim Speichern');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await axios.delete(`/api/time-tracking/daily-summary/${userId}/${date}`);
+      onClose(true);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Fehler beim Zurücksetzen');
     } finally {
       setLoading(false);
     }
@@ -249,7 +263,38 @@ export default function DayEditModal({ userId, date, dayData, userName, onClose 
           )}
 
           {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Tag zurücksetzen
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Wirklich löschen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  >
+                    Nein
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
             <button
               type="button"
               onClick={() => onClose(false)}
@@ -265,6 +310,7 @@ export default function DayEditModal({ userId, date, dayData, userName, onClose 
               <Save className="h-4 w-4" />
               {loading ? 'Speichern...' : 'Speichern'}
             </button>
+            </div>
           </div>
         </form>
       </div>

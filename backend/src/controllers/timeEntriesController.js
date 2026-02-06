@@ -1066,7 +1066,7 @@ async function updateDailySummary(userId, date) {
 
   // Urlaub/Krank/Feiertag prüfen
   const vacation = await pool.query(`
-    SELECT v.id, vt.name as type 
+    SELECT v.id, vt.name as type, vt.credits_target_hours
     FROM vacations v
     JOIN vacation_types vt ON v.type_id = vt.id
     WHERE v.user_id = $1 AND $2 BETWEEN v.start_date AND v.end_date AND v.status = 'approved'
@@ -1076,11 +1076,26 @@ async function updateDailySummary(userId, date) {
     SELECT id FROM holidays WHERE date = $1
   `, [dateStr]);
 
+  // Urlaubsgutschrift berechnen
+  let vacationCredit = 0;
+  if (vacation.rows.length > 0 && vacation.rows[0].credits_target_hours) {
+    vacationCredit = targetMinutes;
+  }
+
   if (vacation.rows.length > 0) {
     status = vacation.rows[0].type;
   } else if (holiday.rows.length > 0) {
     status = 'holiday';
   }
+
+  // Vergangener Tag ohne Stempelungen und ohne Abwesenheit → absent
+  if (dateStr < today && entries.rows.length === 0 && status === 'incomplete') {
+    status = 'absent';
+    missingTypes.push('no_entries');
+  }
+
+  // Finale Arbeitszeit: Urlaubsgutschrift + tatsächlich gearbeitet
+  const finalWorkedMinutes = vacationCredit + dayStats.worked_minutes;
 
   // Upsert
   await pool.query(`
@@ -1103,8 +1118,8 @@ async function updateDailySummary(userId, date) {
       holiday_id = EXCLUDED.holiday_id,
       updated_at = NOW()
   `, [
-    userId, dateStr, targetMinutes, dayStats.worked_minutes, dayStats.break_minutes,
-    dayStats.worked_minutes - targetMinutes, status,
+    userId, dateStr, targetMinutes, finalWorkedMinutes, dayStats.break_minutes,
+    finalWorkedMinutes - targetMinutes, status,
     dayStats.first_clock_in, dayStats.last_clock_out,
     missingTypes.length > 0, missingTypes.length > 0 ? missingTypes : null,
     vacation.rows[0]?.id || null, holiday.rows[0]?.id || null
@@ -1113,6 +1128,172 @@ async function updateDailySummary(userId, date) {
   // Monatssaldo automatisch aktualisieren
   const d = new Date(date);
   await calculateMonthBalance(userId, d.getFullYear(), d.getMonth() + 1);
+}
+
+// ============================================
+// Tag komplett zurücksetzen (Summary + Entries)
+// ============================================
+
+const deleteDay = async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+
+    // Alle Stempelungen des Tages löschen
+    const deleted = await pool.query(
+      `DELETE FROM time_entries WHERE user_id = $1 AND DATE(timestamp AT TIME ZONE 'Europe/Berlin') = $2`,
+      [userId, date]
+    );
+
+    // Summary löschen
+    await pool.query(
+      'DELETE FROM time_daily_summary WHERE user_id = $1 AND date = $2',
+      [userId, date]
+    );
+
+    // Monatssaldo neu berechnen
+    const d = new Date(date + 'T12:00:00');
+    await calculateMonthBalance(parseInt(userId), d.getFullYear(), d.getMonth() + 1);
+
+    res.json({ 
+      message: 'Tag zurückgesetzt',
+      deleted_entries: deleted.rowCount
+    });
+  } catch (error) {
+    console.error('Fehler beim Zurücksetzen des Tages:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
+// ============================================
+// Abwesenheitseinträge generieren (Cron-Job)
+// ============================================
+
+/**
+ * Erstellt time_daily_summary Einträge für Tage ohne Stempelung.
+ * Berücksichtigt Feiertage (absence_credits_target Setting) und genehmigte
+ * Urlaube/Krank (credits_target_hours pro Antragstyp).
+ * 
+ * @param {number} userId
+ * @param {number} lookbackDays - Wie viele Tage zurückschauen (default 7)
+ * @returns {object} { created, entries[] }
+ */
+async function generateAbsenceEntries(userId, lookbackDays = 7) {
+  const results = { created: 0, entries: [] };
+
+  // Zeitmodell des Users
+  const userModel = await pool.query(`
+    SELECT tm.* FROM users u
+    JOIN time_models tm ON u.time_model_id = tm.id
+    WHERE u.id = $1
+  `, [userId]);
+
+  if (userModel.rows.length === 0) return results;
+  const model = userModel.rows[0];
+
+  // Setting: Feiertage Soll-Stunden gutschreiben?
+  const creditSetting = await pool.query(
+    "SELECT value FROM time_settings WHERE key = 'absence_credits_target'"
+  );
+  const holidayCreditEnabled = creditSetting.rows[0]?.value === 'true';
+
+  const today = new Date();
+
+  for (let i = 1; i <= lookbackDays; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() - i);
+    const dateStr = toLocalDateStr(checkDate);
+
+    // Eintrag existiert bereits → überspringen
+    const existing = await pool.query(
+      'SELECT id FROM time_daily_summary WHERE user_id = $1 AND date = $2',
+      [userId, dateStr]
+    );
+    if (existing.rows.length > 0) continue;
+
+    // Soll-Minuten für diesen Wochentag
+    const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();
+    const dayMap = {
+      0: model.sunday_minutes,
+      1: model.monday_minutes,
+      2: model.tuesday_minutes,
+      3: model.wednesday_minutes,
+      4: model.thursday_minutes,
+      5: model.friday_minutes,
+      6: model.saturday_minutes
+    };
+    const targetMinutes = dayMap[dayOfWeek] || 0;
+
+    // Wochenende mit Soll=0 → kein Eintrag nötig
+    if (targetMinutes === 0) continue;
+
+    // Feiertag prüfen
+    const holiday = await pool.query(
+      'SELECT id, name, is_half_day FROM holidays WHERE date = $1',
+      [dateStr]
+    );
+
+    // Genehmigter Urlaub/Krank prüfen
+    const vacation = await pool.query(`
+      SELECT v.id, vt.name as type, vt.credits_target_hours
+      FROM vacations v
+      JOIN vacation_types vt ON v.type_id = vt.id
+      WHERE v.user_id = $1 AND $2 BETWEEN v.start_date AND v.end_date AND v.status = 'approved'
+    `, [userId, dateStr]);
+
+    let status = 'absent';
+    let workedMinutes = 0;
+    let effectiveTarget = targetMinutes;
+    let vacationId = null;
+    let holidayId = null;
+    let hasMissing = false;
+    let missingTypes = null;
+
+    if (holiday.rows.length > 0) {
+      status = 'holiday';
+      holidayId = holiday.rows[0].id;
+      // Halber Feiertag → halbes Soll
+      if (holiday.rows[0].is_half_day) {
+        effectiveTarget = Math.round(targetMinutes / 2);
+      }
+      // Feiertage gutschreiben (globale Setting)
+      if (holidayCreditEnabled) {
+        workedMinutes = effectiveTarget;
+      }
+    } else if (vacation.rows.length > 0) {
+      status = vacation.rows[0].type;
+      vacationId = vacation.rows[0].id;
+      // Gutschreibung pro Typ (credits_target_hours)
+      if (vacation.rows[0].credits_target_hours) {
+        workedMinutes = targetMinutes;
+      }
+    } else {
+      // Arbeitstag ohne Stempelung und ohne Abwesenheit
+      hasMissing = true;
+      missingTypes = ['no_entries'];
+    }
+
+    // Eintrag erstellen
+    await pool.query(`
+      INSERT INTO time_daily_summary (
+        user_id, date, target_minutes, worked_minutes, break_minutes, overtime_minutes,
+        status, has_missing_entries, missing_entry_types, vacation_id, holiday_id
+      ) VALUES ($1, $2, $3, $4, 0, $5, $6, $7, $8, $9, $10)
+    `, [
+      userId, dateStr, effectiveTarget, workedMinutes,
+      workedMinutes - effectiveTarget,
+      status, hasMissing, missingTypes,
+      vacationId, holidayId
+    ]);
+
+    results.created++;
+    results.entries.push({ date: dateStr, status, target: effectiveTarget, worked: workedMinutes });
+
+    // Monatssaldo aktualisieren
+    const d = new Date(dateStr + 'T12:00:00');
+    await calculateMonthBalance(userId, d.getFullYear(), d.getMonth() + 1);
+  }
+
+  return results;
 }
 
 module.exports = {
@@ -1129,5 +1310,7 @@ module.exports = {
   getCurrentPresence,
   getMissingEntries,
   updateDailySummary,
-  autoCloseOpenDays
+  autoCloseOpenDays,
+  deleteDay,
+  generateAbsenceEntries
 };

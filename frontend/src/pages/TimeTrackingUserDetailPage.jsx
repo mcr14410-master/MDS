@@ -56,6 +56,7 @@ export default function TimeTrackingUserDetailPage() {
 
   // Month navigation - bei highlight zum richtigen Monat springen
   const now = new Date();
+  const todayStr = now.toLocaleDateString('sv-SE');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     if (highlightDate) {
       const d = new Date(highlightDate);
@@ -388,7 +389,10 @@ export default function TimeTrackingUserDetailPage() {
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                   const isHoliday = day.status === 'holiday' || day.holiday_name;
                   const isVacation = day.vacation_type;
+                  const isAbsent = day.status === 'absent';
                   const isSpecial = isWeekend || isHoliday || isVacation;
+                  // Werte nur bei echtem Wochenende ohne Soll ausblenden
+                  const hideTimeValues = isWeekend && !day.target_minutes;
                   const dateStr = day.date.split('T')[0];
                   const isExpanded = expandedDay === dateStr;
                   const hasMissing = day.has_missing_entries;
@@ -400,7 +404,12 @@ export default function TimeTrackingUserDetailPage() {
                   else if (isWeekend) { statusText = 'Wochenende'; statusColor = 'text-gray-400'; }
                   else if (day.status === 'complete') { statusText = 'Vollständig'; statusColor = 'text-green-400'; }
                   else if (hasMissing) { statusText = 'Fehlbuchung'; statusColor = 'text-red-400'; }
+                  else if (day.status === 'absent') { statusText = 'Abwesend'; statusColor = 'text-red-400'; }
                   else if (day.worked_minutes > 0) { statusText = 'Offen'; statusColor = 'text-yellow-400'; }
+
+                  // Aufklappbar wenn: normaler Arbeitstag ODER Abwesenheit mit Stempelungen
+                  const hasEntries = day.first_clock_in != null;
+                  const canExpand = (!isSpecial && (day.worked_minutes > 0 || dateStr <= todayStr)) || hasEntries;
 
                   return (
                     <DayRowGroup key={dateStr}>
@@ -411,10 +420,10 @@ export default function TimeTrackingUserDetailPage() {
                           ${isExpanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}
                           cursor-pointer transition-colors
                         `}
-                        onClick={() => !isSpecial && day.worked_minutes > 0 && toggleDay(dateStr)}
+                        onClick={() => canExpand && toggleDay(dateStr)}
                       >
                         <td className="px-3 py-2.5 text-center">
-                          {!isSpecial && day.worked_minutes > 0 && (
+                          {canExpand && (
                             isExpanded
                               ? <ChevronUp className="h-4 w-4 text-gray-400 inline" />
                               : <ChevronDown className="h-4 w-4 text-gray-400 inline" />
@@ -436,16 +445,16 @@ export default function TimeTrackingUserDetailPage() {
                           {isSpecial ? '' : formatMinutes(day.break_minutes)}
                         </td>
                         <td className="px-3 py-2.5 text-center font-medium text-gray-900 dark:text-white">
-                          {isSpecial ? '' : formatMinutes(day.worked_minutes)}
+                          {hideTimeValues ? '' : formatMinutes(day.worked_minutes)}
                         </td>
                         <td className="px-3 py-2.5 text-center text-gray-500">
-                          {isSpecial ? '' : formatMinutes(day.target_minutes)}
+                          {hideTimeValues ? '' : formatMinutes(day.target_minutes)}
                         </td>
                         <td className={`px-3 py-2.5 text-center font-medium ${
-                          isSpecial ? '' :
+                          hideTimeValues ? '' :
                           (day.overtime_minutes || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                         }`}>
-                          {isSpecial ? '' : formatMinutes(day.overtime_minutes)}
+                          {hideTimeValues ? '' : formatMinutes(day.overtime_minutes)}
                         </td>
                         <td className={`px-3 py-2.5 ${statusColor}`}>
                           <div className="flex items-center gap-1">

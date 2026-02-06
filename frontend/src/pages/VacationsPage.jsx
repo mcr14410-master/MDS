@@ -3,11 +3,13 @@ import { useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Settings, 
-  Sun, AlertTriangle, User, Send, Check, FileDown, Clock, BarChart3, Cog
+  Sun, AlertTriangle, User, Users, Send, Check, FileDown, Clock, BarChart3, Cog,
+  UserCheck, UserX, AlertCircle, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useVacationsStore } from '../stores/vacationsStore';
 import { useUsersStore } from '../stores/usersStore';
 import { useAuthStore } from '../stores/authStore';
+import { useTimeTrackingStore } from '../stores/timeTrackingStore';
 import VacationCalendar from '../components/vacations/VacationCalendar';
 import VacationFormModal from '../components/vacations/VacationFormModal';
 import VacationSettingsPanel from '../components/vacations/VacationSettingsPanel';
@@ -15,6 +17,7 @@ import VacationBalanceCard from '../components/vacations/VacationBalanceCard';
 import EntitlementEditModal from '../components/vacations/EntitlementEditModal';
 import MyRequestsPanel from '../components/vacations/MyRequestsPanel';
 import PendingRequestsPanel from '../components/vacations/PendingRequestsPanel';
+import EmployeeSettingsPanel from '../components/vacations/EmployeeSettingsPanel';
 import MyTimeTrackingPanel from '../components/timeTracking/MyTimeTrackingPanel';
 import TimeTrackingAdminPanel from '../components/timeTracking/TimeTrackingAdminPanel';
 import TimeTrackingSettingsPanel from '../components/timeTracking/TimeTrackingSettingsPanel';
@@ -55,6 +58,14 @@ export default function VacationsPage({ view: propView }) {
 
   const { users, fetchUsers } = useUsersStore();
   const { user, hasPermission } = useAuthStore();
+  const { 
+    presence, 
+    missingEntries, 
+    allBalances: timeBalances,
+    fetchPresence, 
+    fetchMissingEntries,
+    fetchAllBalances: fetchTimeBalances
+  } = useTimeTrackingStore();
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingVacation, setEditingVacation] = useState(null);
@@ -141,6 +152,16 @@ export default function VacationsPage({ view: propView }) {
         .catch(() => setPendingRequests([]));
     }
   }, [canApprove]);
+
+  // Fetch time tracking data for dashboard
+  useEffect(() => {
+    if (canManage && activeView === 'admin') {
+      const now = new Date();
+      fetchPresence();
+      fetchMissingEntries();
+      fetchTimeBalances(now.getFullYear(), now.getMonth() + 1);
+    }
+  }, [canManage, activeView]);
 
   // Refresh requests data
   const refreshRequests = async () => {
@@ -689,6 +710,19 @@ export default function VacationsPage({ view: propView }) {
                 </span>
               </button>
               <button
+                onClick={() => setAdminTab('employees')}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  adminTab === 'employees'
+                    ? 'border-green-500 text-green-600 dark:text-green-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Mitarbeiter
+                </span>
+              </button>
+              <button
                 onClick={() => setAdminTab('vacation')}
                 className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   adminTab === 'vacation'
@@ -724,9 +758,191 @@ export default function VacationsPage({ view: propView }) {
             </nav>
           </div>
 
-          {/* Tab: Übersicht */}
+          {/* Tab: Übersicht (Dashboard) */}
           {adminTab === 'overview' && (
-            <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Linke Spalte: Urlaub */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Sun className="h-5 w-5 text-yellow-500" />
+                  Urlaub & Abwesenheit
+                </h3>
+                
+                {/* Urlaub Karten */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Heute abwesend</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {calendarData.vacations?.filter(v => {
+                        const today = new Date().toISOString().split('T')[0];
+                        return v.start_date <= today && v.end_date >= today && v.status === 'approved';
+                      }).length || 0}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Offene Anträge</div>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {pendingRequests.length}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Resturlaub</div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {balances.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0).toFixed(0)}d
+                    </div>
+                  </div>
+                </div>
+
+                {/* Offene Anträge Liste */}
+                {canApprove && (
+                  <PendingRequestsPanel 
+                    requests={pendingRequests}
+                    onRefresh={refreshRequests}
+                  />
+                )}
+
+                {/* Heute abwesend Liste */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm">Heute abwesend</h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {(() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      const absentToday = calendarData.vacations?.filter(v => 
+                        v.start_date <= today && v.end_date >= today && v.status === 'approved'
+                      ) || [];
+                      
+                      if (absentToday.length === 0) {
+                        return (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                            Niemand abwesend
+                          </p>
+                        );
+                      }
+                      
+                      return absentToday.slice(0, 8).map(v => (
+                        <div key={v.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{v.display_name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            {v.type_name}
+                          </span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rechte Spalte: Zeiterfassung */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-500" />
+                  Zeiterfassung
+                </h3>
+                
+                {/* Zeit Karten */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Anwesend</div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {presence?.filter(p => p.status === 'present').length || 0}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fehlend</div>
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {missingEntries?.length || 0}
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ø Monatssaldo</div>
+                    <div className={`text-2xl font-bold ${
+                      (timeBalances?.reduce((sum, b) => sum + (b.overtime_minutes || 0), 0) / (timeBalances?.length || 1)) >= 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {(() => {
+                        const totalMinutes = timeBalances?.reduce((sum, b) => sum + (b.overtime_minutes || 0), 0) || 0;
+                        const avgMinutes = timeBalances?.length ? Math.round(totalMinutes / timeBalances.length) : 0;
+                        const sign = avgMinutes >= 0 ? '+' : '';
+                        const hours = Math.floor(Math.abs(avgMinutes) / 60);
+                        const mins = Math.abs(avgMinutes) % 60;
+                        return `${sign}${avgMinutes < 0 ? '-' : ''}${hours}:${mins.toString().padStart(2, '0')}`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fehlende Buchungen Liste */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    Fehlende Buchungen
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {missingEntries?.length === 0 ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 text-center py-2">
+                        ✓ Keine fehlenden Buchungen
+                      </p>
+                    ) : (
+                      missingEntries?.slice(0, 8).map((entry, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.name}</span>
+                          <span className="text-xs text-red-500">
+                            {entry.missing_entry_types?.map(type => 
+                              type === 'clock_out' ? 'Gehen' :
+                              type === 'break_end' ? 'Pausenende' :
+                              type === 'break_short' ? 'Pause kurz' :
+                              type === 'no_entries' ? 'Keine Buchung' : type
+                            ).join(', ')}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Anwesenheit Liste */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm flex items-center justify-between">
+                    <span>Aktuell anwesend</span>
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                      {presence?.filter(p => p.status === 'present').length || 0} von {presence?.length || 0}
+                    </span>
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {presence?.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                        Keine Zeiterfassungsdaten
+                      </p>
+                    ) : (
+                      presence?.filter(p => p.status === 'present').slice(0, 8).map(p => (
+                        <div key={p.user_id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{p.full_name}</span>
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            seit {p.clock_in_time?.slice(0,5) || '–'}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Mitarbeiter */}
+          {adminTab === 'employees' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <EmployeeSettingsPanel />
+            </div>
+          )}
+
+          {/* Tab: Urlaub */}
+          {adminTab === 'vacation' && (
+            <div className="space-y-6">
               {/* Schnellübersicht */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -822,26 +1038,24 @@ export default function VacationsPage({ view: propView }) {
                   </div>
                 )}
               </div>
-            </>
-          )}
 
-          {/* Tab: Urlaub */}
-          {adminTab === 'vacation' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Urlaubsverwaltung
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Detaillierte Urlaubsverwaltung mit Berichten, Auswertungen und erweiterten Funktionen.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 
-                                text-blue-700 dark:text-blue-300 rounded-lg text-sm">
-                  <span>🚧</span>
-                  <span>In Entwicklung</span>
+              {/* Platzhalter für zukünftige Funktionen */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <h4 className="text-md font-medium text-gray-900 dark:text-white mb-1">
+                    Erweiterte Funktionen
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-3">
+                    Berichte, Auswertungen und erweiterte Urlaubsverwaltung.
+                  </p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 
+                                  text-blue-700 dark:text-blue-300 rounded-lg text-xs">
+                    <span>🚧</span>
+                    <span>In Entwicklung</span>
+                  </div>
                 </div>
               </div>
             </div>

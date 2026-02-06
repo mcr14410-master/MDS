@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
-const { autoCloseOpenDays } = require('../controllers/timeEntriesController');
+const { autoCloseOpenDays, generateAbsenceEntries } = require('../controllers/timeEntriesController');
 
 // ============================================
 // Job Registry
@@ -157,6 +157,52 @@ registerJob(
   '0 2 * * *',
   autoCloseAllOpenDays,
   'Offene Tage automatisch abschließen (täglich 02:00)'
+);
+
+/**
+ * Abwesenheitseinträge generieren für alle aktiven User
+ * Läuft täglich um 02:15 (nach auto_close)
+ * Erstellt time_daily_summary für Feiertage, Urlaub, Krank und unentschuldigte Abwesenheit
+ */
+async function generateAllAbsenceEntries() {
+  const users = await pool.query(`
+    SELECT id, first_name, last_name
+    FROM users
+    WHERE is_active = TRUE AND time_model_id IS NOT NULL
+  `);
+
+  const results = { processed: 0, created: 0, details: [], errors: [] };
+
+  for (const user of users.rows) {
+    try {
+      const userResult = await generateAbsenceEntries(user.id, 7);
+      results.processed++;
+
+      if (userResult.created > 0) {
+        results.created += userResult.created;
+        results.details.push({
+          user: `${user.first_name} ${user.last_name}`,
+          user_id: user.id,
+          entries: userResult.entries
+        });
+      }
+    } catch (error) {
+      results.errors.push({
+        user: `${user.first_name} ${user.last_name}`,
+        user_id: user.id,
+        error: error.message
+      });
+    }
+  }
+
+  return results;
+}
+
+registerJob(
+  'generate_absence_entries',
+  '15 2 * * *',
+  generateAllAbsenceEntries,
+  'Abwesenheitseinträge generieren – Feiertage, Urlaub, Krank (täglich 02:15)'
 );
 
 /**
