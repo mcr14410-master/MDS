@@ -65,7 +65,34 @@ export default function EmployeeSettingsPanel() {
 
   // Toggle checkbox
   const handleToggle = async (userId, field, currentValue) => {
-    await handleUpdate(userId, field, !currentValue);
+    // Bei Deaktivierung der Zeiterfassung: time_model_id zurücksetzen
+    if (field === 'time_tracking_enabled' && currentValue === true) {
+      // Zeiterfassung wird deaktiviert → time_model_id auf NULL setzen
+      setSaving(prev => ({ ...prev, [userId]: true }));
+      setError(null);
+      
+      try {
+        await axios.put(`/api/users/${userId}`, { 
+          time_tracking_enabled: false,
+          time_model_id: null 
+        });
+        
+        setEmployees(prev => prev.map(emp => 
+          emp.id === userId 
+            ? { ...emp, time_tracking_enabled: false, time_model_id: null } 
+            : emp
+        ));
+        
+        setSuccess('Gespeichert');
+        setTimeout(() => setSuccess(null), 2000);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Fehler beim Speichern');
+      } finally {
+        setSaving(prev => ({ ...prev, [userId]: false }));
+      }
+    } else {
+      await handleUpdate(userId, field, !currentValue);
+    }
   };
 
   // Filter employees

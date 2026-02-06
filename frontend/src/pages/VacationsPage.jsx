@@ -798,6 +798,7 @@ export default function VacationsPage({ view: propView }) {
                   <PendingRequestsPanel 
                     requests={pendingRequests}
                     onRefresh={refreshRequests}
+                    compact
                   />
                 )}
 

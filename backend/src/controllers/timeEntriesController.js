@@ -1180,14 +1180,18 @@ const deleteDay = async (req, res) => {
 async function generateAbsenceEntries(userId, lookbackDays = 7) {
   const results = { created: 0, entries: [] };
 
-  // Zeitmodell des Users
+  // Zeitmodell des Users + Prüfung ob Zeiterfassung aktiv
   const userModel = await pool.query(`
-    SELECT tm.* FROM users u
+    SELECT tm.*, u.time_tracking_enabled FROM users u
     JOIN time_models tm ON u.time_model_id = tm.id
     WHERE u.id = $1
   `, [userId]);
 
   if (userModel.rows.length === 0) return results;
+  
+  // Zeiterfassung deaktiviert → keine Einträge generieren
+  if (!userModel.rows[0].time_tracking_enabled) return results;
+  
   const model = userModel.rows[0];
 
   // Setting: Feiertage Soll-Stunden gutschreiben?
