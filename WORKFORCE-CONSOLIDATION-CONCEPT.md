@@ -160,6 +160,37 @@ Die Konsolidierung sollte gestartet werden wenn:
 
 ---
 
+## 🔮 Zukünftige Optimierungen
+
+### Fehlbuchungen: Warnungen vs. Fehler unterscheiden
+
+**Problem:** Aktuell werden alle `missing_entry_types` gleich behandelt, aber manche sind kritisch (fehlende Stempelung), andere nur informativ (Pause zu kurz).
+
+**Kategorisierung:**
+
+| Typ | Kategorie | Beschreibung |
+|-----|-----------|--------------|
+| `clock_out` | ❌ Fehler | Gehen fehlt - muss korrigiert werden |
+| `break_end` | ❌ Fehler | Pausenende fehlt - muss korrigiert werden |
+| `no_entries` | ❌ Fehler | Keine Buchungen - muss geklärt werden |
+| `break_short` | ⚠️ Warnung | Pause zu kurz - nur Info |
+
+**Umsetzungsoptionen:**
+
+| Option | Beschreibung | Aufwand |
+|--------|--------------|---------|
+| A) Frontend-only | Anzeige-Logik nach Typ gruppieren | Niedrig |
+| B) Mit DB-Feld | Neues Feld `missing_entry_severity` ('error'/'warning') | Mittel |
+
+**Vorteile:**
+- Dashboard-Kachel: `❌ 3 Fehler | ⚠️ 5 Warnungen` statt `8 Fehlend`
+- Filter: Nur echte Fehler anzeigen
+- Priorisierung: Kritische Probleme zuerst
+
+**Empfehlung:** Option A als Quick-Win, Option B bei Bedarf für Filterung/Sortierung.
+
+---
+
 ## 📊 Zusammenfassung
 
 | Aspekt | Details |

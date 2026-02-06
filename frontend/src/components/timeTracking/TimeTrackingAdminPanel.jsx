@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, AlertTriangle, Clock, TrendingUp, ChevronLeft, ChevronRight,
-  CheckCircle, XCircle, Coffee, UserCheck, UserX, Edit2, Plus, FileDown, FileSpreadsheet, Eye
+  CheckCircle, XCircle, Coffee, UserCheck, UserX, Edit2, Plus, FileDown, FileSpreadsheet, FileText, Eye
 } from 'lucide-react';
 import { useTimeTrackingStore } from '../../stores/timeTrackingStore';
 import CorrectionModal from './CorrectionModal';
@@ -69,7 +69,7 @@ export default function TimeTrackingAdminPanel() {
 
   const handleExport = async (userId, format) => {
     try {
-      const ext = format === 'excel' ? 'xlsx' : format;
+      const ext = format === 'excel' ? 'xlsx' : format === 'payroll' ? 'pdf' : format;
       const response = await axios.get(
         `/api/time-tracking/export/${format}/${userId}`,
         {
@@ -82,7 +82,32 @@ export default function TimeTrackingAdminPanel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Stundennachweis_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
+      const prefix = format === 'payroll' ? 'Lohnnachweis' : 'Stundennachweis';
+      a.download = `${prefix}_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      console.error('Export-Fehler:', err);
+    }
+  };
+
+  const handleExportPayrollAll = async () => {
+    try {
+      const response = await axios.get(
+        `/api/time-tracking/export/payroll-all`,
+        {
+          params: { year: selectedMonth.year, month: selectedMonth.month },
+          responseType: 'blob'
+        }
+      );
+      
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Lohnnachweise_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -368,22 +393,35 @@ export default function TimeTrackingAdminPanel() {
                 Übersicht aller Mitarbeiter
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <button
-                onClick={() => navigateMonth(-1)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                onClick={handleExportPayrollAll}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 
+                           hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 
+                           hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg border 
+                           border-blue-300 dark:border-blue-600 font-medium"
+                title="Alle Lohnnachweise als PDF exportieren"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <FileText className="h-4 w-4" />
+                Alle Lohnnachweise
               </button>
-              <span className="text-sm font-medium min-w-[120px] text-center">
-                {MONTHS[selectedMonth.month - 1]} {selectedMonth.year}
-              </span>
-              <button
-                onClick={() => navigateMonth(1)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigateMonth(-1)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <span className="text-sm font-medium min-w-[120px] text-center">
+                  {MONTHS[selectedMonth.month - 1]} {selectedMonth.year}
+                </span>
+                <button
+                  onClick={() => navigateMonth(1)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
           
@@ -483,6 +521,14 @@ export default function TimeTrackingAdminPanel() {
                             title="PDF Export"
                           >
                             <FileDown className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleExport(row.user_id, 'payroll')}
+                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 
+                                     dark:hover:bg-blue-900/30 rounded"
+                            title="Lohnnachweis"
+                          >
+                            <FileText className="h-4 w-4" />
                           </button>
                         </div>
                       </td>

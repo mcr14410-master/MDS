@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Settings, 
-  Sun, AlertTriangle, User, Users, Send, Check, FileDown, Clock, BarChart3, Cog,
+  Sun, AlertTriangle, User, Users, Send, Check, FileDown, FileText, Clock, BarChart3, Cog,
   UserCheck, UserX, AlertCircle, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useVacationsStore } from '../stores/vacationsStore';
@@ -210,6 +210,30 @@ export default function VacationsPage({ view: propView }) {
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `Urlaubsuebersicht_Gesamt_${filters.year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
+  };
+
+  // Export all payroll sheets as PDF
+  const handleExportPayrollAll = async () => {
+    try {
+      const response = await axios.get(
+        `/api/time-tracking/export/payroll-all`,
+        {
+          params: { year: filters.year, month: filters.month },
+          responseType: 'blob'
+        }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Lohnnachweise_${filters.year}-${String(filters.month).padStart(2, '0')}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -835,10 +859,25 @@ export default function VacationsPage({ view: propView }) {
 
               {/* Rechte Spalte: Zeiterfassung */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  Zeiterfassung
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-500" />
+                    Zeiterfassung
+                  </h3>
+                  {canManage && (
+                    <button
+                      onClick={handleExportPayrollAll}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 
+                                 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 
+                                 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg border 
+                                 border-blue-300 dark:border-blue-600 font-medium"
+                      title="Lohnnachweise für alle Mitarbeiter als PDF exportieren"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Lohnnachweise
+                    </button>
+                  )}
+                </div>
                 
                 {/* Zeit Karten */}
                 <div className="grid grid-cols-3 gap-3">
