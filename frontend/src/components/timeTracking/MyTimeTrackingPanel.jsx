@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, Play, Pause, Square, Coffee, Calendar, TrendingUp, 
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, FileDown, FileSpreadsheet, Edit2
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, FileDown, FileSpreadsheet, FileText, Edit2
 } from 'lucide-react';
 import { useTimeTrackingStore } from '../../stores/timeTrackingStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -111,7 +111,7 @@ export default function MyTimeTrackingPanel() {
 
   const handleExport = async (format) => {
     try {
-      const ext = format === 'excel' ? 'xlsx' : format;
+      const ext = format === 'excel' ? 'xlsx' : format === 'payroll' ? 'pdf' : format;
       const response = await axios.get(
         `/api/time-tracking/export/${format}/${user.id}`,
         {
@@ -124,7 +124,8 @@ export default function MyTimeTrackingPanel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Stundennachweis_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
+      const prefix = format === 'payroll' ? 'Lohnnachweis' : 'Stundennachweis';
+      a.download = `${prefix}_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -475,6 +476,16 @@ export default function MyTimeTrackingPanel() {
               >
                 <FileDown className="h-3.5 w-3.5" />
                 PDF
+              </button>
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+              <button
+                onClick={() => handleExport('payroll')}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-blue-600 dark:text-blue-400 
+                         hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors font-medium"
+                title="Lohnnachweis als PDF exportieren"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Lohnnachweis
               </button>
             </div>
           </div>
