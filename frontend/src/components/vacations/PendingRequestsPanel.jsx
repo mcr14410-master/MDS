@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClipboardCheck, Check, X, ChevronDown, ChevronUp, AlertTriangle, Users } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
 
-export default function PendingRequestsPanel({ requests, onRefresh }) {
+export default function PendingRequestsPanel({ requests, onRefresh, compact = false }) {
   const { approveVacation, rejectVacation, checkOverlap } = useVacationsStore();
   const [expandedId, setExpandedId] = useState(null);
   const [processing, setProcessing] = useState(null);
@@ -65,12 +65,12 @@ export default function PendingRequestsPanel({ requests, onRefresh }) {
 
   if (!requests || requests.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 h-full">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <ClipboardCheck className="h-5 w-5 text-purple-500" />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <h3 className={`${compact ? 'text-sm font-medium' : 'text-lg font-semibold'} text-gray-900 dark:text-white mb-3 flex items-center gap-2`}>
+          <ClipboardCheck className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-purple-500`} />
           Offene Anträge
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
           Keine offenen Anträge zur Genehmigung
         </p>
       </div>
@@ -78,16 +78,16 @@ export default function PendingRequestsPanel({ requests, onRefresh }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 h-full">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-        <ClipboardCheck className="h-5 w-5 text-purple-500" />
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <h3 className={`${compact ? 'text-sm font-medium' : 'text-lg font-semibold'} text-gray-900 dark:text-white mb-3 flex items-center gap-2`}>
+        <ClipboardCheck className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-purple-500`} />
         Offene Anträge
-        <span className="ml-auto text-sm font-normal bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full">
+        <span className={`ml-auto ${compact ? 'text-xs' : 'text-sm'} font-normal bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full`}>
           {requests.length}
         </span>
       </h3>
 
-      <div className="space-y-2 max-h-80 overflow-y-auto">
+      <div className={`space-y-2 ${compact ? 'max-h-48' : 'max-h-80'} overflow-y-auto`}>
         {requests.map(request => {
           const isExpanded = expandedId === request.id;
           const isRejecting = rejectingId === request.id;
