@@ -100,14 +100,40 @@ const operationRawMaterialsRoutes = require('./routes/operationRawMaterialsRoute
 const vacationRoutes = require('./routes/vacationRoutes');
 const zerobotRoutes = require('./routes/zerobotRoutes');
 const timeTrackingRoutes = require('./routes/timeTrackingRoutes');
+const terminalRoutes = require('./routes/terminalRoutes');
 const cronRoutes = require('./routes/cronRoutes');
 const cronService = require('./services/cronService');
 
 // Audit Log Middleware (logs all CREATE, UPDATE, DELETE operations)
 app.use(auditLog);
 
+// Health Check Endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    const result = await pool.query('SELECT NOW()');
+    
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+   //   version: '1.7.0',
+   //   phase: 'Phase 3, Week 11 - Tool Lists (Backend)',
+      dbTime: result.rows[0].now
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error.message
+    });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/terminal', terminalRoutes);
 app.use('/api/parts', partsRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/programs', programsRoutes);
@@ -165,52 +191,7 @@ app.use('/api/zerobot', zerobotRoutes);
 app.use('/api/time-tracking', timeTrackingRoutes);
 app.use('/api/system/cron', cronRoutes);
 
-// TEST: File Upload Endpoint (Woche 6 - Testing)
-app.post('/api/test/upload', upload.single('file'), handleMulterError, (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Keine Datei hochgeladen' });
-    }
 
-    res.json({
-      success: true,
-      message: 'Datei erfolgreich hochgeladen!',
-      file: {
-        originalName: req.file.originalname,
-        filename: req.file.filename,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        path: req.file.path,
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Health Check Endpoint
-app.get('/api/health', async (req, res) => {
-  try {
-    // Test database connection
-    const result = await pool.query('SELECT NOW()');
-    
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      database: 'connected',
-      version: '1.7.0',
-      phase: 'Phase 3, Week 11 - Tool Lists (Backend)',
-      dbTime: result.rows[0].now
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      database: 'disconnected',
-      error: error.message
-    });
-  }
-});
 
 // Database Info Endpoint
 app.get('/api/db/info', async (req, res) => {
@@ -367,89 +348,8 @@ app.listen(PORT, () => {
   console.log('\n🚀 ========================================');
   console.log(`   MDS Backend Server`);
   console.log('   ========================================');
-  console.log(`   📍 Running on: http://localhost:${PORT}`);
-  console.log(`   🏥 Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`   📊 DB Info: http://localhost:${PORT}/api/db/info`);
-  console.log('   ========================================');
-  console.log('   🔐 Auth Endpoints:');
-  console.log(`      POST /api/auth/register`);
-  console.log(`      POST /api/auth/login`);
-  console.log(`      GET  /api/auth/me`);
-  console.log(`      POST /api/auth/change-password`);
-  console.log('   ========================================');
-  console.log('   🔧 Parts Endpoints:');
-  console.log(`      GET    /api/parts`);
-  console.log(`      GET    /api/parts/:id`);
-  console.log(`      POST   /api/parts`);
-  console.log(`      PUT    /api/parts/:id`);
-  console.log(`      DELETE /api/parts/:id`);
-  console.log(`      GET    /api/parts/stats`);
-  console.log('   ========================================');
-  console.log('   ⚙️  Operations Endpoints:');
-  console.log(`      GET    /api/operations`);
-  console.log(`      GET    /api/operations/:id`);
-  console.log(`      POST   /api/operations`);
-  console.log(`      PUT    /api/operations/:id`);
-  console.log(`      DELETE /api/operations/:id`);
-  console.log('   ========================================');
-  console.log('   📦 Programs Endpoints:');
-  console.log(`      POST   /api/programs`);
-  console.log(`      GET    /api/programs`);
-  console.log(`      GET    /api/programs/:id`);
-  console.log(`      GET    /api/programs/:id/download`);
-  console.log(`      PUT    /api/programs/:id`);
-  console.log(`      DELETE /api/programs/:id`);
-  console.log('   ----------------------------------------');
-  console.log('   🔄 Versionierung (NEW Week 7):');
-  console.log(`      POST   /api/programs/:id/revisions`);
-  console.log(`      GET    /api/programs/:id/revisions`);
-  console.log(`      GET    /api/programs/:id/compare`);
-  console.log(`      POST   /api/programs/:id/rollback`);
-  console.log('   ========================================');
-  console.log('   🏭 Machines Endpoints (Week 8):');
-  console.log(`      GET    /api/machines`);
-  console.log(`      GET    /api/machines/:id`);
-  console.log(`      POST   /api/machines`);
-  console.log(`      PUT    /api/machines/:id`);
-  console.log(`      DELETE /api/machines/:id`);
-  console.log(`      GET    /api/machines/:id/stats`);
-  console.log(`      GET    /api/machines/:id/operations`);
-  console.log('   ========================================');
-  console.log('   🔄 Workflow Endpoints (NEW Week 9):');
-  console.log(`      GET    /api/workflow/states`);
-  console.log(`      POST   /api/workflow/change`);
-  console.log(`      GET    /api/workflow/:type/:id/history`);
-  console.log(`      GET    /api/workflow/:type/:id/transitions`);
-  console.log('   ========================================');
-  console.log('   📋 Setup Sheets Endpoints (NEW Week 10):');
-  console.log(`      GET    /api/setup-sheets/:programId`);
-  console.log(`      POST   /api/setup-sheets`);
-  console.log(`      PUT    /api/setup-sheets/:id`);
-  console.log(`      DELETE /api/setup-sheets/:id`);
-  console.log(`      POST   /api/setup-sheets/:id/photos`);
-  console.log('   ========================================');
-  console.log('   🔧 Tool Lists Endpoints (NEW Week 11):');
-  console.log(`      GET    /api/programs/:programId/tools`);
-  console.log(`      POST   /api/programs/:programId/tools`);
-  console.log(`      PUT    /api/tools/:itemId`);
-  console.log(`      DELETE /api/tools/:itemId`);
-  console.log(`      POST   /api/programs/:programId/tools/reorder`);
-  console.log('   ========================================');
-  console.log('   📊 Inspection Plans Endpoints (NEW Week 12):');
-  console.log(`      GET    /api/operations/:operationId/inspection-plan`);
-  console.log(`      PUT    /api/operations/:operationId/inspection-plan`);
-  console.log(`      POST   /api/operations/:operationId/inspection-plan/items`);
-  console.log(`      PUT    /api/inspection-plan-items/:itemId`);
-  console.log(`      DELETE /api/inspection-plan-items/:itemId`);
-  console.log(`      POST   /api/operations/:operationId/inspection-plan/reorder`);
-  console.log('   ========================================');
-  console.log('   🔄 Phase 3, Week 12 - Inspection Plans Backend');
-  console.log('   ✅ Auth + Parts + Operations + Programs + Machines');
-  console.log('   ✅ File Upload + Versionierung + Rollback');
-  console.log('   ✅ Workflow-Status + Setup Sheets + Tool Lists');
-  console.log('   ✅ Prüfpläne/Messanweisungen (CRUD komplett)');
-  console.log('   🔌 CORS enabled for Frontend (localhost:5173)');
-  console.log('   📋 Backend Week 12 Backend ✅ | Frontend folgt');
+  console.log(`   MDS Backend v2.4.1 running on http://localhost:${PORT}`);
+  console.log(`   Health: http://localhost:${PORT}/api/health\n`);
   console.log('   ========================================');
   
   // Cron-Jobs starten
