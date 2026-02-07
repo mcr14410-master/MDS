@@ -132,8 +132,64 @@ function requireRole(roleName) {
   };
 }
 
+/**
+ * Middleware to authenticate terminal devices via API-Key
+ * Checks X-Terminal-Key header against time_terminals table
+ * Adds terminal object to req.terminal if valid
+ */
+async function authenticateTerminal(req, res, next) {
+  try {
+    const apiKey = req.headers['x-terminal-key'];
+
+    if (!apiKey) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Terminal API-Key erforderlich (Header: X-Terminal-Key)'
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT id, name, location, terminal_type, is_active, settings 
+       FROM time_terminals 
+       WHERE api_key = $1`,
+      [apiKey]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Ungültiger Terminal API-Key'
+      });
+    }
+
+    const terminal = result.rows[0];
+
+    if (!terminal.is_active) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Terminal ist deaktiviert'
+      });
+    }
+
+    // Heartbeat aktualisieren
+    pool.query(
+      'UPDATE time_terminals SET last_heartbeat = NOW() WHERE id = $1',
+      [terminal.id]
+    ).catch(() => {}); // Fire and forget
+
+    req.terminal = terminal;
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: error.message
+    });
+  }
+}
+
 module.exports = {
   authenticateToken,
   requirePermission,
-  requireRole
+  requireRole,
+  authenticateTerminal
 };
