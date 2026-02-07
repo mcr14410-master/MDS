@@ -965,7 +965,7 @@ async function getCurrentBalance(userId) {
   const now = new Date();
   const monthStats = await getMonthStats(userId, now);
 
-  return lastBalanceMinutes + (monthStats.overtime_minutes || 0);
+  return parseInt(lastBalanceMinutes) + parseInt(monthStats.overtime_minutes || 0);
 }
 
 // Resturlaub aus Urlaubsmodul
@@ -1324,5 +1324,14 @@ module.exports = {
   updateDailySummary,
   autoCloseOpenDays,
   deleteDay,
-  generateAbsenceEntries
+  generateAbsenceEntries,
+  // Hilfsfunktionen (für Terminal-Controller)
+  _helpers: {
+    getDayStats,
+    getWeekStats,
+    getMonthStats,
+    getCurrentBalance,
+    getVacationBalance,
+    getCurrentStatus,
+  }
 };
