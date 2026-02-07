@@ -31,6 +31,12 @@ router.get('/info',
   terminalController.getInfo
 );
 
+// User-Info für Info-Screen
+router.get('/user-info/:id',
+  authenticateTerminal,
+  terminalController.getUserInfo
+);
+
 // ============================================
 // Admin-Endpoints (JWT-Auth)
 // ============================================

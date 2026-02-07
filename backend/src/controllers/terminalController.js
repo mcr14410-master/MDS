@@ -9,8 +9,8 @@
 
 const pool = require('../config/db');
 const crypto = require('crypto');
-const { updateDailySummary, autoCloseOpenDays } = require('./timeEntriesController');
-const { calculateMonthBalance } = require('./timeBalancesController');
+const { updateDailySummary, autoCloseOpenDays, _helpers } = require('./timeEntriesController');
+const { getDayStats, getWeekStats, getMonthStats, getCurrentBalance, getVacationBalance, getCurrentStatus } = _helpers;
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin
 function toLocalDateStr(date) {
@@ -293,6 +293,67 @@ const getInfo = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/terminal/user-info/:id
+ * Zeitkonto-Info für Info-Screen am Terminal.
+ */
+const getUserInfo = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    // User prüfen
+    const userResult = await pool.query(`
+      SELECT u.id, u.first_name, u.last_name, u.time_tracking_enabled,
+             tm.name as time_model_name
+      FROM users u
+      LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      WHERE u.id = $1 AND u.is_active = TRUE
+    `, [userId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    const user = userResult.rows[0];
+    const now = new Date();
+
+    // Alle Statistiken parallel laden
+    const [todayStatus, dayStats, weekStats, monthStats, balance, vacation, recentEntries] = await Promise.all([
+      getCurrentStatus(userId),
+      getDayStats(userId, now),
+      getWeekStats(userId, now),
+      getMonthStats(userId, now),
+      getCurrentBalance(userId),
+      getVacationBalance(userId),
+      pool.query(`
+        SELECT entry_type, timestamp, source
+        FROM time_entries
+        WHERE user_id = $1
+        ORDER BY timestamp DESC
+        LIMIT 10
+      `, [userId]),
+    ]);
+
+    res.json({
+      user: {
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`,
+        time_model: user.time_model_name,
+      },
+      status: todayStatus,
+      today: dayStats,
+      week: weekStats,
+      month: monthStats,
+      balance_minutes: balance,
+      vacation_days_remaining: vacation,
+      recent_entries: recentEntries.rows,
+    });
+  } catch (error) {
+    console.error('Terminal getUserInfo Fehler:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
 module.exports = {
   getUsers,
   stamp,
@@ -300,4 +361,5 @@ module.exports = {
   register,
   list,
   getInfo,
+  getUserInfo,
 };
