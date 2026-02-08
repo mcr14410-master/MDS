@@ -35,7 +35,6 @@ async function getAll(req, res) {
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
         u.time_model_id,
-        u.rfid_chip_id,
         u.pin_code,
         u.last_login,
         u.created_at,
@@ -45,7 +44,13 @@ async function getAll(req, res) {
             json_build_object('id', r.id, 'name', r.name)
           ) FILTER (WHERE r.id IS NOT NULL), 
           '[]'
-        ) as roles
+        ) as roles,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', rc.id, 'chip_uid', rc.chip_uid, 'label', rc.label, 'is_active', rc.is_active
+          )) FROM user_rfid_chips rc WHERE rc.user_id = u.id),
+          '[]'
+        ) as rfid_chips
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id
@@ -131,7 +136,6 @@ async function getById(req, res) {
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
         u.time_model_id,
-        u.rfid_chip_id,
         u.pin_code,
         u.last_login,
         u.created_at,
@@ -142,7 +146,14 @@ async function getById(req, res) {
             json_build_object('id', r.id, 'name', r.name, 'description', r.description)
           ) FILTER (WHERE r.id IS NOT NULL), 
           '[]'
-        ) as roles
+        ) as roles,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'id', rc.id, 'chip_uid', rc.chip_uid, 'label', rc.label, 
+            'is_active', rc.is_active, 'created_at', rc.created_at
+          ) ORDER BY rc.created_at) FROM user_rfid_chips rc WHERE rc.user_id = u.id),
+          '[]'
+        ) as rfid_chips
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id
@@ -317,7 +328,7 @@ async function update(req, res) {
     const { id } = req.params;
     const { 
       username, email, first_name, last_name, is_active, skill_level, is_available, 
-      vacation_tracking_enabled, time_tracking_enabled, time_model_id, rfid_chip_id, pin_code,
+      vacation_tracking_enabled, time_tracking_enabled, time_model_id, pin_code,
       role_ids 
     } = req.body;
 
@@ -426,11 +437,27 @@ async function update(req, res) {
         updates.push(`time_model_id = $${paramIndex++}`);
         values.push(time_model_id);
       }
-      if (rfid_chip_id !== undefined) {
-        updates.push(`rfid_chip_id = $${paramIndex++}`);
-        values.push(rfid_chip_id || null);
-      }
       if (pin_code !== undefined) {
+        if (pin_code) {
+          if (!/^\d{4}$/.test(pin_code)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: 'Bad Request',
+              message: 'PIN muss genau 4 Ziffern haben'
+            });
+          }
+          const dupPin = await client.query(
+            'SELECT id FROM users WHERE pin_code = $1 AND id != $2',
+            [pin_code, id]
+          );
+          if (dupPin.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({
+              error: 'Conflict',
+              message: 'Dieser PIN wird bereits von einem anderen Benutzer verwendet'
+            });
+          }
+        }
         updates.push(`pin_code = $${paramIndex++}`);
         values.push(pin_code || null);
       }
@@ -812,6 +839,143 @@ async function updateProfile(req, res) {
   }
 }
 
+// ============================================
+// RFID Chips CRUD
+// ============================================
+
+/**
+ * GET /api/users/:id/rfid-chips
+ * Alle RFID-Chips eines Users
+ */
+async function getRfidChips(req, res) {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT id, chip_uid, label, is_active, created_at FROM user_rfid_chips WHERE user_id = $1 ORDER BY created_at',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('getRfidChips error:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+}
+
+/**
+ * POST /api/users/:id/rfid-chips
+ * Neuen RFID-Chip zuweisen
+ */
+async function addRfidChip(req, res) {
+  try {
+    const { id } = req.params;
+    const { chip_uid, label } = req.body;
+
+    if (!chip_uid || !chip_uid.trim()) {
+      return res.status(400).json({ error: 'Chip-UID erforderlich' });
+    }
+
+    // User existiert?
+    const userCheck = await pool.query('SELECT id FROM users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    // Duplikat-Check
+    const dupCheck = await pool.query(
+      'SELECT id, user_id FROM user_rfid_chips WHERE chip_uid = $1',
+      [chip_uid.trim()]
+    );
+    if (dupCheck.rows.length > 0) {
+      const existingUserId = dupCheck.rows[0].user_id;
+      if (existingUserId === parseInt(id)) {
+        return res.status(409).json({ error: 'Dieser Chip ist bereits diesem Benutzer zugewiesen' });
+      }
+      return res.status(409).json({ error: 'Dieser Chip ist bereits einem anderen Benutzer zugewiesen' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO user_rfid_chips (user_id, chip_uid, label)
+       VALUES ($1, $2, $3)
+       RETURNING id, chip_uid, label, is_active, created_at`,
+      [id, chip_uid.trim(), label?.trim() || null]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('addRfidChip error:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+}
+
+/**
+ * PUT /api/users/:id/rfid-chips/:chipId
+ * Chip aktualisieren (Label, aktiv/inaktiv)
+ */
+async function updateRfidChip(req, res) {
+  try {
+    const { id, chipId } = req.params;
+    const { label, is_active } = req.body;
+
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (label !== undefined) {
+      updates.push(`label = $${paramIndex++}`);
+      values.push(label?.trim() || null);
+    }
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramIndex++}`);
+      values.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Keine Änderungen angegeben' });
+    }
+
+    values.push(parseInt(chipId), parseInt(id));
+    const result = await pool.query(
+      `UPDATE user_rfid_chips SET ${updates.join(', ')}
+       WHERE id = $${paramIndex++} AND user_id = $${paramIndex}
+       RETURNING id, chip_uid, label, is_active, created_at`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Chip nicht gefunden' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('updateRfidChip error:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+}
+
+/**
+ * DELETE /api/users/:id/rfid-chips/:chipId
+ * Chip entfernen
+ */
+async function deleteRfidChip(req, res) {
+  try {
+    const { id, chipId } = req.params;
+
+    const result = await pool.query(
+      'DELETE FROM user_rfid_chips WHERE id = $1 AND user_id = $2 RETURNING id',
+      [chipId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Chip nicht gefunden' });
+    }
+
+    res.json({ message: 'Chip entfernt' });
+  } catch (error) {
+    console.error('deleteRfidChip error:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+}
+
 module.exports = {
   getAll,
   getById,
@@ -821,5 +985,9 @@ module.exports = {
   resetPassword,
   toggleActive,
   getActivity,
-  updateProfile
+  updateProfile,
+  getRfidChips,
+  addRfidChip,
+  updateRfidChip,
+  deleteRfidChip
 };

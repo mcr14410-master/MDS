@@ -2,7 +2,7 @@
 
 **Zeitbudget:** 30-35h/Woche  
 **Start:** Januar 2025  
-**Stand:** Dezember 2025 (~155h investiert, ~99.000 Zeilen Code)
+**Stand:** Februar 2026 (~155h investiert, ~99.000+ Zeilen Code)
 
 > Detaillierte Dokumentation abgeschlossener Phasen: [ROADMAP_ARCHIVE.md](ROADMAP_ARCHIVE.md)
 
@@ -18,7 +18,7 @@
 | Phase 8 | W24-34 | 🔄 65% | Kunden ✅, Wiki ✅, PWA ✅, Verbrauchsmaterial 🔄 |
 | Phase 9 | W35-48 | 🔄 12% | Urlaub 🔄, Roboter, Revisionen, Admin, Benachrichtigungen |
 | Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
-| Phase 11 | W57-70 | 📋 Geplant | Shopfloor-Terminals + Zeiterfassung |
+| Phase 11 | W57-70 | 🔄 10% | Shopfloor-Terminals + Zeiterfassung (Zeit-Terminal ✅) |
 | Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
 
 ---
@@ -604,63 +604,71 @@ purchase_order_items (
 
 ---
 
-### 📋 Woche 69-70: Zeiterfassungs-Terminal ⏱️
-**Status:** 📋 Geplant
+### ✅ Woche 69-70: Zeiterfassungs-Terminal ⏱️
+**Status:** ✅ 90% abgeschlossen (Hardware + Software produktionsbereit)
 **Ziel:** Stempelterminal für Mitarbeiter-Zeiterfassung (Testbetrieb)
+
+**Hardware:**
+- [x] Raspberry Pi 4 (2GB) mit Pi Touch Display 2 (7", 1280×720)
+- [x] PN532 NFC-Reader (I2C, Firmware 1.6)
+- [x] KY-006 Passiv-Piezo Buzzer (PWM GPIO 18)
+- [x] Gehäuse (in Arbeit)
+- [x] Kiosk-Modus: X11/xinit + Chromium + unclutter (Cursor versteckt)
+- [x] Landscape-Rotation (Display + Touch kalibriert)
+- [x] Systemd Services (mds-terminal + kiosk, Auto-Start)
+- [x] PI-SETUP.md Dokumentation
+
+**Terminal-Software (Python/FastAPI, eigenes Repo `mds-time-terminal`):**
+- [x] Offline-first Architektur (SQLite Queue + Background Sync)
+- [x] WebSocket für NFC-Events und Echtzeit-UI-Updates
+- [x] NFC-Polling (0.3s Intervall, 2s Debounce)
+- [x] Buzzer-Feedback (Success/Error/Scan, optimierte Frequenzen 2400-3200Hz)
+- [x] User-Cache (alle 5 Min vom Server aktualisiert)
+- [x] Stempel-Sync (alle 30s, 409-Duplikat-Handling)
+- [x] REST API (Stamp, PIN-Login, User-Status, User-Info)
+
+**Terminal-UI (Vanilla HTML/JS/CSS):**
+- [x] Idle-Screen: Uhr, Datum, NFC-Aufforderung, PIN-Button
+- [x] PIN-Screen: 4-stellige Eingabe mit Auto-Submit
+- [x] Action-Screen: KOMMEN/GEHEN/PAUSE/WEITER Buttons (nur gültige sichtbar)
+- [x] Success-Screen: Bestätigung mit Arbeitszeit + Saldo (bei Gehen)
+- [x] Info-Screen: Zeitkonto (Heute/Woche/Monat/Saldo/Resturlaub/letzte Buchungen)
+- [x] Error-Screen: Fehlermeldung mit Auto-Reset
+- [x] Alle Icons als inline SVG (kein Unicode-Rendering-Problem)
+- [x] Status-Indikatoren (NFC, Server, Sync)
+- [x] Auto-Reset Timer mit Countdown-Bar
+- [x] Quick-Stamp (Karte erneut auflegen = häufigste Aktion)
+
+**MDS Backend-Erweiterungen:**
+- [x] Terminal-API mit API-Key Authentifizierung (X-Terminal-Key Header)
+- [x] Middleware: `authenticateTerminal` in authMiddleware.js
+- [x] Endpoints: `/api/terminal/users`, `/api/terminal/stamp`, `/api/terminal/stamp/batch`
+- [x] Endpoints: `/api/terminal/register`, `/api/terminal/list`, `/api/terminal/info`
+- [x] Endpoint: `/api/terminal/user-info/:id` (Zeitkonto, Saldo, Urlaub, letzte Buchungen)
+- [x] Migration: `time_terminals` um `api_key` + `terminal_type` erweitert
+- [x] `timeEntriesController._helpers` exportiert für Terminal-Endpoint
+- [x] Bugfix: `getCurrentBalance()` parseInt für numerische Berechnung
+- [x] Bugfix: `time_current_status` View - `break_end` → `present` statt `absent`
+- [x] Route-Reihenfolge: `terminalRoutes` vor generischen `/api`-Catch-All Routes
+
+**Offen:**
+- [ ] Mehrere NFC-Karten/Tags pro User (Tabelle `user_rfid_chips`)
+- [ ] Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
+- [ ] PI-SETUP.md ins Terminal-Repo committen
+- [ ] Produktivbetrieb: Alle Mitarbeiter-NFC-Karten registrieren
+- [ ] Gehäuse fertigstellen + Terminal montieren
+- [ ] Langzeit-Test im Betrieb
 
 **Schnell-Workflow (Primär):**
 ```
 [KOMMEN] → Badge/NFC → ✓ "Guten Morgen Max, 07:32"
-[GEHEN]  → Badge/NFC → ✓ "Schönen Feierabend, 8:15h heute"
+[GEHEN]  → Badge/NFC → ✓ "Arbeitszeit: 8:15 · Saldo heute: +0:15 · Zeitkonto: +12:30"
 [PAUSE]  → Badge/NFC → ✓ "Pause gestartet" / "Pause beendet (32 Min)"
 [INFO]   → Badge/NFC → Zeitkonto-Übersicht anzeigen
 ```
 > 2 Sekunden pro Buchung - kein PIN, keine Auswahl
 
-**Badge/NFC Login:**
-- [ ] NFC-Reader Integration (USB HID)
-- [ ] DB: `users.badge_id` Feld (eindeutige Badge-Nummer)
-- [ ] Badge-Zuweisung in User-Verwaltung
-- [ ] Fallback: PIN-Eingabe wenn kein Badge
-
-**Hauptfunktionen:**
-- [ ] Kommen-Stempeln (Arbeitsbeginn)
-- [ ] Gehen-Stempeln (Arbeitsende)
-- [ ] Pause-Stempeln (Toggle: Start/Ende)
-- [ ] Info-Button → Zeitkonto ohne Buchung anzeigen
-- [ ] Aktueller Status nach Buchung (Anwesend seit X:XX)
-- [ ] Visuelles + akustisches Feedback (Erfolg/Fehler)
-
-**Zeitkonto-Anzeige (Info-Screen):**
-- [ ] Aktuelles Saldo (Über-/Unterstunden)
-- [ ] Soll-Stunden heute/Woche/Monat
-- [ ] Ist-Stunden heute/Woche/Monat
-- [ ] Urlaubstage-Rest (Verknüpfung mit Urlaubsplanung)
-- [ ] Letzte Buchungen (Historie)
-
-**Korrekturen (nur mit Berechtigung):**
-- [ ] Vergessenes Stempeln nachtragen
-- [ ] Fehlerhafte Buchung korrigieren
-- [ ] Korrektur-Grund erforderlich
-
-**DB-Erweiterungen:**
-- [ ] `users.badge_id` (NFC Badge-Nummer)
-- [ ] `time_entries` Tabelle (user_id, type [kommen/gehen/pause_start/pause_ende], timestamp, manual, correction_reason)
-- [ ] `time_settings` (Soll-Stunden pro Tag, Pausenregelung, Kernzeit)
-- [ ] `time_balances` View (berechnetes Saldo pro User)
-
-**Verknüpfungen:**
-- [ ] Urlaubsplanung: Abwesenheiten berücksichtigen
-- [ ] Maschinen-Terminal: Arbeitszeit vs. Produktionszeit
-- [ ] Feiertage: Automatisch berücksichtigt
-
-**Testbetrieb:**
-- [ ] Aktivierbar pro User (Einstellung in User-Verwaltung)
-- [ ] Erstmal nur ausgewählte User (Admin, Chef)
-- [ ] Langzeit-Testdaten sammeln (3-6 Monate)
-- [ ] Auswertungen für Validierung
-
-**Deliverable:** Funktionsfähiges Stempel-Terminal für Pilotphase
+**Deliverable:** ✅ Funktionsfähiges Stempel-Terminal für Pilotphase
 
 ---
 
@@ -793,12 +801,25 @@ Phase 9 (Erweiterungen):  ██░░░░░░░░░░░░░░░░
   └─ Benachrichtigungen:  ░░░░░░░░░░░░░░░░░░░░ 0%
 
 Phase 10 (Aufträge):      ░░░░░░░░░░░░░░░░░░░░ 0%
-Phase 11 (Shopfloor):     ░░░░░░░░░░░░░░░░░░░░ 0%
+
+Phase 11 (Shopfloor):     ██░░░░░░░░░░░░░░░░░░ 10%
+  └─ Shopfloor Basis:      ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Werkzeug-Terminal:     ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Messraum-Terminal:     ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Maschinen-Terminal:    ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Zeit-Terminal:        ██████████████████░░ 90% ✅
 ```
 
 ---
 
 ## 🔧 Nächste Session
+
+**Zeit-Terminal abschließen:**
+1. Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
+2. PI-SETUP.md ins Terminal-Repo committen
+3. Mehrere NFC-Karten/Tags pro User (`user_rfid_chips` Tabelle)
+4. Gehäuse fertigstellen + Terminal montieren
+5. Alle Mitarbeiter-NFC-Karten registrieren
 
 **Phase 8 - Woche 29-30: Verbrauchsmaterial abschließen**
 
@@ -826,4 +847,4 @@ Bevor Rohmaterial/Normteile gestartet werden:
 
 ---
 
-**Letzte Aktualisierung:** 2026-01-20
+**Letzte Aktualisierung:** 2026-02-08
