@@ -24,7 +24,7 @@ function toLocalDateStr(date) {
 /**
  * GET /api/terminal/users
  * Gibt alle User mit Zeiterfassung zurück (für lokalen Cache).
- * Enthält rfid_chip_id und pin_code.
+ * Enthält rfid_chips Array und pin_code.
  */
 const getUsers = async (req, res) => {
   try {
@@ -33,14 +33,22 @@ const getUsers = async (req, res) => {
         u.id,
         u.first_name,
         u.last_name,
-        u.rfid_chip_id,
         u.pin_code,
         u.time_tracking_enabled,
         u.is_active,
-        tm.name as time_model_name
+        tm.name as time_model_name,
+        COALESCE(
+          json_agg(
+            json_build_object('chip_uid', rc.chip_uid, 'label', rc.label)
+          ) FILTER (WHERE rc.id IS NOT NULL AND rc.is_active = TRUE),
+          '[]'
+        ) AS rfid_chips
       FROM users u
       LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      LEFT JOIN user_rfid_chips rc ON rc.user_id = u.id
       WHERE u.is_active = TRUE AND u.time_tracking_enabled = TRUE
+      GROUP BY u.id, u.first_name, u.last_name, u.pin_code,
+               u.time_tracking_enabled, u.is_active, tm.name
       ORDER BY u.last_name, u.first_name
     `);
 
@@ -354,6 +362,105 @@ const getUserInfo = async (req, res) => {
   }
 };
 
+// ============================================
+// Selbst-Korrektur vom Terminal
+// ============================================
+
+/**
+ * POST /api/terminal/self-correction
+ * Mitarbeiter meldet vergessene Buchung am Terminal.
+ * Wird als Korrektur mit needs_review markiert.
+ */
+const selfCorrection = async (req, res) => {
+  try {
+    const { user_id, entry_type, timestamp, correction_reason } = req.body;
+    const terminalId = req.terminal.id;
+
+    // Validierung
+    if (!user_id || !entry_type || !timestamp || !correction_reason) {
+      return res.status(400).json({ error: 'user_id, entry_type, timestamp und correction_reason erforderlich' });
+    }
+
+    const validTypes = ['clock_in', 'clock_out', 'break_start', 'break_end'];
+    if (!validTypes.includes(entry_type)) {
+      return res.status(400).json({ error: 'Ungültiger Buchungstyp' });
+    }
+
+    if (correction_reason.trim().length < 3) {
+      return res.status(400).json({ error: 'Bitte einen Grund angeben (mind. 3 Zeichen)' });
+    }
+
+    // User prüfen
+    const userCheck = await pool.query(
+      'SELECT id, first_name, last_name, time_tracking_enabled FROM users WHERE id = $1 AND is_active = TRUE',
+      [user_id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    if (!userCheck.rows[0].time_tracking_enabled) {
+      return res.status(400).json({ error: 'Zeiterfassung nicht aktiviert' });
+    }
+
+    // Nur heutiger und gestriger Tag erlaubt
+    const entryTimestamp = new Date(timestamp);
+    const entryDate = toLocalDateStr(entryTimestamp);
+    const today = toLocalDateStr(new Date());
+    const yesterday = toLocalDateStr(new Date(Date.now() - 86400000));
+
+    if (entryDate !== today && entryDate !== yesterday) {
+      return res.status(400).json({ error: 'Korrekturen sind nur für heute und gestern möglich' });
+    }
+
+    // Duplikat-Check
+    const duplicateCheck = await pool.query(`
+      SELECT id FROM time_entries
+      WHERE user_id = $1 AND entry_type = $2 
+        AND ABS(EXTRACT(EPOCH FROM (timestamp - $3::timestamptz))) < 120
+    `, [user_id, entry_type, entryTimestamp]);
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(409).json({ 
+        error: 'Duplikat',
+        message: 'Diese Buchung existiert bereits'
+      });
+    }
+
+    // Buchung als Korrektur einfügen
+    const result = await pool.query(`
+      INSERT INTO time_entries (
+        user_id, entry_type, timestamp, source,
+        is_correction, correction_reason, corrected_by, terminal_id
+      )
+      VALUES ($1, $2, $3, 'terminal_correction', TRUE, $4, $5, $6)
+      RETURNING *
+    `, [user_id, entry_type, entryTimestamp, correction_reason.trim(), user_id, terminalId]);
+
+    // Tagesübersicht aktualisieren
+    await updateDailySummary(user_id, entryTimestamp);
+
+    // needs_review setzen
+    await pool.query(`
+      UPDATE time_daily_summary
+      SET needs_review = TRUE,
+          review_note = COALESCE(review_note || ' | ', '') || 'Terminal-Korrektur: ' || $3
+      WHERE user_id = $1 AND date = $2
+    `, [user_id, entryDate, correction_reason.trim()]);
+
+    const user = userCheck.rows[0];
+
+    res.status(201).json({
+      ...result.rows[0],
+      user_name: `${user.first_name} ${user.last_name}`,
+    });
+  } catch (error) {
+    console.error('Terminal selfCorrection Fehler:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
 module.exports = {
   getUsers,
   stamp,
@@ -362,4 +469,5 @@ module.exports = {
   list,
   getInfo,
   getUserInfo,
+  selfCorrection,
 };

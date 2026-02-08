@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useUsersStore } from '../../stores/usersStore';
 import { useRolesStore } from '../../stores/rolesStore';
 import { useAuthStore } from '../../stores/authStore';
+import axios from '../../utils/axios';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 function UserDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = ['details', 'terminal', 'activity'].includes(searchParams.get('tab')) 
+    ? searchParams.get('tab') : 'details';
   
   const { 
     currentUser: userData, 
@@ -27,7 +31,7 @@ function UserDetailPage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const [showActivityTab, setShowActivityTab] = useState(false);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     username: '',
@@ -40,12 +44,57 @@ function UserDetailPage() {
     vacation_tracking_enabled: true,
     time_tracking_enabled: false,
     time_model_id: null,
-    rfid_chip_id: '',
     pin_code: '',
     role_ids: []
   });
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // NFC Chips State
+  const [newChipUid, setNewChipUid] = useState('');
+  const [newChipLabel, setNewChipLabel] = useState('');
+  const [chipError, setChipError] = useState('');
+  const [chipLoading, setChipLoading] = useState(false);
+
+  const addChip = useCallback(async () => {
+    if (!newChipUid.trim()) return;
+    setChipError('');
+    setChipLoading(true);
+    try {
+      await axios.post(`/api/users/${id}/rfid-chips`, {
+        chip_uid: newChipUid.trim(),
+        label: newChipLabel.trim() || null
+      });
+      setNewChipUid('');
+      setNewChipLabel('');
+      fetchUser(id); // Reload user data
+    } catch (err) {
+      setChipError(err.response?.data?.error || 'Fehler beim Hinzufügen');
+    } finally {
+      setChipLoading(false);
+    }
+  }, [id, newChipUid, newChipLabel, fetchUser]);
+
+  const deleteChip = useCallback(async (chipId) => {
+    if (!confirm('Chip wirklich entfernen?')) return;
+    try {
+      await axios.delete(`/api/users/${id}/rfid-chips/${chipId}`);
+      fetchUser(id);
+    } catch (err) {
+      setChipError(err.response?.data?.error || 'Fehler beim Entfernen');
+    }
+  }, [id, fetchUser]);
+
+  const toggleChipActive = useCallback(async (chipId, currentActive) => {
+    try {
+      await axios.put(`/api/users/${id}/rfid-chips/${chipId}`, {
+        is_active: !currentActive
+      });
+      fetchUser(id);
+    } catch (err) {
+      setChipError(err.response?.data?.error || 'Fehler beim Aktualisieren');
+    }
+  }, [id, fetchUser]);
 
   useEffect(() => {
     fetchUser(id);
@@ -66,7 +115,6 @@ function UserDetailPage() {
         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
         time_tracking_enabled: userData.time_tracking_enabled || false,
         time_model_id: userData.time_model_id || null,
-        rfid_chip_id: userData.rfid_chip_id || '',
         pin_code: userData.pin_code || '',
         role_ids: userData.roles?.map(r => r.id) || []
       });
@@ -74,10 +122,10 @@ function UserDetailPage() {
   }, [userData]);
 
   useEffect(() => {
-    if (showActivityTab && userActivity.length === 0) {
+    if (activeTab === 'activity' && userActivity.length === 0) {
       fetchUserActivity(id);
     }
-  }, [showActivityTab, id]);
+  }, [activeTab, id]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -278,31 +326,28 @@ function UserDetailPage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4">
-          <button
-            onClick={() => setShowActivityTab(false)}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              !showActivityTab
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            Details
-          </button>
-          <button
-            onClick={() => setShowActivityTab(true)}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              showActivityTab
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            Aktivitäten
-          </button>
+          {[
+            { key: 'details', label: 'Details' },
+            { key: 'terminal', label: 'Terminal / NFC' },
+            { key: 'activity', label: 'Aktivitäten' },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === tab.key
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
       </div>
 
       {/* Content */}
-      {!showActivityTab ? (
+      {activeTab === 'details' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* User Info / Edit Form */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -457,7 +502,7 @@ function UserDetailPage() {
                           Urlaub & Zeiterfassung
                         </h4>
                         <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
-                          Einstellungen für Urlaubsverwaltung, Zeiterfassung, Zeitmodell, RFID-Chip und PIN werden zentral verwaltet.
+                          Einstellungen für Urlaubsverwaltung, Zeiterfassung, Zeitmodell und PIN werden zentral verwaltet. NFC-Chips können unten direkt verwaltet werden.
                         </p>
                         <Link 
                           to="/vacations/admin"
@@ -489,7 +534,6 @@ function UserDetailPage() {
                         vacation_tracking_enabled: userData.vacation_tracking_enabled !== false,
                         time_tracking_enabled: userData.time_tracking_enabled || false,
                         time_model_id: userData.time_model_id || null,
-                        rfid_chip_id: userData.rfid_chip_id || '',
                         pin_code: userData.pin_code || '',
                         role_ids: userData.roles?.map(r => r.id) || []
                       });
@@ -600,8 +644,221 @@ function UserDetailPage() {
             )}
           </div>
         </div>
-      ) : (
-        /* Activity Tab */
+      )}
+
+      {/* Terminal Tab */}
+      {activeTab === 'terminal' && (
+        <div className="space-y-6">
+          {/* NFC Chips */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              NFC-Chips / RFID-Karten
+            </h2>
+
+            {!userData.time_tracking_enabled ? (
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Zeiterfassung ist für diesen Benutzer nicht aktiviert.
+              </p>
+            ) : (
+              <>
+                {/* Chip-Liste */}
+                {userData.rfid_chips?.length > 0 ? (
+                  <div className="space-y-2 mb-4">
+                    {userData.rfid_chips.map(chip => (
+                      <div key={chip.id} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                        chip.is_active
+                          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60'
+                      }`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${chip.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                            <code className="text-sm font-mono text-gray-900 dark:text-white truncate">
+                              {chip.chip_uid}
+                            </code>
+                          </div>
+                          {chip.label && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                              {chip.label}
+                            </span>
+                          )}
+                        </div>
+                        {hasPermission('user.update') && (
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              onClick={() => toggleChipActive(chip.id, chip.is_active)}
+                              className={`px-2 py-1 text-xs rounded ${
+                                chip.is_active
+                                  ? 'text-yellow-700 hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-yellow-900/20'
+                                  : 'text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/20'
+                              }`}
+                              title={chip.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                            >
+                              {chip.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                            </button>
+                            <button
+                              onClick={() => deleteChip(chip.id)}
+                              className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded"
+                              title="Entfernen"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
+                    Keine NFC-Chips zugewiesen
+                  </p>
+                )}
+
+                {/* Chip hinzufügen */}
+                {hasPermission('user.update') && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Neuen Chip hinzufügen
+                    </h3>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newChipUid}
+                        onChange={(e) => setNewChipUid(e.target.value)}
+                        placeholder="Chip-UID (z.B. 04:A2:B3:C4:D5:E6:F7)"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <input
+                        type="text"
+                        value={newChipLabel}
+                        onChange={(e) => setNewChipLabel(e.target.value)}
+                        placeholder="Bezeichnung (optional)"
+                        className="w-48 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <button
+                        onClick={addChip}
+                        disabled={chipLoading || !newChipUid.trim()}
+                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700
+                                 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {chipLoading ? '...' : 'Hinzufügen'}
+                      </button>
+                    </div>
+                    {chipError && (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-2">{chipError}</p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Tipp: Die Chip-UID wird beim Scannen am Terminal angezeigt (unbekannte Karte).
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* PIN-Code */}
+          {userData.time_tracking_enabled && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                PIN-Code
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                Alternativer Zugang zum Terminal per PIN-Eingabe (genau 4 Ziffern).
+              </p>
+              {hasPermission('user.update') ? (
+                <div className="max-w-xs space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="pin-input"
+                      defaultValue={userData.pin_code || ''}
+                      onBlur={async (e) => {
+                        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        e.target.value = cleaned;
+                        if (cleaned !== (userData.pin_code || '')) {
+                          if (cleaned && cleaned.length !== 4) {
+                            setChipError('PIN muss genau 4 Ziffern haben');
+                            return;
+                          }
+                          try {
+                            setChipError('');
+                            await updateUser(id, { pin_code: cleaned || null });
+                            fetchUser(id);
+                          } catch (err) {
+                            setChipError(err.response?.data?.message || 'Fehler beim Speichern');
+                          }
+                        }
+                      }}
+                      placeholder="z.B. 1234"
+                      maxLength={4}
+                      inputMode="numeric"
+                      className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg tracking-[0.3em] text-center font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setChipError('');
+                        const pin = String(Math.floor(1000 + Math.random() * 9000));
+                        try {
+                          await updateUser(id, { pin_code: pin });
+                          fetchUser(id);
+                          const input = document.getElementById('pin-input');
+                          if (input) input.value = pin;
+                        } catch (err) {
+                          setChipError(err.response?.data?.message || 'Fehler beim Generieren');
+                        }
+                      }}
+                      className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300
+                               hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg border border-gray-300 dark:border-gray-600"
+                      title="Zufälligen PIN generieren"
+                    >
+                      🎲 Generieren
+                    </button>
+                    {userData.pin_code && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setChipError('');
+                          try {
+                            await updateUser(id, { pin_code: null });
+                            fetchUser(id);
+                            const input = document.getElementById('pin-input');
+                            if (input) input.value = '';
+                          } catch (err) {
+                            setChipError(err.response?.data?.message || 'Fehler beim Entfernen');
+                          }
+                        }}
+                        className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20
+                                 rounded-lg border border-gray-300 dark:border-gray-600"
+                        title="PIN entfernen"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Änderungen werden beim Verlassen des Feldes gespeichert.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-900 dark:text-white">
+                  {userData.pin_code ? (
+                    <span className="text-green-600 dark:text-green-400">PIN gesetzt (••••)</span>
+                  ) : (
+                    <span className="text-gray-400">Kein PIN gesetzt</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Activity Tab */}
+      {activeTab === 'activity' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

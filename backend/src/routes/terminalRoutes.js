@@ -37,6 +37,12 @@ router.get('/user-info/:id',
   terminalController.getUserInfo
 );
 
+// Selbst-Korrektur (vergessene Buchung melden)
+router.post('/self-correction',
+  authenticateTerminal,
+  terminalController.selfCorrection
+);
+
 // ============================================
 // Admin-Endpoints (JWT-Auth)
 // ============================================

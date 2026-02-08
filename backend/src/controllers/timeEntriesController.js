@@ -286,8 +286,9 @@ const stampByIdentifier = async (req, res) => {
     let user;
     if (rfid_chip_id) {
       const result = await pool.query(
-        `SELECT id, first_name, last_name, time_tracking_enabled FROM users 
-         WHERE rfid_chip_id = $1 AND is_active = TRUE`,
+        `SELECT u.id, u.first_name, u.last_name, u.time_tracking_enabled FROM users u
+         INNER JOIN user_rfid_chips rc ON rc.user_id = u.id
+         WHERE rc.chip_uid = $1 AND rc.is_active = TRUE AND u.is_active = TRUE`,
         [rfid_chip_id]
       );
       user = result.rows[0];
@@ -363,8 +364,9 @@ const getUserInfoByIdentifier = async (req, res) => {
         SELECT u.id, u.first_name, u.last_name, u.time_tracking_enabled, tm.name as time_model_name,
                u.time_balance_carryover
         FROM users u
+        INNER JOIN user_rfid_chips rc ON rc.user_id = u.id
         LEFT JOIN time_models tm ON u.time_model_id = tm.id
-        WHERE u.rfid_chip_id = $1 AND u.is_active = TRUE
+        WHERE rc.chip_uid = $1 AND rc.is_active = TRUE AND u.is_active = TRUE
       `, [rfid_chip_id]);
       user = result.rows[0];
     } else if (pin_code) {

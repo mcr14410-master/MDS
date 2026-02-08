@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Clock, CreditCard, Key, Check, AlertTriangle, Search, ChevronDown, ChevronUp, Calendar, Edit2 } from 'lucide-react';
+import { Users, Clock, CreditCard, Key, Check, AlertTriangle, Search, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import axios from '../../utils/axios';
 
 export default function EmployeeSettingsPanel() {
@@ -294,8 +294,10 @@ export default function EmployeeSettingsPanel() {
                   <td className="py-3 px-4">
                     {emp.time_tracking_enabled ? (
                       <div className="flex items-center gap-2 text-xs">
-                        <span className={emp.rfid_chip_id ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
-                          {emp.rfid_chip_id || '–'}
+                        <span className={emp.rfid_chips?.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
+                          {emp.rfid_chips?.length > 0 
+                            ? `${emp.rfid_chips.filter(c => c.is_active).length} Chip(s)` 
+                            : '–'}
                         </span>
                         <span className="text-gray-300 dark:text-gray-600">/</span>
                         <span className={emp.pin_code ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
@@ -347,52 +349,46 @@ export default function EmployeeSettingsPanel() {
               return (
                 <div className="max-w-xl space-y-4">
                   <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                    <Edit2 className="h-4 w-4" />
                     Terminal-Zugangsdaten für {emp.first_name} {emp.last_name}
                   </h4>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        RFID-Chip ID
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={emp.rfid_chip_id || ''}
-                        onBlur={(e) => {
-                          if (e.target.value !== (emp.rfid_chip_id || '')) {
-                            handleUpdate(emp.id, 'rfid_chip_id', e.target.value);
-                          }
-                        }}
-                        placeholder="z.B. ABC123456"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
+                      <span className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        NFC-Chips
+                      </span>
+                      {emp.rfid_chips?.length > 0 ? (
+                        <div className="space-y-1">
+                          {emp.rfid_chips.map((chip, idx) => (
+                            <div key={idx} className={`text-xs px-2 py-1 rounded ${
+                              chip.is_active 
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 line-through'
+                            }`}>
+                              {chip.label || chip.chip_uid}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Keine Chips zugewiesen</span>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        PIN-Code (4-6 Ziffern)
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={emp.pin_code || ''}
-                        onBlur={(e) => {
-                          const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          if (cleaned !== (emp.pin_code || '')) {
-                            handleUpdate(emp.id, 'pin_code', cleaned);
-                          }
-                        }}
-                        placeholder="z.B. 1234"
-                        maxLength={6}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
+                      <span className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        PIN-Code
+                      </span>
+                      <span className={`text-sm ${emp.pin_code ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                        {emp.pin_code ? 'Gesetzt (••••)' : 'Nicht gesetzt'}
+                      </span>
                     </div>
                   </div>
                   
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    RFID und PIN werden für die Terminal-Stempelung benötigt. Änderungen werden automatisch gespeichert.
-                  </p>
+                  <a 
+                    href={`/admin/users/${emp.id}?tab=terminal`}
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Chips & PIN verwalten →
+                  </a>
                 </div>
               );
             })()}
