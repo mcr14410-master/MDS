@@ -1350,5 +1350,6 @@ module.exports = {
   exportPDF,
   exportExcel,
   exportPayrollPDF,
-  exportPayrollAllPDF
+  exportPayrollAllPDF,
+  calculateCurrentBalance
 };

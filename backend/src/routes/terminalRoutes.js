@@ -43,6 +43,12 @@ router.post('/self-correction',
   terminalController.selfCorrection
 );
 
+// User-Status (Server-Quelle für Terminal)
+router.get('/status/:userId',
+  authenticateTerminal,
+  terminalController.getStatus
+);
+
 // ============================================
 // Admin-Endpoints (JWT-Auth)
 // ============================================
