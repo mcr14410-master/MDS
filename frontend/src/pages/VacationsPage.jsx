@@ -959,10 +959,10 @@ export default function VacationsPage({ view: propView }) {
                         <div key={p.user_id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{p.full_name}</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{p.name}</span>
                           </div>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            seit {p.clock_in_time?.slice(0,5) || '–'}
+                            seit {p.first_clock_in ? new Date(p.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '–'}
                           </span>
                         </div>
                       ))

@@ -10,7 +10,8 @@
 const pool = require('../config/db');
 const crypto = require('crypto');
 const { updateDailySummary, autoCloseOpenDays, _helpers } = require('./timeEntriesController');
-const { getDayStats, getWeekStats, getMonthStats, getCurrentBalance, getVacationBalance, getCurrentStatus } = _helpers;
+const { getDayStats, getWeekStats, getMonthStats, getCurrentStatus } = _helpers;
+const { calculateCurrentBalance } = require('./timeBalancesController');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin
 function toLocalDateStr(date) {
@@ -326,13 +327,16 @@ const getUserInfo = async (req, res) => {
     const now = new Date();
 
     // Alle Statistiken parallel laden
-    const [todayStatus, dayStats, weekStats, monthStats, balance, vacation, recentEntries] = await Promise.all([
+    const [todayStatus, dayStats, weekStats, monthStats, balance, vacation, recentEntries, timeModel] = await Promise.all([
       getCurrentStatus(userId),
       getDayStats(userId, now),
       getWeekStats(userId, now),
       getMonthStats(userId, now),
-      getCurrentBalance(userId),
-      getVacationBalance(userId),
+      calculateCurrentBalance(userId),
+      pool.query(`
+        SELECT remaining_days FROM vacation_balances
+        WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)
+      `, [userId]).then(r => r.rows[0]?.remaining_days || null).catch(() => null),
       pool.query(`
         SELECT entry_type, timestamp, source
         FROM time_entries
@@ -340,7 +344,32 @@ const getUserInfo = async (req, res) => {
         ORDER BY timestamp DESC
         LIMIT 10
       `, [userId]),
+      pool.query(`
+        SELECT tm.monday_minutes, tm.tuesday_minutes, tm.wednesday_minutes,
+               tm.thursday_minutes, tm.friday_minutes, tm.saturday_minutes, tm.sunday_minutes
+        FROM users u
+        JOIN time_models tm ON u.time_model_id = tm.id
+        WHERE u.id = $1
+      `, [userId]),
     ]);
+
+    // Tages-Soll aus Zeitmodell berechnen
+    let todayTarget = 0;
+    if (timeModel.rows.length > 0) {
+      const tm = timeModel.rows[0];
+      const dayMap = {
+        0: tm.sunday_minutes, 1: tm.monday_minutes,
+        2: tm.tuesday_minutes, 3: tm.wednesday_minutes,
+        4: tm.thursday_minutes, 5: tm.friday_minutes,
+        6: tm.saturday_minutes,
+      };
+      const localDay = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+      todayTarget = dayMap[localDay.getDay()] || 0;
+    }
+
+    // today um target und overtime erweitern
+    dayStats.target_minutes = todayTarget;
+    dayStats.overtime_minutes = dayStats.worked_minutes - todayTarget;
 
     res.json({
       user: {
@@ -461,6 +490,111 @@ const selfCorrection = async (req, res) => {
   }
 };
 
+// ============================================
+// Status für Terminal (Server-Quelle)
+// ============================================
+
+const VALID_TRANSITIONS = {
+  absent: ['clock_in'],
+  present: ['clock_out', 'break_start'],
+  break: ['break_end'],
+};
+
+/**
+ * GET /api/terminal/status/:userId
+ * Aktueller Status eines Users basierend auf Server-Daten.
+ * Format kompatibel mit Terminal-lokalem get_user_status().
+ */
+const getStatus = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    const userCheck = await pool.query(
+      'SELECT id, first_name, last_name, time_tracking_enabled FROM users WHERE id = $1 AND is_active = TRUE',
+      [userId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    if (!userCheck.rows[0].time_tracking_enabled) {
+      return res.status(400).json({ error: 'Zeiterfassung nicht aktiviert' });
+    }
+
+    // Heutige Einträge chronologisch
+    const entries = await pool.query(`
+      SELECT id, entry_type, timestamp, source
+      FROM time_entries
+      WHERE user_id = $1 AND DATE(timestamp) = CURRENT_DATE
+      ORDER BY timestamp ASC
+    `, [userId]);
+
+    let state = 'absent';
+    let workedMinutes = 0;
+    let breakMinutes = 0;
+    let clockInTime = null;
+    let breakStartTime = null;
+    let firstClockIn = null;
+
+    for (const entry of entries.rows) {
+      const ts = new Date(entry.timestamp);
+
+      switch (entry.entry_type) {
+        case 'clock_in':
+          if (!firstClockIn) firstClockIn = entry.timestamp;
+          clockInTime = ts;
+          state = 'present';
+          break;
+        case 'clock_out':
+          if (clockInTime) {
+            workedMinutes += (ts - clockInTime) / 60000;
+            clockInTime = null;
+          }
+          state = 'absent';
+          break;
+        case 'break_start':
+          breakStartTime = ts;
+          state = 'break';
+          break;
+        case 'break_end':
+          if (breakStartTime) {
+            breakMinutes += (ts - breakStartTime) / 60000;
+            breakStartTime = null;
+          }
+          state = 'present';
+          break;
+      }
+    }
+
+    // Laufende Arbeitszeit
+    if (clockInTime && state === 'present') {
+      workedMinutes += (new Date() - clockInTime) / 60000;
+    }
+
+    // Laufende Pause
+    if (breakStartTime && state === 'break') {
+      breakMinutes += (new Date() - breakStartTime) / 60000;
+    }
+
+    const lastEntry = entries.rows.length > 0 ? entries.rows[entries.rows.length - 1] : null;
+
+    res.json({
+      state,
+      valid_actions: VALID_TRANSITIONS[state] || [],
+      last_entry: lastEntry,
+      today_entries: entries.rows,
+      worked_minutes: Math.round(workedMinutes),
+      break_minutes: Math.round(breakMinutes),
+      net_minutes: Math.round(workedMinutes - breakMinutes),
+      first_clock_in: firstClockIn,
+    });
+  } catch (error) {
+    console.error('Terminal getStatus Fehler:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
 module.exports = {
   getUsers,
   stamp,
@@ -470,4 +604,5 @@ module.exports = {
   getInfo,
   getUserInfo,
   selfCorrection,
+  getStatus,
 };
