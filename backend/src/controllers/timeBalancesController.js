@@ -254,12 +254,16 @@ const getWeekSummary = async (req, res) => {
       ORDER BY ds.date ASC
     `, [userId, mondayStr, sundayStr]);
 
-    // Summen berechnen
+    // Summen berechnen (nur abgeschlossene Tage)
+    const todayStr = toLocalDateStr(new Date());
     const totals = result.rows.reduce((acc, row) => {
-      acc.target_minutes += row.target_minutes || 0;
-      acc.worked_minutes += row.worked_minutes || 0;
-      acc.break_minutes += row.break_minutes || 0;
-      acc.overtime_minutes += row.overtime_minutes || 0;
+      const isIncompleteToday = toLocalDateStr(new Date(row.date)) === todayStr && row.status !== 'complete';
+      if (!isIncompleteToday) {
+        acc.target_minutes += row.target_minutes || 0;
+        acc.worked_minutes += row.worked_minutes || 0;
+        acc.break_minutes += row.break_minutes || 0;
+        acc.overtime_minutes += row.overtime_minutes || 0;
+      }
       return acc;
     }, { target_minutes: 0, worked_minutes: 0, break_minutes: 0, overtime_minutes: 0 });
 
@@ -305,7 +309,7 @@ async function calculateCurrentBalance(userId) {
 }
 
 async function calculateMonthBalance(userId, year, month) {
-  // Tagesübersichten des Monats summieren
+  // Tagesübersichten des Monats summieren (nur abgeschlossene Tage)
   const summaryResult = await pool.query(`
     SELECT 
       COALESCE(SUM(target_minutes), 0) as target_minutes,
@@ -313,6 +317,7 @@ async function calculateMonthBalance(userId, year, month) {
       COALESCE(SUM(overtime_minutes), 0) as overtime_minutes
     FROM time_daily_summary
     WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 AND EXTRACT(MONTH FROM date) = $3
+      AND (date != CURRENT_DATE OR status = 'complete')
   `, [userId, year, month]);
 
   const summary = summaryResult.rows[0];
@@ -435,10 +440,10 @@ function formatRowForExport(row) {
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
   const clockIn = row.first_clock_in 
-    ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' })
     : '';
   const clockOut = row.last_clock_out
-    ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' })
     : '';
 
   let status = row.status || '';
@@ -1038,10 +1043,10 @@ async function exportPayrollPDF(req, res) {
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
       const clockIn = row.first_clock_in 
-        ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' })
         : '-';
       const clockOut = row.last_clock_out
-        ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' })
         : '-';
 
       // Abwesenheit berechnen: Zeit zwischen Kommen/Gehen minus Arbeit minus Pause
@@ -1051,7 +1056,8 @@ async function exportPayrollPDF(req, res) {
         const outTime = new Date(row.last_clock_out);
         const grossMinutes = Math.round((outTime - inTime) / 60000);
         absentMinutes = grossMinutes - (row.worked_minutes || 0) - (row.break_minutes || 0);
-        if (absentMinutes < 0) absentMinutes = 0;
+        // Rundungstoleranz: ±1min durch separate Rundungen ignorieren
+        if (absentMinutes <= 1) absentMinutes = 0;
       }
 
       let bemerkung = '';
@@ -1289,8 +1295,8 @@ async function exportPayrollAllPDF(req, res) {
         const weekday = WEEKDAYS[date.getDay()];
         const dateStr = date.toLocaleDateString('de-DE');
         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-        const clockIn = row.first_clock_in ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '-';
-        const clockOut = row.last_clock_out ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '-';
+        const clockIn = row.first_clock_in ? new Date(row.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' }) : '-';
+        const clockOut = row.last_clock_out ? new Date(row.last_clock_out).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' }) : '-';
         let bemerkung = row.vacation_type || (row.holiday_name ? 'Feiertag' : (row.status === 'holiday' ? 'Feiertag' : ''));
 
         // Abwesenheit berechnen
@@ -1300,7 +1306,8 @@ async function exportPayrollAllPDF(req, res) {
           const outTime = new Date(row.last_clock_out);
           const grossMinutes = Math.round((outTime - inTime) / 60000);
           absentMinutes = grossMinutes - (row.worked_minutes || 0) - (row.break_minutes || 0);
-          if (absentMinutes < 0) absentMinutes = 0;
+          // Rundungstoleranz: ±1min durch separate Rundungen ignorieren
+          if (absentMinutes <= 1) absentMinutes = 0;
         }
 
         if (isWeekend) { doc.save(); doc.rect(40, y - 2, 515, 11).fill('#f3f4f6'); doc.restore(); }

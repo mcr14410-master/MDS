@@ -567,6 +567,54 @@ export default function MyTimeTrackingPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* Monatssummen (nur abgeschlossene Tage) */}
+          {dailySummaries.length > 0 && (() => {
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const totals = dailySummaries.reduce((acc, row) => {
+              const isIncompleteToday = row.date?.slice(0, 10) === todayStr && row.status !== 'complete';
+              if (!isIncompleteToday) {
+                acc.target_minutes += row.target_minutes || 0;
+                acc.worked_minutes += row.worked_minutes || 0;
+                acc.break_minutes += row.break_minutes || 0;
+                acc.overtime_minutes += row.overtime_minutes || 0;
+              }
+              return acc;
+            }, { target_minutes: 0, worked_minutes: 0, break_minutes: 0, overtime_minutes: 0 });
+
+            return (
+              <div className="grid grid-cols-4 gap-4 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Soll</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {formatMinutes(totals.target_minutes)}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Ist</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {formatMinutes(totals.worked_minutes)}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Pause</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {formatMinutes(totals.break_minutes)}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Saldo</div>
+                  <div className={`text-lg font-semibold ${
+                    totals.overtime_minutes >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {totals.overtime_minutes > 0 ? '+' : ''}
+                    {formatMinutes(totals.overtime_minutes)}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
