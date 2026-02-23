@@ -920,6 +920,7 @@ async function getWeekStats(userId, date) {
       COALESCE(SUM(overtime_minutes), 0) as overtime_minutes
     FROM time_daily_summary
     WHERE user_id = $1 AND date BETWEEN $2 AND $3
+      AND (date != CURRENT_DATE OR status = 'complete')
   `, [userId, toLocalDateStr(monday), toLocalDateStr(sunday)]);
 
   return result.rows[0];
@@ -939,6 +940,7 @@ async function getMonthStats(userId, date) {
       COUNT(*) FILTER (WHERE has_missing_entries = TRUE) as missing_days
     FROM time_daily_summary
     WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 AND EXTRACT(MONTH FROM date) = $3
+      AND (date != CURRENT_DATE OR status = 'complete')
   `, [userId, year, month]);
 
   return result.rows[0];

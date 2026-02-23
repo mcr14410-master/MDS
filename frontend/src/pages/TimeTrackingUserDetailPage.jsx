@@ -242,12 +242,16 @@ export default function TimeTrackingUserDetailPage() {
   // Computed
   // ============================================
 
-  const monthTotals = dailySummaries.reduce((acc, day) => ({
-    target: acc.target + (day.target_minutes || 0),
-    worked: acc.worked + (day.worked_minutes || 0),
-    breaks: acc.breaks + (day.break_minutes || 0),
-    overtime: acc.overtime + (day.overtime_minutes || 0)
-  }), { target: 0, worked: 0, breaks: 0, overtime: 0 });
+  const monthTotals = dailySummaries.reduce((acc, day) => {
+    const isIncompleteToday = day.date?.slice(0, 10) === todayStr && day.status !== 'complete';
+    if (isIncompleteToday) return acc;
+    return {
+      target: acc.target + (day.target_minutes || 0),
+      worked: acc.worked + (day.worked_minutes || 0),
+      breaks: acc.breaks + (day.break_minutes || 0),
+      overtime: acc.overtime + (day.overtime_minutes || 0)
+    };
+  }, { target: 0, worked: 0, breaks: 0, overtime: 0 });
 
   const currentMonthBalance = balance?.monthly?.find(
     m => m.year === selectedMonth.year && m.month === selectedMonth.month
@@ -609,7 +613,7 @@ export default function TimeTrackingUserDetailPage() {
             <BalanceDetail label="Auszahlungen" value={-(currentMonthBalance.payout_minutes || 0)} />
           </div>
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Monatssaldo</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Gesamtsaldo</span>
             <span className={`text-xl font-bold ${
               (currentMonthBalance.balance_minutes || 0) >= 0 ? 'text-green-500' : 'text-red-500'
             }`}>
