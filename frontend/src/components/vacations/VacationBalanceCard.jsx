@@ -14,14 +14,19 @@ const getRoleBadgeColor = (roleName) => {
 };
 
 export default function VacationBalanceCard({ balance, onClick }) {
-  const { display_name, total_days, carried_over, used_days, remaining_days, roles } = balance;
+  const { display_name, total_days, carried_over, remaining_days, taken_days, approved_days, pending_days, roles } = balance;
 
   // Parse roles - can be JSON array or string (for backwards compatibility)
   const roleList = Array.isArray(roles) ? roles : [];
 
   // Calculate percentage
   const available = parseFloat(total_days) + parseFloat(carried_over || 0);
-  const usedPercent = available > 0 ? (parseFloat(used_days) / available) * 100 : 0;
+  const taken = parseFloat(taken_days || 0);
+  const approved = parseFloat(approved_days || 0);
+  const pending = parseFloat(pending_days || 0);
+  const takenPct = available > 0 ? (taken / available) * 100 : 0;
+  const approvedPct = available > 0 ? (approved / available) * 100 : 0;
+  const pendingPct = available > 0 ? (pending / available) * 100 : 0;
 
   // Determine color based on remaining days
   const getColor = () => {
@@ -35,17 +40,14 @@ export default function VacationBalanceCard({ balance, onClick }) {
     red: {
       bg: 'bg-red-100 dark:bg-red-900/30',
       text: 'text-red-600 dark:text-red-400',
-      bar: 'bg-red-500'
     },
     yellow: {
       bg: 'bg-yellow-100 dark:bg-yellow-900/30',
       text: 'text-yellow-600 dark:text-yellow-400',
-      bar: 'bg-yellow-500'
     },
     green: {
       bg: 'bg-green-100 dark:bg-green-900/30',
       text: 'text-green-600 dark:text-green-400',
-      bar: 'bg-green-500'
     }
   };
 
@@ -80,18 +82,52 @@ export default function VacationBalanceCard({ balance, onClick }) {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${colorClasses[color].bar} transition-all duration-300`}
-          style={{ width: `${Math.min(usedPercent, 100)}%` }}
-        />
+      {/* Stacked progress bar */}
+      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+        {taken > 0 && (
+          <div 
+            className="h-full bg-gray-500 dark:bg-gray-400 transition-all duration-300"
+            style={{ width: `${Math.min(takenPct, 100)}%` }}
+            title={`${taken} genommen`}
+          />
+        )}
+        {approved > 0 && (
+          <div 
+            className="h-full bg-green-500 dark:bg-green-400 transition-all duration-300"
+            style={{ width: `${Math.min(approvedPct, 100)}%` }}
+            title={`${approved} genehmigt`}
+          />
+        )}
+        {pending > 0 && (
+          <div 
+            className="h-full bg-amber-400 dark:bg-amber-500 transition-all duration-300"
+            style={{ width: `${Math.min(pendingPct, 100)}%` }}
+            title={`${pending} beantragt`}
+          />
+        )}
       </div>
 
       {/* Details */}
-      <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
-        <span>{used_days} genommen</span>
-        <span>
+      <div className="flex flex-wrap gap-x-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {taken > 0 && (
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-gray-500 dark:bg-gray-400 inline-block" />
+            {taken} genommen
+          </span>
+        )}
+        {approved > 0 && (
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400 inline-block" />
+            {approved} genehmigt
+          </span>
+        )}
+        {pending > 0 && (
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-400 dark:bg-amber-500 inline-block" />
+            {pending} beantragt
+          </span>
+        )}
+        <span className="ml-auto">
           {total_days}
           {carried_over > 0 && ` +${carried_over}`}
           {' '}gesamt

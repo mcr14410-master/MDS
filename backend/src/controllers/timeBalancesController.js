@@ -791,11 +791,11 @@ async function exportExcel(req, res) {
 }
 
 /**
- * Export kombinierter Lohnnachweis als PDF
+ * Export kombinierter Zeitnachweis als PDF
  * GET /api/time-tracking/export/payroll/:userId
  * 
  * Enthält:
- * - Urlaubskonto (Anspruch, Übertrag, Gesamt, Genommen, Rest)
+ * - Urlaubskonto (Anspruch, Übertrag, Genommen, Genehmigt, Beantragt, Rest)
  * - Zeitkonto (Saldo alt, +/- Monat, Saldo neu)
  * - Tagesübersicht mit Kommen, Gehen, Soll, Ist, Pause, +/-
  */
@@ -835,6 +835,9 @@ async function exportPayrollPDF(req, res) {
         carried_over,
         adjustment,
         available_days,
+        taken_days,
+        approved_days,
+        pending_days,
         used_days,
         remaining_days
       FROM vacation_balances 
@@ -844,7 +847,7 @@ async function exportPayrollPDF(req, res) {
     
     const vacation = vacationResult.rows[0] || {
       total_days: 0, carried_over: 0, adjustment: 0,
-      available_days: 0, used_days: 0, remaining_days: 0
+      available_days: 0, taken_days: 0, approved_days: 0, pending_days: 0, remaining_days: 0
     };
 
     // 3. Zeitkonto - Saldo Vormonat berechnen
@@ -911,19 +914,19 @@ async function exportPayrollPDF(req, res) {
       size: 'A4', 
       margin: 40,
       info: {
-        Title: `Lohnnachweis ${MONTH_NAMES[targetMonth - 1]} ${targetYear} - ${userName}`,
+        Title: `Zeitnachweis ${MONTH_NAMES[targetMonth - 1]} ${targetYear} - ${userName}`,
         Author: 'MDS Personalverwaltung'
       }
     });
 
-    const filename = `Lohnnachweis_${userName.replace(/\s+/g, '_')}_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
+    const filename = `Zeitnachweis_${userName.replace(/\s+/g, '_')}_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     doc.pipe(res);
 
     // === KOPFBEREICH ===
     doc.fontSize(16).font('Helvetica-Bold')
-       .text('Lohnnachweis', 40, 40);
+       .text('Zeitnachweis', 40, 40);
     doc.fontSize(12).font('Helvetica')
        .text(`${MONTH_NAMES[targetMonth - 1]} ${targetYear}`, 40, 60);
     
@@ -940,7 +943,7 @@ async function exportPayrollPDF(req, res) {
 
     // === ZWEI BOXEN NEBENEINANDER ===
     const boxTop = 125;
-    const boxHeight = 110;
+    const boxHeight = 125;
     const boxWidth = 250;
     
     // Box 1: Urlaubskonto (links)
@@ -959,12 +962,16 @@ async function exportPayrollPDF(req, res) {
     doc.text(`Übertrag Vorjahr:`, 50, yBox);
     doc.text(`${vacation.carried_over} Tage`, 180, yBox, { width: 100, align: 'right' });
     yBox += 13;
-    doc.text(`Gesamt verfügbar:`, 50, yBox);
-    doc.font('Helvetica-Bold').text(`${vacation.available_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    doc.font('Helvetica');
+    doc.text(`Genommen:`, 50, yBox);
+    doc.text(`${vacation.taken_days} Tage`, 180, yBox, { width: 100, align: 'right' });
     yBox += 13;
-    doc.text(`Genommen/Geplant:`, 50, yBox);
-    doc.text(`${vacation.used_days} Tage`, 180, yBox, { width: 100, align: 'right' });
+    doc.text(`Genehmigt:`, 50, yBox);
+    doc.fillColor('#16a34a').text(`${vacation.approved_days} Tage`, 180, yBox, { width: 100, align: 'right' });
+    doc.fillColor('black');
+    yBox += 13;
+    doc.text(`Beantragt:`, 50, yBox);
+    doc.fillColor('#d97706').text(`${vacation.pending_days} Tage`, 180, yBox, { width: 100, align: 'right' });
+    doc.fillColor('black');
     yBox += 13;
     doc.text(`Resturlaub:`, 50, yBox);
     doc.font('Helvetica-Bold').fillColor(vacation.remaining_days >= 0 ? '#16a34a' : '#dc2626');
@@ -1127,13 +1134,13 @@ async function exportPayrollPDF(req, res) {
     doc.end();
 
   } catch (error) {
-    console.error('Fehler beim Lohnnachweis-Export:', error);
+    console.error('Fehler beim Zeitnachweis-Export:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }
 
 /**
- * Export Lohnnachweis für ALLE Mitarbeiter mit aktivem Zeitkonto
+ * Export Zeitnachweis für ALLE Mitarbeiter mit aktivem Zeitkonto
  * GET /api/time-tracking/export/payroll-all
  * 
  * Erstellt ein PDF mit einer Seite pro Mitarbeiter
@@ -1164,12 +1171,12 @@ async function exportPayrollAllPDF(req, res) {
       size: 'A4', 
       margin: 40,
       info: {
-        Title: `Lohnnachweise ${MONTH_NAMES[targetMonth - 1]} ${targetYear}`,
+        Title: `Zeitnachweise ${MONTH_NAMES[targetMonth - 1]} ${targetYear}`,
         Author: 'MDS Personalverwaltung'
       }
     });
 
-    const filename = `Lohnnachweise_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
+    const filename = `Zeitnachweise_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     doc.pipe(res);
@@ -1183,13 +1190,13 @@ async function exportPayrollAllPDF(req, res) {
 
       // Urlaubskonto
       const vacationResult = await pool.query(`
-        SELECT total_days, carried_over, adjustment, available_days, used_days, remaining_days
+        SELECT total_days, carried_over, adjustment, available_days, taken_days, approved_days, pending_days, used_days, remaining_days
         FROM vacation_balances WHERE user_id = $1 AND year = $2 LIMIT 1
       `, [userId, targetYear]);
       
       const vacation = vacationResult.rows[0] || {
         total_days: 0, carried_over: 0, adjustment: 0,
-        available_days: 0, used_days: 0, remaining_days: 0
+        available_days: 0, taken_days: 0, approved_days: 0, pending_days: 0, remaining_days: 0
       };
 
       // Zeitkonto Vormonat
@@ -1234,7 +1241,7 @@ async function exportPayrollAllPDF(req, res) {
 
       // === SEITE RENDERN ===
       // Kopf
-      doc.fontSize(16).font('Helvetica-Bold').text('Lohnnachweis', 40, 40);
+      doc.fontSize(16).font('Helvetica-Bold').text('Zeitnachweis', 40, 40);
       doc.fontSize(12).font('Helvetica').text(`${MONTH_NAMES[targetMonth - 1]} ${targetYear}`, 40, 60);
       doc.fontSize(10).text(`Mitarbeiter: ${userName}`, 40, 85);
       if (user.time_model_name) doc.text(`Zeitmodell: ${user.time_model_name}`, 40, 100);
@@ -1243,7 +1250,7 @@ async function exportPayrollAllPDF(req, res) {
 
       // Boxen
       const boxTop = 125;
-      const boxHeight = 110;
+      const boxHeight = 125;
       const boxWidth = 250;
       
       // Urlaubskonto Box
@@ -1253,8 +1260,9 @@ async function exportPayrollAllPDF(req, res) {
       let yBox = boxTop + 25;
       doc.text(`Jahresanspruch:`, 50, yBox); doc.text(`${vacation.total_days} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
       doc.text(`Übertrag Vorjahr:`, 50, yBox); doc.text(`${vacation.carried_over} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Gesamt verfügbar:`, 50, yBox); doc.font('Helvetica-Bold').text(`${vacation.available_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.font('Helvetica'); yBox += 13;
-      doc.text(`Genommen/Geplant:`, 50, yBox); doc.text(`${vacation.used_days} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
+      doc.text(`Genommen:`, 50, yBox); doc.text(`${vacation.taken_days} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
+      doc.text(`Genehmigt:`, 50, yBox); doc.fillColor('#16a34a').text(`${vacation.approved_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
+      doc.text(`Beantragt:`, 50, yBox); doc.fillColor('#d97706').text(`${vacation.pending_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
       doc.text(`Resturlaub:`, 50, yBox); doc.font('Helvetica-Bold').fillColor(vacation.remaining_days >= 0 ? '#16a34a' : '#dc2626');
       doc.text(`${vacation.remaining_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black').font('Helvetica');
 
@@ -1339,7 +1347,7 @@ async function exportPayrollAllPDF(req, res) {
     doc.end();
 
   } catch (error) {
-    console.error('Fehler beim Sammel-Lohnnachweis-Export:', error);
+    console.error('Fehler beim Sammel-Zeitnachweis-Export:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }

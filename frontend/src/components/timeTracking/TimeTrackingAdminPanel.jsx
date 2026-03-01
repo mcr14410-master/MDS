@@ -82,7 +82,7 @@ export default function TimeTrackingAdminPanel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const prefix = format === 'payroll' ? 'Lohnnachweis' : 'Stundennachweis';
+      const prefix = format === 'payroll' ? 'Zeitnachweis' : 'Stundennachweis';
       a.download = `${prefix}_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
       document.body.appendChild(a);
       a.click();
@@ -107,7 +107,7 @@ export default function TimeTrackingAdminPanel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Lohnnachweise_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.pdf`;
+      a.download = `Zeitnachweise_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -400,24 +400,24 @@ export default function TimeTrackingAdminPanel() {
                            hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 
                            hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg border 
                            border-blue-300 dark:border-blue-600 font-medium"
-                title="Alle Lohnnachweise als PDF exportieren"
+                title="Alle Zeitnachweise als PDF exportieren"
               >
                 <FileText className="h-4 w-4" />
-                Alle Lohnnachweise
+                Alle Zeitnachweise
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigateMonth(-1)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <span className="text-sm font-medium min-w-[120px] text-center">
+                <span className="text-sm font-medium min-w-[120px] text-center text-gray-900 dark:text-white">
                   {MONTHS[selectedMonth.month - 1]} {selectedMonth.year}
                 </span>
                 <button
                   onClick={() => navigateMonth(1)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -526,7 +526,7 @@ export default function TimeTrackingAdminPanel() {
                             onClick={() => handleExport(row.user_id, 'payroll')}
                             className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 
                                      dark:hover:bg-blue-900/30 rounded"
-                            title="Lohnnachweis"
+                            title="Zeitnachweis"
                           >
                             <FileText className="h-4 w-4" />
                           </button>

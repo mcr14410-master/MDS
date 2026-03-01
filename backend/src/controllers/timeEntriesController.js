@@ -1194,7 +1194,7 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
 
   // Zeitmodell des Users + Prüfung ob Zeiterfassung aktiv
   const userModel = await pool.query(`
-    SELECT tm.*, u.time_tracking_enabled FROM users u
+    SELECT tm.*, u.time_tracking_enabled, u.time_tracking_start_date FROM users u
     JOIN time_models tm ON u.time_model_id = tm.id
     WHERE u.id = $1
   `, [userId]);
@@ -1205,6 +1205,7 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
   if (!userModel.rows[0].time_tracking_enabled) return results;
   
   const model = userModel.rows[0];
+  const startDate = model.time_tracking_start_date ? new Date(model.time_tracking_start_date + 'T00:00:00') : null;
 
   // Setting: Feiertage Soll-Stunden gutschreiben?
   const creditSetting = await pool.query(
@@ -1218,6 +1219,9 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
     const checkDate = new Date(today);
     checkDate.setDate(today.getDate() - i);
     const dateStr = toLocalDateStr(checkDate);
+
+    // Datum liegt vor dem Zeiterfassungs-Start → überspringen
+    if (startDate && new Date(dateStr + 'T00:00:00') < startDate) continue;
 
     // Eintrag existiert bereits → überspringen
     const existing = await pool.query(

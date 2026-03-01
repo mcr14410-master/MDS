@@ -309,17 +309,17 @@ export default function TimeTrackingUserDetailPage() {
       </div>
 
       {/* Month Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center gap-2">
         <button onClick={() => changeMonth(-1)}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-          <ChevronLeft className="h-5 w-5 text-gray-500" />
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300">
+          <ChevronLeft className="h-5 w-5" />
         </button>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white min-w-[200px] text-center">
           {MONTH_NAMES[selectedMonth.month - 1]} {selectedMonth.year}
         </h2>
         <button onClick={() => changeMonth(1)}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-          <ChevronRight className="h-5 w-5 text-gray-500" />
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300">
+          <ChevronRight className="h-5 w-5" />
         </button>
       </div>
 

@@ -210,13 +210,13 @@ router.get('/export/excel/:userId',
   timeBalancesController.exportExcel
 );
 
-// Lohnnachweis PDF Export (einzelner Mitarbeiter)
+// Zeitnachweis PDF Export (einzelner Mitarbeiter)
 router.get('/export/payroll/:userId', 
   authenticateToken, 
   timeBalancesController.exportPayrollPDF
 );
 
-// Lohnnachweis PDF Export (alle Mitarbeiter mit aktivem Zeitkonto)
+// Zeitnachweis PDF Export (alle Mitarbeiter mit aktivem Zeitkonto)
 router.get('/export/payroll-all', 
   authenticateToken, 
   requirePermission('time_tracking.manage'),
