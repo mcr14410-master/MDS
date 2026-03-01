@@ -233,7 +233,7 @@ export default function VacationsPage({ view: propView }) {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Lohnnachweise_${filters.year}-${String(filters.month).padStart(2, '0')}.pdf`);
+      link.setAttribute('download', `Zeitnachweise_${filters.year}-${String(filters.month).padStart(2, '0')}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -373,7 +373,7 @@ export default function VacationsPage({ view: propView }) {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => filters.view === 'month' ? navigateMonth(-1) : navigateYear(-1)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -389,7 +389,7 @@ export default function VacationsPage({ view: propView }) {
                   
                   <button
                     onClick={() => filters.view === 'month' ? navigateMonth(1) : navigateYear(1)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -401,7 +401,7 @@ export default function VacationsPage({ view: propView }) {
                     month: new Date().getMonth() + 1 
                   })}
                   className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg 
-                             hover:bg-gray-200 dark:hover:bg-gray-600"
+                             hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                 >
                   Heute
                 </button>
@@ -527,7 +527,7 @@ export default function VacationsPage({ view: propView }) {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {myBalance.total_days}
@@ -547,10 +547,22 @@ export default function VacationsPage({ view: propView }) {
                   <div className="text-xs text-gray-500 dark:text-gray-400">Verfügbar</div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {myBalance.used_days}
+                  <div className="text-2xl font-bold text-gray-500 dark:text-gray-400">
+                    {myBalance.taken_days || 0}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Genommen</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {myBalance.approved_days || 0}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Genehmigt</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-amber-500 dark:text-amber-400">
+                    {myBalance.pending_days || 0}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Beantragt</div>
                 </div>
                 <div className={`rounded-lg p-3 text-center ${
                   myBalance.remaining_days < 0
@@ -871,10 +883,10 @@ export default function VacationsPage({ view: propView }) {
                                  hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 
                                  hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg border 
                                  border-blue-300 dark:border-blue-600 font-medium"
-                      title="Lohnnachweise für alle Mitarbeiter als PDF exportieren"
+                      title="Zeitnachweise für alle Mitarbeiter als PDF exportieren"
                     >
                       <FileText className="h-4 w-4" />
-                      Lohnnachweise
+                      Zeitnachweise
                     </button>
                   )}
                 </div>
@@ -884,8 +896,13 @@ export default function VacationsPage({ view: propView }) {
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Anwesend</div>
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {presence?.filter(p => p.status === 'present').length || 0}
+                      {presence?.filter(p => p.status === 'present' || p.status === 'break').length || 0}
                     </div>
+                    {presence?.filter(p => p.status === 'break').length > 0 && (
+                      <div className="text-xs text-amber-500 dark:text-amber-400 mt-0.5">
+                        davon {presence.filter(p => p.status === 'break').length} in Pause
+                      </div>
+                    )}
                   </div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fehlend</div>
@@ -946,7 +963,7 @@ export default function VacationsPage({ view: propView }) {
                   <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm flex items-center justify-between">
                     <span>Aktuell anwesend</span>
                     <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                      {presence?.filter(p => p.status === 'present').length || 0} von {presence?.length || 0}
+                      {presence?.filter(p => p.status === 'present' || p.status === 'break').length || 0} von {presence?.length || 0}
                     </span>
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -955,11 +972,14 @@ export default function VacationsPage({ view: propView }) {
                         Keine Zeiterfassungsdaten
                       </p>
                     ) : (
-                      presence?.filter(p => p.status === 'present').slice(0, 8).map(p => (
+                      presence?.filter(p => p.status === 'present' || p.status === 'break').slice(0, 8).map(p => (
                         <div key={p.user_id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className={`w-2 h-2 rounded-full ${p.status === 'break' ? 'bg-amber-400' : 'bg-green-500'}`} />
                             <span className="text-sm text-gray-700 dark:text-gray-300">{p.name}</span>
+                            {p.status === 'break' && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Pause</span>
+                            )}
                           </div>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             seit {p.first_clock_in ? new Date(p.first_clock_in).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '–'}

@@ -124,7 +124,7 @@ export default function MyTimeTrackingPanel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const prefix = format === 'payroll' ? 'Lohnnachweis' : 'Stundennachweis';
+      const prefix = format === 'payroll' ? 'Zeitnachweis' : 'Stundennachweis';
       a.download = `${prefix}_${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}.${ext}`;
       document.body.appendChild(a);
       a.click();
@@ -482,10 +482,10 @@ export default function MyTimeTrackingPanel() {
                 onClick={() => handleExport('payroll')}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-blue-600 dark:text-blue-400 
                          hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors font-medium"
-                title="Lohnnachweis als PDF exportieren"
+                title="Zeitnachweis als PDF exportieren"
               >
                 <FileText className="h-3.5 w-3.5" />
-                Lohnnachweis
+                Zeitnachweis
               </button>
             </div>
           </div>

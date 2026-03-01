@@ -251,7 +251,9 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
 
               {/* Vacations */}
               <div className="space-y-0.5 overflow-hidden">
-                {dayVacations.slice(0, 3).map(v => (
+                {dayVacations.slice(0, 3).map(v => {
+                  const isPending = v.status === 'pending';
+                  return (
                   <div
                     key={v.id}
                     onClick={(e) => {
@@ -261,15 +263,25 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
                     className="text-xs px-1 py-0.5 rounded truncate cursor-pointer 
                                hover:opacity-80 transition-opacity"
                     style={{ 
-                      backgroundColor: v.type_color + '30',
+                      backgroundColor: isPending ? 'transparent' : v.type_color + '30',
                       color: v.type_color,
-                      borderLeft: `3px solid ${v.type_color}`
+                      borderLeft: `3px ${isPending ? 'dashed' : 'solid'} ${v.type_color}`,
+                      ...(isPending ? {
+                        backgroundImage: `repeating-linear-gradient(
+                          -45deg,
+                          ${v.type_color}15,
+                          ${v.type_color}15 3px,
+                          ${v.type_color}35 3px,
+                          ${v.type_color}35 6px
+                        )`
+                      } : {})
                     }}
-                    title={`${v.display_name}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
+                    title={`${v.display_name}${isPending ? ' (beantragt)' : ''}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
                   >
-                    {formatShortName(v.display_name)}
+                    {formatShortName(v.display_name)}{isPending ? ' ?' : ''}
                   </div>
-                ))}
+                  );
+                })}
                 {dayVacations.length > 3 && (
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     +{dayVacations.length - 3} mehr
@@ -292,6 +304,21 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
             <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
           </div>
         ))}
+        <div className="flex items-center gap-2 text-sm">
+          <div 
+            className="w-4 h-4 rounded border border-dashed border-gray-400 dark:border-gray-500"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                -45deg,
+                rgba(156,163,175,0.15),
+                rgba(156,163,175,0.15) 2px,
+                rgba(156,163,175,0.4) 2px,
+                rgba(156,163,175,0.4) 4px
+              )`
+            }}
+          />
+          <span className="text-gray-600 dark:text-gray-400">Beantragt</span>
+        </div>
       </div>
     </div>
   );
@@ -391,6 +418,7 @@ function YearView({ data, year, vacationTypes, onVacationClick, onDayClick }) {
                 {/* Vacation bars */}
                 {group.vacations.map(v => {
                   const style = getBarStyle(v);
+                  const isPending = v.status === 'pending';
                   return (
                     <div
                       key={v.id}
@@ -400,10 +428,20 @@ function YearView({ data, year, vacationTypes, onVacationClick, onDayClick }) {
                       style={{
                         left: style.left,
                         width: style.width,
-                        backgroundColor: v.type_color,
-                        minWidth: '4px'
+                        backgroundColor: isPending ? 'transparent' : v.type_color,
+                        minWidth: '4px',
+                        ...(isPending ? {
+                          backgroundImage: `repeating-linear-gradient(
+                            -45deg,
+                            ${v.type_color}40,
+                            ${v.type_color}40 3px,
+                            ${v.type_color} 3px,
+                            ${v.type_color} 6px
+                          )`,
+                          border: `1px dashed ${v.type_color}`
+                        } : {})
                       }}
-                      title={`${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
+                      title={`${v.type_name}${isPending ? ' (beantragt)' : ''}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
                     />
                   );
                 })}
@@ -424,6 +462,21 @@ function YearView({ data, year, vacationTypes, onVacationClick, onDayClick }) {
             <span className="text-gray-600 dark:text-gray-400">{type.name}</span>
           </div>
         ))}
+        <div className="flex items-center gap-2 text-sm">
+          <div 
+            className="w-4 h-4 rounded border border-dashed border-gray-400 dark:border-gray-500"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                -45deg,
+                rgba(156,163,175,0.15),
+                rgba(156,163,175,0.15) 2px,
+                rgba(156,163,175,0.4) 2px,
+                rgba(156,163,175,0.4) 4px
+              )`
+            }}
+          />
+          <span className="text-gray-600 dark:text-gray-400">Beantragt</span>
+        </div>
       </div>
     </div>
   );

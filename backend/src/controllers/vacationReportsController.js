@@ -108,11 +108,31 @@ exports.exportMyYear = async (req, res) => {
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
-             AND v.status = 'approved'
+             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
              AND vt.affects_balance = true
              AND EXTRACT(YEAR FROM v.start_date) = $2),
           0
-        ) as used_days
+        ) as taken_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = $1 
+             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $2),
+          0
+        ) as approved_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = $1 
+             AND v.status = 'pending'
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $2),
+          0
+        ) as pending_days
       FROM vacation_entitlements ve
       WHERE ve.user_id = $1 AND ve.year = $2
     `, [userId, year]);
@@ -121,8 +141,11 @@ exports.exportMyYear = async (req, res) => {
       total_days: 0,
       carried_over: 0,
       available_days: 0,
-      used_days: 0
+      taken_days: 0,
+      approved_days: 0,
+      pending_days: 0
     };
+    balance.used_days = parseFloat(balance.taken_days) + parseFloat(balance.approved_days) + parseFloat(balance.pending_days);
     balance.remaining_days = balance.available_days - balance.used_days;
 
     // Fetch vacations
@@ -179,7 +202,7 @@ exports.exportMyYear = async (req, res) => {
     }
 
     // ========== BALANCE BOX ==========
-    doc.rect(50, y, 495, 70).stroke();
+    doc.rect(50, y, 495, 85).stroke();
     doc.fontSize(12).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 10);
     
     doc.fontSize(10).font('Helvetica');
@@ -190,16 +213,24 @@ exports.exportMyYear = async (req, res) => {
     
     doc.font('Helvetica').text('Übertrag:', col2, y + 30);
     doc.font('Helvetica-Bold').text(`${balance.carried_over || 0} Tage`, col2, y + 45);
-    
-    doc.font('Helvetica').text('Genommen:', col3, y + 30);
-    doc.font('Helvetica-Bold').text(`${balance.used_days} Tage`, col3, y + 45);
-    
-    doc.font('Helvetica').text('Rest:', col4, y + 30);
-    const restColor = balance.remaining_days < 0 ? '#dc2626' : balance.remaining_days < 5 ? '#d97706' : '#16a34a';
-    doc.fillColor(restColor).font('Helvetica-Bold').text(`${balance.remaining_days} Tage`, col4, y + 45);
+
+    doc.font('Helvetica').text('Genommen:', col1, y + 60);
+    doc.font('Helvetica-Bold').text(`${balance.taken_days} Tage`, col1, y + 75);
+
+    doc.font('Helvetica').text('Genehmigt:', col2, y + 60);
+    doc.fillColor('#16a34a').font('Helvetica-Bold').text(`${balance.approved_days} Tage`, col2, y + 75);
+    doc.fillColor('#000000');
+
+    doc.font('Helvetica').text('Beantragt:', col3, y + 60);
+    doc.fillColor('#d97706').font('Helvetica-Bold').text(`${balance.pending_days} Tage`, col3, y + 75);
     doc.fillColor('#000000');
     
-    y += 85;
+    doc.font('Helvetica').text('Rest:', col4, y + 60);
+    const restColor = balance.remaining_days < 0 ? '#dc2626' : balance.remaining_days < 5 ? '#d97706' : '#16a34a';
+    doc.fillColor(restColor).font('Helvetica-Bold').text(`${balance.remaining_days} Tage`, col4, y + 75);
+    doc.fillColor('#000000');
+    
+    y += 100;
 
     // ========== APPROVED VACATIONS TABLE ==========
     doc.fontSize(12).font('Helvetica-Bold').text('Genehmigte Abwesenheiten', 50, y);
@@ -334,17 +365,37 @@ exports.exportAll = async (req, res) => {
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
-             AND v.status = 'approved'
+             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
              AND vt.affects_balance = true
              AND EXTRACT(YEAR FROM v.start_date) = $1),
           0
-        ) as used_days,
+        ) as taken_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = u.id 
+             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $1),
+          0
+        ) as approved_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = u.id 
+             AND v.status = 'pending'
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $1),
+          0
+        ) as pending_days,
         (ve.total_days + COALESCE(ve.carried_over, 0) - COALESCE(
           (SELECT SUM(v.calculated_days)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
-             AND v.status = 'approved'
+             AND v.status IN ('approved', 'pending')
              AND vt.affects_balance = true
              AND EXTRACT(YEAR FROM v.start_date) = $1),
           0
@@ -366,7 +417,10 @@ exports.exportAll = async (req, res) => {
     // Summary stats
     const totalEmployees = balancesResult.rows.length;
     const totalDays = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.available_days || 0), 0);
-    const totalUsed = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.used_days || 0), 0);
+    const totalTaken = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.taken_days || 0), 0);
+    const totalApproved = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.approved_days || 0), 0);
+    const totalPending = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.pending_days || 0), 0);
+    const totalUsed = totalTaken + totalApproved + totalPending;
     const totalRemaining = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0);
 
     // Fetch all vacations for detail view
@@ -432,22 +486,26 @@ exports.exportAll = async (req, res) => {
     doc.fontSize(11).font('Helvetica-Bold').text('Zusammenfassung', 50, y + 8);
     doc.fontSize(10).font('Helvetica');
     doc.text(`Mitarbeiter: ${totalEmployees}`, 50, y + 25);
-    doc.text(`Gesamt verfügbar: ${totalDays} Tage`, 200, y + 25);
-    doc.text(`Genommen: ${totalUsed} Tage`, 400, y + 25);
-    doc.text(`Verbleibend: ${totalRemaining} Tage`, 580, y + 25);
+    doc.text(`Verfügbar: ${totalDays}`, 200, y + 25);
+    doc.text(`Genommen: ${totalTaken}`, 340, y + 25);
+    doc.text(`Genehmigt: ${totalApproved}`, 460, y + 25);
+    doc.text(`Beantragt: ${totalPending}`, 570, y + 25);
+    doc.text(`Rest: ${totalRemaining}`, 680, y + 25);
     y += 60;
 
-    // Table Header (ohne Abwesenheiten-Spalte)
+    // Table Header
     const drawTableHeader = (yPos) => {
-      doc.rect(40, yPos, 660, 20).fill('#f3f4f6');
+      doc.rect(40, yPos, 760, 20).fill('#f3f4f6');
       doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
       doc.text('Mitarbeiter', 45, yPos + 6);
-      doc.text('Rollen', 200, yPos + 6);
-      doc.text('Anspruch', 380, yPos + 6);
-      doc.text('Übertrag', 450, yPos + 6);
-      doc.text('Verfügbar', 520, yPos + 6);
-      doc.text('Genommen', 590, yPos + 6);
-      doc.text('Rest', 660, yPos + 6);
+      doc.text('Rollen', 195, yPos + 6);
+      doc.text('Anspruch', 370, yPos + 6);
+      doc.text('Übertrag', 430, yPos + 6);
+      doc.text('Verfügbar', 490, yPos + 6);
+      doc.text('Genomm.', 555, yPos + 6);
+      doc.text('Genehm.', 615, yPos + 6);
+      doc.text('Beantr.', 675, yPos + 6);
+      doc.text('Rest', 735, yPos + 6);
       return yPos + 25;
     };
 
@@ -480,35 +538,39 @@ exports.exportAll = async (req, res) => {
 
       // Row background for low remaining
       if (b.remaining_days < 0) {
-        doc.rect(40, y - 2, 660, 18).fill('#fee2e2');
+        doc.rect(40, y - 2, 760, 18).fill('#fee2e2');
         doc.fillColor('#000000');
       } else if (b.remaining_days < 5) {
-        doc.rect(40, y - 2, 660, 18).fill('#fef9c3');
+        doc.rect(40, y - 2, 760, 18).fill('#fef9c3');
         doc.fillColor('#000000');
       }
 
-      doc.text(b.display_name, 45, y, { width: 150 });
-      doc.text(roles, 200, y, { width: 175 });
-      doc.text(`${b.total_days}`, 380, y, { width: 65 });
-      doc.text(`${b.carried_over || 0}`, 450, y, { width: 65 });
-      doc.text(`${b.available_days}`, 520, y, { width: 65 });
-      doc.text(`${b.used_days}`, 590, y, { width: 65 });
+      doc.text(b.display_name, 45, y, { width: 145 });
+      doc.text(roles, 195, y, { width: 170 });
+      doc.text(`${b.total_days}`, 370, y, { width: 55 });
+      doc.text(`${b.carried_over || 0}`, 430, y, { width: 55 });
+      doc.text(`${b.available_days}`, 490, y, { width: 55 });
+      doc.text(`${b.taken_days}`, 555, y, { width: 55 });
+      doc.fillColor('#16a34a').text(`${b.approved_days}`, 615, y, { width: 55 });
+      doc.fillColor('#d97706').text(`${b.pending_days}`, 675, y, { width: 55 });
       
       const restColor = b.remaining_days < 0 ? '#dc2626' : b.remaining_days < 5 ? '#d97706' : '#16a34a';
-      doc.fillColor(restColor).text(`${b.remaining_days}`, 660, y, { width: 55 });
+      doc.fillColor(restColor).text(`${b.remaining_days}`, 735, y, { width: 55 });
       doc.fillColor('#000000');
 
       y += 20;
     }
 
     // Totals row
-    doc.moveTo(40, y).lineTo(700, y).stroke();
+    doc.moveTo(40, y).lineTo(800, y).stroke();
     y += 5;
     doc.font('Helvetica-Bold').fontSize(10);
     doc.text('GESAMT', 45, y);
-    doc.text(`${totalDays}`, 520, y);
-    doc.text(`${totalUsed}`, 590, y);
-    doc.text(`${totalRemaining}`, 660, y);
+    doc.text(`${totalDays}`, 490, y);
+    doc.text(`${totalTaken}`, 555, y);
+    doc.text(`${totalApproved}`, 615, y);
+    doc.text(`${totalPending}`, 675, y);
+    doc.text(`${totalRemaining}`, 735, y);
 
     // Footer for overview page
     addLandscapeFooter(doc, pageNum);
@@ -531,7 +593,7 @@ exports.exportAll = async (req, res) => {
       y = 130;
 
       // Balance Box
-      doc.rect(50, y, 495, 60).stroke();
+      doc.rect(50, y, 495, 75).stroke();
       doc.fontSize(11).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 8);
       
       doc.fontSize(10).font('Helvetica');
@@ -542,16 +604,24 @@ exports.exportAll = async (req, res) => {
       
       doc.font('Helvetica').text('Übertrag:', col2, y + 28);
       doc.font('Helvetica-Bold').text(`${b.carried_over || 0} Tage`, col2, y + 42);
-      
-      doc.font('Helvetica').text('Genommen:', col3, y + 28);
-      doc.font('Helvetica-Bold').text(`${b.used_days} Tage`, col3, y + 42);
-      
-      doc.font('Helvetica').text('Rest:', col4, y + 28);
-      const restColor = b.remaining_days < 0 ? '#dc2626' : b.remaining_days < 5 ? '#d97706' : '#16a34a';
-      doc.fillColor(restColor).font('Helvetica-Bold').text(`${b.remaining_days} Tage`, col4, y + 42);
+
+      doc.font('Helvetica').text('Genommen:', col1, y + 55);
+      doc.font('Helvetica-Bold').text(`${b.taken_days}`, col1, y + 67);
+
+      doc.font('Helvetica').text('Genehmigt:', col2, y + 55);
+      doc.fillColor('#16a34a').font('Helvetica-Bold').text(`${b.approved_days}`, col2, y + 67);
+      doc.fillColor('#000000');
+
+      doc.font('Helvetica').text('Beantragt:', col3, y + 55);
+      doc.fillColor('#d97706').font('Helvetica-Bold').text(`${b.pending_days}`, col3, y + 67);
       doc.fillColor('#000000');
       
-      y += 75;
+      doc.font('Helvetica').text('Rest:', col4, y + 55);
+      const restColor = b.remaining_days < 0 ? '#dc2626' : b.remaining_days < 5 ? '#d97706' : '#16a34a';
+      doc.fillColor(restColor).font('Helvetica-Bold').text(`${b.remaining_days} Tage`, col4, y + 67);
+      doc.fillColor('#000000');
+      
+      y += 90;
 
       // Vacations Table
       const userVacations = vacationsByUser[b.user_id] || [];

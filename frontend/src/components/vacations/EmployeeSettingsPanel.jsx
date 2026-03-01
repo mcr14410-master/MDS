@@ -91,6 +91,33 @@ export default function EmployeeSettingsPanel() {
         setSaving(prev => ({ ...prev, [userId]: false }));
       }
     } else {
+      // Beim Aktivieren der Zeiterfassung: Startdatum auf heute setzen wenn noch nicht vorhanden
+      if (field === 'time_tracking_enabled' && !currentValue) {
+        const employee = employees.find(e => e.id === userId);
+        if (!employee?.time_tracking_start_date) {
+          const today = new Date().toISOString().split('T')[0];
+          setSaving(prev => ({ ...prev, [userId]: true }));
+          setError(null);
+          try {
+            await axios.put(`/api/users/${userId}`, { 
+              time_tracking_enabled: true,
+              time_tracking_start_date: today 
+            });
+            setEmployees(prev => prev.map(emp => 
+              emp.id === userId 
+                ? { ...emp, time_tracking_enabled: true, time_tracking_start_date: today } 
+                : emp
+            ));
+            setSuccess('Gespeichert');
+            setTimeout(() => setSuccess(null), 2000);
+          } catch (err) {
+            setError(err.response?.data?.error || 'Fehler beim Speichern');
+          } finally {
+            setSaving(prev => ({ ...prev, [userId]: false }));
+          }
+          return;
+        }
+      }
       await handleUpdate(userId, field, !currentValue);
     }
   };
@@ -272,20 +299,33 @@ export default function EmployeeSettingsPanel() {
                   
                   <td className="py-3 px-4">
                     {emp.time_tracking_enabled ? (
-                      <select
-                        value={emp.time_model_id || ''}
-                        onChange={(e) => handleUpdate(emp.id, 'time_model_id', e.target.value ? parseInt(e.target.value) : null)}
-                        disabled={isSaving}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded 
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="">-- Kein Modell --</option>
-                        {timeModels.map(model => (
-                          <option key={model.id} value={model.id}>
-                            {model.name} ({(model.weekly_minutes / 60).toFixed(1)}h)
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-col gap-1">
+                        <select
+                          value={emp.time_model_id || ''}
+                          onChange={(e) => handleUpdate(emp.id, 'time_model_id', e.target.value ? parseInt(e.target.value) : null)}
+                          disabled={isSaving}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded 
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option value="">-- Kein Modell --</option>
+                          {timeModels.map(model => (
+                            <option key={model.id} value={model.id}>
+                              {model.name} ({(model.weekly_minutes / 60).toFixed(1)}h)
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">ab:</span>
+                          <input
+                            type="date"
+                            value={emp.time_tracking_start_date || ''}
+                            onChange={(e) => handleUpdate(emp.id, 'time_tracking_start_date', e.target.value || null)}
+                            disabled={isSaving}
+                            className="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded 
+                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
                     ) : (
                       <span className="text-gray-400 dark:text-gray-500">–</span>
                     )}

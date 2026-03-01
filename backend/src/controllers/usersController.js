@@ -34,6 +34,7 @@ async function getAll(req, res) {
         u.is_available,
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
+        u.time_tracking_start_date,
         u.time_model_id,
         u.pin_code,
         u.last_login,
@@ -135,6 +136,7 @@ async function getById(req, res) {
         u.is_available,
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
+        u.time_tracking_start_date,
         u.time_model_id,
         u.pin_code,
         u.last_login,
@@ -328,7 +330,7 @@ async function update(req, res) {
     const { id } = req.params;
     const { 
       username, email, first_name, last_name, is_active, skill_level, is_available, 
-      vacation_tracking_enabled, time_tracking_enabled, time_model_id, pin_code,
+      vacation_tracking_enabled, time_tracking_enabled, time_tracking_start_date, time_model_id, pin_code,
       role_ids 
     } = req.body;
 
@@ -432,6 +434,10 @@ async function update(req, res) {
       if (time_tracking_enabled !== undefined) {
         updates.push(`time_tracking_enabled = $${paramIndex++}`);
         values.push(time_tracking_enabled);
+      }
+      if (time_tracking_start_date !== undefined) {
+        updates.push(`time_tracking_start_date = $${paramIndex++}`);
+        values.push(time_tracking_start_date);
       }
       if (time_model_id !== undefined) {
         updates.push(`time_model_id = $${paramIndex++}`);
