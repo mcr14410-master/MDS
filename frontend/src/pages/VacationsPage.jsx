@@ -15,6 +15,7 @@ import VacationFormModal from '../components/vacations/VacationFormModal';
 import VacationSettingsPanel from '../components/vacations/VacationSettingsPanel';
 import VacationBalanceCard from '../components/vacations/VacationBalanceCard';
 import EntitlementEditModal from '../components/vacations/EntitlementEditModal';
+import VacationDetailModal from '../components/vacations/VacationDetailModal';
 import MyRequestsPanel from '../components/vacations/MyRequestsPanel';
 import PendingRequestsPanel from '../components/vacations/PendingRequestsPanel';
 import EmployeeSettingsPanel from '../components/vacations/EmployeeSettingsPanel';
@@ -70,6 +71,7 @@ export default function VacationsPage({ view: propView }) {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingVacation, setEditingVacation] = useState(null);
   const [editingEntitlement, setEditingEntitlement] = useState(null);
+  const [detailBalance, setDetailBalance] = useState(null);
   const [userFilter, setUserFilter] = useState('');
   
   // Tab states for different views
@@ -1069,10 +1071,10 @@ export default function VacationsPage({ view: propView }) {
                       />
                     </div>
 
-                    {/* Balance Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
+                    {/* Balance List */}
+                    <div className="max-h-[600px] overflow-y-auto space-y-3 pr-1">
                       {filteredBalances.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full text-center py-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                           Keine Urlaubsansprüche für {filters.year}
                         </p>
                       ) : (
@@ -1080,7 +1082,7 @@ export default function VacationsPage({ view: propView }) {
                           <VacationBalanceCard 
                             key={`${balance.user_id}-${index}`} 
                             balance={balance} 
-                            onClick={() => setEditingEntitlement(balance)}
+                            onClick={() => setDetailBalance(balance)}
                           />
                         ))
                       )}
@@ -1183,6 +1185,19 @@ export default function VacationsPage({ view: propView }) {
           vacationTypes={vacationTypes}
           users={users}
           onClose={handleCloseForm}
+        />
+      )}
+
+      {/* Vacation Detail Modal */}
+      {detailBalance && (
+        <VacationDetailModal
+          balance={detailBalance}
+          year={filters.year}
+          onClose={() => setDetailBalance(null)}
+          onEdit={() => {
+            setEditingEntitlement(detailBalance);
+            setDetailBalance(null);
+          }}
         />
       )}
 

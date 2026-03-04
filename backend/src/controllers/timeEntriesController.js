@@ -129,29 +129,8 @@ async function autoCloseOpenDays(userId, currentTimestamp) {
 
     // Tag ist nicht abgeschlossen (noch present oder break)
     if (state !== 'absent') {
-      // Auto clock_out: Soll-Arbeitszeit ab erstem clock_in berechnen
       const firstClockIn = dayEntries.rows.find(e => e.entry_type === 'clock_in');
       if (!firstClockIn) continue;
-
-      // Zeitmodell holen
-      const userModel = await pool.query(`
-        SELECT tm.* FROM users u
-        JOIN time_models tm ON u.time_model_id = tm.id
-        WHERE u.id = $1
-      `, [userId]);
-
-      let targetMinutes = 510; // Fallback 8:30
-      if (userModel.rows.length > 0) {
-        const model = userModel.rows[0];
-        const dayOfWeek = new Date(dayStr).getDay();
-        const dayMap = {
-          0: model.sunday_minutes, 1: model.monday_minutes,
-          2: model.tuesday_minutes, 3: model.wednesday_minutes,
-          4: model.thursday_minutes, 5: model.friday_minutes,
-          6: model.saturday_minutes
-        };
-        targetMinutes = dayMap[dayOfWeek] || 510;
-      }
 
       // Offene Pause zuerst schließen
       if (state === 'break') {
@@ -165,13 +144,9 @@ async function autoCloseOpenDays(userId, currentTimestamp) {
         `, [userId, breakEndTime]);
       }
 
-      // Auto clock_out: first_clock_in + Soll-Arbeitszeit + Standardpause
-      const autoClockOut = new Date(firstClockIn.timestamp);
-      autoClockOut.setMinutes(autoClockOut.getMinutes() + targetMinutes + 30); // + 30min Pause
-
-      // Nicht über 23:59 des Tages hinaus
-      const dayEnd = new Date(dayStr + 'T23:59:00');
-      const clockOutTime = autoClockOut <= dayEnd ? autoClockOut : dayEnd;
+      // Auto clock_out immer auf 23:59 des Tages
+      // Echte Korrektur erfolgt manuell durch Mitarbeiter/Admin
+      const clockOutTime = new Date(dayStr + 'T23:59:00');
 
       await pool.query(`
         INSERT INTO time_entries (user_id, entry_type, timestamp, source, is_correction, correction_reason, corrected_by)
