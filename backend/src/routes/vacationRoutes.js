@@ -62,6 +62,7 @@ router.get('/vacations/pending', requirePermission('vacations.approve'), vacatio
 router.get('/vacations/my-requests', requirePermission('vacations.read'), vacationsController.getMyRequests);
 router.get('/vacations/export/my-year', requirePermission('vacations.read'), vacationReportsController.exportMyYear);
 router.get('/vacations/export/all', requirePermission('vacations.manage'), vacationReportsController.exportAll);
+router.get('/vacations/export/user/:userId', requirePermission('vacations.manage'), vacationReportsController.exportUserYear);
 router.get('/vacations/:id', requirePermission('vacations.read'), vacationsController.getVacation);
 router.post('/vacations', requirePermission('vacations.manage'), vacationsController.createVacation);
 router.post('/vacations/request', requirePermission('vacations.read'), vacationsController.requestVacation); // For self-requests (always pending)

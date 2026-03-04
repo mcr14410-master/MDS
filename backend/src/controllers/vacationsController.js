@@ -9,10 +9,122 @@
  */
 
 const pool = require('../config/db');
+const { calculateMonthBalance } = require('./timeBalancesController');
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+/**
+ * Sync time_daily_summary entries when a vacation is approved.
+ * Updates existing "absent" entries (from cron) with the correct vacation data.
+ * Creates missing entries for days without any time_daily_summary record.
+ */
+async function syncDailySummaryForVacation(vacationId) {
+  // Vacation + Type Info laden
+  const vacResult = await pool.query(`
+    SELECT v.*, vt.name as type_name, vt.credits_target_hours
+    FROM vacations v
+    JOIN vacation_types vt ON vt.id = v.type_id
+    WHERE v.id = $1
+  `, [vacationId]);
+
+  if (vacResult.rows.length === 0) return;
+  const vac = vacResult.rows[0];
+
+  // Zeitmodell des Users laden
+  const modelResult = await pool.query(`
+    SELECT tm.* FROM users u
+    JOIN time_models tm ON u.time_model_id = tm.id
+    WHERE u.id = $1
+  `, [vac.user_id]);
+
+  const model = modelResult.rows.length > 0 ? modelResult.rows[0] : null;
+
+  // Jeden Tag im Urlaubszeitraum durchgehen
+  const start = new Date(vac.start_date);
+  const end = new Date(vac.end_date);
+  const affectedMonths = new Set();
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();
+
+    // Soll-Minuten für diesen Tag
+    let targetMinutes = 0;
+    if (model) {
+      const dayMap = {
+        0: model.sunday_minutes, 1: model.monday_minutes,
+        2: model.tuesday_minutes, 3: model.wednesday_minutes,
+        4: model.thursday_minutes, 5: model.friday_minutes,
+        6: model.saturday_minutes
+      };
+      targetMinutes = dayMap[dayOfWeek] ?? 0;
+    }
+
+    // Wochenende mit Soll=0 → überspringen
+    if (targetMinutes === 0) continue;
+
+    // Gutschreibung wenn Typ das vorsieht
+    const workedMinutes = vac.credits_target_hours ? targetMinutes : 0;
+    const overtimeMinutes = workedMinutes - targetMinutes;
+
+    // Prüfen ob bereits ein Eintrag existiert
+    const existing = await pool.query(
+      'SELECT id, status, has_missing_entries, worked_minutes, vacation_id FROM time_daily_summary WHERE user_id = $1 AND date = $2',
+      [vac.user_id, dateStr]
+    );
+
+    if (existing.rows.length > 0) {
+      const entry = existing.rows[0];
+      // Fall 1: Fehlbuchung (absent + has_missing) → komplett mit Abwesenheit ersetzen
+      if (entry.status === 'absent' && entry.has_missing_entries) {
+        await pool.query(`
+          UPDATE time_daily_summary
+          SET status = $1, vacation_id = $2, has_missing_entries = FALSE, missing_entry_types = NULL,
+              worked_minutes = $3, target_minutes = $4, overtime_minutes = $5,
+              needs_review = FALSE, review_note = NULL
+          WHERE id = $6
+        `, [vac.type_name, vacationId, workedMinutes, targetMinutes, overtimeMinutes, entry.id]);
+      }
+      // Fall 2: Echte Stempelungen vorhanden + credits_target_hours → Differenz gutschreiben
+      // Beispiel: MA arbeitet 2h, geht krank → 480 Soll - 120 Ist = 360 Min Gutschrift
+      else if (vac.credits_target_hours && entry.status !== 'absent' && !entry.vacation_id) {
+        // Aktuelle worked_minutes aus dem Eintrag lesen
+        const currentWorked = parseInt(entry.worked_minutes) || 0;
+        const creditedMinutes = Math.max(0, targetMinutes - currentWorked);
+        const newWorkedTotal = currentWorked + creditedMinutes;
+        const newOvertime = newWorkedTotal - targetMinutes;
+
+        await pool.query(`
+          UPDATE time_daily_summary
+          SET vacation_id = $1, credited_minutes = $2, 
+              worked_minutes = $3, overtime_minutes = $4,
+              needs_review = FALSE, review_note = NULL
+          WHERE id = $5
+        `, [vacationId, creditedMinutes, newWorkedTotal, newOvertime, entry.id]);
+      }
+    } else {
+      // Kein Eintrag vorhanden → neu erstellen (z.B. Abwesenheit vor Cron-Lauf eingetragen)
+      await pool.query(`
+        INSERT INTO time_daily_summary (
+          user_id, date, target_minutes, worked_minutes, break_minutes, overtime_minutes,
+          status, has_missing_entries, missing_entry_types, vacation_id
+        ) VALUES ($1, $2, $3, $4, 0, $5, $6, FALSE, NULL, $7)
+      `, [vac.user_id, dateStr, targetMinutes, workedMinutes, overtimeMinutes, vac.type_name, vacationId]);
+    }
+
+    // Betroffene Monate merken
+    const month = new Date(dateStr + 'T12:00:00');
+    affectedMonths.add(`${month.getFullYear()}-${month.getMonth() + 1}`);
+  }
+
+  // Monatssalden aktualisieren
+  for (const key of affectedMonths) {
+    const [year, month] = key.split('-').map(Number);
+    await calculateMonthBalance(vac.user_id, year, month);
+  }
+}
 
 /**
  * Check if user has a specific permission
@@ -239,7 +351,7 @@ const getVacations = async (req, res) => {
            WHERE ur.user_id = v.user_id),
           '[]'::json
         ) as roles,
-        vt.name as type_name, vt.color as type_color,
+        vt.name as type_name, vt.color as type_color, vt.affects_balance,
         creator.first_name || ' ' || creator.last_name as created_by_name,
         approver.first_name || ' ' || approver.last_name as approved_by_name
       FROM vacations v
@@ -481,6 +593,11 @@ const createVacation = async (req, res) => {
       ...(concurrentWarning && { warning: concurrentWarning })
     };
     
+    // Bei direkter Genehmigung: Fehlbuchungen in time_daily_summary korrigieren
+    if (status === 'approved') {
+      await syncDailySummaryForVacation(result.rows[0].id);
+    }
+
     res.status(201).json(response);
   } catch (error) {
     console.error('Error creating vacation:', error);
@@ -687,6 +804,9 @@ const approveVacation = async (req, res) => {
       [id]
     );
     
+    // Fehlbuchungen in time_daily_summary korrigieren
+    await syncDailySummaryForVacation(id);
+
     res.json(fullResult.rows[0]);
   } catch (error) {
     console.error('Error approving vacation:', error);

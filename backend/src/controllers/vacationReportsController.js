@@ -148,7 +148,7 @@ exports.exportMyYear = async (req, res) => {
     balance.used_days = parseFloat(balance.taken_days) + parseFloat(balance.approved_days) + parseFloat(balance.pending_days);
     balance.remaining_days = balance.available_days - balance.used_days;
 
-    // Fetch vacations
+    // Fetch all vacations (approved + pending)
     const vacationsResult = await pool.query(`
       SELECT 
         v.*,
@@ -163,12 +163,12 @@ exports.exportMyYear = async (req, res) => {
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
         AND EXTRACT(YEAR FROM v.start_date) = $2
-        AND v.status = 'approved'
+        AND v.status IN ('approved', 'pending')
       ORDER BY v.start_date
     `, [userId, year]);
 
-    // Fetch pending/rejected requests
-    const requestsResult = await pool.query(`
+    // Fetch rejected requests separately
+    const rejectedResult = await pool.query(`
       SELECT 
         v.*,
         vt.name as type_name,
@@ -178,9 +178,13 @@ exports.exportMyYear = async (req, res) => {
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
         AND EXTRACT(YEAR FROM v.start_date) = $2
-        AND v.status IN ('pending', 'rejected')
+        AND v.status = 'rejected'
       ORDER BY v.start_date
     `, [userId, year]);
+
+    // Split by affects_balance
+    const balanceEntries = vacationsResult.rows.filter(v => v.affects_balance);
+    const otherEntries = vacationsResult.rows.filter(v => !v.affects_balance);
 
     // Create PDF
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -232,63 +236,76 @@ exports.exportMyYear = async (req, res) => {
     
     y += 100;
 
-    // ========== APPROVED VACATIONS TABLE ==========
-    doc.fontSize(12).font('Helvetica-Bold').text('Genehmigte Abwesenheiten', 50, y);
-    y += 20;
+    // ========== TABLE HELPERS ==========
+    const drawHeader = (yPos, headerColor = '#f3f4f6') => {
+      doc.rect(50, yPos, 495, 18).fill(headerColor);
+      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
+      doc.text('Zeitraum', 55, yPos + 5);
+      doc.text('Art', 175, yPos + 5);
+      doc.text('Tage', 290, yPos + 5);
+      doc.text('Status', 340, yPos + 5);
+      doc.text('Genehmigt von', 430, yPos + 5);
+      return yPos + 22;
+    };
 
-    if (vacationsResult.rows.length === 0) {
-      doc.fontSize(10).font('Helvetica').text('Keine genehmigten Abwesenheiten in diesem Jahr.', 50, y);
-      y += 25;
-    } else {
-      // Table Header
-      const drawVacationHeader = (yPos) => {
-        doc.rect(50, yPos, 495, 18).fill('#f3f4f6');
-        doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
-        doc.text('Zeitraum', 55, yPos + 5);
-        doc.text('Art', 170, yPos + 5);
-        doc.text('Tage', 280, yPos + 5);
-        doc.text('Genehmigt am', 330, yPos + 5);
-        doc.text('Genehmigt von', 430, yPos + 5);
-        return yPos + 22;
-      };
-
-      y = drawVacationHeader(y);
+    const drawRows = (entries, yStart, headerColor) => {
+      let yy = yStart;
       doc.font('Helvetica').fontSize(9);
+      let total = 0;
 
-      for (const v of vacationsResult.rows) {
-        if (y > 720) {
+      for (const v of entries) {
+        if (yy > 720) {
           addFooter(doc, pageNum);
           doc.addPage();
           pageNum++;
-          y = 50;
-          y = drawVacationHeader(y);
+          yy = 50;
+          yy = drawHeader(yy, headerColor);
           doc.font('Helvetica').fontSize(9);
         }
 
         const dateRange = v.start_date === v.end_date 
           ? formatDate(v.start_date)
-          : `${formatDate(v.start_date)} - ${formatDate(v.end_date)}`;
+          : `${formatDate(v.start_date)} – ${formatDate(v.end_date)}`;
 
-        doc.text(dateRange, 55, y, { width: 110 });
-        doc.text(v.type_name, 170, y, { width: 105 });
-        doc.text(`${v.calculated_days}`, 280, y, { width: 45 });
-        doc.text(formatDate(v.approved_at), 330, y, { width: 95 });
-        doc.text(v.approved_by_name || '-', 430, y, { width: 110 });
+        doc.fillColor('#000000');
+        doc.text(dateRange, 55, yy, { width: 115 });
+        doc.text(v.type_name, 175, yy, { width: 110 });
+        doc.text(`${v.calculated_days}`, 290, yy, { width: 45 });
+
+        const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
+        doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
+        doc.fillColor('#000000');
+
+        doc.text(v.approved_by_name || '–', 430, yy, { width: 110 });
         
-        y += 18;
+        total += parseFloat(v.calculated_days || 0);
+        yy += 18;
       }
 
       // Total
-      doc.moveTo(50, y).lineTo(545, y).stroke();
-      y += 5;
-      doc.font('Helvetica-Bold').text('Gesamt:', 55, y);
-      const totalDays = vacationsResult.rows.reduce((sum, v) => sum + parseFloat(v.calculated_days || 0), 0);
-      doc.text(`${totalDays} Tage`, 280, y);
+      doc.fillColor('#000000');
+      doc.moveTo(50, yy).lineTo(545, yy).stroke();
+      yy += 5;
+      doc.font('Helvetica-Bold');
+      doc.text('Gesamt:', 55, yy);
+      doc.text(`${total} Tage`, 290, yy);
+      return yy + 25;
+    };
+
+    // ========== VOM URLAUBSKONTO ==========
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text('Vom Urlaubskonto', 50, y);
+    y += 20;
+
+    if (balanceEntries.length === 0) {
+      doc.fontSize(10).font('Helvetica').text('Keine Einträge.', 50, y);
       y += 25;
+    } else {
+      y = drawHeader(y);
+      y = drawRows(balanceEntries, y, '#f3f4f6');
     }
 
-    // ========== PENDING/REJECTED REQUESTS ==========
-    if (requestsResult.rows.length > 0) {
+    // ========== OHNE URLAUBSABZUG ==========
+    if (otherEntries.length > 0) {
       if (y > 650) {
         addFooter(doc, pageNum);
         doc.addPage();
@@ -296,35 +313,44 @@ exports.exportMyYear = async (req, res) => {
         y = 50;
       }
 
-      doc.fontSize(12).font('Helvetica-Bold').text('Offene/Abgelehnte Anträge', 50, y);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text('Ohne Urlaubsabzug', 50, y);
       y += 20;
 
-      // Table Header
+      y = drawHeader(y, '#e0f2fe');
+      y = drawRows(otherEntries, y, '#e0f2fe');
+    }
+
+    // ========== ABGELEHNTE ANTRÄGE ==========
+    if (rejectedResult.rows.length > 0) {
+      if (y > 650) {
+        addFooter(doc, pageNum);
+        doc.addPage();
+        pageNum++;
+        y = 50;
+      }
+
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text('Abgelehnte Anträge', 50, y);
+      y += 20;
+
       doc.rect(50, y, 495, 18).fill('#fef3c7');
       doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
       doc.text('Zeitraum', 55, y + 5);
-      doc.text('Art', 170, y + 5);
-      doc.text('Tage', 280, y + 5);
-      doc.text('Status', 330, y + 5);
-      doc.text('Grund', 400, y + 5);
+      doc.text('Art', 175, y + 5);
+      doc.text('Tage', 290, y + 5);
+      doc.text('Grund', 340, y + 5);
       y += 22;
 
       doc.font('Helvetica').fontSize(9);
-      for (const r of requestsResult.rows) {
+      for (const r of rejectedResult.rows) {
         const dateRange = r.start_date === r.end_date 
           ? formatDate(r.start_date)
-          : `${formatDate(r.start_date)} - ${formatDate(r.end_date)}`;
+          : `${formatDate(r.start_date)} – ${formatDate(r.end_date)}`;
 
-        doc.text(dateRange, 55, y, { width: 110 });
-        doc.text(r.type_name, 170, y, { width: 105 });
-        doc.text(`${r.calculated_days}`, 280, y, { width: 45 });
-        
-        const statusColor = r.status === 'pending' ? '#d97706' : '#dc2626';
-        doc.fillColor(statusColor).text(getStatusText(r.status), 330, y, { width: 65 });
         doc.fillColor('#000000');
-        
-        doc.text(r.rejection_reason || '-', 400, y, { width: 140 });
-        
+        doc.text(dateRange, 55, y, { width: 115 });
+        doc.text(r.type_name, 175, y, { width: 110 });
+        doc.text(`${r.calculated_days}`, 290, y, { width: 45 });
+        doc.text(r.rejection_reason || '–', 340, y, { width: 200 });
         y += 18;
       }
     }
@@ -423,13 +449,14 @@ exports.exportAll = async (req, res) => {
     const totalUsed = totalTaken + totalApproved + totalPending;
     const totalRemaining = balancesResult.rows.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0);
 
-    // Fetch all vacations for detail view
+    // Fetch all vacations for detail view (approved + pending)
     const vacationsResult = await pool.query(`
       SELECT 
         v.user_id,
         v.start_date,
         v.end_date,
         v.calculated_days,
+        v.status,
         v.note,
         v.approved_at,
         vt.name as type_name,
@@ -438,7 +465,7 @@ exports.exportAll = async (req, res) => {
       FROM vacations v
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users approver ON approver.id = v.approved_by
-      WHERE v.status = 'approved'
+      WHERE v.status IN ('approved', 'pending')
         AND EXTRACT(YEAR FROM v.start_date) = $1
       ORDER BY v.start_date
     `, [year]);
@@ -623,67 +650,94 @@ exports.exportAll = async (req, res) => {
       
       y += 90;
 
-      // Vacations Table
+      // Split vacations
       const userVacations = vacationsByUser[b.user_id] || [];
-      
-      doc.fontSize(11).font('Helvetica-Bold').text('Genehmigte Abwesenheiten', 50, y);
-      y += 18;
+      const balanceEntries = userVacations.filter(v => v.affects_balance);
+      const otherEntries = userVacations.filter(v => !v.affects_balance);
 
-      if (userVacations.length === 0) {
-        doc.fontSize(10).font('Helvetica').text('Keine genehmigten Abwesenheiten in diesem Jahr.', 50, y);
-      } else {
-        // Table Header
-        doc.rect(50, y, 495, 18).fill('#f3f4f6');
+      // Table drawing helpers
+      const drawSectionHeader = (yPos, headerColor = '#f3f4f6') => {
+        doc.rect(50, yPos, 495, 18).fill(headerColor);
         doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
-        doc.text('Zeitraum', 55, y + 5);
-        doc.text('Art', 180, y + 5);
-        doc.text('Tage', 300, y + 5);
-        doc.text('Genehmigt am', 360, y + 5);
-        doc.text('Genehmigt von', 460, y + 5);
-        y += 22;
+        doc.text('Zeitraum', 55, yPos + 5);
+        doc.text('Art', 180, yPos + 5);
+        doc.text('Tage', 300, yPos + 5);
+        doc.text('Status', 355, yPos + 5);
+        doc.text('Genehmigt von', 440, yPos + 5);
+        return yPos + 22;
+      };
 
+      const drawSectionRows = (entries, yStart, headerColor) => {
+        let yy = yStart;
         doc.font('Helvetica').fontSize(9);
-        let totalVacDays = 0;
+        let totalDays = 0;
 
-        for (const v of userVacations) {
-          if (y > 750) {
+        for (const v of entries) {
+          if (yy > 720) {
             addFooter(doc, pageNum);
             doc.addPage({ size: 'A4', layout: 'portrait', margin: 50 });
             pageNum++;
-            y = 50;
-            
-            // Re-draw header on new page
-            doc.rect(50, y, 495, 18).fill('#f3f4f6');
-            doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
-            doc.text('Zeitraum', 55, y + 5);
-            doc.text('Art', 180, y + 5);
-            doc.text('Tage', 300, y + 5);
-            doc.text('Genehmigt am', 360, y + 5);
-            doc.text('Genehmigt von', 460, y + 5);
-            y += 22;
+            yy = 50;
+            yy = drawSectionHeader(yy, headerColor);
             doc.font('Helvetica').fontSize(9);
           }
 
           const dateRange = v.start_date === v.end_date 
             ? formatDate(v.start_date)
-            : `${formatDate(v.start_date)} - ${formatDate(v.end_date)}`;
+            : `${formatDate(v.start_date)} – ${formatDate(v.end_date)}`;
 
-          doc.text(dateRange, 55, y, { width: 120 });
-          doc.text(v.type_name, 180, y, { width: 115 });
-          doc.text(`${v.calculated_days}`, 300, y, { width: 55 });
-          doc.text(formatDate(v.approved_at), 360, y, { width: 95 });
-          doc.text(v.approved_by_name || '-', 460, y, { width: 85 });
+          doc.fillColor('#000000');
+          doc.text(dateRange, 55, yy, { width: 120 });
+          doc.text(v.type_name, 180, yy, { width: 115 });
+          doc.text(`${v.calculated_days}`, 300, yy, { width: 50 });
+
+          const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
+          doc.fillColor(statusColor).text(getStatusText(v.status), 355, yy, { width: 80 });
+          doc.fillColor('#000000');
+
+          doc.text(v.approved_by_name || '–', 440, yy, { width: 100 });
           
-          totalVacDays += parseFloat(v.calculated_days || 0);
-          y += 16;
+          totalDays += parseFloat(v.calculated_days || 0);
+          yy += 16;
         }
 
         // Total
-        doc.moveTo(50, y).lineTo(545, y).stroke();
-        y += 4;
+        doc.fillColor('#000000');
+        doc.moveTo(50, yy).lineTo(545, yy).stroke();
+        yy += 4;
         doc.font('Helvetica-Bold');
-        doc.text('Gesamt:', 55, y);
-        doc.text(`${totalVacDays} Tage`, 300, y);
+        doc.text('Gesamt:', 55, yy);
+        doc.text(`${totalDays} Tage`, 300, yy);
+        return yy + 20;
+      };
+
+      // Vom Urlaubskonto
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#000000').text('Vom Urlaubskonto', 50, y);
+      y += 18;
+
+      if (balanceEntries.length === 0) {
+        doc.fontSize(10).font('Helvetica').text('Keine Einträge.', 50, y);
+        y += 25;
+      } else {
+        y = drawSectionHeader(y);
+        y = drawSectionRows(balanceEntries, y, '#f3f4f6');
+      }
+
+      // Ohne Urlaubsabzug
+      if (otherEntries.length > 0) {
+        if (y > 650) {
+          addFooter(doc, pageNum);
+          doc.addPage({ size: 'A4', layout: 'portrait', margin: 50 });
+          pageNum++;
+          y = 50;
+        }
+
+        y += 5;
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#000000').text('Ohne Urlaubsabzug', 50, y);
+        y += 18;
+
+        y = drawSectionHeader(y, '#e0f2fe');
+        y = drawSectionRows(otherEntries, y, '#e0f2fe');
       }
 
       // Footer
@@ -694,6 +748,264 @@ exports.exportAll = async (req, res) => {
 
   } catch (error) {
     console.error('Export all error:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Exports' });
+  }
+};
+
+// ============================================================================
+// SINGLE USER EXPORT (ADMIN)
+// ============================================================================
+
+/**
+ * GET /api/vacations/export/user/:userId?year=2026
+ * PDF mit Urlaubsüberblick eines bestimmten Mitarbeiters (für Admin/Verwalter)
+ */
+exports.exportUserYear = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    // Fetch user info
+    const userResult = await pool.query(`
+      SELECT 
+        u.id, u.username, 
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        u.first_name, u.last_name,
+        COALESCE(
+          (SELECT json_agg(r.name)
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id
+           WHERE ur.user_id = u.id),
+          '[]'::json
+        ) as roles
+      FROM users u
+      WHERE u.id = $1
+    `, [userId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+    const user = userResult.rows[0];
+
+    // Fetch balance (nur affects_balance Typen)
+    const balanceResult = await pool.query(`
+      SELECT 
+        ve.total_days,
+        ve.carried_over,
+        ve.adjustment,
+        (ve.total_days + COALESCE(ve.carried_over, 0) + COALESCE(ve.adjustment, 0)) as available_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = $1 
+             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $2),
+          0
+        ) as taken_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = $1 
+             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $2),
+          0
+        ) as approved_days,
+        COALESCE(
+          (SELECT SUM(v.calculated_days)
+           FROM vacations v
+           JOIN vacation_types vt ON vt.id = v.type_id
+           WHERE v.user_id = $1 
+             AND v.status = 'pending'
+             AND vt.affects_balance = true
+             AND EXTRACT(YEAR FROM v.start_date) = $2),
+          0
+        ) as pending_days
+      FROM vacation_entitlements ve
+      WHERE ve.user_id = $1 AND ve.year = $2
+    `, [userId, year]);
+
+    const balance = balanceResult.rows[0] || {
+      total_days: 0, carried_over: 0, adjustment: 0, available_days: 0,
+      taken_days: 0, approved_days: 0, pending_days: 0
+    };
+    balance.used_days = parseFloat(balance.taken_days) + parseFloat(balance.approved_days) + parseFloat(balance.pending_days);
+    balance.remaining_days = balance.available_days - balance.used_days;
+
+    // Fetch all vacations for user/year
+    const vacationsResult = await pool.query(`
+      SELECT 
+        v.*,
+        vt.name as type_name,
+        vt.color as type_color,
+        vt.affects_balance,
+        approver.first_name || ' ' || approver.last_name as approved_by_name
+      FROM vacations v
+      JOIN vacation_types vt ON vt.id = v.type_id
+      LEFT JOIN users approver ON approver.id = v.approved_by
+      WHERE v.user_id = $1 
+        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.status IN ('approved', 'pending')
+      ORDER BY v.start_date
+    `, [userId, year]);
+
+    // Split by affects_balance
+    const allVacations = vacationsResult.rows;
+    const balanceEntries = allVacations.filter(v => v.affects_balance);
+    const otherEntries = allVacations.filter(v => !v.affects_balance);
+
+    // Create PDF
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    
+    const filename = `Urlaubsuebersicht_${user.display_name.replace(/\s+/g, '_')}_${year}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    
+    doc.pipe(res);
+
+    let y = setupPDF(doc, `Urlaubsübersicht ${year}`, user.display_name);
+    let pageNum = 1;
+
+    // Roles
+    const roles = Array.isArray(user.roles) ? user.roles : [];
+    if (roles.length > 0) {
+      doc.fontSize(10).font('Helvetica').text(`Rollen: ${roles.join(', ')}`, 50, y);
+      y += 20;
+    }
+
+    // ========== BALANCE BOX ==========
+    const hasAdjustment = balance.adjustment && parseFloat(balance.adjustment) !== 0;
+    const boxHeight = hasAdjustment ? 95 : 85;
+    doc.rect(50, y, 495, boxHeight).stroke();
+    doc.fontSize(12).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 10);
+    
+    doc.fontSize(10).font('Helvetica');
+    const col1 = 60, col2 = 180, col3 = 300, col4 = 420;
+    
+    doc.text('Anspruch:', col1, y + 30);
+    doc.font('Helvetica-Bold').text(`${balance.total_days} Tage`, col1, y + 45);
+    
+    doc.font('Helvetica').text('Übertrag:', col2, y + 30);
+    doc.font('Helvetica-Bold').text(`${balance.carried_over || 0} Tage`, col2, y + 45);
+
+    if (hasAdjustment) {
+      doc.font('Helvetica').text('Korrektur:', col3, y + 30);
+      doc.font('Helvetica-Bold').text(`${balance.adjustment} Tage`, col3, y + 45);
+    }
+
+    doc.font('Helvetica').text('Verfügbar:', col4, y + 30);
+    doc.font('Helvetica-Bold').text(`${balance.available_days} Tage`, col4, y + 45);
+
+    const row2Y = y + (hasAdjustment ? 65 : 60);
+
+    doc.font('Helvetica').text('Genommen:', col1, row2Y);
+    doc.font('Helvetica-Bold').text(`${balance.taken_days} Tage`, col1, row2Y + 15);
+
+    doc.font('Helvetica').text('Genehmigt:', col2, row2Y);
+    doc.fillColor('#16a34a').font('Helvetica-Bold').text(`${balance.approved_days} Tage`, col2, row2Y + 15);
+    doc.fillColor('#000000');
+
+    doc.font('Helvetica').text('Beantragt:', col3, row2Y);
+    doc.fillColor('#d97706').font('Helvetica-Bold').text(`${balance.pending_days} Tage`, col3, row2Y + 15);
+    doc.fillColor('#000000');
+    
+    doc.font('Helvetica').text('Rest:', col4, row2Y);
+    const restColor = balance.remaining_days < 0 ? '#dc2626' : balance.remaining_days < 5 ? '#d97706' : '#16a34a';
+    doc.fillColor(restColor).font('Helvetica-Bold').text(`${balance.remaining_days} Tage`, col4, row2Y + 15);
+    doc.fillColor('#000000');
+    
+    y += boxHeight + 15;
+
+    // ========== TABLE HELPER ==========
+    const drawHeader = (yPos, headerColor = '#f3f4f6') => {
+      doc.rect(50, yPos, 495, 18).fill(headerColor);
+      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
+      doc.text('Zeitraum', 55, yPos + 5);
+      doc.text('Art', 175, yPos + 5);
+      doc.text('Tage', 290, yPos + 5);
+      doc.text('Status', 340, yPos + 5);
+      doc.text('Genehmigt von', 430, yPos + 5);
+      return yPos + 22;
+    };
+
+    const drawRows = (rows, yStart, headerColor) => {
+      let yy = yStart;
+      doc.font('Helvetica').fontSize(9);
+      for (const v of rows) {
+        if (yy > 720) {
+          addFooter(doc, pageNum);
+          doc.addPage();
+          pageNum++;
+          yy = 50;
+          yy = drawHeader(yy, headerColor);
+          doc.font('Helvetica').fontSize(9);
+        }
+
+        const dateRange = v.start_date === v.end_date 
+          ? formatDate(v.start_date)
+          : `${formatDate(v.start_date)} – ${formatDate(v.end_date)}`;
+
+        doc.fillColor('#000000');
+        doc.text(dateRange, 55, yy, { width: 115 });
+        doc.text(v.type_name, 175, yy, { width: 110 });
+        doc.text(`${v.calculated_days}`, 290, yy, { width: 45 });
+        
+        const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
+        doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
+        doc.fillColor('#000000');
+        
+        doc.text(v.approved_by_name || '–', 430, yy, { width: 110 });
+        
+        yy += 18;
+      }
+      return yy;
+    };
+
+    const drawSection = (title, entries, headerColor = '#f3f4f6') => {
+      if (y > 650) {
+        addFooter(doc, pageNum);
+        doc.addPage();
+        pageNum++;
+        y = 50;
+      }
+
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000000').text(title, 50, y);
+      y += 20;
+
+      if (entries.length === 0) {
+        doc.fontSize(10).font('Helvetica').text('Keine Einträge.', 50, y);
+        y += 25;
+        return;
+      }
+
+      y = drawHeader(y, headerColor);
+      y = drawRows(entries, y, headerColor);
+
+      doc.fillColor('#000000');
+      doc.moveTo(50, y).lineTo(545, y).stroke();
+      y += 5;
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Gesamt:', 55, y);
+      const total = entries.reduce((sum, v) => sum + parseFloat(v.calculated_days || 0), 0);
+      doc.text(`${total} Tage`, 290, y);
+      y += 25;
+    };
+
+    // ========== SECTIONS ==========
+    drawSection('Vom Urlaubskonto', balanceEntries, '#f3f4f6');
+    if (otherEntries.length > 0) {
+      drawSection('Ohne Urlaubsabzug', otherEntries, '#e0f2fe');
+    }
+
+    // Footer
+    addFooter(doc, pageNum);
+    doc.end();
+
+  } catch (error) {
+    console.error('Export user year error:', error);
     res.status(500).json({ error: 'Fehler beim Erstellen des Exports' });
   }
 };

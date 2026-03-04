@@ -395,8 +395,11 @@ export default function TimeTrackingUserDetailPage() {
                   const isVacation = day.vacation_type;
                   const isAbsent = day.status === 'absent';
                   const isSpecial = isWeekend || isHoliday || isVacation;
-                  // Werte nur bei echtem Wochenende ohne Soll ausblenden
-                  const hideTimeValues = isWeekend && !day.target_minutes;
+                  // Werte nur bei echtem Wochenende ohne Buchungen ausblenden
+                  const hasEntries = day.first_clock_in != null;
+                  const hideTimeValues = isWeekend && !day.target_minutes && !hasEntries;
+                  // Kommen/Gehen/Pause ausblenden bei Special-Tagen OHNE Buchungen
+                  const hideClockValues = isSpecial && !hasEntries;
                   const dateStr = day.date.split('T')[0];
                   const isExpanded = expandedDay === dateStr;
                   const hasMissing = day.has_missing_entries;
@@ -412,7 +415,6 @@ export default function TimeTrackingUserDetailPage() {
                   else if (day.worked_minutes > 0) { statusText = 'Offen'; statusColor = 'text-yellow-400'; }
 
                   // Aufklappbar wenn: normaler Arbeitstag ODER Abwesenheit mit Stempelungen
-                  const hasEntries = day.first_clock_in != null;
                   const canExpand = (!isSpecial && (day.worked_minutes > 0 || dateStr <= todayStr)) || hasEntries;
 
                   return (
@@ -440,13 +442,13 @@ export default function TimeTrackingUserDetailPage() {
                           {weekday}
                         </td>
                         <td className="px-3 py-2.5 text-center text-gray-600 dark:text-gray-300">
-                          {isSpecial ? '' : formatTime(day.first_clock_in)}
+                          {hideClockValues ? '' : formatTime(day.first_clock_in)}
                         </td>
                         <td className="px-3 py-2.5 text-center text-gray-600 dark:text-gray-300">
-                          {isSpecial ? '' : formatTime(day.last_clock_out)}
+                          {hideClockValues ? '' : formatTime(day.last_clock_out)}
                         </td>
                         <td className="px-3 py-2.5 text-center text-gray-600 dark:text-gray-300">
-                          {isSpecial ? '' : formatMinutes(day.break_minutes)}
+                          {hideClockValues ? '' : formatMinutes(day.break_minutes)}
                         </td>
                         <td className="px-3 py-2.5 text-center font-medium text-gray-900 dark:text-white">
                           {hideTimeValues ? '' : formatMinutes(day.worked_minutes)}
@@ -481,7 +483,7 @@ export default function TimeTrackingUserDetailPage() {
                           </div>
                         </td>
                         <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
-                          {!isWeekend && (
+                          {(!isWeekend || hasEntries || day.needs_review) && (
                             <button
                               onClick={() => setDayEditData({
                                 userId: parseInt(userId),
