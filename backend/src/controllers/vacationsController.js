@@ -161,7 +161,10 @@ async function calculateWorkingDays(startDate, endDate, region = 'BY') {
     [startDate, endDate, region]
   );
   
-  const holidays = new Set(holidaysResult.rows.map(h => h.date.toISOString().split('T')[0]));
+  const holidays = new Set(holidaysResult.rows.map(h => {
+    const d = h.date instanceof Date ? h.date : new Date(h.date);
+    return d.toISOString().split('T')[0];
+  }));
   
   let workingDays = 0;
   const current = new Date(startDate);
