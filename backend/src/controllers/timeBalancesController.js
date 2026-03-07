@@ -119,25 +119,109 @@ const createAdjustment = async (req, res) => {
     // Sicherstellen dass Eintrag existiert
     await ensureBalanceEntry(userId, year, month);
 
-    const result = await pool.query(`
-      UPDATE time_balances SET
-        adjustment_minutes = adjustment_minutes + $1,
-        adjustment_reason = CASE 
-          WHEN adjustment_reason IS NULL THEN $2
-          ELSE adjustment_reason || E'\n' || $2
-        END,
-        balance_minutes = balance_minutes + $1,
-        updated_at = NOW()
-      WHERE user_id = $3 AND year = $4 AND month = $5
+    // Einzelnen Eintrag in adjustments Tabelle erstellen
+    const adjResult = await pool.query(`
+      INSERT INTO time_balance_adjustments (user_id, year, month, minutes, reason, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [adjustment_minutes, `${toLocalDateStr(new Date())}: ${reason} (${adjustment_minutes > 0 ? '+' : ''}${adjustment_minutes} Min)`, userId, year, month]);
+    `, [userId, year, month, adjustment_minutes, reason, req.user?.id || null]);
 
-    res.json(result.rows[0]);
+    // Summe in time_balances synchronisieren
+    await syncAdjustmentMinutes(userId, year, month);
+
+    // Folgemonate kaskadierend neu berechnen
+    const nextMonth = month === 12 ? 1 : parseInt(month) + 1;
+    const nextYear = month === 12 ? parseInt(year) + 1 : parseInt(year);
+    await recalculateFromMonth(userId, nextYear, nextMonth);
+
+    res.json(adjResult.rows[0]);
   } catch (error) {
     console.error('Fehler beim Erstellen der Anpassung:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 };
+
+// ============================================
+// Anpassung löschen
+// ============================================
+const deleteAdjustment = async (req, res) => {
+  try {
+    const { adjustmentId } = req.params;
+
+    // Eintrag laden (für user_id/year/month)
+    const adj = await pool.query(
+      'SELECT * FROM time_balance_adjustments WHERE id = $1',
+      [adjustmentId]
+    );
+
+    if (adj.rows.length === 0) {
+      return res.status(404).json({ error: 'Anpassung nicht gefunden' });
+    }
+
+    const { user_id, year, month } = adj.rows[0];
+
+    // Löschen
+    await pool.query('DELETE FROM time_balance_adjustments WHERE id = $1', [adjustmentId]);
+
+    // Summe in time_balances synchronisieren
+    await syncAdjustmentMinutes(user_id, year, month);
+
+    // Folgemonate kaskadierend neu berechnen
+    const nextMonth = month === 12 ? 1 : parseInt(month) + 1;
+    const nextYear = month === 12 ? parseInt(year) + 1 : parseInt(year);
+    await recalculateFromMonth(user_id, nextYear, nextMonth);
+
+    res.json({ message: 'Anpassung gelöscht', deleted: adj.rows[0] });
+  } catch (error) {
+    console.error('Fehler beim Löschen der Anpassung:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
+// ============================================
+// Anpassungen eines Monats abrufen
+// ============================================
+const getAdjustments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { year, month } = req.query;
+
+    const result = await pool.query(`
+      SELECT a.*,
+             COALESCE(u.first_name || ' ' || u.last_name, u.username) as created_by_name
+      FROM time_balance_adjustments a
+      LEFT JOIN users u ON u.id = a.created_by
+      WHERE a.user_id = $1 AND a.year = $2 AND a.month = $3
+      ORDER BY a.created_at ASC
+    `, [userId, year, month]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Fehler beim Laden der Anpassungen:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
+
+/**
+ * Synchronize adjustment_minutes in time_balances from adjustments table
+ */
+async function syncAdjustmentMinutes(userId, year, month) {
+  const sumResult = await pool.query(`
+    SELECT COALESCE(SUM(minutes), 0) as total
+    FROM time_balance_adjustments
+    WHERE user_id = $1 AND year = $2 AND month = $3
+  `, [userId, year, month]);
+
+  const total = parseInt(sumResult.rows[0].total);
+
+  await pool.query(`
+    UPDATE time_balances SET
+      adjustment_minutes = $1,
+      balance_minutes = carryover_minutes + overtime_minutes + $1 - payout_minutes,
+      updated_at = NOW()
+    WHERE user_id = $2 AND year = $3 AND month = $4
+  `, [total, userId, year, month]);
+}
 
 // ============================================
 // Auszahlung erfassen
@@ -163,6 +247,11 @@ const createPayout = async (req, res) => {
       WHERE user_id = $3 AND year = $4 AND month = $5
       RETURNING *
     `, [payout_minutes, payout_date || new Date(), userId, year, month]);
+
+    // Folgemonate kaskadierend neu berechnen
+    const nextMonth = month === 12 ? 1 : parseInt(month) + 1;
+    const nextYear = month === 12 ? parseInt(year) + 1 : parseInt(year);
+    await recalculateFromMonth(userId, nextYear, nextMonth);
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -355,7 +444,7 @@ async function calculateMonthBalance(userId, year, month) {
       worked_minutes = EXCLUDED.worked_minutes,
       overtime_minutes = EXCLUDED.overtime_minutes,
       carryover_minutes = EXCLUDED.carryover_minutes,
-      balance_minutes = time_balances.carryover_minutes + EXCLUDED.overtime_minutes + 
+      balance_minutes = EXCLUDED.carryover_minutes + EXCLUDED.overtime_minutes + 
                         time_balances.adjustment_minutes - time_balances.payout_minutes,
       updated_at = NOW()
     RETURNING *
@@ -368,6 +457,28 @@ async function calculateMonthBalance(userId, year, month) {
   return result.rows[0];
 }
 
+/**
+ * Recalculate all month balances from a given month forward to current month.
+ * Used after adjustments/payouts to cascade carryover changes.
+ */
+async function recalculateFromMonth(userId, year, month) {
+  const now = new Date();
+  const nowYear = now.getFullYear();
+  const nowMonth = now.getMonth() + 1;
+
+  let y = year;
+  let m = month;
+
+  while (y < nowYear || (y === nowYear && m <= nowMonth)) {
+    await calculateMonthBalance(userId, y, m);
+    m++;
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+  }
+}
+
 async function ensureBalanceEntry(userId, year, month) {
   const exists = await pool.query(
     'SELECT id FROM time_balances WHERE user_id = $1 AND year = $2 AND month = $3',
@@ -378,6 +489,39 @@ async function ensureBalanceEntry(userId, year, month) {
     await calculateMonthBalance(userId, year, month);
   }
 }
+
+// ============================================
+// Alle Salden aller User neu berechnen
+// ============================================
+const recalculateAll = async (req, res) => {
+  try {
+    // Alle aktiven User mit Zeiterfassung
+    const users = await pool.query(
+      'SELECT id, first_name, last_name FROM users WHERE time_tracking_enabled = TRUE AND is_active = TRUE'
+    );
+
+    const results = [];
+
+    for (const user of users.rows) {
+      // Frühesten Monat mit Eintrag finden
+      const earliest = await pool.query(
+        'SELECT year, month FROM time_balances WHERE user_id = $1 ORDER BY year ASC, month ASC LIMIT 1',
+        [user.id]
+      );
+
+      if (earliest.rows.length > 0) {
+        const { year, month } = earliest.rows[0];
+        await recalculateFromMonth(user.id, year, month);
+        results.push({ user_id: user.id, name: `${user.first_name} ${user.last_name}`, from: `${year}-${String(month).padStart(2, '0')}` });
+      }
+    }
+
+    res.json({ message: `${results.length} Benutzer neu berechnet`, results });
+  } catch (error) {
+    console.error('Fehler bei Gesamt-Neuberechnung:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+};
 
 // ============================================
 // Export-Funktionen
@@ -1357,10 +1501,14 @@ module.exports = {
   getAll,
   calculateMonth,
   createAdjustment,
+  deleteAdjustment,
+  getAdjustments,
   createPayout,
   getDailySummaries,
   getWeekSummary,
   calculateMonthBalance,
+  recalculateFromMonth,
+  recalculateAll,
   exportCSV,
   exportPDF,
   exportExcel,

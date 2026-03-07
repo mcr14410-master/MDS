@@ -174,11 +174,32 @@ router.post('/balances/calculate',
   timeBalancesController.calculateMonth
 );
 
+// Alle Salden aller User neu berechnen (Admin)
+router.post('/balances/recalculate-all',
+  authenticateToken,
+  requirePermission('time_tracking.settings'),
+  timeBalancesController.recalculateAll
+);
+
 // Anpassung erstellen
 router.post('/balances/user/:userId/adjustment', 
   authenticateToken, 
   requirePermission('time_tracking.settings'),
   timeBalancesController.createAdjustment
+);
+
+// Anpassungen eines Monats abrufen
+router.get('/balances/user/:userId/adjustments',
+  authenticateToken,
+  requirePermission('time_tracking.manage'),
+  timeBalancesController.getAdjustments
+);
+
+// Anpassung löschen
+router.delete('/balances/adjustments/:adjustmentId',
+  authenticateToken,
+  requirePermission('time_tracking.settings'),
+  timeBalancesController.deleteAdjustment
 );
 
 // Auszahlung erfassen
