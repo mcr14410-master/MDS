@@ -27,6 +27,7 @@ function formatDate(dateStr) {
 
 export default function VacationDetailModal({ balance, year, onClose, onEdit }) {
   const [vacations, setVacations] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const total = parseFloat(balance.total_days) || 0;
@@ -41,8 +42,6 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
   const takenPct = available > 0 ? (taken / available) * 100 : 0;
   const approvedPct = available > 0 ? (approved / available) * 100 : 0;
   const pendingPct = available > 0 ? (pending / available) * 100 : 0;
-
-  const roleName = balance.role_name || '';
 
   const handleExport = async () => {
     try {
@@ -63,7 +62,14 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
 
   useEffect(() => {
     axios.get('/api/vacations', { params: { user_id: balance.user_id, year } })
-      .then(res => setVacations(Array.isArray(res.data) ? res.data : res.data?.rows || []))
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.rows || [];
+        setVacations(data);
+        // Extract roles from first vacation entry (roles is JSON array)
+        if (data.length > 0 && Array.isArray(data[0].roles)) {
+          setRoles(data[0].roles.map(r => r.role_name || r.name || r));
+        }
+      })
       .catch(err => console.error('Error fetching vacations:', err))
       .finally(() => setLoading(false));
   }, [balance.user_id, year]);
@@ -113,6 +119,11 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
                 <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${st.bg} ${st.color}`}>
                   {st.text}
                 </span>
+                {v.status === 'approved' && v.approved_by_name && (
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                    von {v.approved_by_name}{v.approved_at ? `, ${formatDate(v.approved_at)}` : ''}
+                  </span>
+                )}
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-xs shrink-0 ml-2">
                 {v.calculated_days} T
@@ -137,12 +148,12 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
                 <Sun className="h-5 w-5 text-yellow-500" />
                 {balance.display_name}
               </h2>
-              <div className="flex items-center gap-2 mt-0.5">
-                {roleName && (
-                  <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(roleName)}`}>
-                    {roleName}
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {(roles.length > 0 ? roles : (balance.role_name ? [balance.role_name] : [])).map((name, idx) => (
+                  <span key={idx} className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(name)}`}>
+                    {name}
                   </span>
-                )}
+                ))}
                 <span className="text-sm text-gray-500 dark:text-gray-400">{year}</span>
               </div>
             </div>

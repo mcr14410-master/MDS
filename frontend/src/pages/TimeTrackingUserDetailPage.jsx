@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Clock, Calendar,
   TrendingUp, Edit2, Trash2, Plus, AlertTriangle, CheckCircle,
-  ChevronDown, ChevronUp, FileDown, FileSpreadsheet, DollarSign, Sliders, MessageSquare
+  ChevronDown, ChevronUp, FileDown, FileSpreadsheet, DollarSign, Sliders, MessageSquare, X
 } from 'lucide-react';
 import axios from '../utils/axios';
 import CorrectionModal from '../components/timeTracking/CorrectionModal';
@@ -79,6 +79,7 @@ export default function TimeTrackingUserDetailPage() {
   const [dayEditData, setDayEditData] = useState(null);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [adjustments, setAdjustments] = useState([]);
 
   // ============================================
   // Data Fetching
@@ -113,6 +114,30 @@ export default function TimeTrackingUserDetailPage() {
     }
   }, [userId]);
 
+  const fetchAdjustments = useCallback(async () => {
+    try {
+      const response = await axios.get(`/api/time-tracking/balances/user/${userId}/adjustments`, {
+        params: { year: selectedMonth.year, month: selectedMonth.month }
+      });
+      setAdjustments(response.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Anpassungen:', err);
+      setAdjustments([]);
+    }
+  }, [userId, selectedMonth.year, selectedMonth.month]);
+
+  const handleDeleteAdjustment = async (adjId) => {
+    if (!confirm('Anpassung wirklich löschen?')) return;
+    try {
+      await axios.delete(`/api/time-tracking/balances/adjustments/${adjId}`);
+      await fetchAdjustments();
+      await fetchBalance();
+    } catch (err) {
+      console.error('Fehler beim Löschen:', err);
+      alert(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  };
+
   const fetchDayEntries = async (date) => {
     try {
       const response = await axios.get(`/api/time-tracking/entries/user/${userId}`, {
@@ -132,6 +157,11 @@ export default function TimeTrackingUserDetailPage() {
     };
     loadAll();
   }, [fetchUserInfo, fetchDailySummaries, fetchBalance]);
+
+  // Anpassungen laden wenn Monat wechselt
+  useEffect(() => {
+    fetchAdjustments();
+  }, [fetchAdjustments]);
 
   // Highlight: Tag aufklappen wenn von Fehlbuchungen navigiert
   useEffect(() => {
@@ -622,12 +652,32 @@ export default function TimeTrackingUserDetailPage() {
               {formatMinutes(currentMonthBalance.balance_minutes)}
             </span>
           </div>
-          {currentMonthBalance.adjustment_reason && (
+          {adjustments.length > 0 && (
             <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs font-semibold text-gray-500 mb-1">Anpassungs-Protokoll:</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                {currentMonthBalance.adjustment_reason}
-              </p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Anpassungs-Protokoll:</p>
+              <div className="space-y-1.5">
+                {adjustments.map(adj => (
+                  <div key={adj.id} className="flex items-center justify-between group text-sm">
+                    <div className="flex-1 min-w-0">
+                      <span className={`font-medium ${adj.minutes >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {adj.minutes > 0 ? '+' : ''}{formatMinutes(adj.minutes)}
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400 ml-2">{adj.reason}</span>
+                      <span className="text-gray-400 dark:text-gray-500 text-xs ml-2">
+                        {adj.created_by_name && `${adj.created_by_name}, `}
+                        {new Date(adj.created_at).toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAdjustment(adj.id)}
+                      className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      title="Anpassung löschen"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -713,7 +763,7 @@ export default function TimeTrackingUserDetailPage() {
           monthName={MONTH_NAMES[selectedMonth.month - 1]}
           onClose={async (refresh) => {
             setShowAdjustmentModal(false);
-            if (refresh) { await fetchBalance(); await fetchDailySummaries(); }
+            if (refresh) { await fetchBalance(); await fetchAdjustments(); await fetchDailySummaries(); }
           }}
         />
       )}

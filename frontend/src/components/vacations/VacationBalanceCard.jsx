@@ -1,28 +1,7 @@
 import { Pencil } from 'lucide-react';
 
-// Role badge colors (same as UserDetailPage)
-const getRoleBadgeColor = (roleName) => {
-  const colors = {
-    admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    programmer: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    reviewer: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-    operator: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    helper: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    supervisor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  };
-  return colors[roleName?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-};
-
 export default function VacationBalanceCard({ balance, onClick }) {
-  const { display_name, total_days, carried_over, remaining_days, taken_days, approved_days, pending_days, roles, role_name } = balance;
-
-  // Parse roles - handle both array format [{id, name}] and single role_name string from view
-  let roleList = [];
-  if (Array.isArray(roles) && roles.length > 0) {
-    roleList = roles.map(r => typeof r === 'string' ? { name: r } : r);
-  } else if (role_name) {
-    roleList = [{ name: role_name }];
-  }
+  const { display_name, total_days, carried_over, remaining_days, taken_days, approved_days, pending_days } = balance;
 
   const available = parseFloat(total_days) + parseFloat(carried_over || 0);
   const taken = parseFloat(taken_days || 0);
@@ -61,25 +40,13 @@ export default function VacationBalanceCard({ balance, onClick }) {
                   cursor-pointer hover:ring-2 hover:ring-green-500 transition-all group`}
     >
       <div className="flex items-center gap-4">
-        {/* Left: Name + Roles */}
+        {/* Left: Name */}
         <div className="w-44 shrink-0 min-w-0">
           <p className="font-medium text-sm text-gray-900 dark:text-white truncate flex items-center gap-1" 
              title={display_name}>
             {display_name}
             <Pencil className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
           </p>
-          {roleList.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-0.5">
-              {roleList.map((role, idx) => (
-                <span 
-                  key={role.id || idx}
-                  className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(role.name)}`}
-                >
-                  {role.name}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Center: Progress bar + Legend */}

@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { calculateMonthBalance } = require('./timeBalancesController');
+const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -1114,7 +1114,17 @@ async function updateDailySummary(userId, date) {
 
   // Monatssaldo automatisch aktualisieren
   const d = new Date(date);
-  await calculateMonthBalance(userId, d.getFullYear(), d.getMonth() + 1);
+  const editYear = d.getFullYear();
+  const editMonth = d.getMonth() + 1;
+  await calculateMonthBalance(userId, editYear, editMonth);
+
+  // Bei vergangenen Monaten: Folgemonate kaskadierend neu berechnen
+  const now = new Date();
+  if (editYear < now.getFullYear() || (editYear === now.getFullYear() && editMonth < now.getMonth() + 1)) {
+    const nextMonth = editMonth === 12 ? 1 : editMonth + 1;
+    const nextYear = editMonth === 12 ? editYear + 1 : editYear;
+    await recalculateFromMonth(userId, nextYear, nextMonth);
+  }
 }
 
 // ============================================
@@ -1139,7 +1149,17 @@ const deleteDay = async (req, res) => {
 
     // Monatssaldo neu berechnen
     const d = new Date(date + 'T12:00:00');
-    await calculateMonthBalance(parseInt(userId), d.getFullYear(), d.getMonth() + 1);
+    const editYear = d.getFullYear();
+    const editMonth = d.getMonth() + 1;
+    await calculateMonthBalance(parseInt(userId), editYear, editMonth);
+
+    // Bei vergangenen Monaten: Folgemonate kaskadierend neu berechnen
+    const now = new Date();
+    if (editYear < now.getFullYear() || (editYear === now.getFullYear() && editMonth < now.getMonth() + 1)) {
+      const nextMonth = editMonth === 12 ? 1 : editMonth + 1;
+      const nextYear = editMonth === 12 ? editYear + 1 : editYear;
+      await recalculateFromMonth(parseInt(userId), nextYear, nextMonth);
+    }
 
     res.json({ 
       message: 'Tag zurückgesetzt',

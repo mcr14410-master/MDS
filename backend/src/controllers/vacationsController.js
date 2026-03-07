@@ -9,7 +9,7 @@
  */
 
 const pool = require('../config/db');
-const { calculateMonthBalance } = require('./timeBalancesController');
+const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -41,9 +41,10 @@ async function syncDailySummaryForVacation(vacationId) {
 
   const model = modelResult.rows.length > 0 ? modelResult.rows[0] : null;
 
-  // Jeden Tag im Urlaubszeitraum durchgehen
+  // Jeden Tag im Urlaubszeitraum durchgehen (nur bis heute, Zukunft übernimmt Cron)
   const start = new Date(vac.start_date);
-  const end = new Date(vac.end_date);
+  const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }));
+  const end = new Date(vac.end_date) > today ? today : new Date(vac.end_date);
   const affectedMonths = new Set();
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -119,10 +120,21 @@ async function syncDailySummaryForVacation(vacationId) {
     affectedMonths.add(`${month.getFullYear()}-${month.getMonth() + 1}`);
   }
 
-  // Monatssalden aktualisieren
-  for (const key of affectedMonths) {
-    const [year, month] = key.split('-').map(Number);
-    await calculateMonthBalance(vac.user_id, year, month);
+  // Monatssalden aktualisieren + Folgemonate kaskadieren
+  if (affectedMonths.size > 0) {
+    // Alle betroffenen Monate sortiert durchrechnen
+    const sortedMonths = [...affectedMonths].sort();
+    for (const key of sortedMonths) {
+      const [year, month] = key.split('-').map(Number);
+      await calculateMonthBalance(vac.user_id, year, month);
+    }
+
+    // Ab dem Monat nach dem letzten betroffenen kaskadieren
+    const lastKey = sortedMonths[sortedMonths.length - 1];
+    const [lastYear, lastMonth] = lastKey.split('-').map(Number);
+    const nextMonth = lastMonth === 12 ? 1 : lastMonth + 1;
+    const nextYear = lastMonth === 12 ? lastYear + 1 : lastYear;
+    await recalculateFromMonth(vac.user_id, nextYear, nextMonth);
   }
 }
 
@@ -567,14 +579,16 @@ const createVacation = async (req, res) => {
       `INSERT INTO vacations (
         user_id, type_id, start_date, end_date, 
         start_time, end_time, calculated_days, calculated_hours,
-        note, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        note, status, created_by, approved_by, approved_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
         user_id, type_id, start_date, end_date,
         start_time || null, end_time || null, 
         calculatedDays, calculatedHours,
-        note, status, req.user?.id || null
+        note, status, req.user?.id || null,
+        status === 'approved' ? (req.user?.id || null) : null,
+        status === 'approved' ? new Date() : null
       ]
     );
     
