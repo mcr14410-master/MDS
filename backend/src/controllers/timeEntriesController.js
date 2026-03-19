@@ -144,9 +144,12 @@ async function autoCloseOpenDays(userId, currentTimestamp) {
         `, [userId, breakEndTime]);
       }
 
-      // Auto clock_out immer auf 23:59 des Tages
+      // Auto clock_out immer auf 23:59 des Tages (Europe/Berlin)
       // Echte Korrektur erfolgt manuell durch Mitarbeiter/Admin
-      const clockOutTime = new Date(dayStr + 'T23:59:00');
+      const probe = new Date(dayStr + 'T12:00:00Z');
+      const berlinH = parseInt(probe.toLocaleString('en-US', { timeZone: 'Europe/Berlin', hour: 'numeric', hour12: false }));
+      const offsetH = berlinH - probe.getUTCHours();
+      const clockOutTime = new Date(dayStr + `T23:59:00+${String(offsetH).padStart(2, '0')}:00`);
 
       await pool.query(`
         INSERT INTO time_entries (user_id, entry_type, timestamp, source, is_correction, correction_reason, corrected_by)
