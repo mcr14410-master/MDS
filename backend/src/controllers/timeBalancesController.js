@@ -1002,17 +1002,15 @@ async function exportPayrollPDF(req, res) {
       prevYear = targetYear - 1;
     }
     
-    // Summe aller Überstunden bis Ende Vormonat
+    // Saldo Vormonat aus time_balances (enthält Überstunden + Anpassungen + Auszahlungen)
     const prevBalanceResult = await pool.query(`
-      SELECT COALESCE(SUM(overtime_minutes), 0) as total_overtime
-      FROM time_daily_summary
-      WHERE user_id = $1 
-        AND date < make_date($2, $3, 1)
-    `, [userId, targetYear, targetMonth]);
+      SELECT balance_minutes FROM time_balances
+      WHERE user_id = $1 AND year = $2 AND month = $3
+    `, [userId, prevYear, prevMonth]);
     
-    const carryover = user.time_balance_carryover || 0;
-    const prevOvertimeSum = parseInt(prevBalanceResult.rows[0]?.total_overtime || 0);
-    const saldoVormonat = carryover + prevOvertimeSum;
+    const saldoVormonat = prevBalanceResult.rows.length > 0
+      ? prevBalanceResult.rows[0].balance_minutes
+      : (user.time_balance_carryover || 0);
 
     // 4. Aktueller Monat Summe
     const monthSumResult = await pool.query(`
@@ -1349,13 +1347,13 @@ async function exportPayrollAllPDF(req, res) {
       if (prevMonth === 0) { prevMonth = 12; prevYear = targetYear - 1; }
       
       const prevBalanceResult = await pool.query(`
-        SELECT COALESCE(SUM(overtime_minutes), 0) as total_overtime
-        FROM time_daily_summary WHERE user_id = $1 AND date < make_date($2, $3, 1)
-      `, [userId, targetYear, targetMonth]);
+        SELECT balance_minutes FROM time_balances
+        WHERE user_id = $1 AND year = $2 AND month = $3
+      `, [userId, prevYear, prevMonth]);
       
-      const carryover = user.time_balance_carryover || 0;
-      const prevOvertimeSum = parseInt(prevBalanceResult.rows[0]?.total_overtime || 0);
-      const saldoVormonat = carryover + prevOvertimeSum;
+      const saldoVormonat = prevBalanceResult.rows.length > 0
+        ? prevBalanceResult.rows[0].balance_minutes
+        : (user.time_balance_carryover || 0);
 
       // Monatssumme
       const monthSumResult = await pool.query(`
