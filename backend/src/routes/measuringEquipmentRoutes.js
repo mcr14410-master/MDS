@@ -31,6 +31,9 @@ router.get('/checkouts/active', controller.getActiveCheckouts);
 // ============================================================================
 router.get('/stats', controller.getEquipmentStats);
 router.get('/next-number', controller.getNextInventoryNumber);
+router.post('/bulk-status', controller.bulkUpdateStatus);
+router.post('/calibration-report', controller.generateCalibrationReport);
+router.post('/datasheets', controller.generateDataSheets);
 router.get('/', controller.getAllEquipment);
 router.get('/:id', controller.getEquipmentById);
 router.post('/', controller.createEquipment);

@@ -185,6 +185,23 @@ export const useMeasuringEquipmentStore = create((set, get) => ({
     }
   },
 
+  bulkUpdateStatus: async (ids, status, lock_reason = null) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axios.post('/api/measuring-equipment/bulk-status', { ids, status, lock_reason });
+      const updatedList = response.data.data || [];
+      const updatedMap = new Map(updatedList.map(e => [e.id, e]));
+      set(state => ({
+        equipment: state.equipment.map(e => updatedMap.get(e.id) || e),
+        loading: false
+      }));
+      return response.data;
+    } catch (error) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+
   deleteEquipment: async (id) => {
     set({ loading: true, error: null });
     try {
