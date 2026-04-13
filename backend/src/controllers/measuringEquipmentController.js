@@ -900,6 +900,603 @@ exports.updateEquipmentStatus = async (req, res) => {
 };
 
 /**
+ * POST /api/measuring-equipment/bulk-status
+ * Bulk update status for multiple equipment IDs in a single transaction.
+ * Body: { ids: number[], status: string, lock_reason?: string }
+ */
+exports.bulkUpdateStatus = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { ids, status, lock_reason = null } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Keine Messmittel ausgewählt (ids fehlen oder leer)'
+      });
+    }
+
+    const validStatuses = ['active', 'locked', 'in_calibration', 'repair', 'retired'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Ungültiger Status. Erlaubt: ${validStatuses.join(', ')}`
+      });
+    }
+
+    await client.query('BEGIN');
+
+    const result = await client.query(`
+      UPDATE measuring_equipment SET
+        status = $1,
+        lock_reason = $2,
+        updated_by = $3,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ANY($4::int[]) AND deleted_at IS NULL
+      RETURNING id
+    `, [status, lock_reason, req.user?.id, ids]);
+
+    await client.query('COMMIT');
+
+    // Fetch updated rows with full view
+    const fullResult = await pool.query(`
+      SELECT * FROM measuring_equipment_with_status WHERE id = ANY($1::int[])
+    `, [result.rows.map(r => r.id)]);
+
+    res.json({
+      success: true,
+      message: `${result.rowCount} Messmittel auf Status "${status}" geändert`,
+      updated_count: result.rowCount,
+      data: fullResult.rows
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Error bulk updating equipment status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Aktualisieren der Status',
+      error: error.message
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * POST /api/measuring-equipment/calibration-report
+ * Generate PDF "Kalibrier-Laufzettel" for a list of selected equipment IDs.
+ * Body: { ids: number[] }
+ */
+exports.generateCalibrationReport = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Keine Messmittel ausgewählt'
+      });
+    }
+
+    const result = await pool.query(`
+      SELECT me.*,
+        (SELECT MAX(calibration_date) FROM calibrations
+          WHERE equipment_id = me.id) as last_calibration_date
+      FROM measuring_equipment_with_status me
+      WHERE me.id = ANY($1::int[]) AND me.deleted_at IS NULL
+      ORDER BY me.inventory_number ASC
+    `, [ids]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Keine passenden Messmittel gefunden'
+      });
+    }
+
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';
+    const formatDateTime = (d) => d ? new Date(d).toLocaleString('de-DE') : '-';
+
+    const creator = req.user?.full_name || req.user?.username || '-';
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Kalibrier-Laufzettel_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.pipe(res);
+
+    // Page geometry (A4: 595 x 842 pt, margin 40 → usable 515 x 762)
+    const PAGE_LEFT = 40;
+    const PAGE_RIGHT = 555;
+    const PAGE_WIDTH = PAGE_RIGHT - PAGE_LEFT; // 515
+
+    // Column layout
+    const COLS = [
+      { key: 'pos',           label: 'Pos.',          x: 40,  w: 28 },
+      { key: 'inv',           label: 'Inventar-Nr.',  x: 68,  w: 70 },
+      { key: 'name',          label: 'Bezeichnung',   x: 138, w: 115 },
+      { key: 'type',          label: 'Typ',           x: 253, w: 70 },
+      { key: 'manufacturer',  label: 'Hersteller',    x: 323, w: 70 },
+      { key: 'serial',        label: 'Serien-Nr.',    x: 393, w: 60 },
+      { key: 'last_cal',      label: 'Letzte Kal.',   x: 453, w: 48 },
+      { key: 'done',          label: 'OK',            x: 501, w: 54 },
+    ];
+    const ROW_HEIGHT = 28;
+
+    let pageNum = 1;
+
+    const drawHeader = () => {
+      // Title
+      doc.fontSize(16).font('Helvetica-Bold')
+         .fillColor('#000000')
+         .text('Kalibrier-Laufzettel', PAGE_LEFT, 40);
+
+      // Meta block
+      doc.fontSize(9).font('Helvetica');
+      doc.text(`Erstellt am: ${formatDateTime(new Date())}`, PAGE_LEFT, 65);
+      doc.text(`Ersteller: ${creator}`, PAGE_LEFT, 78);
+      doc.text(`Anzahl Messmittel: ${result.rows.length}`, PAGE_LEFT, 91);
+
+      // Separator
+      doc.moveTo(PAGE_LEFT, 108).lineTo(PAGE_RIGHT, 108).lineWidth(0.8).stroke();
+    };
+
+    const drawTableHeader = (y) => {
+      doc.rect(PAGE_LEFT, y, PAGE_WIDTH, 18).fillColor('#f3f4f6').fill();
+      doc.fillColor('#000000').fontSize(8).font('Helvetica-Bold');
+      for (const col of COLS) {
+        doc.text(col.label, col.x + 2, y + 5, { width: col.w - 4, align: 'left' });
+      }
+      // Borders
+      doc.lineWidth(0.5).strokeColor('#000000');
+      doc.rect(PAGE_LEFT, y, PAGE_WIDTH, 18).stroke();
+      return y + 18;
+    };
+
+    const drawFooter = () => {
+      const savedY = doc.y;
+      doc.fontSize(7).font('Helvetica').fillColor('#000000');
+      doc.text(`Seite ${pageNum}  –  MDS Manufacturing Data System`, PAGE_LEFT, 780, {
+        align: 'center', width: PAGE_WIDTH, lineBreak: false
+      });
+      doc.y = savedY;
+    };
+
+    const drawSignatureBlock = (y) => {
+      const boxY = y + 20;
+      const colW = (PAGE_WIDTH - 20) / 2;
+
+      // Ausgabe
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000')
+         .text('Ausgabe an Kalibrierdienst', PAGE_LEFT, boxY);
+      doc.moveTo(PAGE_LEFT, boxY + 30).lineTo(PAGE_LEFT + colW, boxY + 30).lineWidth(0.5).stroke();
+      doc.fontSize(7).font('Helvetica')
+         .text('Datum, Unterschrift', PAGE_LEFT, boxY + 33);
+
+      // Rückgabe
+      const rX = PAGE_LEFT + colW + 20;
+      doc.fontSize(9).font('Helvetica-Bold')
+         .text('Rückgabe / Eingangsprüfung', rX, boxY);
+      doc.moveTo(rX, boxY + 30).lineTo(rX + colW, boxY + 30).stroke();
+      doc.fontSize(7).font('Helvetica')
+         .text('Datum, Unterschrift', rX, boxY + 33);
+    };
+
+    // Start first page
+    drawHeader();
+    let y = 120;
+    y = drawTableHeader(y);
+
+    const MAX_Y = 690; // leave room for signature block + footer
+
+    doc.fontSize(8).font('Helvetica').fillColor('#000000');
+
+    result.rows.forEach((eq, idx) => {
+      // Need new page?
+      if (y + ROW_HEIGHT > MAX_Y) {
+        drawFooter();
+        doc.addPage();
+        pageNum++;
+        drawHeader();
+        y = 120;
+        y = drawTableHeader(y);
+        doc.fontSize(8).font('Helvetica').fillColor('#000000');
+      }
+
+      // Alternate row background
+      if (idx % 2 === 1) {
+        doc.rect(PAGE_LEFT, y, PAGE_WIDTH, ROW_HEIGHT).fillColor('#fafafa').fill();
+        doc.fillColor('#000000');
+      }
+
+      const values = {
+        pos: String(idx + 1),
+        inv: eq.inventory_number || '-',
+        name: eq.name || '-',
+        type: eq.type_name || '-',
+        manufacturer: eq.manufacturer || '-',
+        serial: eq.serial_number || '-',
+        last_cal: formatDate(eq.last_calibration_date),
+        done: '', // leeres Häkchenfeld
+      };
+
+      for (const col of COLS) {
+        doc.fontSize(8).font('Helvetica').fillColor('#000000');
+        doc.text(values[col.key] || '', col.x + 2, y + 4, {
+          width: col.w - 4,
+          height: ROW_HEIGHT - 8,
+          ellipsis: true,
+          lineBreak: true
+        });
+      }
+
+      // Checkbox in "OK" column
+      const cbSize = 10;
+      const cbCol = COLS[COLS.length - 1];
+      const cbX = cbCol.x + 6;
+      const cbY = y + 8;
+      doc.lineWidth(0.6).rect(cbX, cbY, cbSize, cbSize).stroke();
+
+      // Row separator
+      doc.lineWidth(0.3).strokeColor('#cccccc')
+         .moveTo(PAGE_LEFT, y + ROW_HEIGHT).lineTo(PAGE_RIGHT, y + ROW_HEIGHT).stroke();
+      doc.strokeColor('#000000');
+
+      y += ROW_HEIGHT;
+    });
+
+    // Table outer border
+    doc.lineWidth(0.5).rect(PAGE_LEFT, 120, PAGE_WIDTH, y - 120).stroke();
+
+    // Vertical column separators (over last table region only — simple approach: redraw over full last region)
+    // (skipped to keep it simple; horizontal separation + header bg is enough visual structure)
+
+    // Signature block + footer on last page
+    drawSignatureBlock(y);
+    drawFooter();
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating calibration report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Erstellen des Kalibrier-Laufzettels',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/measuring-equipment/datasheets
+ * Generate PDF "Messmittel-Datenblätter" for a list of selected equipment IDs.
+ * Body: { ids: number[], layout?: 'full' | 'compact' }
+ *   - 'full':    1 Messmittel pro Seite (ausführlich)
+ *   - 'compact': 4 Messmittel pro Seite (2x2 Raster)
+ */
+exports.generateDataSheets = async (req, res) => {
+  try {
+    const { ids, layout = 'full' } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Keine Messmittel ausgewählt'
+      });
+    }
+
+    if (!['full', 'compact'].includes(layout)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ungültiges Layout (erlaubt: full, compact)'
+      });
+    }
+
+    const result = await pool.query(`
+      SELECT me.*,
+        (SELECT MAX(calibration_date) FROM calibrations
+          WHERE equipment_id = me.id) as last_calibration_date,
+        sl.name as location_name_full,
+        sc.name as compartment_name_full
+      FROM measuring_equipment_with_status me
+      LEFT JOIN storage_items si ON si.measuring_equipment_id = me.id
+        AND si.is_deleted = false AND si.is_active = true
+      LEFT JOIN storage_compartments sc ON sc.id = si.compartment_id
+      LEFT JOIN storage_locations sl ON sl.id = sc.location_id
+      WHERE me.id = ANY($1::int[]) AND me.deleted_at IS NULL
+      ORDER BY me.inventory_number ASC
+    `, [ids]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Keine passenden Messmittel gefunden'
+      });
+    }
+
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';
+    const formatDateTime = (d) => d ? new Date(d).toLocaleString('de-DE') : '-';
+
+    const statusTextMap = {
+      ok: 'OK',
+      due_soon: 'Fällig (≤30 Tage)',
+      overdue: 'Überfällig',
+      locked: 'Gesperrt',
+      in_calibration: 'In Kalibrierung',
+      repair: 'In Reparatur',
+      retired: 'Ausgemustert',
+      active: 'Aktiv',
+      unknown: 'Unbekannt'
+    };
+    const statusText = (s) => statusTextMap[s] || s || '-';
+
+    const getSpec = (eq) => {
+      const num = (v) => v !== null && v !== undefined ? parseFloat(v).toString() : null;
+      switch (eq.type_field_category) {
+        case 'measuring_instrument':
+          if (eq.measuring_range_min !== null && eq.measuring_range_max !== null)
+            return `${num(eq.measuring_range_min)}-${num(eq.measuring_range_max)} ${eq.unit || 'mm'}`;
+          break;
+        case 'gauge':
+          if (eq.nominal_value)
+            return `Ø${num(eq.nominal_value)} ${eq.tolerance_class || ''}`.trim();
+          break;
+        case 'thread_gauge':
+          if (eq.thread_size) {
+            const parts = [eq.thread_standard || '', eq.thread_size || ''].filter(Boolean).join('');
+            const pitch = eq.thread_pitch ? `x${eq.thread_pitch}` : '';
+            const tol = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+            return `${parts}${pitch}${tol}`.trim();
+          }
+          break;
+        case 'gauge_block':
+          if (eq.nominal_value) {
+            const klass = eq.accuracy_class ? ` Kl.${eq.accuracy_class}` : '';
+            return `${num(eq.nominal_value)} ${eq.unit || 'mm'}${klass}`;
+          }
+          break;
+        case 'angle_gauge':
+          if (eq.nominal_value) {
+            const tol = eq.tolerance_class ? ` ${eq.tolerance_class}` : '';
+            return `${num(eq.nominal_value)}°${tol}`;
+          }
+          break;
+        case 'surface_tester':
+          if (eq.measuring_range_min !== null && eq.measuring_range_max !== null)
+            return `${num(eq.measuring_range_min)}-${num(eq.measuring_range_max)} µm`;
+          break;
+      }
+      return '-';
+    };
+
+    const getLocation = (eq) => {
+      const loc = eq.location_name_full || '';
+      const comp = eq.compartment_name_full || '';
+      if (loc && comp) return `${loc} / ${comp}`;
+      return loc || '-';
+    };
+
+    const creator = req.user?.full_name || req.user?.username || '-';
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=Messmittel-Datenblaetter_${layout}_${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+    doc.pipe(res);
+
+    const PAGE_LEFT = 40;
+    const PAGE_RIGHT = 555;
+    const PAGE_WIDTH = PAGE_RIGHT - PAGE_LEFT;
+
+    const drawFooter = (pageNum) => {
+      const savedY = doc.y;
+      doc.fontSize(7).font('Helvetica').fillColor('#000000');
+      doc.text(
+        `Seite ${pageNum}  –  Erstellt: ${formatDateTime(new Date())}  –  Ersteller: ${creator}  –  MDS`,
+        PAGE_LEFT, 790,
+        { align: 'center', width: PAGE_WIDTH, lineBreak: false }
+      );
+      doc.y = savedY;
+    };
+
+    // ----------------------------------------------------------------
+    // LAYOUT 'full': 1 Messmittel pro Seite
+    // ----------------------------------------------------------------
+    const renderFullCard = (eq, origin = { x: PAGE_LEFT, y: 50, w: PAGE_WIDTH, h: 730 }) => {
+      const { x, y, w } = origin;
+
+      // Header stripe
+      doc.rect(x, y, w, 40).fillColor('#1e40af').fill();
+      doc.fillColor('#ffffff').fontSize(11).font('Helvetica-Bold')
+         .text('MESSMITTEL-DATENBLATT', x + 10, y + 8);
+      doc.fontSize(18).font('Helvetica-Bold')
+         .text(eq.inventory_number || '-', x + 10, y + 20, { width: w - 20 });
+
+      // Name row
+      doc.fillColor('#000000').fontSize(13).font('Helvetica-Bold')
+         .text(eq.name || '-', x + 10, y + 52, { width: w - 20 });
+      doc.fontSize(10).font('Helvetica').fillColor('#666666')
+         .text(eq.type_name || '-', x + 10, y + 72, { width: w - 20 });
+
+      doc.moveTo(x, y + 92).lineTo(x + w, y + 92).lineWidth(0.5).strokeColor('#cccccc').stroke();
+
+      // Data grid (2 columns)
+      const col1X = x + 10;
+      const col2X = x + w / 2 + 5;
+      const colW = w / 2 - 15;
+      let rowY = y + 104;
+      const rowH = 22;
+
+      const field = (label, value, fx, fy) => {
+        doc.fontSize(7).font('Helvetica').fillColor('#888888')
+           .text(label.toUpperCase(), fx, fy, { width: colW });
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000')
+           .text(value || '-', fx, fy + 9, { width: colW, ellipsis: true, lineBreak: false });
+      };
+
+      // Row 1: Typ | Status
+      field('Typ', eq.type_name, col1X, rowY);
+      field('Status', statusText(eq.calibration_status), col2X, rowY);
+      rowY += rowH;
+
+      // Row 2: Hersteller | Modell
+      field('Hersteller', eq.manufacturer, col1X, rowY);
+      field('Modell', eq.model, col2X, rowY);
+      rowY += rowH;
+
+      // Row 3: Serien-Nr. | Kaufdatum
+      field('Serien-Nr.', eq.serial_number, col1X, rowY);
+      field('Kaufdatum', formatDate(eq.purchase_date), col2X, rowY);
+      rowY += rowH;
+
+      // Row 4: Spezifikation | Einheit
+      field('Spezifikation', getSpec(eq), col1X, rowY);
+      field('Einheit', eq.unit, col2X, rowY);
+      rowY += rowH;
+
+      // Row 5: Lagerort | Kal.-Intervall
+      field('Lagerort', getLocation(eq), col1X, rowY);
+      const interval = eq.calibration_interval_months
+        ? `${eq.calibration_interval_months} Monate`
+        : '-';
+      field('Kal.-Intervall', interval, col2X, rowY);
+      rowY += rowH;
+
+      // Row 6: Letzte Kal. | Nächste Kal.
+      field('Letzte Kalibrierung', formatDate(eq.last_calibration_date), col1X, rowY);
+      field('Nächste Kalibrierung', formatDate(eq.next_calibration_date), col2X, rowY);
+      rowY += rowH;
+
+      // Separator
+      doc.moveTo(x, rowY + 5).lineTo(x + w, rowY + 5).lineWidth(0.5).strokeColor('#cccccc').stroke();
+      rowY += 15;
+
+      // Notes
+      if (eq.notes) {
+        doc.fontSize(7).font('Helvetica').fillColor('#888888')
+           .text('BEMERKUNGEN', x + 10, rowY);
+        doc.fontSize(9).font('Helvetica').fillColor('#000000')
+           .text(eq.notes, x + 10, rowY + 10, { width: w - 20, height: 100 });
+      }
+    };
+
+    // ----------------------------------------------------------------
+    // LAYOUT 'compact': 4 Messmittel pro Seite (2x2 Raster)
+    // ----------------------------------------------------------------
+    const renderCompactCard = (eq, origin) => {
+      const { x, y, w, h } = origin;
+
+      // Border
+      doc.lineWidth(0.5).strokeColor('#999999').rect(x, y, w, h).stroke();
+
+      // Header stripe
+      doc.rect(x, y, w, 26).fillColor('#1e40af').fill();
+      doc.fillColor('#ffffff').fontSize(12).font('Helvetica-Bold')
+         .text(eq.inventory_number || '-', x + 8, y + 8, { width: w - 16, lineBreak: false });
+
+      // Status badge (right side of header)
+      const statusLabel = statusText(eq.calibration_status);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+         .text(statusLabel, x + w - 110, y + 9, { width: 100, align: 'right', lineBreak: false });
+
+      // Name + Typ
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold')
+         .text(eq.name || '-', x + 8, y + 32, { width: w - 16, ellipsis: true, lineBreak: false });
+      doc.fontSize(8).font('Helvetica').fillColor('#666666')
+         .text(eq.type_name || '-', x + 8, y + 48, { width: w - 16, ellipsis: true, lineBreak: false });
+
+      doc.moveTo(x + 8, y + 62).lineTo(x + w - 8, y + 62).lineWidth(0.4).strokeColor('#cccccc').stroke();
+
+      // Fields (2 columns, compact)
+      const col1X = x + 8;
+      const col2X = x + w / 2 + 4;
+      const colW = w / 2 - 12;
+      let rowY = y + 70;
+      const rowH = 20;
+
+      const field = (label, value, fx, fy) => {
+        doc.fontSize(6.5).font('Helvetica').fillColor('#888888')
+           .text(label.toUpperCase(), fx, fy, { width: colW, lineBreak: false });
+        doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#000000')
+           .text(value || '-', fx, fy + 8, { width: colW, ellipsis: true, lineBreak: false });
+      };
+
+      field('Hersteller', eq.manufacturer, col1X, rowY);
+      field('Serien-Nr.', eq.serial_number, col2X, rowY);
+      rowY += rowH;
+
+      field('Spezifikation', getSpec(eq), col1X, rowY);
+      field('Modell', eq.model, col2X, rowY);
+      rowY += rowH;
+
+      field('Lagerort', getLocation(eq), col1X, rowY);
+      field('Letzte Kal.', formatDate(eq.last_calibration_date), col2X, rowY);
+      rowY += rowH;
+
+      field('Nächste Kalibrierung', formatDate(eq.next_calibration_date), col1X, rowY);
+      const interval = eq.calibration_interval_months
+        ? `${eq.calibration_interval_months} Mon.`
+        : '-';
+      field('Kal.-Intervall', interval, col2X, rowY);
+    };
+
+    // ----------------------------------------------------------------
+    // Seiten aufbauen
+    // ----------------------------------------------------------------
+    let pageNum = 1;
+
+    if (layout === 'full') {
+      result.rows.forEach((eq, idx) => {
+        if (idx > 0) {
+          drawFooter(pageNum);
+          doc.addPage();
+          pageNum++;
+        }
+        renderFullCard(eq);
+      });
+      drawFooter(pageNum);
+    } else {
+      // compact: 2x2 pro Seite
+      const CARD_W = PAGE_WIDTH / 2 - 6;   // 2 Spalten mit 12pt Gap
+      const CARD_H = 355;                   // 2 Zeilen, Platz für Footer
+      const GAP = 12;
+
+      const positions = [
+        { x: PAGE_LEFT,                    y: 40 },
+        { x: PAGE_LEFT + CARD_W + GAP,     y: 40 },
+        { x: PAGE_LEFT,                    y: 40 + CARD_H + GAP },
+        { x: PAGE_LEFT + CARD_W + GAP,     y: 40 + CARD_H + GAP },
+      ];
+
+      result.rows.forEach((eq, idx) => {
+        const slot = idx % 4;
+        if (idx > 0 && slot === 0) {
+          drawFooter(pageNum);
+          doc.addPage();
+          pageNum++;
+        }
+        const pos = positions[slot];
+        renderCompactCard(eq, { x: pos.x, y: pos.y, w: CARD_W, h: CARD_H });
+      });
+      drawFooter(pageNum);
+    }
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating datasheets:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Erstellen der Datenblätter',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Generate next inventory number
  * Format: MM-NNNN (findet erste freie Lücke ab 1000)
  */
@@ -1307,7 +1904,7 @@ exports.checkAvailability = async (req, res) => {
  * Generate label PDF for printing
  * 
  * Query params:
- * - preset: 'multi' | 'qr-large' | 'qr-small' | 'compact' | 'full' (default: 'multi')
+ * - preset: 'multi' | 'multi-name' | 'qr-large' | 'qr-small' | 'compact' | 'full' | 'full-name' (default: 'multi')
  * 
  * Presets:
  * - multi: 4 Labels auf 103mm Rolle (QR groß, QR klein, Typ/Spec, Inv/Lager)
@@ -1418,7 +2015,7 @@ exports.generateLabel = async (req, res) => {
     // Location code helper
     const getLocationCode = () => {
       return eq.compartment_code 
-        ? `${eq.location_code || ''}${eq.compartment_code}`
+        ? `${eq.location_code || ''}/${eq.compartment_code}`
         : (eq.location_code || '-');
     };
 
@@ -1494,7 +2091,75 @@ exports.generateLabel = async (req, res) => {
            .text(`Lagerort: ${getLocationCode()}`, mm(2), mm(28), { width: mm(56), align: 'center' });
         break;
       }
-      
+
+      case 'full-name': {
+        // Alles mit Bezeichnung statt Typ (60x35mm)
+        const qrImage = await QRCode.toDataURL(qrContent, { width: 200, margin: 0, errorCorrectionLevel: 'M' });
+        doc = new PDFDocument({ size: [mm(60), mm(35)], margin: 0 });
+
+        doc.image(qrImage, mm(2), mm(2), { width: mm(20), height: mm(20) });
+
+        doc.fontSize(14)
+           .font('Helvetica-Bold')
+           .text(eq.inventory_number, mm(25), mm(3), { width: mm(33), align: 'center' });
+
+        doc.fontSize(9)
+           .font('Helvetica-Bold')
+           .text(eq.name || '', mm(25), mm(11), { width: mm(33), align: 'center' });
+
+        doc.fontSize(9)
+           .font('Helvetica')
+           .text(getSpecification(), mm(25), mm(17), { width: mm(33), align: 'center' });
+
+        doc.moveTo(mm(2), mm(25)).lineTo(mm(58), mm(25)).lineWidth(0.5).stroke();
+
+        doc.fontSize(10)
+           .font('Helvetica')
+           .text(`Lagerort: ${getLocationCode()}`, mm(2), mm(28), { width: mm(56), align: 'center' });
+        break;
+      }
+
+      case 'multi-name': {
+        // Multi-Label mit Bezeichnung statt Typ: 4 Labels auf 103mm Rolle
+        const qrLarge = await QRCode.toDataURL(qrContent, { width: 200, margin: 0, errorCorrectionLevel: 'M' });
+        const qrSmall = await QRCode.toDataURL(qrContent, { width: 100, margin: 0, errorCorrectionLevel: 'M' });
+
+        doc = new PDFDocument({ size: [mm(103), mm(25)], margin: 0 });
+
+        const margin = mm(2.5);
+        const gap = mm(2);
+
+        const l1x = margin, l1y = margin, l1w = mm(20), l1h = mm(20);
+        const l2x = l1x + l1w + gap, l2y = margin + mm(5), l2w = mm(10), l2h = mm(10);
+        const l3x = l2x + l2w + gap, l3y = margin + mm(5), l3w = mm(35), l3h = mm(10);
+        const l4x = l3x + l3w + gap, l4y = margin + mm(5), l4w = mm(20), l4h = mm(10);
+
+        doc.strokeColor('#cccccc').lineWidth(0.5).dash(2, { space: 2 });
+        [l1x + l1w + gap/2, l2x + l2w + gap/2, l3x + l3w + gap/2].forEach(x => {
+          doc.moveTo(x, 0).lineTo(x, mm(25)).stroke();
+        });
+        doc.undash().strokeColor('#000000');
+
+        doc.rect(l1x, l1y, l1w, l1h).lineWidth(0.25).stroke();
+        doc.image(qrLarge, l1x + mm(1), l1y + mm(1), { width: mm(18), height: mm(18) });
+
+        doc.rect(l2x, l2y, l2w, l2h).lineWidth(0.25).stroke();
+        doc.image(qrSmall, l2x + mm(0.5), l2y + mm(0.5), { width: mm(9), height: mm(9) });
+
+        doc.rect(l3x, l3y, l3w, l3h).lineWidth(0.25).stroke();
+        doc.fontSize(10).font('Helvetica-Bold')
+           .text(eq.name || '', l3x + mm(1), l3y + mm(2), { width: l3w - mm(2), align: 'center', lineBreak: false });
+        doc.fontSize(10).font('Helvetica')
+           .text(getSpecification(), l3x + mm(1), l3y + mm(6), { width: l3w - mm(2), align: 'center', lineBreak: false });
+
+        doc.rect(l4x, l4y, l4w, l4h).lineWidth(0.25).stroke();
+        doc.fontSize(10).font('Helvetica-Bold')
+           .text(eq.inventory_number, l4x + mm(1), l4y + mm(2), { width: l4w - mm(2), align: 'center', lineBreak: false });
+        doc.fontSize(10).font('Helvetica')
+           .text(getLocationCode(), l4x + mm(1), l4y + mm(6), { width: l4w - mm(2), align: 'center', lineBreak: false });
+        break;
+      }
+
       case 'multi':
       default: {
         // Multi-Label: 4 Labels auf 103mm Rolle

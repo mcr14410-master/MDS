@@ -9,10 +9,17 @@ import API_BASE_URL from '../../config/api';
 const LABEL_PRESETS = [
   {
     id: 'multi',
-    name: 'Multi-Label',
+    name: 'Multi-Label (Typ)',
     description: '4 Labels auf 103mm Rolle',
     size: '103 x 25 mm',
     preview: 'multi'
+  },
+  {
+    id: 'multi-name',
+    name: 'Multi-Label (Bezeichnung)',
+    description: '4 Labels auf 103mm Rolle',
+    size: '103 x 25 mm',
+    preview: 'multi-name'
   },
   {
     id: 'qr-large',
@@ -37,10 +44,17 @@ const LABEL_PRESETS = [
   },
   {
     id: 'full',
-    name: 'Vollständig',
+    name: 'Vollständig (Typ)',
     description: 'Alle Informationen',
     size: '60 x 35 mm',
     preview: 'full'
+  },
+  {
+    id: 'full-name',
+    name: 'Vollständig (Bezeichnung)',
+    description: 'Alle Informationen',
+    size: '60 x 35 mm',
+    preview: 'full-name'
   }
 ];
 
@@ -58,7 +72,7 @@ export default function MeasuringEquipmentLabelModal({ equipment, onClose }) {
   
   // Location code helper
   const locationCode = equipment.compartment_code 
-    ? `${equipment.location_code || ''}${equipment.compartment_code}`
+    ? `${equipment.location_code || ''}/${equipment.compartment_code}`
     : (equipment.location_code || equipment.storage_location_name || '-');
 
   // Helper: Dezimalstellen nur wenn nötig
@@ -204,6 +218,23 @@ export default function MeasuringEquipmentLabelModal({ equipment, onClose }) {
           </div>
         );
         
+      case 'full-name':
+        return (
+          <div className="bg-white p-4 rounded-lg inline-block" style={{ minWidth: '280px' }}>
+            <div className="flex gap-4">
+              <QRCodeSVG value={qrContent} size={80} level="M" />
+              <div className="flex-1 text-center">
+                <div className="font-bold text-xl text-gray-900">{equipment.inventory_number}</div>
+                <div className="font-semibold text-sm text-gray-700 mt-1">{equipment.name || '-'}</div>
+                <div className="text-sm text-gray-600">{specification}</div>
+              </div>
+            </div>
+            <div className="border-t border-gray-300 mt-3 pt-2 text-center text-sm text-gray-600">
+              Lagerort: {locationCode}
+            </div>
+          </div>
+        );
+
       case 'full':
         return (
           <div className="bg-white p-4 rounded-lg inline-block" style={{ minWidth: '280px' }}>
@@ -221,6 +252,26 @@ export default function MeasuringEquipmentLabelModal({ equipment, onClose }) {
           </div>
         );
         
+      case 'multi-name':
+        return (
+          <div className="bg-white p-2 rounded-lg inline-flex items-end gap-1" style={{ minWidth: '400px' }}>
+            <div className="border border-gray-300 p-1 rounded">
+              <QRCodeSVG value={qrContent} size={70} level="M" />
+            </div>
+            <div className="border border-gray-300 p-1 rounded self-center">
+              <QRCodeSVG value={qrContent} size={40} level="M" />
+            </div>
+            <div className="border border-gray-300 p-2 rounded text-center flex-1 self-center">
+              <div className="font-bold text-sm text-gray-900">{equipment.name || '-'}</div>
+              <div className="text-xs text-gray-600">{specification}</div>
+            </div>
+            <div className="border border-gray-300 p-2 rounded text-center self-center">
+              <div className="font-bold text-sm text-gray-900">{equipment.inventory_number}</div>
+              <div className="text-xs text-gray-600">{locationCode}</div>
+            </div>
+          </div>
+        );
+
       case 'multi':
       default:
         return (

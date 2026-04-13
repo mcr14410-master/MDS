@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMeasuringEquipmentStore } from '../stores/measuringEquipmentStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
@@ -9,6 +9,9 @@ import MeasuringEquipmentTable from '../components/measuringEquipment/MeasuringE
 import MeasuringEquipmentFormModal from '../components/measuringEquipment/MeasuringEquipmentFormModal';
 import MeasuringEquipmentTypesModal from '../components/measuringEquipment/MeasuringEquipmentTypesModal';
 import MeasuringEquipmentCheckoutModal from '../components/measuringEquipment/MeasuringEquipmentCheckoutModal';
+import MeasuringEquipmentBulkActionBar from '../components/measuringEquipment/MeasuringEquipmentBulkActionBar';
+import Pagination from '../components/Pagination';
+import axios from '../utils/axios';
 import API_BASE_URL from '../config/api';
 
 // Kalibrierungsstatus-Farben
@@ -42,7 +45,8 @@ export default function MeasuringEquipmentPage() {
     fetchEquipment, 
     fetchTypes,
     fetchStats,
-    deleteEquipment 
+    deleteEquipment,
+    bulkUpdateStatus,
   } = useMeasuringEquipmentStore();
   const { hasPermission } = useAuthStore();
   
@@ -64,8 +68,18 @@ export default function MeasuringEquipmentPage() {
   const [checkoutEquipmentItem, setCheckoutEquipmentItem] = useState(null);
   const [checkoutMode, setCheckoutMode] = useState('checkout'); // 'checkout' oder 'return'
   
-  const { getViewMode, setViewMode } = usePreferencesStore();
+  const { getViewMode, setViewMode, getPageSize, setPageSize } = usePreferencesStore();
   const viewMode = getViewMode('measuringEquipment');
+  const pageSize = getPageSize('measuringEquipment');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // === Bulk-Auswahl State ===
+  // selectedItems: Map<id, equipment-Objekt>  (Volldaten cachen, damit Auswahl filterübergreifend erhalten bleibt)
+  const [selectedItems, setSelectedItems] = useState(() => new Map());
+  const [showOnlySelected, setShowOnlySelected] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const selectedIdSet = useMemo(() => new Set(selectedItems.keys()), [selectedItems]);
 
   useEffect(() => {
     fetchTypes({ is_active: true });
@@ -75,13 +89,139 @@ export default function MeasuringEquipmentPage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchEquipment(filters);
   };
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setCurrentPage(1);
     fetchEquipment(newFilters);
+  };
+
+  // === Visible Equipment: "Nur Auswahl anzeigen" oder normale Liste ===
+  const visibleEquipment = useMemo(() => {
+    if (showOnlySelected) {
+      return Array.from(selectedItems.values());
+    }
+    return equipment || [];
+  }, [showOnlySelected, selectedItems, equipment]);
+
+  // Aktuelle Seite clampen, falls Einträge weniger werden (z.B. nach Löschen oder Filter/Toggle)
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(visibleEquipment.length / pageSize));
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [visibleEquipment.length, pageSize, currentPage]);
+
+  // Paginierte Einträge
+  const paginatedEquipment = visibleEquipment.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const handlePageSizeChange = (size) => {
+    setPageSize('measuringEquipment', size);
+    setCurrentPage(1);
+  };
+
+  // === Bulk-Selection Handler ===
+  const handleToggleSelect = (item) => {
+    setSelectedItems(prev => {
+      const next = new Map(prev);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.set(item.id, item);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllVisible = (visibleIds, selectAll) => {
+    setSelectedItems(prev => {
+      const next = new Map(prev);
+      if (selectAll) {
+        visibleIds.forEach(id => {
+          const item = paginatedEquipment.find(e => e.id === id);
+          if (item) next.set(id, item);
+        });
+      } else {
+        visibleIds.forEach(id => next.delete(id));
+      }
+      return next;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedItems(new Map());
+    setShowOnlySelected(false);
+  };
+
+  const handleToggleShowOnlySelected = () => {
+    setShowOnlySelected(v => !v);
+    setCurrentPage(1);
+  };
+
+  const handleSendToCalibration = async () => {
+    const ids = Array.from(selectedItems.keys());
+    if (ids.length === 0) return;
+    if (!window.confirm(`${ids.length} Messmittel auf Status "In Kalibrierung" setzen?`)) return;
+
+    try {
+      setBulkLoading(true);
+      const result = await bulkUpdateStatus(ids, 'in_calibration');
+      toast.success(result?.message || `${ids.length} Messmittel zur Kalibrierung gesendet`);
+      setSelectedItems(new Map());
+      setShowOnlySelected(false);
+      fetchStats();
+    } catch (err) {
+      toast.error(err.message || 'Fehler beim Aktualisieren');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleExportPDF = async (type) => {
+    const ids = Array.from(selectedItems.keys());
+    if (ids.length === 0) return;
+
+    let url, body, filenamePrefix;
+    switch (type) {
+      case 'calibration-report':
+        url = '/api/measuring-equipment/calibration-report';
+        body = { ids };
+        filenamePrefix = 'Kalibrier-Laufzettel';
+        break;
+      case 'datasheet-full':
+        url = '/api/measuring-equipment/datasheets';
+        body = { ids, layout: 'full' };
+        filenamePrefix = 'Messmittel-Datenblaetter';
+        break;
+      case 'datasheet-compact':
+        url = '/api/measuring-equipment/datasheets';
+        body = { ids, layout: 'compact' };
+        filenamePrefix = 'Messmittel-Datenblaetter-kompakt';
+        break;
+      default:
+        return;
+    }
+
+    try {
+      setBulkLoading(true);
+      const response = await axios.post(url, body, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('PDF wurde erstellt');
+    } catch (err) {
+      toast.error(err.message || 'Fehler beim PDF-Export');
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   const handleCreateNew = () => {
@@ -555,26 +695,65 @@ export default function MeasuringEquipmentPage() {
           </p>
         </div>
       ) : viewMode === 'table' ? (
-        <MeasuringEquipmentTable
-          equipment={equipment}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onCheckout={handleCheckout}
-        />
+        <>
+          <MeasuringEquipmentBulkActionBar
+            selectedCount={selectedIdSet.size}
+            showOnlySelected={showOnlySelected}
+            onToggleShowOnlySelected={handleToggleShowOnlySelected}
+            onSendToCalibration={handleSendToCalibration}
+            onExportPDF={handleExportPDF}
+            onClearSelection={handleClearSelection}
+            loading={bulkLoading}
+          />
+          <MeasuringEquipmentTable
+            equipment={paginatedEquipment}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onCheckout={handleCheckout}
+            selectedIds={selectedIdSet}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAllVisible={handleToggleSelectAllVisible}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalItems={visibleEquipment.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {equipment.map(item => (
-            <MeasuringEquipmentCard
-              key={item.id}
-              equipment={item}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onCheckout={handleCheckout}
-              statusColors={calibrationStatusColors}
-              statusLabels={calibrationStatusLabels}
-            />
-          ))}
-        </div>
+        <>
+          <MeasuringEquipmentBulkActionBar
+            selectedCount={selectedIdSet.size}
+            showOnlySelected={showOnlySelected}
+            onToggleShowOnlySelected={handleToggleShowOnlySelected}
+            onSendToCalibration={handleSendToCalibration}
+            onExportPDF={handleExportPDF}
+            onClearSelection={handleClearSelection}
+            loading={bulkLoading}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedEquipment.map(item => (
+              <MeasuringEquipmentCard
+                key={item.id}
+                equipment={item}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onCheckout={handleCheckout}
+                statusColors={calibrationStatusColors}
+                statusLabels={calibrationStatusLabels}
+              />
+            ))}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={visibleEquipment.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
       )}
 
       {/* Modal */}

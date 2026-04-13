@@ -13,9 +13,12 @@ const defaultPreferences = {
     measuringEquipment: 'grid',
     // Weitere Seiten hier hinzufügen
   },
+  pageSizes: {
+    measuringEquipment: 50,
+    // Weitere Seiten hier hinzufügen
+  },
   // Später erweiterbar:
   // sidebarCollapsed: false,
-  // tableRowsPerPage: 25,
 };
 
 // Aus localStorage laden
@@ -31,6 +34,10 @@ const loadPreferences = () => {
         viewModes: {
           ...defaultPreferences.viewModes,
           ...(parsed.viewModes || {}),
+        },
+        pageSizes: {
+          ...defaultPreferences.pageSizes,
+          ...(parsed.pageSizes || {}),
         },
       };
     }
@@ -70,6 +77,24 @@ const usePreferencesStore = create((set, get) => ({
 
   getViewMode: (page) => {
     return get().viewModes[page] || 'grid';
+  },
+
+  setPageSize: (page, size) => {
+    set((state) => {
+      const newState = {
+        ...state,
+        pageSizes: {
+          ...state.pageSizes,
+          [page]: size,
+        },
+      };
+      savePreferences(newState);
+      return newState;
+    });
+  },
+
+  getPageSize: (page) => {
+    return get().pageSizes[page] || 50;
   },
 
   // Für spätere Erweiterungen
