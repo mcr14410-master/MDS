@@ -5,6 +5,8 @@
  */
 
 const db = require('../config/db');
+const fs = require('fs').promises;
+const path = require('path');
 
 /**
  * GET /api/setup-sheets
@@ -431,6 +433,12 @@ exports.deleteSetupSheet = async (req, res) => {
     // Delete (CASCADE löscht auch Fotos)
     await db.query('DELETE FROM setup_sheets WHERE id = $1', [id]);
 
+    // Foto-Verzeichnis vom Filesystem entfernen (falls vorhanden)
+    const sheetDir = path.join(__dirname, '../../uploads/setup-sheets', String(id));
+    await fs.rm(sheetDir, { recursive: true, force: true }).catch(err => {
+      console.error('Error removing setup sheet photo directory:', err);
+    });
+
     res.json({
       success: true,
       message: 'Einrichteblatt erfolgreich gelöscht'
@@ -483,9 +491,12 @@ exports.uploadPhoto = async (req, res) => {
       RETURNING *
     `;
 
+    // Relativen Pfad konstruieren (passend zum Static-Mount /uploads in server.js)
+    const relativePath = `uploads/setup-sheets/${id}/${req.file.filename}`;
+
     const values = [
       id,
-      req.file.path,
+      relativePath,
       req.file.originalname,
       req.file.size,
       req.file.mimetype,
@@ -519,7 +530,6 @@ exports.uploadPhoto = async (req, res) => {
 exports.deletePhoto = async (req, res) => {
   try {
     const { id, photoId } = req.params;
-    const fs = require('fs').promises;
 
     // Get photo info
     const photoQuery = await db.query(
@@ -536,9 +546,10 @@ exports.deletePhoto = async (req, res) => {
 
     const photo = photoQuery.rows[0];
 
-    // Delete file from filesystem
+    // Delete file from filesystem (file_path ist relativ, zu absolutem Pfad auflösen)
     try {
-      await fs.unlink(photo.file_path);
+      const absPath = path.join(__dirname, '../..', photo.file_path);
+      await fs.unlink(absPath);
     } catch (err) {
       console.error('Error deleting file:', err);
       // Continue anyway - file might already be deleted

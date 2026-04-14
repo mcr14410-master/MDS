@@ -63,7 +63,14 @@ export default function SetupSheetsList({ operationId }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Einrichteblatt wirklich löschen?')) return;
+    if (!confirm(
+      'Einrichteblatt wirklich löschen?\n\n' +
+      'Hinweis: Alle zugehörigen Daten werden unwiderruflich entfernt:\n' +
+      '• Hochgeladene Fotos\n' +
+      '• Werkzeuglisten\n' +
+      '• Spannmittel-Zuordnungen\n' +
+      '• Prüfpläne'
+    )) return;
 
     const result = await deleteSetupSheet(id);
     if (result.success) {
