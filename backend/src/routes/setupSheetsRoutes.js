@@ -10,13 +10,21 @@ const setupSheetsController = require('../controllers/setupSheetsController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // ============================================================================
 // Multer Config für Fotos
 // ============================================================================
+const uploadDir = path.join(__dirname, '../../uploads/setup-sheets');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/setup-sheets/');
+    const sheetDir = path.join(uploadDir, String(req.params.id));
+    fs.mkdirSync(sheetDir, { recursive: true });
+    cb(null, sheetDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
