@@ -60,6 +60,33 @@ function formatResult(jobName, result) {
     if (result.errors?.length > 0) text += ` ⚠ ${result.errors.length} Fehler`;
     return text;
   }
+  if (jobName === 'generate_maintenance_tasks') {
+    const count = result.created_count || 0;
+    return `${count === 0 ? '✓' : '✓'} ${count} Wartungsaufgabe${count === 1 ? '' : 'n'} erstellt`;
+  }
+  if (jobName === 'fs_garbage_collection') {
+    const total = result.total || {};
+    const trash = result.trashbin || {};
+    const prefix = result.dry_run ? '🔍 DRY-RUN' : '✓';
+    const action = result.dry_run ? 'gefunden' : 'in Trash verschoben';
+    const count = result.dry_run ? (total.orphans_found || 0) : (total.moved_to_trash || 0);
+
+    let text = `${prefix}: ${count} Orphan${count === 1 ? '' : 's'} ${action}`;
+    if (count > 0) text += ` (${total.freed_mb || '0.00'} MB)`;
+    if (total.skipped_grace > 0) text += `, ${total.skipped_grace} Grace-skipped`;
+    text += ` | Grace: ${result.grace_period_hours}h`;
+
+    if (trash.run_count > 0) {
+      text += ` | 🗑 Trash: ${trash.run_count} Run${trash.run_count === 1 ? '' : 's'}, ${trash.file_count} File${trash.file_count === 1 ? '' : 's'}, ${trash.total_size_mb} MB`;
+    }
+
+    // Fehler aufsummieren
+    const errorCount = Object.values(result.areas || {})
+      .reduce((sum, a) => sum + (a.errors?.length || 0) + (a.error ? 1 : 0), 0);
+    if (errorCount > 0) text += ` ⚠ ${errorCount} Fehler`;
+
+    return text;
+  }
   return JSON.stringify(result);
 }
 

@@ -176,6 +176,10 @@ router.post(
   maintenanceTasksController.uploadChecklistPhoto
 );
 
+// Foto für Checklist-Item anzeigen / herunterladen
+router.get('/tasks/:taskId/checklist/:itemId/photo/view', maintenanceTasksController.viewChecklistPhoto);
+router.get('/tasks/:taskId/checklist/:itemId/photo/download', maintenanceTasksController.downloadChecklistPhoto);
+
 // Task abschließen
 router.put('/tasks/:id/complete', maintenanceTasksController.completeTask);
 

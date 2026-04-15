@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const { _serveMaintenanceImage: serveMaintenanceImage } = require('./maintenancePlansController');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -979,6 +980,39 @@ exports.uploadChecklistPhoto = async (req, res) => {
 };
 
 /**
+ * Helper: photo_path für (taskId, itemId) aus DB holen und ausliefern
+ */
+async function serveChecklistPhoto(req, res, disposition) {
+  try {
+    const { taskId, itemId } = req.params;
+    const result = await pool.query(
+      `SELECT photo_path FROM maintenance_checklist_completions
+       WHERE maintenance_task_id = $1 AND checklist_item_id = $2`,
+      [taskId, itemId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Foto nicht gefunden' });
+    }
+    await serveMaintenanceImage(req, res, result.rows[0].photo_path, disposition);
+  } catch (error) {
+    console.error('Error serving checklist photo:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Ausliefern des Fotos' });
+  }
+}
+
+/**
+ * GET /api/maintenance/tasks/:taskId/checklist/:itemId/photo/view
+ * Wartungs-Beweisfoto inline anzeigen
+ */
+exports.viewChecklistPhoto = (req, res) => serveChecklistPhoto(req, res, 'inline');
+
+/**
+ * GET /api/maintenance/tasks/:taskId/checklist/:itemId/photo/download
+ * Wartungs-Beweisfoto als Download
+ */
+exports.downloadChecklistPhoto = (req, res) => serveChecklistPhoto(req, res, 'attachment');
+
+/**
  * Complete task
  * PUT /api/maintenance/tasks/:id/complete
  */
@@ -1339,9 +1373,14 @@ exports.getTodaysTasks = async (req, res) => {
  * Generate tasks from due plans (wird z.B. täglich aufgerufen)
  * POST /api/maintenance/tasks/generate
  */
-exports.generateTasksFromDuePlans = async (req, res) => {
+/**
+ * Interne Logik: Fällige Wartungsaufgaben aus Plänen generieren.
+ * Wird sowohl vom HTTP-Handler als auch vom Cron-Job genutzt.
+ *
+ * @returns {Promise<{created_count: number, data: Array}>}
+ */
+async function generateDueTasks() {
   const client = await pool.connect();
-  
   try {
     await client.query('BEGIN');
 
@@ -1397,22 +1436,40 @@ exports.generateTasksFromDuePlans = async (req, res) => {
 
     await client.query('COMMIT');
 
-    res.json({
-      success: true,
+    return {
       created_count: createdTasks.length,
       data: createdTasks,
-      message: `${createdTasks.length} neue Wartungsaufgaben erstellt`
-    });
+    };
   } catch (error) {
     await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+exports.generateDueTasks = generateDueTasks;
+
+/**
+ * HTTP-Handler: Fällige Wartungsaufgaben aus Plänen generieren
+ * POST /api/maintenance/tasks/generate
+ */
+exports.generateTasksFromDuePlans = async (req, res) => {
+  try {
+    const result = await generateDueTasks();
+    res.json({
+      success: true,
+      created_count: result.created_count,
+      data: result.data,
+      message: `${result.created_count} neue Wartungsaufgaben erstellt`,
+    });
+  } catch (error) {
     console.error('Fehler beim Generieren der Aufgaben:', error);
     res.status(500).json({
       success: false,
       error: 'Fehler beim Generieren der Aufgaben',
-      message: error.message
+      message: error.message,
     });
-  } finally {
-    client.release();
   }
 };
 

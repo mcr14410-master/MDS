@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
 const { autoCloseOpenDays, generateAbsenceEntries } = require('../controllers/timeEntriesController');
+const { generateDueTasks } = require('../controllers/maintenanceTasksController');
+const { runGarbageCollection } = require('./fsGarbageCollector');
 
 // ============================================
 // Job Registry
@@ -247,11 +249,41 @@ async function checkBackupStatus() {
   return result;
 }
 
+/**
+ * Wartungsaufgaben aus fälligen Plänen generieren
+ * Läuft täglich um 02:30 (nach absences, vor backup_monitor)
+ */
+async function generateMaintenanceTasks() {
+  const result = await generateDueTasks();
+  return {
+    created_count: result.created_count,
+    plans: result.data.map(t => ({
+      task_id: t.id,
+      plan_id: t.maintenance_plan_id,
+      due_date: t.due_date,
+    })),
+  };
+}
+
+registerJob(
+  'generate_maintenance_tasks',
+  '30 2 * * *',
+  generateMaintenanceTasks,
+  'Wartungsaufgaben aus fälligen Plänen generieren (täglich 02:30)'
+);
+
 registerJob(
   'backup_monitor',
   '0 3 * * *',
   checkBackupStatus,
   'Backup-Status prüfen (täglich 03:00)'
+);
+
+registerJob(
+  'fs_garbage_collection',
+  '30 3 * * *',
+  runGarbageCollection,
+  'Verwaiste Upload-Dateien aufräumen (täglich 03:30, ENV FS_GC_DRY_RUN=true für Testlauf)'
 );
 
 module.exports = { startAll, stopAll, runJob, jobs };

@@ -443,13 +443,19 @@ export const useMaintenanceStore = create((set, get) => ({
     try {
       const response = await axios.put(`${MAINTENANCE_API}/tasks/${taskId}/checklist/${itemId}`, data);
       // Update currentTask checklist items
+      // WICHTIG: response.data.data ist eine Completion-Zeile mit eigener id.
+      // Diese darf item.id NICHT überschreiben, sonst zeigen Folge-Requests
+      // (z.B. AuthImage für photo_path) auf die falsche ID → 404.
+      const { id: completionId, ...completionData } = response.data.data;
       set(state => {
         if (state.currentTask?.id === parseInt(taskId) && state.currentTask?.checklist_items) {
           return {
             currentTask: {
               ...state.currentTask,
               checklist_items: state.currentTask.checklist_items.map(item =>
-                item.id === parseInt(itemId) ? { ...item, ...response.data.data, completed: data.completed } : item
+                item.id === parseInt(itemId)
+                  ? { ...item, ...completionData, completion_id: completionId, completed: data.completed }
+                  : item
               )
             }
           };
