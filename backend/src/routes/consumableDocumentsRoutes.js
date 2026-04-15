@@ -22,6 +22,9 @@ router.delete('/:id', controller.deleteDocument);
 // PUT    /api/consumable-documents/:id/primary        - Set as primary image
 router.put('/:id/primary', controller.setPrimaryImage);
 
+// GET    /api/consumable-documents/:id/view           - View document inline
+router.get('/:id/view', controller.viewDocument);
+
 // GET    /api/consumable-documents/:id/download       - Download document file
 router.get('/:id/download', controller.downloadDocument);
 
