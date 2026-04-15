@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import { useMachinesStore } from '../stores/machinesStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
-import API_BASE_URL from '../config/api';
+import { downloadFileViaApi } from '../utils/fileDownload';
 
 const DOCUMENT_TYPES = {
   manual: 'Handbuch',
@@ -88,8 +88,14 @@ export default function MachineDocumentsTab({ machineId }) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getDownloadUrl = (doc) => {
-    return `${API_BASE_URL}/api/machine-documents/${doc.id}/download`;
+  const handleDownload = async (doc) => {
+    const result = await downloadFileViaApi(
+      `/api/machine-documents/${doc.id}/download`,
+      doc.file_name
+    );
+    if (!result.success) {
+      toast.error(result.error);
+    }
   };
 
   // Group documents by type
@@ -253,17 +259,16 @@ export default function MachineDocumentsTab({ machineId }) {
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {/* Download */}
-                        <a
-                          href={getDownloadUrl(doc)}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => handleDownload(doc)}
                           className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           title="Herunterladen"
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
-                        </a>
+                        </button>
 
                         {hasPermission('machine.update') && (
                           <>

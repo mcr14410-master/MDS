@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from '../utils/axios';
 import { toast } from './Toaster';
+import { downloadFileViaApi } from '../utils/fileDownload';
 
 // Dokument-Typ Labels und Icons
 const DOCUMENT_TYPES = {
@@ -136,8 +137,14 @@ export default function PartDocuments({ partId, onDocumentChange }) {
   };
 
   // Dokument herunterladen
-  const handleDownload = (documentId, filename) => {
-    window.open(`/api/parts/${partId}/documents/${documentId}/download`, '_blank');
+  const handleDownload = async (documentId, filename) => {
+    const result = await downloadFileViaApi(
+      `/api/parts/${partId}/documents/${documentId}/download`,
+      filename
+    );
+    if (!result.success) {
+      toast.error(result.error);
+    }
   };
 
   // Dateigröße formatieren
