@@ -97,6 +97,26 @@ router.post(
 );
 
 /**
+ * GET /api/setup-sheets/:id/photos/:photoId/view
+ * Foto inline anzeigen (für AuthImage-Komponente)
+ */
+router.get(
+  '/:id/photos/:photoId/view',
+  authenticateToken,
+  setupSheetsController.viewPhoto
+);
+
+/**
+ * GET /api/setup-sheets/:id/photos/:photoId/download
+ * Foto als Download ausliefern
+ */
+router.get(
+  '/:id/photos/:photoId/download',
+  authenticateToken,
+  setupSheetsController.downloadPhoto
+);
+
+/**
  * PUT /api/setup-sheets/:id/photos/:photoId
  * Foto-Metadaten aktualisieren
  */
