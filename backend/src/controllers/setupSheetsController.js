@@ -573,6 +573,62 @@ exports.deletePhoto = async (req, res) => {
 };
 
 /**
+ * Interne Helper-Funktion: Foto ausliefern (DRY für view + download)
+ */
+async function servePhoto(req, res, disposition) {
+  const { id, photoId } = req.params;
+
+  try {
+    const result = await db.query(
+      'SELECT file_path, file_name, mime_type FROM setup_sheet_photos WHERE id = $1 AND setup_sheet_id = $2',
+      [photoId, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Foto nicht gefunden' });
+    }
+
+    const photo = result.rows[0];
+    const absPath = path.resolve(__dirname, '../..', photo.file_path);
+    const uploadsRoot = path.resolve(__dirname, '../../uploads');
+
+    // Path-Traversal-Schutz
+    if (!absPath.startsWith(uploadsRoot + path.sep)) {
+      return res.status(403).json({ success: false, message: 'Ungültiger Pfad' });
+    }
+
+    // Datei-Existenz prüfen
+    try {
+      await fs.access(absPath);
+    } catch {
+      return res.status(404).json({ success: false, message: 'Datei nicht auf Server gefunden' });
+    }
+
+    res.setHeader('Content-Type', photo.mime_type || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `${disposition}; filename="${encodeURIComponent(photo.file_name)}"`
+    );
+    res.sendFile(absPath);
+  } catch (error) {
+    console.error('Error serving photo:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Ausliefern des Fotos' });
+  }
+}
+
+/**
+ * GET /api/setup-sheets/:id/photos/:photoId/view
+ * Foto inline anzeigen (für AuthImage-Komponente)
+ */
+exports.viewPhoto = (req, res) => servePhoto(req, res, 'inline');
+
+/**
+ * GET /api/setup-sheets/:id/photos/:photoId/download
+ * Foto als Download ausliefern
+ */
+exports.downloadPhoto = (req, res) => servePhoto(req, res, 'attachment');
+
+/**
  * PUT /api/setup-sheets/:id/photos/:photoId
  * Foto-Metadaten aktualisieren
  */

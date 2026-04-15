@@ -1,7 +1,7 @@
 // frontend/src/components/SetupSheetPhotos.jsx
 import { useState, useRef } from 'react';
 import { useSetupSheetsStore } from '../stores/setupSheetsStore';
-import API_BASE_URL from '../config/api';
+import AuthImage from './common/AuthImage';
 
 const PHOTO_TYPES = [
   { value: 'general', label: 'Allgemeines Foto' },
@@ -170,10 +170,11 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
                   className="aspect-w-16 aspect-h-9 bg-gray-100 dark:bg-gray-900 cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setViewingPhoto(photo)}
                 >
-                  <img
-                    src={`${API_BASE_URL}/${photo.file_path}`}
+                  <AuthImage
+                    apiPath={`/api/setup-sheets/${setupSheetId}/photos/${photo.id}/view`}
                     alt={photo.caption || 'Setup photo'}
                     className="w-full h-48 object-cover"
+                    placeholderClassName="w-full h-48"
                   />
                 </div>
 
@@ -333,10 +334,11 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
             className="max-w-7xl max-h-full overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={`${API_BASE_URL}/${viewingPhoto.file_path}`}
+            <AuthImage
+              apiPath={`/api/setup-sheets/${setupSheetId}/photos/${viewingPhoto.id}/view`}
               alt={viewingPhoto.caption || 'Setup photo'}
               className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg"
+              placeholderClassName="w-96 h-96"
             />
             
             {/* Photo Info Overlay */}
