@@ -1668,3 +1668,6 @@ exports.removeConsumable = async (req, res) => {
     });
   }
 };
+
+// Helper-Export für andere Maintenance-Controller (z.B. Task-Photos)
+exports._serveMaintenanceImage = serveMaintenanceImage;

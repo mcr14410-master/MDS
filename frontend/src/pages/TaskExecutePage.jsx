@@ -599,18 +599,21 @@ export default function TaskExecutePage() {
                   {/* Show uploaded photo */}
                   {item.photo_path && (
                     <div className="mt-3">
-                      <a 
-                        href={`${API_BASE_URL}${item.photo_path}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-block"
+                      <button
+                        type="button"
+                        onClick={() => setLightbox({
+                          apiPath: `/api/maintenance/tasks/${currentTask.id}/checklist/${item.id}/photo/view`,
+                          alt: 'Wartungsfoto',
+                        })}
+                        className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        <img 
-                          src={`${API_BASE_URL}${item.photo_path}`}
-                          alt="Wartungsfoto" 
-                          className="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                        <AuthImage
+                          apiPath={`/api/maintenance/tasks/${currentTask.id}/checklist/${item.id}/photo/view`}
+                          alt="Wartungsfoto"
+                          className="w-24 h-24 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                          placeholderClassName="w-24 h-24 rounded-lg border border-gray-300 dark:border-gray-600"
                         />
-                      </a>
+                      </button>
                     </div>
                   )}
 

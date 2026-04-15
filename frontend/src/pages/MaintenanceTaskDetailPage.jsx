@@ -16,8 +16,9 @@ import {
   Loader2
 } from 'lucide-react';
 import axios from '../utils/axios';
-import API_BASE_URL from '../config/api';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
+import AuthImage from '../components/common/AuthImage';
+import ImageLightbox from '../components/common/ImageLightbox';
 
 export default function MaintenanceTaskDetailPage() {
   const { id } = useParams();
@@ -28,6 +29,7 @@ export default function MaintenanceTaskDetailPage() {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
+  const [lightbox, setLightbox] = useState(null); // { apiPath, alt }
 
   useEffect(() => {
     fetchTaskDetails();
@@ -441,18 +443,21 @@ export default function MaintenanceTaskDetailPage() {
                     {/* Foto */}
                     {item.photo_path && (
                       <div className="pt-2">
-                        <a 
-                          href={`${API_BASE_URL}${item.photo_path}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-block"
+                        <button
+                          type="button"
+                          onClick={() => setLightbox({
+                            apiPath: `/api/maintenance/tasks/${id}/checklist/${item.id}/photo/view`,
+                            alt: 'Wartungsfoto',
+                          })}
+                          className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
                         >
-                          <img 
-                            src={`${API_BASE_URL}${item.photo_path}`}
-                            alt="Wartungsfoto" 
-                            className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                          <AuthImage
+                            apiPath={`/api/maintenance/tasks/${id}/checklist/${item.id}/photo/view`}
+                            alt="Wartungsfoto"
+                            className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                            placeholderClassName="w-32 h-32 rounded-lg border border-gray-300 dark:border-gray-600"
                           />
-                        </a>
+                        </button>
                       </div>
                     )}
 
@@ -481,6 +486,13 @@ export default function MaintenanceTaskDetailPage() {
           </Link>
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={!!lightbox}
+        onClose={() => setLightbox(null)}
+        apiPath={lightbox?.apiPath}
+        alt={lightbox?.alt}
+      />
     </div>
   );
 }
