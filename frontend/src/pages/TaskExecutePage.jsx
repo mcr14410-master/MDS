@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import API_BASE_URL from '../config/api';
+import AuthImage from '../components/common/AuthImage';
+import ImageLightbox from '../components/common/ImageLightbox';
 
 export default function TaskExecutePage() {
   const { id } = useParams();
@@ -54,6 +56,7 @@ export default function TaskExecutePage() {
   const [stopItem, setStopItem] = useState(null);
   const [stopReason, setStopReason] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [lightbox, setLightbox] = useState(null); // { apiPath, alt }
 
   useEffect(() => {
     loadTask();
@@ -323,18 +326,21 @@ export default function TaskExecutePage() {
         {currentTask.plan_reference_image && (
           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referenzbild</h4>
-            <a 
-              href={`${API_BASE_URL}${currentTask.plan_reference_image}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block"
+            <button
+              type="button"
+              onClick={() => setLightbox({
+                apiPath: `/api/maintenance/plans/${currentTask.plan_id}/reference-image/view`,
+                alt: 'Referenzbild',
+              })}
+              className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <img 
-                src={`${API_BASE_URL}${currentTask.plan_reference_image}`}
-                alt="Referenzbild" 
-                className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+              <AuthImage
+                apiPath={`/api/maintenance/plans/${currentTask.plan_id}/reference-image/view`}
+                alt="Referenzbild"
+                className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                placeholderClassName="w-48 h-48 rounded-lg border border-gray-300 dark:border-gray-600"
               />
-            </a>
+            </button>
           </div>
         )}
       </div>
@@ -436,18 +442,21 @@ export default function TaskExecutePage() {
                   {item.reference_image && (
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Referenzbild:</p>
-                      <a 
-                        href={`${API_BASE_URL}${item.reference_image}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block"
+                      <button
+                        type="button"
+                        onClick={() => setLightbox({
+                          apiPath: `/api/maintenance/checklist/${item.id}/reference-image/view`,
+                          alt: 'Referenzbild',
+                        })}
+                        className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        <img 
-                          src={`${API_BASE_URL}${item.reference_image}`}
-                          alt="Referenzbild" 
-                          className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                        <AuthImage
+                          apiPath={`/api/maintenance/checklist/${item.id}/reference-image/view`}
+                          alt="Referenzbild"
+                          className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                          placeholderClassName="w-32 h-32 rounded-lg border border-gray-300 dark:border-gray-600"
                         />
-                      </a>
+                      </button>
                     </div>
                   )}
 
@@ -933,6 +942,13 @@ export default function TaskExecutePage() {
           </div>
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={!!lightbox}
+        onClose={() => setLightbox(null)}
+        apiPath={lightbox?.apiPath}
+        alt={lightbox?.alt}
+      />
     </div>
   );
 }

@@ -1087,6 +1087,139 @@ exports.uploadChecklistItemReferenceImage = async (req, res) => {
 };
 
 /**
+ * Interne Helper-Funktion: Maintenance-Bild ausliefern (DRY für view + download)
+ * @param {string} dbReferencePath - z.B. "/uploads/maintenance/xxx.png" aus DB
+ */
+async function serveMaintenanceImage(req, res, dbReferencePath, disposition) {
+  const path = require('path');
+  const fs = require('fs').promises;
+
+  if (!dbReferencePath) {
+    return res.status(404).json({ success: false, error: 'Kein Bild vorhanden' });
+  }
+
+  // dbReferencePath ist z.B. "/uploads/maintenance/xxx.png" → in absoluten Pfad konvertieren
+  const relativePath = dbReferencePath.replace(/^\/uploads\//, 'uploads/');
+  const absPath = path.resolve(__dirname, '../..', relativePath);
+  const uploadsRoot = path.resolve(__dirname, '../../uploads');
+
+  // Path-Traversal-Schutz
+  if (!absPath.startsWith(uploadsRoot + path.sep)) {
+    return res.status(403).json({ success: false, error: 'Ungültiger Pfad' });
+  }
+
+  // Datei-Existenz prüfen
+  try {
+    await fs.access(absPath);
+  } catch {
+    return res.status(404).json({ success: false, error: 'Datei nicht auf Server gefunden' });
+  }
+
+  // MIME-Type aus Extension
+  const ext = path.extname(absPath).toLowerCase();
+  const mimeMap = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+  };
+  const mimeType = mimeMap[ext] || 'application/octet-stream';
+  const fileName = path.basename(absPath);
+
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader(
+    'Content-Disposition',
+    `${disposition}; filename="${encodeURIComponent(fileName)}"`
+  );
+  res.sendFile(absPath);
+}
+
+/**
+ * GET /api/maintenance/plans/:id/reference-image/view
+ * Plan-Referenzbild inline anzeigen
+ */
+exports.viewPlanReferenceImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT reference_image FROM maintenance_plans WHERE id = $1',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Wartungsplan nicht gefunden' });
+    }
+    await serveMaintenanceImage(req, res, result.rows[0].reference_image, 'inline');
+  } catch (error) {
+    console.error('Error viewing plan reference image:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Ausliefern des Bildes' });
+  }
+};
+
+/**
+ * GET /api/maintenance/plans/:id/reference-image/download
+ * Plan-Referenzbild als Download
+ */
+exports.downloadPlanReferenceImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT reference_image FROM maintenance_plans WHERE id = $1',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Wartungsplan nicht gefunden' });
+    }
+    await serveMaintenanceImage(req, res, result.rows[0].reference_image, 'attachment');
+  } catch (error) {
+    console.error('Error downloading plan reference image:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Ausliefern des Bildes' });
+  }
+};
+
+/**
+ * GET /api/maintenance/checklist/:itemId/reference-image/view
+ * Checklist-Item-Referenzbild inline anzeigen
+ */
+exports.viewChecklistItemReferenceImage = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const result = await pool.query(
+      'SELECT reference_image FROM maintenance_checklist_items WHERE id = $1',
+      [itemId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Checklist-Item nicht gefunden' });
+    }
+    await serveMaintenanceImage(req, res, result.rows[0].reference_image, 'inline');
+  } catch (error) {
+    console.error('Error viewing checklist item reference image:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Ausliefern des Bildes' });
+  }
+};
+
+/**
+ * GET /api/maintenance/checklist/:itemId/reference-image/download
+ * Checklist-Item-Referenzbild als Download
+ */
+exports.downloadChecklistItemReferenceImage = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const result = await pool.query(
+      'SELECT reference_image FROM maintenance_checklist_items WHERE id = $1',
+      [itemId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Checklist-Item nicht gefunden' });
+    }
+    await serveMaintenanceImage(req, res, result.rows[0].reference_image, 'attachment');
+  } catch (error) {
+    console.error('Error downloading checklist item reference image:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Ausliefern des Bildes' });
+  }
+};
+
+/**
  * Reorder checklist items
  * PUT /api/maintenance/plans/:id/checklist/reorder
  */

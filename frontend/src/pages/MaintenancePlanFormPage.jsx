@@ -12,6 +12,7 @@ import {
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useMachinesStore } from '../stores/machinesStore';
 import API_BASE_URL from '../config/api';
+import AuthImage from '../components/common/AuthImage';
 
 export default function MaintenancePlanFormPage() {
   const { id } = useParams();
@@ -565,10 +566,11 @@ export default function MaintenancePlanFormPage() {
             {/* Bestehendes Bild (nur bei Edit) */}
             {isEdit && currentPlan?.reference_image && !referenceImageFile && (
               <div className="relative group">
-                <img 
-                  src={`${API_BASE_URL}${currentPlan.reference_image}`}
-                  alt="Aktuelles Referenzbild" 
+                <AuthImage
+                  apiPath={`/api/maintenance/plans/${currentPlan.id}/reference-image/view`}
+                  alt="Aktuelles Referenzbild"
                   className="w-40 h-40 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                  placeholderClassName="w-40 h-40 rounded-lg border border-gray-300 dark:border-gray-600"
                 />
                 <button
                   type="button"

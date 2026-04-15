@@ -25,6 +25,8 @@ import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useConsumablesStore } from '../stores/consumablesStore';
 import API_BASE_URL from '../config/api';
 import axios from '../utils/axios';
+import AuthImage from '../components/common/AuthImage';
+import ImageLightbox from '../components/common/ImageLightbox';
 
 export default function MaintenancePlanDetailPage() {
   const { id } = useParams();
@@ -70,6 +72,7 @@ export default function MaintenancePlanDetailPage() {
   const [selectedConsumableId, setSelectedConsumableId] = useState('');
   const [consumableQuantity, setConsumableQuantity] = useState('');
   const [consumableNotes, setConsumableNotes] = useState('');
+  const [lightbox, setLightbox] = useState(null); // { apiPath, alt }
 
   useEffect(() => {
     loadPlan();
@@ -562,18 +565,21 @@ export default function MaintenancePlanDetailPage() {
         {currentPlan.reference_image && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Referenzbild</h4>
-            <a 
-              href={`${API_BASE_URL}${currentPlan.reference_image}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block"
+            <button
+              type="button"
+              onClick={() => setLightbox({
+                apiPath: `/api/maintenance/plans/${currentPlan.id}/reference-image/view`,
+                alt: 'Referenzbild',
+              })}
+              className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <img 
-                src={`${API_BASE_URL}${currentPlan.reference_image}`}
-                alt="Referenzbild" 
-                className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+              <AuthImage
+                apiPath={`/api/maintenance/plans/${currentPlan.id}/reference-image/view`}
+                alt="Referenzbild"
+                className="w-48 h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                placeholderClassName="w-48 h-48 rounded-lg border border-gray-300 dark:border-gray-600"
               />
-            </a>
+            </button>
           </div>
         )}
       </div>
@@ -689,18 +695,21 @@ export default function MaintenancePlanDetailPage() {
                     {/* Referenzbild */}
                     {item.reference_image && (
                       <div className="mt-2">
-                        <a 
-                          href={`${API_BASE_URL}${item.reference_image}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block"
+                        <button
+                          type="button"
+                          onClick={() => setLightbox({
+                            apiPath: `/api/maintenance/checklist/${item.id}/reference-image/view`,
+                            alt: 'Referenzbild',
+                          })}
+                          className="inline-block cursor-pointer hover:opacity-80 transition-opacity"
                         >
-                          <img 
-                            src={`${API_BASE_URL}${item.reference_image}`}
-                            alt="Referenzbild" 
-                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                          <AuthImage
+                            apiPath={`/api/maintenance/checklist/${item.id}/reference-image/view`}
+                            alt="Referenzbild"
+                            className="w-20 h-20 object-cover rounded border border-gray-300 dark:border-gray-600"
+                            placeholderClassName="w-20 h-20 rounded border border-gray-300 dark:border-gray-600"
                           />
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1131,10 +1140,11 @@ export default function MaintenancePlanDetailPage() {
                   {/* Bestehendes Bild anzeigen */}
                   {editingItem.reference_image && (
                     <div className="mb-3">
-                      <img 
-                        src={`${API_BASE_URL}${editingItem.reference_image}`}
-                        alt="Referenzbild" 
+                      <AuthImage
+                        apiPath={`/api/maintenance/checklist/${editingItem.id}/reference-image/view`}
+                        alt="Referenzbild"
                         className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                        placeholderClassName="w-32 h-32 rounded-lg border border-gray-300 dark:border-gray-600"
                       />
                     </div>
                   )}
@@ -1202,6 +1212,13 @@ export default function MaintenancePlanDetailPage() {
           </div>
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={!!lightbox}
+        onClose={() => setLightbox(null)}
+        apiPath={lightbox?.apiPath}
+        alt={lightbox?.alt}
+      />
     </div>
   );
 }

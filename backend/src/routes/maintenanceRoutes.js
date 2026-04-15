@@ -76,6 +76,10 @@ router.post(
 // Referenzbild für Wartungsplan löschen
 router.delete('/plans/:id/reference-image', maintenancePlansController.deletePlanReferenceImage);
 
+// Referenzbild für Wartungsplan anzeigen / herunterladen
+router.get('/plans/:id/reference-image/view', maintenancePlansController.viewPlanReferenceImage);
+router.get('/plans/:id/reference-image/download', maintenancePlansController.downloadPlanReferenceImage);
+
 // Checklist-Items neu sortieren
 router.put('/plans/:id/checklist/reorder', maintenancePlansController.reorderChecklistItems);
 
@@ -89,6 +93,10 @@ router.post(
   handleMaintenanceUploadError,
   maintenancePlansController.uploadChecklistItemReferenceImage
 );
+
+// Referenzbild für Checklist-Item anzeigen / herunterladen
+router.get('/checklist/:itemId/reference-image/view', maintenancePlansController.viewChecklistItemReferenceImage);
+router.get('/checklist/:itemId/reference-image/download', maintenancePlansController.downloadChecklistItemReferenceImage);
 
 // Checklist-Item löschen
 router.delete('/checklist/:itemId', maintenancePlansController.deleteChecklistItem);
