@@ -9,9 +9,11 @@ import {
   Download,
   Trash2,
   Star,
-  X,
   Eye
 } from 'lucide-react';
+import AuthImage from '../common/AuthImage';
+import ImageLightbox from '../common/ImageLightbox';
+import { downloadFileViaApi } from '../../utils/fileDownload';
 
 const DOCUMENT_TYPES = [
   { value: 'sds', label: 'Sicherheitsdatenblatt (SDB)', icon: AlertTriangle, color: 'orange' },
@@ -142,8 +144,19 @@ export default function ConsumableDocumentsTab({ consumableId }) {
     return new Date(dateStr).toLocaleDateString('de-DE');
   };
 
-  const getFileUrl = (filePath) => {
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${filePath}`;
+  const getFileIcon = (docType) => {
+    const type = DOCUMENT_TYPES.find(t => t.value === docType);
+    return type ? type.icon : File;
+  };
+
+  const handleDownload = async (doc) => {
+    const result = await downloadFileViaApi(
+      `/api/consumable-documents/${doc.id}/download`,
+      doc.original_filename
+    );
+    if (!result.success) {
+      alert(result.error);
+    }
   };
 
   // Group documents by type
@@ -210,10 +223,11 @@ export default function ConsumableDocumentsTab({ consumableId }) {
                           className="h-32 bg-gray-100 dark:bg-gray-900 cursor-pointer relative group"
                           onClick={() => setPreviewImage(doc)}
                         >
-                          <img
-                            src={getFileUrl(doc.file_path)}
+                          <AuthImage
+                            apiPath={`/api/consumable-documents/${doc.id}/view`}
                             alt={doc.title}
                             className="w-full h-full object-cover"
+                            placeholderClassName="w-full h-full"
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
                             <Eye className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -247,15 +261,14 @@ export default function ConsumableDocumentsTab({ consumableId }) {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <a
-                            href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/consumable-documents/${doc.id}/download`}
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(doc)}
                             className="flex items-center gap-1 px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                            target="_blank"
-                            rel="noopener noreferrer"
                           >
                             <Download className="h-4 w-4" />
                             Download
-                          </a>
+                          </button>
                           {doc.document_type === 'image' && !doc.is_primary && (
                             <button
                               onClick={() => handleSetPrimary(doc.id)}
@@ -367,26 +380,14 @@ export default function ConsumableDocumentsTab({ consumableId }) {
         </div>
       )}
 
-      {/* Image Preview Modal */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-          onClick={() => setPreviewImage(null)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300"
-            onClick={() => setPreviewImage(null)}
-          >
-            <X className="h-8 w-8" />
-          </button>
-          <img
-            src={getFileUrl(previewImage.file_path)}
-            alt={previewImage.title}
-            className="max-w-full max-h-full object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      {/* Image Preview (ImageLightbox) */}
+      <ImageLightbox
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        apiPath={previewImage ? `/api/consumable-documents/${previewImage.id}/view` : null}
+        alt={previewImage?.title}
+        caption={previewImage?.title}
+      />
     </div>
   );
 }

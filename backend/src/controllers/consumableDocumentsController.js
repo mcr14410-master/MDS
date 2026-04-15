@@ -397,7 +397,10 @@ exports.setPrimaryImage = async (req, res) => {
  * GET /api/consumable-documents/:id/download
  * Download document file
  */
-exports.downloadDocument = async (req, res) => {
+/**
+ * Interne Helper-Funktion: Document ausliefern (DRY für view + download)
+ */
+async function serveDocument(req, res, disposition) {
   try {
     const { id } = req.params;
 
@@ -414,11 +417,17 @@ exports.downloadDocument = async (req, res) => {
     }
 
     const doc = result.rows[0];
-    const filePath = path.join(UPLOAD_DIR, doc.file_path);
+    const absPath = path.resolve(UPLOAD_DIR, doc.file_path);
+    const uploadsRoot = path.resolve(UPLOAD_DIR);
 
-    // Check if file exists
+    // Path-Traversal-Schutz
+    if (!absPath.startsWith(uploadsRoot + path.sep)) {
+      return res.status(403).json({ success: false, message: 'Ungültiger Pfad' });
+    }
+
+    // Datei-Existenz prüfen
     try {
-      await fs.access(filePath);
+      await fs.access(absPath);
     } catch {
       return res.status(404).json({
         success: false,
@@ -426,14 +435,30 @@ exports.downloadDocument = async (req, res) => {
       });
     }
 
-    res.download(filePath, doc.original_filename);
-
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `${disposition}; filename="${encodeURIComponent(doc.original_filename)}"`
+    );
+    res.sendFile(absPath);
   } catch (error) {
-    console.error('Error downloading document:', error);
+    console.error('Error serving document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error downloading document',
+      message: 'Error serving document',
       error: error.message
     });
   }
-};
+}
+
+/**
+ * GET /api/consumable-documents/:id/view
+ * Document inline anzeigen (für AuthImage)
+ */
+exports.viewDocument = (req, res) => serveDocument(req, res, 'inline');
+
+/**
+ * GET /api/consumable-documents/:id/download
+ * Download document file
+ */
+exports.downloadDocument = (req, res) => serveDocument(req, res, 'attachment');
