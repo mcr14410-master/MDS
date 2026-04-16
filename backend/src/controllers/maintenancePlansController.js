@@ -1359,7 +1359,7 @@ exports.getDashboard = async (req, res) => {
         m.name AS machine_name,
         m.location AS machine_location,
         m.current_operating_hours,
-        mt.name AS maintenance_type,
+        mt.description AS maintenance_type,
         mt.icon,
         mt.color
       FROM maintenance_plans mp

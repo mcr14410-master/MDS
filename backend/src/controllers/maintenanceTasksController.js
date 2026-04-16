@@ -56,7 +56,7 @@ exports.getAllTasks = async (req, res) => {
         m.machine_category,
         m.location AS machine_location,
         -- Wartungstyp (nullable für standalone)
-        mtype.name AS maintenance_type,
+        mtype.description AS maintenance_type,
         mtype.icon AS maintenance_type_icon,
         mtype.color AS maintenance_type_color,
         -- User-Daten
@@ -205,7 +205,7 @@ exports.getMyTasks = async (req, res) => {
         mp.interval_hours,
         m.name AS machine_name,
         COALESCE(mt.location, m.location) AS machine_location,
-        mtype.name AS maintenance_type,
+        mtype.description AS maintenance_type,
         mtype.icon AS maintenance_type_icon,
         mtype.color AS maintenance_type_color,
         (SELECT COUNT(*) FROM maintenance_checklist_items WHERE maintenance_plan_id = mp.id) AS total_checklist_items,
@@ -324,7 +324,7 @@ exports.getTaskById = async (req, res) => {
         m.machine_category,
         COALESCE(mt.location, m.location) AS machine_location,
         m.current_operating_hours,
-        mtype.name AS maintenance_type,
+        mtype.description AS maintenance_type,
         mtype.icon AS maintenance_type_icon,
         mtype.color AS maintenance_type_color,
         u_assigned.username AS assigned_to_username,
