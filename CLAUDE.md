@@ -98,6 +98,58 @@ Bei Problemen, Fehlern oder Bugs:
 - Wiki, Kundenverwaltung, Verbrauchsmaterial
 - Setup Sheets, Zerobot Positionsrechner
 
+## Ordner-Struktur
+
+```
+MDS/
+├── backend/                 Node.js/Express API
+│   ├── src/
+│   │   ├── config/           DB-Pool, Auth, App-Config
+│   │   ├── controllers/      Request-Handler
+│   │   ├── middleware/       authenticateToken, Logging, Errors
+│   │   ├── routes/           API-Endpoints (/api/*)
+│   │   ├── services/         Business-Logik, Raw-SQL-Queries
+│   │   ├── utils/            Helpers (Timezone, File-Upload, PDF…)
+│   │   └── server.js         Express-Entry
+│   ├── migrations/          node-pg-migrate Migrationen
+│   ├── tests/               Backend-Tests
+│   ├── uploads/             User-Uploads (nur via /view + /download)
+│   ├── http/                REST-Client .http-Dateien (API-Tests)
+│   └── docs/                Backend-spezifische Docs
+│
+├── frontend/                React 19 SPA (Vite)
+│   ├── src/
+│   │   ├── components/       Wiederverwendbare UI-Komponenten
+│   │   ├── pages/            Seiten / Route-Targets (React Router v7)
+│   │   ├── stores/           Zustand-Stores
+│   │   ├── utils/            axios-Instanz, downloadFileViaApi, Helpers
+│   │   ├── config/           Frontend-Config
+│   │   ├── assets/           Styles, Images
+│   │   ├── App.jsx           Root-Component
+│   │   └── main.jsx          Vite-Entry
+│   ├── public/              Statische Assets
+│   └── scripts/             Build-/Dev-Skripte
+│
+├── docs/                    Projekt-Doku (ARCHITECTURE.md, cron-system.md,
+│                            Feature-Guides, sessions/)
+├── scripts/                 Ops-Skripte (init.sh, deploy.sh, migrate.sh,
+│                            backup.sh, restore.sh)
+│
+├── compose.yaml             Docker-Compose (Backend, Frontend, Postgres, Caddy)
+├── Caddyfile                Reverse Proxy / TLS
+├── .env.production.example  Env-Template
+├── ROADMAP.md               Wochen-Meilensteine
+├── CHANGELOG.md             Release-Notes
+└── CLAUDE.md                Diese Datei
+```
+
+**Wo was typischerweise hingehört:**
+- Neuer API-Endpoint → `backend/src/routes/` + Logik in `backend/src/services/`
+- DB-Schema-Änderung → `backend/migrations/` (node-pg-migrate)
+- Neue React-Seite → `frontend/src/pages/` + Komponenten in `frontend/src/components/`
+- Shared Frontend-Utils → `frontend/src/utils/` (z. B. axios-Instanz)
+- Cron-Job → `backend/src/services/` + Registrierung im Server-Startup
+
 ## Hardware-Umgebung
 - TopSolid CAD/CAM v7.17, Heidenhain TNC, Siemens Drehmaschinen, Mazatrol 640M
 - Zerobot Laderobots (Grob G350, Hermle C22)
