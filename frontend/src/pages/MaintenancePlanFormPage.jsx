@@ -300,7 +300,7 @@ export default function MaintenancePlanFormPage() {
               >
                 <option value="">Typ wählen...</option>
                 {maintenanceTypes.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{t.description}</option>
                 ))}
               </select>
             </div>
