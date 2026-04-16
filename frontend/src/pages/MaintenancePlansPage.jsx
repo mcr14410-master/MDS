@@ -76,7 +76,7 @@ export default function MaintenancePlansPage() {
     is_shift_critical: '',
     search: ''
   });
-  const [showFilters, setShowFilters] = useState(!!initialMachineId); // Filter automatisch öffnen wenn Maschine vorausgewählt
+  const [showFilters, setShowFilters] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
 
