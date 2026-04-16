@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  Settings, 
-  Plus, 
-  Search, 
+import {
+  Settings,
+  Plus,
+  Search,
   Filter,
   Clock,
   AlertTriangle,
@@ -14,10 +14,41 @@ import {
   Users,
   Trash2,
   Edit,
-  MoreVertical
+  MoreVertical,
+  ClipboardCheck,
+  Sparkles,
+  Wrench,
+  Droplet,
+  Target,
+  Shield,
+  TrendingUp,
+  Bot,
+  ShieldCheck,
+  Droplets,
+  RefreshCw,
+  Crosshair
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useMachinesStore } from '../stores/machinesStore';
+
+const MAINTENANCE_TYPE_ICONS = {
+  ClipboardCheck,
+  Sparkles,
+  Wrench,
+  Droplet,
+  Filter,
+  Target,
+  AlertTriangle,
+  Shield,
+  TrendingUp,
+  Bot,
+  Clock,
+  ShieldCheck,
+  Droplets,
+  Search,
+  RefreshCw,
+  Crosshair,
+};
 
 export default function MaintenancePlansPage() {
   const navigate = useNavigate();
@@ -290,11 +321,14 @@ export default function MaintenancePlansPage() {
                   <Link to={`/maintenance/plans/${plan.id}`} className="flex-1">
                     <div className="flex items-start gap-4">
                       {/* Icon */}
-                      <div 
+                      <div
                         className="p-3 rounded-lg"
                         style={{ backgroundColor: `${plan.maintenance_type_color}20`, color: plan.maintenance_type_color }}
                       >
-                        <Settings className="w-6 h-6" />
+                        {(() => {
+                          const TypeIcon = MAINTENANCE_TYPE_ICONS[plan.maintenance_type_icon] || Settings;
+                          return <TypeIcon className="w-6 h-6" />;
+                        })()}
                       </div>
 
                       {/* Content */}
