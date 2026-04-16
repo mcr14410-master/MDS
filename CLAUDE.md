@@ -35,11 +35,11 @@ Bei Problemen, Fehlern oder Bugs:
 - CHANGELOG.md pflegen
 
 ## Git-Workflow
-- Neue Branches IMMER von aktuellem main erstellen (`git checkout main && git pull` vor dem Branchen)
+- Neue Branches IMMER von aktuellem master erstellen (`git checkout master && git pull` vor dem Branchen)
 - Für jede Session/Feature/Bugfix einen neuen Branch erstellen
 - Einzelne Schritte committen (kleine, nachvollziehbare Commits)
 - Push erst wenn alles läuft und getestet ist
-- Merge via Pull Request auf GitHub nach main
+- Merge via Pull Request auf GitHub nach master
 - Keine Commits, Pushes oder Branch-Operationen ohne explizite Aufforderung
 - `git diff` und `git status` sind jederzeit erlaubt
 
