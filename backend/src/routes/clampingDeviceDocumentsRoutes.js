@@ -60,6 +60,16 @@ router.get(
 );
 
 /**
+ * View document inline (Bilder in Lightbox etc.)
+ * GET /api/clamping-device-documents/:id/view
+ */
+router.get(
+  '/documents/:id/view',
+  requirePermission('storage.view'),
+  controller.viewDocument
+);
+
+/**
  * Update document metadata
  * PUT /api/clamping-device-documents/:id
  */
