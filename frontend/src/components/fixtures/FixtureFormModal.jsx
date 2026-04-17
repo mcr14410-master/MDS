@@ -6,7 +6,7 @@ import { toast } from '../Toaster';
 import axios from '../../utils/axios';
 
 export default function FixtureFormModal({ fixture, types, onClose }) {
-  const { createFixture, updateFixture, checkFixtureNumber } = useFixturesStore();
+  const { createFixture, updateFixture, checkFixtureNumber, getNextFixtureNumber } = useFixturesStore();
   const { parts, fetchParts } = usePartsStore();
   const { machines, fetchMachines } = useMachinesStore();
   
@@ -49,7 +49,7 @@ export default function FixtureFormModal({ fixture, types, onClose }) {
   useEffect(() => {
     fetchParts();
     fetchMachines();
-    
+
     if (fixture) {
       setFormData({
         fixture_number: fixture.fixture_number || '',
@@ -60,11 +60,16 @@ export default function FixtureFormModal({ fixture, types, onClose }) {
         machine_id: fixture.machine_id || '',
         notes: fixture.notes || '',
       });
-      
+
       // Load operations for selected part
       if (fixture.part_id) {
         loadOperations(fixture.part_id);
       }
+    } else {
+      // Neue Vorrichtung: naechste freie Nummer vorbelegen
+      getNextFixtureNumber()
+        .then(num => setFormData(f => ({ ...f, fixture_number: num })))
+        .catch(console.error);
     }
   }, [fixture]);
 
