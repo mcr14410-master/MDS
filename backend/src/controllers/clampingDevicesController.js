@@ -274,11 +274,13 @@ exports.deleteType = async (req, res) => {
  */
 exports.getAll = async (req, res) => {
   try {
-    const { 
-      type_id, 
-      status, 
+    const {
+      type_id,
+      status,
       machine_id,
       search,
+      sort_by,
+      sort_order,
       include_deleted = 'false'
     } = req.query;
 
@@ -328,7 +330,18 @@ exports.getAll = async (req, res) => {
       paramCount++;
     }
 
-    queryText += ` ORDER BY type_name, name`;
+    // Sortierung (Whitelist gegen SQL-Injection)
+    const sortColumnMap = {
+      name: 'name',
+      inventory_number: 'inventory_number',
+      type_name: 'type_name',
+      manufacturer: 'manufacturer',
+      status: 'status',
+      total_stock: 'total_stock',
+    };
+    const sortColumn = sortColumnMap[sort_by] || 'type_name';
+    const sortDirection = String(sort_order).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    queryText += ` ORDER BY ${sortColumn} ${sortDirection} NULLS LAST, name ASC`;
 
     const result = await pool.query(queryText, params);
 
