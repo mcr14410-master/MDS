@@ -53,6 +53,7 @@ router.use(authenticateToken);
 router.get('/:id/documents', fixtureDocumentsController.getDocuments);
 router.post('/:id/documents/upload', upload.single('file'), fixtureDocumentsController.uploadDocument);
 router.get('/documents/:id/download', fixtureDocumentsController.downloadDocument);
+router.get('/documents/:id/view', fixtureDocumentsController.viewDocument);
 router.put('/documents/:id', fixtureDocumentsController.updateDocument);
 router.delete('/documents/:id', fixtureDocumentsController.deleteDocument);
 
