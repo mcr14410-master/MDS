@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useFixturesStore } from '../stores/fixturesStore';
+import { usePreferencesStore } from '../stores/preferencesStore';
 import FixtureTypesModal from '../components/fixtures/FixtureTypesModal';
 import FixtureFormModal from '../components/fixtures/FixtureFormModal';
+import Pagination from '../components/Pagination';
 
 const statusColors = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -16,31 +18,38 @@ const statusLabels = {
   retired: 'Ausgemustert',
 };
 
+const defaultFilters = {
+  search: '',
+  type_id: '',
+  status: '',
+  sort_by: 'fixture_number',
+  sort_order: 'asc',
+};
+
 export default function FixturesPage() {
-  const { 
-    fixtures, 
-    types, 
-    stats, 
-    loading, 
-    fetchFixtures, 
-    fetchTypes, 
-    fetchStats 
+  const {
+    fixtures,
+    types,
+    stats,
+    loading,
+    fetchFixtures,
+    fetchTypes,
+    fetchStats,
   } = useFixturesStore();
-  
+
+  const { getViewMode, setViewMode, getPageSize, setPageSize } = usePreferencesStore();
+  const viewMode = getViewMode('fixtures');
+  const pageSize = getPageSize('fixtures');
+
   const [showTypesModal, setShowTypesModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingFixture, setEditingFixture] = useState(null);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
-  const [filters, setFilters] = useState({
-    type_id: '',
-    status: '',
-    search: '',
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState(defaultFilters);
 
   useEffect(() => {
     fetchTypes();
     fetchStats();
-    fetchFixtures();
   }, []);
 
   useEffect(() => {
@@ -48,13 +57,39 @@ export default function FixturesPage() {
     if (filters.type_id) activeFilters.type_id = filters.type_id;
     if (filters.status) activeFilters.status = filters.status;
     if (filters.search) activeFilters.search = filters.search;
-    
+    activeFilters.sort_by = filters.sort_by;
+    activeFilters.sort_order = filters.sort_order;
+
     fetchFixtures(activeFilters);
   }, [filters]);
 
+  // Clamp currentPage, wenn Ergebnisliste kleiner wird
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(fixtures.length / pageSize));
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [fixtures.length, pageSize, currentPage]);
+
+  const paginatedFixtures = fixtures.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
+
+  const handlePageSizeChange = (size) => {
+    setPageSize('fixtures', size);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = !!(filters.search || filters.type_id || filters.status);
 
   const getStatusBadge = (status) => (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || statusColors.active}`}>
@@ -158,7 +193,7 @@ export default function FixturesPage() {
           {/* View Mode Toggle */}
           <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => setViewMode('fixtures', 'grid')}
               className={`p-2 transition-colors ${
                 viewMode === 'grid'
                   ? 'bg-indigo-600 text-white'
@@ -171,7 +206,7 @@ export default function FixturesPage() {
               </svg>
             </button>
             <button
-              onClick={() => setViewMode('table')}
+              onClick={() => setViewMode('fixtures', 'table')}
               className={`p-2 transition-colors ${
                 viewMode === 'table'
                   ? 'bg-indigo-600 text-white'
@@ -184,7 +219,7 @@ export default function FixturesPage() {
               </svg>
             </button>
           </div>
-          
+
           <button
             onClick={() => setShowTypesModal(true)}
             className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -195,7 +230,7 @@ export default function FixturesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
-          
+
           <button
             onClick={() => {
               setEditingFixture(null);
@@ -214,19 +249,31 @@ export default function FixturesPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-indigo-500 transition-colors"
+            onClick={() => handleFilterChange('status', '')}
+            title="Alle anzeigen"
+          >
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.total || 0}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">Gesamt</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-green-500 transition-colors"
+            onClick={() => handleFilterChange('status', 'active')}
+            title="Nur aktive anzeigen"
+          >
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {stats.active || 0}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">Aktiv</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-orange-500 transition-colors"
+            onClick={() => handleFilterChange('status', 'in_repair')}
+            title="Nur in Reparatur anzeigen"
+          >
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {stats.in_repair || 0}
             </div>
@@ -243,58 +290,88 @@ export default function FixturesPage() {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="flex flex-wrap gap-4">
           {/* Search */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Suche
-            </label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Vorrichtungsnr., Name, Bemerkung..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
-            />
+          <div className="flex-1 min-w-[240px]">
+            <div className="relative">
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Vorrichtungsnr., Name, Bemerkung..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
 
           {/* Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Typ
-            </label>
-            <select
-              value={filters.type_id}
-              onChange={(e) => handleFilterChange('type_id', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">Alle Typen</option>
-              {types.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={filters.type_id}
+            onChange={(e) => handleFilterChange('type_id', e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Alle Typen</option>
+            {types.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </select>
 
           {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
-            </label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
+          <select
+            value={filters.status}
+            onChange={(e) => handleFilterChange('status', e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">Alle Status</option>
+            <option value="active">Aktiv</option>
+            <option value="in_repair">In Reparatur</option>
+            <option value="retired">Ausgemustert</option>
+          </select>
+
+          {/* Sort */}
+          <select
+            value={`${filters.sort_by}-${filters.sort_order}`}
+            onChange={(e) => {
+              const [sort_by, sort_order] = e.target.value.split('-');
+              setFilters(prev => ({ ...prev, sort_by, sort_order }));
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="fixture_number-asc">Vorrichtungs-Nr. ↑</option>
+            <option value="fixture_number-desc">Vorrichtungs-Nr. ↓</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="type_name-asc">Typ A-Z</option>
+            <option value="type_name-desc">Typ Z-A</option>
+            <option value="status-asc">Status ↑</option>
+            <option value="total_stock-desc">Bestand (hoch zuerst)</option>
+            <option value="total_stock-asc">Bestand (niedrig zuerst)</option>
+          </select>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <option value="">Alle Status</option>
-              <option value="active">Aktiv</option>
-              <option value="in_repair">In Reparatur</option>
-              <option value="retired">Ausgemustert</option>
-            </select>
-          </div>
+              Zurücksetzen
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Results Count */}
+      {!loading && (
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {fixtures.length} {fixtures.length === 1 ? 'Vorrichtung' : 'Vorrichtungen'} gefunden
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -316,115 +393,126 @@ export default function FixturesPage() {
           </p>
         </div>
       ) : viewMode === 'grid' ? (
-        /* Grid View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {fixtures.map((fixture) => (
-            <FixtureCard key={fixture.id} fixture={fixture} />
-          ))}
-        </div>
-      ) : (
-        /* Table View */
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Vorrichtung
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Typ
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Zuordnung
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Lagerorte
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Aktionen
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {fixtures.map((fixture) => (
-                  <tr 
-                    key={fixture.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-4 py-4">
-                      <Link to={`/fixtures/${fixture.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400">
-                        <div className="font-medium text-gray-900 dark:text-white font-mono">
-                          {fixture.fixture_number}
-                        </div>
-                        {fixture.name && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {fixture.name}
-                          </div>
-                        )}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                      {fixture.type_name || '-'}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm space-y-0.5">
-                        {fixture.part_number && (
-                          <div className="text-gray-900 dark:text-white">{fixture.part_number}</div>
-                        )}
-                        {fixture.machine_name && (
-                          <div className="text-gray-500 dark:text-gray-400">{fixture.machine_name}</div>
-                        )}
-                        {!fixture.part_number && !fixture.machine_name && (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {fixture.storage_location_count || 0}
-                        </span>
-                        <span className="text-gray-400 dark:text-gray-500">|</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {parseInt(fixture.total_stock) || 0} Stk.
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {getStatusBadge(fixture.status)}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <Link
-                        to={`/fixtures/${fixture.id}`}
-                        className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline text-sm"
-                      >
-                        Details
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Grid View */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedFixtures.map((fixture) => (
+              <FixtureCard key={fixture.id} fixture={fixture} />
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* Result Count */}
-      {!loading && fixtures.length > 0 && (
-        <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
-          {fixtures.length} Vorrichtungen gefunden
-        </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={fixtures.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
+      ) : (
+        <>
+          {/* Table View */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Vorrichtung
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Typ
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Zuordnung
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Lagerorte
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Aktionen
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {paginatedFixtures.map((fixture) => (
+                    <tr
+                      key={fixture.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-4 py-4">
+                        <Link to={`/fixtures/${fixture.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400">
+                          <div className="font-medium text-gray-900 dark:text-white font-mono">
+                            {fixture.fixture_number}
+                          </div>
+                          {fixture.name && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {fixture.name}
+                            </div>
+                          )}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                        {fixture.type_name || '-'}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm space-y-0.5">
+                          {fixture.part_number && (
+                            <div className="text-gray-900 dark:text-white">{fixture.part_number}</div>
+                          )}
+                          {fixture.machine_name && (
+                            <div className="text-gray-500 dark:text-gray-400">{fixture.machine_name}</div>
+                          )}
+                          {!fixture.part_number && !fixture.machine_name && (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {fixture.storage_location_count || 0}
+                          </span>
+                          <span className="text-gray-400 dark:text-gray-500">|</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {parseInt(fixture.total_stock) || 0} Stk.
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {getStatusBadge(fixture.status)}
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <Link
+                          to={`/fixtures/${fixture.id}`}
+                          className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline text-sm"
+                        >
+                          Details
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={fixtures.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </>
       )}
 
       {/* Types Modal */}
@@ -434,7 +522,7 @@ export default function FixturesPage() {
 
       {/* Form Modal */}
       {showFormModal && (
-        <FixtureFormModal 
+        <FixtureFormModal
           fixture={editingFixture}
           types={types}
           onClose={(saved) => {
