@@ -752,6 +752,50 @@ exports.updateStatus = async (req, res) => {
 };
 
 /**
+ * GET /api/fixtures/next-number
+ * Generate next free fixture number (Format: V00001)
+ */
+exports.getNextNumber = async (req, res) => {
+  try {
+    const prefix = 'V';
+    const padLength = 5;
+    const startNumber = 1;
+
+    // Alle existierenden Nummern im Format V##### holen (inkl. soft-deleted,
+    // damit Nummern nicht doppelt vergeben werden)
+    const result = await pool.query(`
+      SELECT CAST(SUBSTRING(fixture_number FROM 2) AS INTEGER) as num
+      FROM fixtures
+      WHERE fixture_number ~ '^V[0-9]+$'
+      ORDER BY num ASC
+    `);
+
+    const existingNumbers = new Set(result.rows.map(r => r.num));
+
+    // Erste freie Nummer ab startNumber finden
+    let nextNumber = startNumber;
+    while (existingNumbers.has(nextNumber)) {
+      nextNumber++;
+    }
+
+    const nextFixtureNumber = `${prefix}${String(nextNumber).padStart(padLength, '0')}`;
+
+    res.json({
+      success: true,
+      data: { next_fixture_number: nextFixtureNumber }
+    });
+
+  } catch (error) {
+    console.error('Error generating fixture number:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Generieren der Vorrichtungsnummer',
+      error: error.message
+    });
+  }
+};
+
+/**
  * GET /api/fixtures/check-number/:number
  * Check if fixture number is available
  */

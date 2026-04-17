@@ -106,6 +106,16 @@ export const useFixturesStore = create((set, get) => ({
     }
   },
 
+  getNextFixtureNumber: async () => {
+    try {
+      const response = await axios.get('/api/fixtures/next-number');
+      return response.data.data.next_fixture_number;
+    } catch (error) {
+      console.error('Error fetching next fixture number:', error);
+      throw error;
+    }
+  },
+
   createFixture: async (data) => {
     try {
       const response = await axios.post('/api/fixtures', data);

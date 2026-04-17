@@ -25,6 +25,7 @@ router.delete('/types/:id', fixturesController.deleteType);
 // FIXTURES ROUTES
 // ============================================================================
 router.get('/stats', fixturesController.getStats);
+router.get('/next-number', fixturesController.getNextNumber);
 router.get('/check-number/:number', fixturesController.checkNumber);
 router.get('/', fixturesController.getAll);
 router.get('/:id', fixturesController.getById);
