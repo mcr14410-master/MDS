@@ -12,11 +12,13 @@ const defaultPreferences = {
     suppliers: 'grid',
     measuringEquipment: 'grid',
     fixtures: 'table',
+    clampingDevices: 'table',
     // Weitere Seiten hier hinzufügen
   },
   pageSizes: {
     measuringEquipment: 50,
     fixtures: 50,
+    clampingDevices: 50,
     // Weitere Seiten hier hinzufügen
   },
   // Später erweiterbar:

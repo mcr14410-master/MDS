@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from '../../utils/axios';
 import { toast } from '../Toaster';
+import AuthImage from '../common/AuthImage';
+import ImageLightbox from '../common/ImageLightbox';
 
 const documentTypes = [
   { value: 'drawing', label: 'Zeichnung', icon: '📐' },
@@ -20,6 +22,7 @@ export default function ClampingDeviceDocumentsSection({ device, onUpdate }) {
     description: '',
   });
   const fileInputRef = useRef(null);
+  const [lightboxDoc, setLightboxDoc] = useState(null);
 
   useEffect(() => {
     if (device?.id) {
@@ -104,6 +107,22 @@ export default function ClampingDeviceDocumentsSection({ device, onUpdate }) {
       toast.error('Fehler beim Löschen');
     }
   };
+
+  const handleSetPrimary = async (doc) => {
+    try {
+      await axios.put(`/api/clamping-devices/documents/${doc.id}`, {
+        is_primary: true,
+        document_type: doc.document_type,
+      });
+      toast.success('Als Hauptbild gesetzt');
+      loadDocuments();
+      onUpdate?.();
+    } catch (error) {
+      toast.error('Fehler beim Setzen als Hauptbild');
+    }
+  };
+
+  const isImage = (doc) => doc.mime_type?.startsWith('image/');
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '-';
@@ -225,16 +244,43 @@ export default function ClampingDeviceDocumentsSection({ device, onUpdate }) {
         <div className="space-y-2">
           {documents.map((doc) => {
             const typeInfo = getTypeInfo(doc.document_type);
+            const imageDoc = isImage(doc);
             return (
               <div
                 key={doc.id}
                 className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-2xl">{typeInfo.icon}</span>
-                  <div className="min-w-0">
-                    <div className="font-medium text-gray-900 dark:text-white truncate">
-                      {doc.file_name}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {imageDoc ? (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxDoc(doc)}
+                      className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-900 flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all"
+                      title="Vergrößern"
+                    >
+                      <AuthImage
+                        apiPath={`/api/clamping-devices/documents/${doc.id}/view`}
+                        alt={doc.file_name}
+                        className="w-full h-full object-cover"
+                        placeholderClassName="w-full h-full"
+                      />
+                    </button>
+                  ) : (
+                    <span className="text-2xl flex-shrink-0 w-12 h-12 flex items-center justify-center">{typeInfo.icon}</span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-gray-900 dark:text-white truncate">
+                        {doc.file_name}
+                      </span>
+                      {doc.is_primary && imageDoc && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          Hauptbild
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                       <span>{typeInfo.label}</span>
@@ -250,6 +296,17 @@ export default function ClampingDeviceDocumentsSection({ device, onUpdate }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
+                  {imageDoc && !doc.is_primary && (
+                    <button
+                      onClick={() => handleSetPrimary(doc)}
+                      className="p-2 text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg"
+                      title="Als Hauptbild setzen"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDownload(doc)}
                     className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
@@ -273,6 +330,18 @@ export default function ClampingDeviceDocumentsSection({ device, onUpdate }) {
             );
           })}
         </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxDoc && (
+        <ImageLightbox
+          isOpen={!!lightboxDoc}
+          onClose={() => setLightboxDoc(null)}
+          apiPath={`/api/clamping-devices/documents/${lightboxDoc.id}/view`}
+          alt={lightboxDoc.file_name}
+          caption={lightboxDoc.file_name}
+          metadata={lightboxDoc.description ? <span>{lightboxDoc.description}</span> : null}
+        />
       )}
     </div>
   );

@@ -111,7 +111,7 @@ exports.getDocumentsByDevice = async (req, res) => {
     const { deviceId } = req.params;
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         id,
         clamping_device_id,
         document_type,
@@ -120,11 +120,12 @@ exports.getDocumentsByDevice = async (req, res) => {
         file_size,
         mime_type,
         description,
+        is_primary,
         uploaded_by,
         uploaded_at
       FROM clamping_device_documents
       WHERE clamping_device_id = $1
-      ORDER BY document_type, uploaded_at DESC
+      ORDER BY is_primary DESC, document_type, uploaded_at DESC
     `, [deviceId]);
 
     res.json({
@@ -149,8 +150,9 @@ exports.getDocumentsByDevice = async (req, res) => {
 exports.uploadDocument = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const { document_type = 'other', description } = req.body;
+    const { document_type = 'other', description, is_primary = false } = req.body;
     const userId = req.user.id;
+    const setPrimary = is_primary === true || is_primary === 'true';
 
     // Check if file was uploaded
     if (!req.file) {
@@ -185,6 +187,15 @@ exports.uploadDocument = async (req, res) => {
       });
     }
 
+    // Wenn is_primary gesetzt, bisherige Hauptbilder dieses Spannmittels zurueckstellen
+    if (setPrimary) {
+      await pool.query(`
+        UPDATE clamping_device_documents
+        SET is_primary = false
+        WHERE clamping_device_id = $1
+      `, [deviceId]);
+    }
+
     // Insert document record
     const result = await pool.query(`
       INSERT INTO clamping_device_documents (
@@ -195,8 +206,9 @@ exports.uploadDocument = async (req, res) => {
         file_size,
         mime_type,
         description,
+        is_primary,
         uploaded_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `, [
       deviceId,
@@ -206,6 +218,7 @@ exports.uploadDocument = async (req, res) => {
       req.file.size,
       req.file.mimetype,
       description || null,
+      setPrimary,
       userId
     ]);
 
@@ -322,7 +335,7 @@ exports.downloadDocument = async (req, res) => {
 exports.updateDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const { document_type, description } = req.body;
+    const { document_type, description, is_primary } = req.body;
 
     const validTypes = ['drawing', 'photo', 'manual', 'datasheet', 'other'];
     if (document_type && !validTypes.includes(document_type)) {
@@ -332,20 +345,34 @@ exports.updateDocument = async (req, res) => {
       });
     }
 
-    const result = await pool.query(`
-      UPDATE clamping_device_documents SET
-        document_type = COALESCE($1, document_type),
-        description = $2
-      WHERE id = $3
-      RETURNING *
-    `, [document_type, description, id]);
-
-    if (result.rows.length === 0) {
+    const current = await pool.query(
+      'SELECT clamping_device_id FROM clamping_device_documents WHERE id = $1',
+      [id]
+    );
+    if (current.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Dokument nicht gefunden'
       });
     }
+
+    // Wenn is_primary=true gesetzt wird, andere Hauptbilder des Spannmittels zuruecksetzen
+    if (is_primary === true || is_primary === 'true') {
+      await pool.query(`
+        UPDATE clamping_device_documents
+        SET is_primary = false
+        WHERE clamping_device_id = $1 AND id != $2
+      `, [current.rows[0].clamping_device_id, id]);
+    }
+
+    const result = await pool.query(`
+      UPDATE clamping_device_documents SET
+        document_type = COALESCE($1, document_type),
+        description = $2,
+        is_primary = COALESCE($3, is_primary)
+      WHERE id = $4
+      RETURNING *
+    `, [document_type, description, is_primary, id]);
 
     res.json({
       success: true,
@@ -357,6 +384,64 @@ exports.updateDocument = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Fehler beim Aktualisieren',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * View document inline (for images in Lightbox etc.)
+ * GET /api/clamping-device-documents/:id/view
+ */
+exports.viewDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'SELECT file_name, file_path, mime_type FROM clamping_device_documents WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Dokument nicht gefunden'
+      });
+    }
+
+    const doc = result.rows[0];
+    const filePath = path.join(uploadDir, doc.file_path);
+
+    // Path-Traversal-Schutz: resolved path muss innerhalb uploadDir liegen
+    const resolvedPath = path.resolve(filePath);
+    const resolvedDir = path.resolve(uploadDir);
+    if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(resolvedDir + path.sep)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Ungültiger Dateipfad'
+      });
+    }
+
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        error: 'Datei nicht gefunden'
+      });
+    }
+
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.file_name)}"`);
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+
+    const fileStream = fsSync.createReadStream(resolvedPath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Error viewing document:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Anzeigen',
       message: error.message
     });
   }
