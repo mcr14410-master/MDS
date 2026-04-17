@@ -14,6 +14,7 @@
 const pool = require('../config/db');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 
 // Upload directory
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -184,6 +185,63 @@ exports.downloadDocument = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Fehler beim Herunterladen des Dokuments',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/fixtures/documents/:id/view
+ * View document inline (for images in Lightbox etc.)
+ */
+exports.viewDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT * FROM fixture_documents WHERE id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dokument nicht gefunden'
+      });
+    }
+
+    const doc = result.rows[0];
+
+    // Path-Traversal-Schutz: file_path muss innerhalb FIXTURES_DIR liegen
+    const resolvedPath = path.resolve(doc.file_path);
+    const resolvedDir = path.resolve(FIXTURES_DIR);
+    if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(resolvedDir + path.sep)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Ungültiger Dateipfad'
+      });
+    }
+
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        message: 'Datei nicht gefunden'
+      });
+    }
+
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.file_name)}"`);
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+
+    const fileStream = fsSync.createReadStream(resolvedPath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    console.error('Error viewing fixture document:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Anzeigen des Dokuments',
       error: error.message
     });
   }
