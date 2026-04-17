@@ -278,7 +278,7 @@ function NavSubItem({ to, label, badge, exact }) {
 export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, onLogout }) {
   const location = useLocation();
   const { user } = useAuthStore();
-  const { darkMode, toggleTheme } = useThemeStore();
+  const { isDark, toggleTheme } = useThemeStore();
   const { escalations, fetchEscalations } = useMaintenanceStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -576,10 +576,10 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <button
               onClick={toggleTheme}
               className={`flex items-center gap-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : ''}`}
-              title={darkMode ? 'Light Mode' : 'Dark Mode'}
+              title={isDark ? 'Light Mode' : 'Dark Mode'}
             >
-              {darkMode ? <Icons.Sun /> : <Icons.Moon />}
-              {!collapsed && <span className="text-xs">{darkMode ? 'Light' : 'Dark'}</span>}
+              {isDark ? <Icons.Sun /> : <Icons.Moon />}
+              {!collapsed && <span className="text-xs">{isDark ? 'Light' : 'Dark'}</span>}
             </button>
 
             {/* Collapse Toggle */}
