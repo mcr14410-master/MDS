@@ -26,9 +26,6 @@ exports.getAllMachines = async (req, res) => {
         mt.custom_field_definitions AS machine_type_field_definitions,
         ct.name     AS control_type_name,
         ct.color    AS control_type_color,
-        -- Legacy-Kompatibilitaet: control_type/machine_type aus FK, falls vorhanden
-        COALESCE(ct.name, m.control_type) AS control_type,
-        COALESCE(mt.name, m.machine_type) AS machine_type,
         (SELECT COUNT(*) FROM programs pr
          JOIN operations o ON pr.operation_id = o.id
          WHERE o.machine_id = m.id) as program_count
@@ -120,8 +117,6 @@ exports.getMachineById = async (req, res) => {
         mt.custom_field_definitions AS machine_type_field_definitions,
         ct.name  AS control_type_name,
         ct.color AS control_type_color,
-        COALESCE(ct.name, m.control_type) AS control_type,
-        COALESCE(mt.name, m.machine_type) AS machine_type,
         (SELECT COUNT(*) FROM programs pr
          JOIN operations o ON pr.operation_id = o.id
          WHERE o.machine_id = m.id) as program_count,

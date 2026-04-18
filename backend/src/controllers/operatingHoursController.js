@@ -196,22 +196,23 @@ exports.recordOperatingHours = async (req, res) => {
 exports.getAllMachinesOperatingHours = async (req, res) => {
   try {
     const query = `
-      SELECT 
+      SELECT
         m.id,
         m.name,
-        m.machine_type,
+        mt.name AS machine_type,
         m.machine_category,
         m.location,
         m.current_operating_hours,
         m.operating_hours_updated_at,
-        (SELECT recorded_hours FROM operating_hours_log 
+        (SELECT recorded_hours FROM operating_hours_log
          WHERE machine_id = m.id ORDER BY recorded_at DESC LIMIT 1) AS last_recorded_hours,
-        (SELECT recorded_at FROM operating_hours_log 
+        (SELECT recorded_at FROM operating_hours_log
          WHERE machine_id = m.id ORDER BY recorded_at DESC LIMIT 1) AS last_recorded_at,
-        (SELECT COUNT(*) FROM maintenance_plans mp 
+        (SELECT COUNT(*) FROM maintenance_plans mp
          WHERE mp.machine_id = m.id AND mp.is_active AND mp.interval_hours IS NOT NULL
          AND mp.next_due_hours <= m.current_operating_hours) AS due_hours_plans
       FROM machines m
+      LEFT JOIN machine_types mt ON mt.id = m.machine_type_id
       WHERE m.is_active = true
       ORDER BY m.name
     `;

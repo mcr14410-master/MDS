@@ -1759,7 +1759,7 @@ exports.getTaskDetails = async (req, res) => {
         COALESCE(mt.required_skill_level, mp.required_skill_level) AS required_skill_level,
         m.name AS machine_name,
         COALESCE(mt.location, m.location) AS machine_location,
-        m.machine_type,
+        machtype.name AS machine_type,
         COALESCE(NULLIF(CONCAT(u_completed.first_name, ' ', u_completed.last_name), ' '), u_completed.username) AS completed_by_name,
         u_completed.username AS completed_by_username,
         COALESCE(NULLIF(CONCAT(u_assigned.first_name, ' ', u_assigned.last_name), ' '), u_assigned.username) AS assigned_to_name,
@@ -1767,6 +1767,7 @@ exports.getTaskDetails = async (req, res) => {
       FROM maintenance_tasks mt
       LEFT JOIN maintenance_plans mp ON mt.maintenance_plan_id = mp.id
       LEFT JOIN machines m ON mt.machine_id = m.id
+      LEFT JOIN machine_types machtype ON machtype.id = m.machine_type_id
       LEFT JOIN users u_completed ON mt.completed_by = u_completed.id
       LEFT JOIN users u_assigned ON mt.assigned_to = u_assigned.id
       WHERE mt.id = $1
@@ -1951,10 +1952,14 @@ exports.getMachineMaintenanceStats = async (req, res) => {
 
     // Maschinen-Daten
     const machineQuery = `
-      SELECT id, name, location, machine_type, control_type, 
-             current_operating_hours, is_active
-      FROM machines
-      WHERE id = $1
+      SELECT m.id, m.name, m.location,
+             mt.name AS machine_type,
+             ct.name AS control_type,
+             m.current_operating_hours, m.is_active
+      FROM machines m
+      LEFT JOIN machine_types mt ON mt.id = m.machine_type_id
+      LEFT JOIN control_types ct ON ct.id = m.control_type_id
+      WHERE m.id = $1
     `;
     const machineResult = await pool.query(machineQuery, [id]);
 

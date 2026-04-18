@@ -56,10 +56,10 @@ export default function SetupSheetForm({
   useEffect(() => {
     if (formData.machine_id) {
       const selectedMachine = machines.find(m => m.id === parseInt(formData.machine_id));
-      if (selectedMachine && selectedMachine.control_type) {
+      if (selectedMachine && selectedMachine.control_type_name) {
         setFormData(prev => ({
           ...prev,
-          control_type: selectedMachine.control_type
+          control_type: selectedMachine.control_type_name
         }));
       }
     }

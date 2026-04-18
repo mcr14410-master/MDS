@@ -810,14 +810,15 @@ const getMachinesForList = async (req, res) => {
     const { id } = req.params; // list_id
 
     const result = await pool.query(`
-      SELECT 
+      SELECT
         mtnl.*,
         m.name as machine_name,
         m.manufacturer as machine_manufacturer,
-        m.control_type,
+        ct.name as control_type,
         u.username as assigned_by_username
       FROM machine_tool_number_lists mtnl
       JOIN machines m ON m.id = mtnl.machine_id
+      LEFT JOIN control_types ct ON ct.id = m.control_type_id
       LEFT JOIN users u ON u.id = mtnl.assigned_by
       WHERE mtnl.list_id = $1
       ORDER BY m.name ASC

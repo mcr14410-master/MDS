@@ -22,7 +22,7 @@ export default function MachineWikiTab({ machine }) {
     fetchArticles({
       category_slug: 'machine-errors',
       machine_id: machine.id,
-      control_type: machine.control_type
+      control_type: machine.control_type_name
     });
   };
 
@@ -50,12 +50,12 @@ export default function MachineWikiTab({ machine }) {
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Fehlercodes und Lösungen für {machine.name}
-            {machine.control_type && ` (${machine.control_type})`}
+            {machine.control_type_name && ` (${machine.control_type_name})`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
-            to={`/wiki?category=machine-errors&search=${machine.control_type || ''}`}
+            to={`/wiki?category=machine-errors&search=${machine.control_type_name || ''}`}
             className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             Alle Fehler →
@@ -179,7 +179,7 @@ export default function MachineWikiTab({ machine }) {
           initialData={{
             category_id: errorCategory?.id,
             machine_id: machine.id,
-            control_type: machine.control_type
+            control_type: machine.control_type_name
           }}
         />
       )}

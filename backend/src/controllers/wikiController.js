@@ -278,7 +278,7 @@ exports.getArticleById = async (req, res) => {
         wc.has_error_code,
         wc.has_machine_reference,
         m.name as machine_name,
-        m.control_type as machine_control_type,
+        ct.name as machine_control_type,
         mp.id as maintenance_plan_id,
         mp.title as maintenance_plan_name,
         u.username as created_by_username,
@@ -286,6 +286,7 @@ exports.getArticleById = async (req, res) => {
       FROM wiki_articles wa
       JOIN wiki_categories wc ON wc.id = wa.category_id
       LEFT JOIN machines m ON m.id = wa.machine_id
+      LEFT JOIN control_types ct ON ct.id = m.control_type_id
       LEFT JOIN maintenance_plans mp ON mp.id = wa.maintenance_plan_id
       LEFT JOIN users u ON u.id = wa.created_by
       LEFT JOIN users u2 ON u2.id = wa.updated_by
