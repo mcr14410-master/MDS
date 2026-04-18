@@ -28,8 +28,8 @@ export const useMachinesStore = create((set, get) => ({
       
       // Build query string
       const params = new URLSearchParams();
-      if (filters.machine_type) params.append('machine_type', filters.machine_type);
-      if (filters.control_type) params.append('control_type', filters.control_type);
+      if (filters.machine_type_id) params.append('machine_type_id', filters.machine_type_id);
+      if (filters.control_type_id) params.append('control_type_id', filters.control_type_id);
       if (filters.is_active !== null && filters.is_active !== undefined && filters.is_active !== '') {
         params.append('is_active', filters.is_active);
       }
