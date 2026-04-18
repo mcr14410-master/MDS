@@ -15,29 +15,40 @@ const pool = new Pool({
  */
 exports.getAllMachines = async (req, res) => {
   try {
-    const { machine_type, control_type, is_active, search, sort_by, sort_order } = req.query;
+    const { machine_type_id, control_type_id, is_active, search, sort_by, sort_order } = req.query;
 
     let query = `
       SELECT
         m.*,
+        mt.name     AS machine_type_name,
+        mt.color    AS machine_type_color,
+        mt.sequence AS machine_type_sequence,
+        mt.custom_field_definitions AS machine_type_field_definitions,
+        ct.name     AS control_type_name,
+        ct.color    AS control_type_color,
+        -- Legacy-Kompatibilitaet: control_type/machine_type aus FK, falls vorhanden
+        COALESCE(ct.name, m.control_type) AS control_type,
+        COALESCE(mt.name, m.machine_type) AS machine_type,
         (SELECT COUNT(*) FROM programs pr
          JOIN operations o ON pr.operation_id = o.id
          WHERE o.machine_id = m.id) as program_count
       FROM machines m
+      LEFT JOIN machine_types mt ON mt.id = m.machine_type_id
+      LEFT JOIN control_types ct ON ct.id = m.control_type_id
       WHERE 1=1
     `;
     const params = [];
     let paramCount = 1;
 
-    if (machine_type) {
-      query += ` AND m.machine_type = $${paramCount}`;
-      params.push(machine_type);
+    if (machine_type_id) {
+      query += ` AND m.machine_type_id = $${paramCount}`;
+      params.push(parseInt(machine_type_id, 10));
       paramCount++;
     }
 
-    if (control_type) {
-      query += ` AND m.control_type = $${paramCount}`;
-      params.push(control_type);
+    if (control_type_id) {
+      query += ` AND m.control_type_id = $${paramCount}`;
+      params.push(parseInt(control_type_id, 10));
       paramCount++;
     }
 
@@ -59,14 +70,21 @@ exports.getAllMachines = async (req, res) => {
     }
 
     // Sortierung mit Whitelist (SQL-Injection-Schutz)
-    const allowedSortColumns = ['name', 'manufacturer', 'model', 'machine_type', 'control_type'];
-    const safeSortBy = allowedSortColumns.includes(sort_by) ? sort_by : 'name';
+    // Schluesselwert -> Spaltenausdruck
+    const sortColumnMap = {
+      name: 'm.name',
+      manufacturer: 'm.manufacturer',
+      model: 'm.model',
+      machine_type: 'mt.name',
+      control_type: 'ct.name'
+    };
+    const safeSortBy = sortColumnMap[sort_by] || 'm.name';
     const safeSortOrder = String(sort_order).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-    // Gruppierung nach machine_type kommt immer zuerst, damit die Liste nach Typ gebuendelt bleibt
-    if (safeSortBy === 'machine_type') {
-      query += ` ORDER BY m.machine_type ${safeSortOrder} NULLS LAST, m.name ASC`;
+    // Gruppierung nach Maschinentyp (sequence) kommt immer zuerst
+    if (sort_by === 'machine_type') {
+      query += ` ORDER BY mt.sequence ${safeSortOrder} NULLS LAST, mt.name ${safeSortOrder} NULLS LAST, m.name ASC`;
     } else {
-      query += ` ORDER BY m.machine_type ASC NULLS LAST, m.${safeSortBy} ${safeSortOrder} NULLS LAST, m.name ASC`;
+      query += ` ORDER BY mt.sequence ASC NULLS LAST, mt.name ASC NULLS LAST, ${safeSortBy} ${safeSortOrder} NULLS LAST, m.name ASC`;
     }
 
     const result = await pool.query(query, params);
@@ -95,13 +113,22 @@ exports.getMachineById = async (req, res) => {
     const { id } = req.params;
 
     const query = `
-      SELECT 
+      SELECT
         m.*,
-        (SELECT COUNT(*) FROM programs pr 
-         JOIN operations o ON pr.operation_id = o.id 
+        mt.name  AS machine_type_name,
+        mt.color AS machine_type_color,
+        mt.custom_field_definitions AS machine_type_field_definitions,
+        ct.name  AS control_type_name,
+        ct.color AS control_type_color,
+        COALESCE(ct.name, m.control_type) AS control_type,
+        COALESCE(mt.name, m.machine_type) AS machine_type,
+        (SELECT COUNT(*) FROM programs pr
+         JOIN operations o ON pr.operation_id = o.id
          WHERE o.machine_id = m.id) as program_count,
         (SELECT COUNT(*) FROM operations WHERE machine_id = m.id) as operation_count
       FROM machines m
+      LEFT JOIN machine_types mt ON mt.id = m.machine_type_id
+      LEFT JOIN control_types ct ON ct.id = m.control_type_id
       WHERE m.id = $1
     `;
 
@@ -149,16 +176,11 @@ exports.createMachine = async (req, res) => {
       manufacturer,
       model,
       serial_number,
-      machine_type,
-      control_type,
+      machine_type_id,
+      control_type_id,
       control_version,
-      num_axes,
-      workspace_x,
-      workspace_y,
-      workspace_z,
-      spindle_power,
-      max_rpm,
-      tool_capacity,
+      year_built,
+      custom_fields,
       location,
       network_path,
       postprocessor_name,
@@ -167,7 +189,6 @@ exports.createMachine = async (req, res) => {
       operating_hours = 0
     } = req.body;
 
-    // Validation
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -175,10 +196,7 @@ exports.createMachine = async (req, res) => {
       });
     }
 
-    // Check if machine name already exists
-    const checkQuery = 'SELECT id FROM machines WHERE name = $1';
-    const checkResult = await pool.query(checkQuery, [name]);
-    
+    const checkResult = await pool.query('SELECT id FROM machines WHERE name = $1', [name]);
     if (checkResult.rows.length > 0) {
       return res.status(400).json({
         success: false,
@@ -188,14 +206,13 @@ exports.createMachine = async (req, res) => {
 
     const query = `
       INSERT INTO machines (
-        name, manufacturer, model, serial_number, machine_type,
-        control_type, control_version, num_axes,
-        workspace_x, workspace_y, workspace_z,
-        spindle_power, max_rpm, tool_capacity,
+        name, manufacturer, model, serial_number,
+        machine_type_id, control_type_id, control_version, year_built,
+        custom_fields,
         location, network_path, postprocessor_name,
         notes, is_active, operating_hours
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
@@ -204,16 +221,11 @@ exports.createMachine = async (req, res) => {
       manufacturer || null,
       model || null,
       serial_number || null,
-      machine_type,
-      control_type,
+      machine_type_id ? parseInt(machine_type_id, 10) : null,
+      control_type_id ? parseInt(control_type_id, 10) : null,
       control_version || null,
-      sanitizeNumericField(num_axes),
-      sanitizeNumericField(workspace_x),
-      sanitizeNumericField(workspace_y),
-      sanitizeNumericField(workspace_z),
-      sanitizeNumericField(spindle_power),
-      sanitizeNumericField(max_rpm),
-      sanitizeNumericField(tool_capacity),
+      sanitizeNumericField(year_built),
+      custom_fields ? JSON.stringify(custom_fields) : '{}',
       location || null,
       network_path || null,
       postprocessor_name || null,
@@ -251,16 +263,11 @@ exports.updateMachine = async (req, res) => {
       manufacturer,
       model,
       serial_number,
-      machine_type,
-      control_type,
+      machine_type_id,
+      control_type_id,
       control_version,
-      num_axes,
-      workspace_x,
-      workspace_y,
-      workspace_z,
-      spindle_power,
-      max_rpm,
-      tool_capacity,
+      year_built,
+      custom_fields,
       location,
       network_path,
       postprocessor_name,
@@ -295,32 +302,29 @@ exports.updateMachine = async (req, res) => {
       }
     }
 
+    // COALESCE bewusst weggelassen, wo wir Felder bewusst leeren koennen sollen.
+    // year_built, custom_fields, machine_type_id und control_type_id muessen loeschbar sein.
     const query = `
       UPDATE machines SET
         name = COALESCE($1, name),
         manufacturer = COALESCE($2, manufacturer),
         model = COALESCE($3, model),
         serial_number = COALESCE($4, serial_number),
-        machine_type = COALESCE($5, machine_type),
-        control_type = COALESCE($6, control_type),
+        machine_type_id = $5,
+        control_type_id = $6,
         control_version = COALESCE($7, control_version),
-        num_axes = COALESCE($8, num_axes),
-        workspace_x = COALESCE($9, workspace_x),
-        workspace_y = COALESCE($10, workspace_y),
-        workspace_z = COALESCE($11, workspace_z),
-        spindle_power = COALESCE($12, spindle_power),
-        max_rpm = COALESCE($13, max_rpm),
-        tool_capacity = COALESCE($14, tool_capacity),
-        location = COALESCE($15, location),
-        network_path = COALESCE($16, network_path),
-        postprocessor_name = COALESCE($17, postprocessor_name),
-        notes = COALESCE($18, notes),
-        is_active = COALESCE($19, is_active),
-        operating_hours = COALESCE($20, operating_hours),
-        last_maintenance = COALESCE($21, last_maintenance),
-        next_maintenance = COALESCE($22, next_maintenance),
+        year_built = $8,
+        custom_fields = COALESCE($9, custom_fields),
+        location = COALESCE($10, location),
+        network_path = COALESCE($11, network_path),
+        postprocessor_name = COALESCE($12, postprocessor_name),
+        notes = COALESCE($13, notes),
+        is_active = COALESCE($14, is_active),
+        operating_hours = COALESCE($15, operating_hours),
+        last_maintenance = COALESCE($16, last_maintenance),
+        next_maintenance = COALESCE($17, next_maintenance),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $23
+      WHERE id = $18
       RETURNING *
     `;
 
@@ -329,16 +333,11 @@ exports.updateMachine = async (req, res) => {
       manufacturer || null,
       model || null,
       serial_number || null,
-      machine_type || null,
-      control_type || null,
+      machine_type_id !== undefined ? (machine_type_id ? parseInt(machine_type_id, 10) : null) : null,
+      control_type_id !== undefined ? (control_type_id ? parseInt(control_type_id, 10) : null) : null,
       control_version || null,
-      sanitizeNumericField(num_axes),
-      sanitizeNumericField(workspace_x),
-      sanitizeNumericField(workspace_y),
-      sanitizeNumericField(workspace_z),
-      sanitizeNumericField(spindle_power),
-      sanitizeNumericField(max_rpm),
-      sanitizeNumericField(tool_capacity),
+      sanitizeNumericField(year_built),
+      custom_fields !== undefined ? JSON.stringify(custom_fields) : null,
       location || null,
       network_path || null,
       postprocessor_name || null,

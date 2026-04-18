@@ -1,6 +1,19 @@
 import { Link } from 'react-router-dom';
 
 export default function MachineCard({ machine, getControlTypeColor }) {
+  // Custom-Fields mit Labels/Units aus den Typ-Definitions (falls geliefert)
+  const customFields = machine.custom_fields || {};
+  const definitions = machine.machine_type_field_definitions || [];
+  const defMap = new Map(definitions.map((d) => [d.key, d]));
+
+  // Reihenfolge laut Definition, nur Felder mit Wert, max. 4
+  const customFieldPreview = (definitions.length > 0
+    ? definitions.map((d) => [d.key, customFields[d.key]])
+    : Object.entries(customFields)
+  )
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .slice(0, 4);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
       {/* Header */}
@@ -8,7 +21,7 @@ export default function MachineCard({ machine, getControlTypeColor }) {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Link 
+              <Link
                 to={`/machines/${machine.id}`}
                 className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
@@ -21,13 +34,14 @@ export default function MachineCard({ machine, getControlTypeColor }) {
               )}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {machine.manufacturer} {machine.model}
+              {[machine.manufacturer, machine.model].filter(Boolean).join(' ')}
+              {machine.year_built ? ` · ${machine.year_built}` : ''}
             </p>
           </div>
-          
-          {machine.control_type && (
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getControlTypeColor(machine.control_type)}`}>
-              {machine.control_type}
+
+          {machine.control_type_name && (
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getControlTypeColor(machine.control_type_color)}`}>
+              {machine.control_type_name}
             </span>
           )}
         </div>
@@ -35,45 +49,23 @@ export default function MachineCard({ machine, getControlTypeColor }) {
 
       {/* Details */}
       <div className="p-4 space-y-3">
-        {/* Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          {machine.num_axes && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Achsen:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{machine.num_axes}</span>
-            </div>
-          )}
-          
-          {machine.tool_capacity && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Werkzeuge:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{machine.tool_capacity}</span>
-            </div>
-          )}
-
-          {machine.workspace_x && (
-            <div className="col-span-2">
-              <span className="text-gray-500 dark:text-gray-400">Arbeitsraum:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">
-                {machine.workspace_x} × {machine.workspace_y || 0} × {machine.workspace_z || 0} mm
-              </span>
-            </div>
-          )}
-
-          {machine.spindle_power && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Spindelleistung:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{machine.spindle_power} kW</span>
-            </div>
-          )}
-
-          {machine.max_rpm && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Max. Drehzahl:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{machine.max_rpm.toLocaleString()} U/min</span>
-            </div>
-          )}
-        </div>
+        {customFieldPreview.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            {customFieldPreview.map(([key, value]) => {
+              const def = defMap.get(key);
+              const label = def?.label || formatKey(key);
+              const unit = def?.unit;
+              return (
+                <div key={key}>
+                  <span className="text-gray-500 dark:text-gray-400">{label}:</span>
+                  <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">
+                    {String(value)}{unit ? ` ${unit}` : ''}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Location */}
         {machine.location && (
@@ -93,14 +85,14 @@ export default function MachineCard({ machine, getControlTypeColor }) {
           <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between text-sm">
               {machine.operating_hours !== null && machine.operating_hours !== undefined && (
-                <a 
+                <a
                   href={`/maintenance/operating-hours?machine=${machine.id}`}
                   className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 group flex items-center gap-1"
                   title="Betriebsstunden erfassen"
                 >
                   <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                     {machine.operating_hours.toLocaleString()}
-                  </span> 
+                  </span>
                   Betriebsstunden
                   <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -147,4 +139,11 @@ export default function MachineCard({ machine, getControlTypeColor }) {
       </div>
     </div>
   );
+}
+
+// Fallback-Label aus Custom-Field-Key (falls keine Definition greifbar)
+function formatKey(key) {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

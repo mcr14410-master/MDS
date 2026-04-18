@@ -8,6 +8,7 @@ import MachineDocumentsTab from '../components/MachineDocumentsTab';
 import MachineImage from '../components/MachineImage';
 import MachineForm from '../components/MachineForm';
 import MachineWikiTab from '../components/MachineWikiTab';
+import CustomFieldsDisplay from '../components/tools/CustomFieldsDisplay';
 
 export default function MachineDetailPage() {
   const { id } = useParams();
@@ -51,17 +52,6 @@ export default function MachineDetailPage() {
     } catch (err) {
       toast.error(err.message || 'Fehler beim Deaktivieren');
     }
-  };
-
-  const getMachineTypeText = (type) => {
-    const types = {
-      'milling': 'Fräsen',
-      'turning': 'Drehen',
-      'mill-turn': 'Dreh-Fräsen',
-      'grinding': 'Schleifen',
-      'edm': 'Erodieren',
-    };
-    return types[type] || type || '-';
   };
 
   const formatDate = (dateStr) => {
@@ -206,7 +196,7 @@ export default function MachineDetailPage() {
 
       {/* Tab Content */}
       {activeTab === 'details' && (
-        <DetailsTab machine={machine} documents={documents} formatDate={formatDate} getMachineTypeText={getMachineTypeText} />
+        <DetailsTab machine={machine} documents={documents} formatDate={formatDate} />
       )}
 
       {activeTab === 'documents' && (
@@ -243,10 +233,11 @@ export default function MachineDetailPage() {
 // ============================================================================
 // DETAILS TAB
 // ============================================================================
-function DetailsTab({ machine, documents, formatDate, getMachineTypeText }) {
-  // Find primary photo document
+function DetailsTab({ machine, documents, formatDate }) {
   const primaryPhoto = documents?.find(doc => doc.is_primary && doc.document_type === 'photo');
-  
+  const controlDisplay = [machine.control_type_name, machine.control_version].filter(Boolean).join(' ') || '-';
+  const technicalDefinitions = machine.machine_type_field_definitions || [];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Column - Main Content */}
@@ -260,40 +251,33 @@ function DetailsTab({ machine, documents, formatDate, getMachineTypeText }) {
               <InfoField label="Hersteller" value={machine.manufacturer} />
               <InfoField label="Modell" value={machine.model} />
               <InfoField label="Seriennummer" value={machine.serial_number} />
-              <InfoField label="Maschinentyp" value={getMachineTypeText(machine.machine_type)} />
-              <InfoField label="Steuerung" value={machine.control_type} />
-              <InfoField label="Steuerungsversion" value={machine.control_version} />
+              <InfoField label="Baujahr" value={machine.year_built} />
+              <InfoField label="Maschinentyp" value={machine.machine_type_name} />
+              <InfoField label="Steuerung" value={controlDisplay} />
               <InfoField label="Standort" value={machine.location} />
             </div>
           </div>
         </div>
 
-        {/* Technische Daten + Netzwerk & CAM - nebeneinander */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Technical Specs */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Technische Daten</h3>
-            <div className="space-y-3">
-              <InfoField label="Achsen" value={machine.num_axes} />
-              <InfoField 
-                label="Arbeitsraum (X/Y/Z)" 
-                value={machine.workspace_x ? `${machine.workspace_x} × ${machine.workspace_y} × ${machine.workspace_z} mm` : null} 
-              />
-              <InfoField label="Spindelleistung" value={machine.spindle_power ? `${machine.spindle_power} kW` : null} />
-              <InfoField label="Max. Drehzahl" value={machine.max_rpm ? `${machine.max_rpm} U/min` : null} />
-              <InfoField label="Werkzeugplätze" value={machine.tool_capacity} />
-            </div>
-          </div>
+        {/* Technische Daten (Custom Fields) */}
+        {technicalDefinitions.length > 0 && (
+          <CustomFieldsDisplay
+            definitions={technicalDefinitions}
+            customFields={machine.custom_fields || {}}
+            heading="Technische Daten"
+          />
+        )}
 
-          {/* Network & CAM */}
+        {/* Netzwerk & CAM */}
+        {(machine.network_path || machine.postprocessor_name) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Netzwerk & CAM</h3>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InfoField label="Netzwerkpfad" value={machine.network_path} mono />
               <InfoField label="Postprozessor" value={machine.postprocessor_name} />
             </div>
           </div>
-        </div>
+        )}
 
         {/* Notes */}
         {machine.notes && (

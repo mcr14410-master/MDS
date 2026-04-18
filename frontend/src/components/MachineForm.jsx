@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useMachinesStore } from '../stores/machinesStore';
+import { useMachineTypesStore } from '../stores/machineTypesStore';
+import { useControlTypesStore } from '../stores/controlTypesStore';
 import { toast } from './Toaster';
+import CustomFieldsRenderer from './tools/CustomFieldsRenderer';
 
 export default function MachineForm({ machine, onClose, onSuccess }) {
   const { createMachine, updateMachine, loading } = useMachinesStore();
+  const { types: machineTypes, fetchTypes: fetchMachineTypes } = useMachineTypesStore();
+  const { types: controlTypes, fetchTypes: fetchControlTypes } = useControlTypesStore();
   const isEdit = !!machine;
 
   const [formData, setFormData] = useState({
@@ -11,16 +16,11 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
     manufacturer: '',
     model: '',
     serial_number: '',
-    machine_type: 'milling',
-    control_type: 'Heidenhain',
+    machine_type_id: '',
+    control_type_id: '',
     control_version: '',
-    num_axes: 3,
-    workspace_x: '',
-    workspace_y: '',
-    workspace_z: '',
-    spindle_power: '',
-    max_rpm: '',
-    tool_capacity: '',
+    year_built: '',
+    custom_fields: {},
     location: '',
     network_path: '',
     postprocessor_name: '',
@@ -30,22 +30,22 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
   });
 
   useEffect(() => {
+    fetchMachineTypes({ is_active: 'true' }).catch(() => {});
+    fetchControlTypes({ is_active: 'true' }).catch(() => {});
+  }, [fetchMachineTypes, fetchControlTypes]);
+
+  useEffect(() => {
     if (machine) {
       setFormData({
         name: machine.name || '',
         manufacturer: machine.manufacturer || '',
         model: machine.model || '',
         serial_number: machine.serial_number || '',
-        machine_type: machine.machine_type || 'milling',
-        control_type: machine.control_type || 'Heidenhain',
+        machine_type_id: machine.machine_type_id || '',
+        control_type_id: machine.control_type_id || '',
         control_version: machine.control_version || '',
-        num_axes: machine.num_axes || 3,
-        workspace_x: machine.workspace_x || '',
-        workspace_y: machine.workspace_y || '',
-        workspace_z: machine.workspace_z || '',
-        spindle_power: machine.spindle_power || '',
-        max_rpm: machine.max_rpm || '',
-        tool_capacity: machine.tool_capacity || '',
+        year_built: machine.year_built || '',
+        custom_fields: machine.custom_fields || {},
         location: machine.location || '',
         network_path: machine.network_path || '',
         postprocessor_name: machine.postprocessor_name || '',
@@ -56,21 +56,34 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
     }
   }, [machine]);
 
+  // Aktuell ausgewählter Maschinentyp (für Custom-Fields)
+  const selectedMachineType = useMemo(
+    () => machineTypes.find((t) => t.id === parseInt(formData.machine_type_id, 10)),
+    [machineTypes, formData.machine_type_id]
+  );
+  const customFieldDefinitions = selectedMachineType?.custom_field_definitions || [];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!formData.name.trim()) {
       toast.error('Name ist erforderlich');
       return;
     }
 
+    const payload = {
+      ...formData,
+      machine_type_id: formData.machine_type_id ? parseInt(formData.machine_type_id, 10) : null,
+      control_type_id: formData.control_type_id ? parseInt(formData.control_type_id, 10) : null,
+      year_built: formData.year_built ? parseInt(formData.year_built, 10) : null,
+    };
+
     try {
       if (isEdit) {
-        await updateMachine(machine.id, formData);
+        await updateMachine(machine.id, payload);
         toast.success('Maschine erfolgreich aktualisiert');
       } else {
-        await createMachine(formData);
+        await createMachine(payload);
         toast.success('Maschine erfolgreich erstellt');
       }
       onSuccess();
@@ -85,6 +98,10 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+  };
+
+  const handleCustomFieldsChange = (newCustomFields) => {
+    setFormData({ ...formData, custom_fields: newCustomFields });
   };
 
   return (
@@ -161,18 +178,35 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Maschinentyp</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Baujahr</label>
+                <input
+                  type="number"
+                  name="year_built"
+                  value={formData.year_built}
+                  onChange={handleChange}
+                  min="1900"
+                  max="2100"
+                  placeholder="z.B. 2018"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Maschinentyp
+                </label>
                 <select
-                  name="machine_type"
-                  value={formData.machine_type}
+                  name="machine_type_id"
+                  value={formData.machine_type_id}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                 >
-                  <option value="milling">Fräsen</option>
-                  <option value="turning">Drehen</option>
-                  <option value="mill-turn">Dreh-Fräsen</option>
-                  <option value="grinding">Schleifen</option>
-                  <option value="edm">Erodieren</option>
+                  <option value="">-- Bitte wählen --</option>
+                  {machineTypes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -185,16 +219,17 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steuerungstyp</label>
                 <select
-                  name="control_type"
-                  value={formData.control_type}
+                  name="control_type_id"
+                  value={formData.control_type_id}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                 >
-                  <option value="Heidenhain">Heidenhain</option>
-                  <option value="Siemens">Siemens</option>
-                  <option value="Fanuc">Fanuc</option>
-                  <option value="Mazatrol">Mazatrol</option>
-                  <option value="Fagor">Fagor</option>
+                  <option value="">-- Bitte wählen --</option>
+                  {controlTypes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -212,90 +247,29 @@ export default function MachineForm({ machine, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Technische Daten */}
+          {/* Technische Daten (Custom Fields) */}
+          {formData.machine_type_id && customFieldDefinitions.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Technische Daten</h3>
+              <CustomFieldsRenderer
+                definitions={customFieldDefinitions}
+                customFields={formData.custom_fields}
+                onChange={handleCustomFieldsChange}
+                heading={`Felder für ${selectedMachineType?.name || 'Maschinentyp'}`}
+              />
+            </div>
+          )}
+
+          {formData.machine_type_id && customFieldDefinitions.length === 0 && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-sm p-3">
+              Für diesen Maschinentyp sind keine technischen Felder definiert. Im Dialog "Stammdaten" können typ-spezifische Felder angelegt werden.
+            </div>
+          )}
+
+          {/* Betriebsstunden */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Technische Daten</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Achsen</label>
-                <input
-                  type="number"
-                  name="num_axes"
-                  value={formData.num_axes}
-                  onChange={handleChange}
-                  min="1"
-                  max="9"
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Werkzeugplätze</label>
-                <input
-                  type="number"
-                  name="tool_capacity"
-                  value={formData.tool_capacity}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Spindelleistung (kW)</label>
-                <input
-                  type="number"
-                  name="spindle_power"
-                  value={formData.spindle_power}
-                  onChange={handleChange}
-                  step="0.1"
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max. Drehzahl (U/min)</label>
-                <input
-                  type="number"
-                  name="max_rpm"
-                  value={formData.max_rpm}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arbeitsraum X (mm)</label>
-                <input
-                  type="number"
-                  name="workspace_x"
-                  value={formData.workspace_x}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arbeitsraum Y (mm)</label>
-                <input
-                  type="number"
-                  name="workspace_y"
-                  value={formData.workspace_y}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arbeitsraum Z (mm)</label>
-                <input
-                  type="number"
-                  name="workspace_z"
-                  value={formData.workspace_z}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                />
-              </div>
-
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Betrieb</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Betriebsstunden</label>
                 <div className="flex gap-2">

@@ -3,28 +3,23 @@ import { Link } from 'react-router-dom';
 import { useMachinesStore } from '../stores/machinesStore';
 import { useAuthStore } from '../stores/authStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
-import { toast } from '../components/Toaster';
+import { useMachineTypesStore } from '../stores/machineTypesStore';
+import { useControlTypesStore } from '../stores/controlTypesStore';
 import MachineCard from '../components/MachineCard';
 import MachineForm from '../components/MachineForm';
 import MachineMasterDataModal from '../components/machines/MachineMasterDataModal';
 
-const MACHINE_TYPES = {
-  milling: 'Fräsen',
-  turning: 'Drehen',
-  'mill-turn': 'Dreh-Fräsen',
-  grinding: 'Schleifen',
-  edm: 'Erodieren',
-  other: 'Sonstige',
+// Tailwind-Farbklassen pro Farbschluessel (muss statisch sein, sonst purged Tailwind)
+const COLOR_CLASSES = {
+  gray:   'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  blue:   'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  green:  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  red:    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
 };
-
-const MACHINE_TYPE_ORDER = ['milling', 'turning', 'mill-turn', 'grinding', 'edm', 'other'];
-
-const CONTROL_TYPE_COLORS = {
-  Heidenhain: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  Siemens: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  Fanuc: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  Mazatrol: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-};
+const getColorClasses = (color) => COLOR_CLASSES[color] || COLOR_CLASSES.gray;
 
 const SORT_OPTIONS = [
   { value: 'name|ASC', label: 'Name (A-Z)' },
@@ -41,6 +36,8 @@ export default function MachinesPage() {
   const { machines, loading, error, fetchMachines } = useMachinesStore();
   const { hasPermission } = useAuthStore();
   const { getViewMode, setViewMode } = usePreferencesStore();
+  const { types: machineTypes, fetchTypes: fetchMachineTypes } = useMachineTypesStore();
+  const { types: controlTypes, fetchTypes: fetchControlTypes } = useControlTypesStore();
   const viewMode = getViewMode('machines');
 
   const [showForm, setShowForm] = useState(false);
@@ -48,12 +45,17 @@ export default function MachinesPage() {
   const [showMasterDataModal, setShowMasterDataModal] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
-    machine_type: '',
-    control_type: '',
+    machine_type_id: '',
+    control_type_id: '',
     is_active: 'true',
     sort_by: 'name',
     sort_order: 'ASC',
   });
+
+  useEffect(() => {
+    fetchMachineTypes({ is_active: 'true' }).catch(() => {});
+    fetchControlTypes({ is_active: 'true' }).catch(() => {});
+  }, [fetchMachineTypes, fetchControlTypes]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -81,8 +83,8 @@ export default function MachinesPage() {
   const handleResetFilters = () => {
     setFilters({
       search: '',
-      machine_type: '',
-      control_type: '',
+      machine_type_id: '',
+      control_type_id: '',
       is_active: 'true',
       sort_by: 'name',
       sort_order: 'ASC',
@@ -91,28 +93,31 @@ export default function MachinesPage() {
 
   const hasActiveFilters =
     filters.search ||
-    filters.machine_type ||
-    filters.control_type ||
+    filters.machine_type_id ||
+    filters.control_type_id ||
     filters.is_active !== 'true' ||
     filters.sort_by !== 'name' ||
     filters.sort_order !== 'ASC';
 
-  const getMachineTypeText = (type) => MACHINE_TYPES[type] || type || 'Sonstige';
+  const getControlTypeColor = (colorKey) => getColorClasses(colorKey);
 
-  const getControlTypeColor = (type) =>
-    CONTROL_TYPE_COLORS[type] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-
+  // Gruppierung nach machine_type_id (Backend liefert bereits sequence-sortiert)
   const groupedMachines = machines.reduce((acc, machine) => {
-    const type = machine.machine_type || 'other';
-    if (!acc[type]) acc[type] = [];
-    acc[type].push(machine);
+    const key = machine.machine_type_id || 'none';
+    if (!acc[key]) {
+      acc[key] = {
+        id: machine.machine_type_id,
+        name: machine.machine_type_name || 'Ohne Typ',
+        color: machine.machine_type_color || 'gray',
+        sequence: machine.machine_type_sequence ?? 9999,
+        machines: []
+      };
+    }
+    acc[key].machines.push(machine);
     return acc;
   }, {});
 
-  const orderedGroups = [
-    ...MACHINE_TYPE_ORDER.filter((t) => groupedMachines[t]),
-    ...Object.keys(groupedMachines).filter((t) => !MACHINE_TYPE_ORDER.includes(t)),
-  ];
+  const orderedGroups = Object.values(groupedMachines).sort((a, b) => a.sequence - b.sequence);
 
   const sortValue = `${filters.sort_by}|${filters.sort_order}`;
 
@@ -210,30 +215,31 @@ export default function MachinesPage() {
 
           <div>
             <select
-              value={filters.machine_type}
-              onChange={(e) => setFilters({ ...filters, machine_type: e.target.value })}
+              value={filters.machine_type_id}
+              onChange={(e) => setFilters({ ...filters, machine_type_id: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Alle Typen</option>
-              <option value="milling">Fräsen</option>
-              <option value="turning">Drehen</option>
-              <option value="mill-turn">Dreh-Fräsen</option>
-              <option value="grinding">Schleifen</option>
-              <option value="edm">Erodieren</option>
+              {machineTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
             <select
-              value={filters.control_type}
-              onChange={(e) => setFilters({ ...filters, control_type: e.target.value })}
+              value={filters.control_type_id}
+              onChange={(e) => setFilters({ ...filters, control_type_id: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Alle Steuerungen</option>
-              <option value="Heidenhain">Heidenhain</option>
-              <option value="Siemens">Siemens</option>
-              <option value="Fanuc">Fanuc</option>
-              <option value="Mazatrol">Mazatrol</option>
+              {controlTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -317,36 +323,35 @@ export default function MachinesPage() {
       {/* Grouped Machines List */}
       {!loading && machines.length > 0 && (
         <div className="space-y-6">
-          {orderedGroups.map((type) => {
-            const machinesInType = groupedMachines[type];
-            return (
-              <div key={type}>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  {getMachineTypeText(type)}
-                  <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                    ({machinesInType.length})
-                  </span>
-                </h2>
+          {orderedGroups.map((group) => (
+            <div key={group.id || 'none'}>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <span className={`inline-block px-2 py-0.5 text-sm font-medium rounded ${getColorClasses(group.color)}`}>
+                  {group.name}
+                </span>
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({group.machines.length})
+                </span>
+              </h2>
 
-                {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {machinesInType.map((machine) => (
-                      <MachineCard
-                        key={machine.id}
-                        machine={machine}
-                        getControlTypeColor={getControlTypeColor}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <MachinesTable
-                    machines={machinesInType}
-                    getControlTypeColor={getControlTypeColor}
-                  />
-                )}
-              </div>
-            );
-          })}
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {group.machines.map((machine) => (
+                    <MachineCard
+                      key={machine.id}
+                      machine={machine}
+                      getControlTypeColor={getControlTypeColor}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <MachinesTable
+                  machines={group.machines}
+                  getControlTypeColor={getControlTypeColor}
+                />
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -419,13 +424,13 @@ function MachinesTable({ machines, getControlTypeColor }) {
                   {[machine.manufacturer, machine.model].filter(Boolean).join(' ') || '-'}
                 </td>
                 <td className="px-4 py-3 truncate text-sm">
-                  {machine.control_type ? (
+                  {machine.control_type_name ? (
                     <span
                       className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${getControlTypeColor(
-                        machine.control_type
+                        machine.control_type_color
                       )}`}
                     >
-                      {machine.control_type}
+                      {machine.control_type_name}
                       {machine.control_version ? ` ${machine.control_version}` : ''}
                     </span>
                   ) : (
