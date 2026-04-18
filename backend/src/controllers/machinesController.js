@@ -15,13 +15,13 @@ const pool = new Pool({
  */
 exports.getAllMachines = async (req, res) => {
   try {
-    const { machine_type, control_type, is_active, search } = req.query;
-    
+    const { machine_type, control_type, is_active, search, sort_by, sort_order } = req.query;
+
     let query = `
-      SELECT 
+      SELECT
         m.*,
-        (SELECT COUNT(*) FROM programs pr 
-         JOIN operations o ON pr.operation_id = o.id 
+        (SELECT COUNT(*) FROM programs pr
+         JOIN operations o ON pr.operation_id = o.id
          WHERE o.machine_id = m.id) as program_count
       FROM machines m
       WHERE 1=1
@@ -41,7 +41,7 @@ exports.getAllMachines = async (req, res) => {
       paramCount++;
     }
 
-    if (is_active !== undefined) {
+    if (is_active !== undefined && is_active !== '') {
       query += ` AND m.is_active = $${paramCount}`;
       params.push(is_active === 'true');
       paramCount++;
@@ -49,8 +49,8 @@ exports.getAllMachines = async (req, res) => {
 
     if (search) {
       query += ` AND (
-        m.name ILIKE $${paramCount} OR 
-        m.manufacturer ILIKE $${paramCount} OR 
+        m.name ILIKE $${paramCount} OR
+        m.manufacturer ILIKE $${paramCount} OR
         m.model ILIKE $${paramCount} OR
         m.serial_number ILIKE $${paramCount}
       )`;
@@ -58,7 +58,16 @@ exports.getAllMachines = async (req, res) => {
       paramCount++;
     }
 
-    query += ' ORDER BY m.name ASC';
+    // Sortierung mit Whitelist (SQL-Injection-Schutz)
+    const allowedSortColumns = ['name', 'manufacturer', 'model', 'machine_type', 'control_type'];
+    const safeSortBy = allowedSortColumns.includes(sort_by) ? sort_by : 'name';
+    const safeSortOrder = String(sort_order).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    // Gruppierung nach machine_type kommt immer zuerst, damit die Liste nach Typ gebuendelt bleibt
+    if (safeSortBy === 'machine_type') {
+      query += ` ORDER BY m.machine_type ${safeSortOrder} NULLS LAST, m.name ASC`;
+    } else {
+      query += ` ORDER BY m.machine_type ASC NULLS LAST, m.${safeSortBy} ${safeSortOrder} NULLS LAST, m.name ASC`;
+    }
 
     const result = await pool.query(query, params);
 
