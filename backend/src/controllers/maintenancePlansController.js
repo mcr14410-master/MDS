@@ -62,10 +62,10 @@ exports.getAllPlans = async (req, res) => {
     const { machine_id, maintenance_type_id, is_active, skill_level, is_shift_critical, search } = req.query;
 
     let query = `
-      SELECT 
+      SELECT
         mp.*,
         m.name AS machine_name,
-        m.machine_type,
+        machtype.name AS machine_type,
         m.machine_category,
         m.location AS machine_location,
         m.current_operating_hours,
@@ -76,7 +76,7 @@ exports.getAllPlans = async (req, res) => {
         (SELECT COUNT(*) FROM maintenance_checklist_items WHERE maintenance_plan_id = mp.id) AS checklist_count,
         (SELECT COUNT(*) FROM maintenance_tasks WHERE maintenance_plan_id = mp.id) AS task_count,
         (SELECT MAX(completed_at) FROM maintenance_tasks WHERE maintenance_plan_id = mp.id AND status = 'completed') AS last_completed_at,
-        CASE 
+        CASE
           -- Zeitbasiert überfällig
           WHEN mp.next_due_at IS NOT NULL AND mp.next_due_at < NOW() THEN 'overdue'
           -- Betriebsstundenbasiert überfällig
@@ -91,6 +91,7 @@ exports.getAllPlans = async (req, res) => {
         END AS status
       FROM maintenance_plans mp
       JOIN machines m ON mp.machine_id = m.id
+      LEFT JOIN machine_types machtype ON machtype.id = m.machine_type_id
       JOIN maintenance_types mt ON mp.maintenance_type_id = mt.id
       LEFT JOIN users u ON mp.created_by = u.id
       WHERE 1=1
@@ -169,10 +170,10 @@ exports.getPlanById = async (req, res) => {
 
     // Plan mit Details
     const planQuery = `
-      SELECT 
+      SELECT
         mp.*,
         m.name AS machine_name,
-        m.machine_type,
+        machtype.name AS machine_type,
         m.machine_category,
         m.location AS machine_location,
         m.current_operating_hours,
@@ -181,7 +182,7 @@ exports.getPlanById = async (req, res) => {
         mt.icon AS maintenance_type_icon,
         mt.color AS maintenance_type_color,
         u.username AS created_by_username,
-        CASE 
+        CASE
           -- Zeitbasiert überfällig
           WHEN mp.next_due_at IS NOT NULL AND mp.next_due_at < NOW() THEN 'overdue'
           -- Betriebsstundenbasiert überfällig
@@ -196,6 +197,7 @@ exports.getPlanById = async (req, res) => {
         END AS status
       FROM maintenance_plans mp
       JOIN machines m ON mp.machine_id = m.id
+      LEFT JOIN machine_types machtype ON machtype.id = m.machine_type_id
       JOIN maintenance_types mt ON mp.maintenance_type_id = mt.id
       LEFT JOIN users u ON mp.created_by = u.id
       WHERE mp.id = $1

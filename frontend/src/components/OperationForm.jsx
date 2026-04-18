@@ -365,7 +365,7 @@ export default function OperationForm({ partId, operation, onClose, onSuccess })
                 .filter(m => m.is_active !== false)
                 .map(machine => (
                   <option key={machine.id} value={machine.id}>
-                    {machine.name} {machine.control_type ? `(${machine.control_type})` : ''}
+                    {machine.name} {machine.control_type_name ? `(${machine.control_type_name})` : ''}
                   </option>
                 ))
               }

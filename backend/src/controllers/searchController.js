@@ -61,16 +61,18 @@ exports.search = async (req, res) => {
         UNION ALL
         
         -- Maschinen
-        SELECT 
+        SELECT
           'machine' as type,
-          id::text,
-          name as title,
-          COALESCE(manufacturer, '') || ' - ' || COALESCE(machine_type, '') as subtitle,
-          '/machines/' || id as url,
+          m.id::text,
+          m.name as title,
+          COALESCE(m.manufacturer, '') || ' - ' || COALESCE(mt.name, '') as subtitle,
+          '/machines/' || m.id as url,
           3 as priority
-        FROM machines
-        WHERE is_active = true
-          AND (name ILIKE $1 OR manufacturer ILIKE $1 OR machine_type ILIKE $1 OR control_type ILIKE $1)
+        FROM machines m
+        LEFT JOIN machine_types mt ON mt.id = m.machine_type_id
+        LEFT JOIN control_types ct ON ct.id = m.control_type_id
+        WHERE m.is_active = true
+          AND (m.name ILIKE $1 OR m.manufacturer ILIKE $1 OR mt.name ILIKE $1 OR ct.name ILIKE $1)
         
         UNION ALL
         

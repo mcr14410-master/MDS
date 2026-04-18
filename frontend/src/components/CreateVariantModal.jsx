@@ -170,9 +170,9 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
                         <p className="text-xs text-gray-500 dark:text-gray-400">{machine.location}</p>
                       )}
                     </div>
-                    {machine.control_type && (
+                    {machine.control_type_name && (
                       <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
-                        {machine.control_type}
+                        {machine.control_type_name}
                       </span>
                     )}
                   </label>

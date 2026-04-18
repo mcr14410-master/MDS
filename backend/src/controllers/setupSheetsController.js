@@ -100,7 +100,7 @@ exports.getSetupSheetById = async (req, res) => {
 		c.customer_number,
 		m.name as machine_name,
 		m.serial_number as machine_number,
-		m.control_type as machine_control_type,
+		ct.name as machine_control_type,
 		prog.program_number,
 		prog.program_name,
 		rev.version_string as program_version,
@@ -112,6 +112,7 @@ exports.getSetupSheetById = async (req, res) => {
 		JOIN parts p ON o.part_id = p.id
 		LEFT JOIN customers c ON p.customer_id = c.id
 		JOIN machines m ON ss.machine_id = m.id
+		LEFT JOIN control_types ct ON ct.id = m.control_type_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id

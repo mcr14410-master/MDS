@@ -26,34 +26,36 @@ async function seed() {
       ON CONFLICT DO NOTHING;
     `);
 
-    // 2. Test-Maschinen
+    // 2. Test-Maschinen (Typ/Steuerung ueber FKs, technische Daten in custom_fields)
     console.log('Creating machines...');
     await client.query(`
       INSERT INTO machines (
-        name, manufacturer, model, serial_number, machine_type, 
-        control_type, control_version, num_axes, 
-        workspace_x, workspace_y, workspace_z,
-        spindle_power, max_rpm, tool_capacity, location, 
-        postprocessor_name, network_path
+        name, manufacturer, model, serial_number,
+        machine_type_id, control_type_id, control_version,
+        location, postprocessor_name, network_path,
+        custom_fields
       )
-      VALUES 
-        ('DMG DMU 50', 'DMG Mori', 'DMU 50', 'SN12345', 'milling', 
-         'Heidenhain TNC640', '640 SP5', 5, 
-         500, 400, 400, 
-         18.5, 18000, 30, 'Halle A, Pos. 1', 
-         'Heidenhain_5Axis', '\\\\fileserver\\cnc\\dmu50'),
-        
-        ('Hermle C42U', 'Hermle', 'C42U', 'SN67890', 'milling',
-         'Heidenhain TNC640', '640 SP6', 5,
-         1000, 1100, 600,
-         33, 18000, 42, 'Halle A, Pos. 2',
-         'Heidenhain_5Axis_C42', '\\\\fileserver\\cnc\\hermle'),
-        
-        ('Mazak Integrex i-200', 'Mazak', 'Integrex i-200', 'SN11122', 'mill-turn',
-         'Mazatrol Matrix Nexus 2', '2.0', 5,
-         560, 1000, 500,
-         26, 6000, 40, 'Halle B, Pos. 1',
-         'Mazak_Matrix', '\\\\fileserver\\cnc\\mazak')
+      VALUES
+        ('DMG DMU 50', 'DMG Mori', 'DMU 50', 'SN12345',
+         (SELECT id FROM machine_types WHERE name = 'Fräsen'),
+         (SELECT id FROM control_types WHERE name = 'Heidenhain'),
+         'TNC640 640 SP5',
+         'Halle A, Pos. 1', 'Heidenhain_5Axis', '\\\\fileserver\\cnc\\dmu50',
+         '{"num_axes":5,"workspace_x":500,"workspace_y":400,"workspace_z":400,"spindle_power":18.5,"max_rpm":18000,"tool_capacity":30}'::jsonb),
+
+        ('Hermle C42U', 'Hermle', 'C42U', 'SN67890',
+         (SELECT id FROM machine_types WHERE name = 'Fräsen'),
+         (SELECT id FROM control_types WHERE name = 'Heidenhain'),
+         'TNC640 640 SP6',
+         'Halle A, Pos. 2', 'Heidenhain_5Axis_C42', '\\\\fileserver\\cnc\\hermle',
+         '{"num_axes":5,"workspace_x":1000,"workspace_y":1100,"workspace_z":600,"spindle_power":33,"max_rpm":18000,"tool_capacity":42}'::jsonb),
+
+        ('Mazak Integrex i-200', 'Mazak', 'Integrex i-200', 'SN11122',
+         (SELECT id FROM machine_types WHERE name = 'Dreh-Fräsen'),
+         (SELECT id FROM control_types WHERE name = 'Mazatrol'),
+         'Matrix Nexus 2 2.0',
+         'Halle B, Pos. 1', 'Mazak_Matrix', '\\\\fileserver\\cnc\\mazak',
+         '{"num_axes":5,"workspace_x":560,"workspace_y":1000,"workspace_z":500,"spindle_power":26,"max_rpm":6000,"tool_capacity":40}'::jsonb)
       ON CONFLICT (name) DO NOTHING;
     `);
 
