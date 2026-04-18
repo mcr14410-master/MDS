@@ -34,6 +34,8 @@ export const useMachinesStore = create((set, get) => ({
         params.append('is_active', filters.is_active);
       }
       if (filters.search) params.append('search', filters.search);
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_order) params.append('sort_order', filters.sort_order);
       
       const url = `${API_ENDPOINTS.MACHINES}${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);

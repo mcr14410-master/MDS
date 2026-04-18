@@ -13,6 +13,7 @@ const defaultPreferences = {
     measuringEquipment: 'grid',
     fixtures: 'table',
     clampingDevices: 'table',
+    machines: 'grid',
     // Weitere Seiten hier hinzufügen
   },
   pageSizes: {

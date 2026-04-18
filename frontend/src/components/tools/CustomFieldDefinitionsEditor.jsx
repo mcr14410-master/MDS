@@ -10,7 +10,7 @@ import SortableFieldsList from './SortableFieldsList';
  * @param {function} onClose - Close modal callback
  * @param {function} onSave - Save callback(categoryId, definitions)
  */
-export default function CustomFieldDefinitionsEditor({ category, onClose, onSave }) {
+export default function CustomFieldDefinitionsEditor({ category, onClose, onSave, entityLabel = 'Kategorie' }) {
   const [definitions, setDefinitions] = useState(category?.custom_field_definitions || []);
   const [editingIndex, setEditingIndex] = useState(null);
   const [showFieldForm, setShowFieldForm] = useState(false);
@@ -195,7 +195,7 @@ export default function CustomFieldDefinitionsEditor({ category, onClose, onSave
           <div>
             <h2 className="text-2xl font-bold text-white">Custom Fields Editor</h2>
             <p className="text-sm text-gray-400 mt-1">
-              Kategorie: {category?.name}
+              {entityLabel}: {category?.name}
             </p>
           </div>
           <button
