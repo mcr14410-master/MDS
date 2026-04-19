@@ -1,36 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Info, CheckCircle2, XCircle } from 'lucide-react';
-import { useToolCategoriesStore } from '../../stores/toolCategoriesStore';
 
 /**
  * CustomFieldsDisplay Component
- * Read-only display of custom field values based on definitions
+ * Read-only display of custom field values based on definitions.
  *
- * @param {Array}  [definitions]  Direct definitions array (preferred, generic)
- * @param {number} [categoryId]   Legacy: tool category id (resolved via tool categories store)
- * @param {object} customFields   Custom field values {key: value}
- * @param {string} [heading]      Heading label (default: "Zusätzliche Felder")
+ * @param {Array}  definitions    Array von Feld-Definitionen (key, label, type, ...)
+ * @param {object} customFields   Werte {key: value}
+ * @param {string} [heading]      Ueberschrift (default: "Zusätzliche Felder")
  */
-export default function CustomFieldsDisplay({ definitions, categoryId, customFields, heading = 'Zusätzliche Felder' }) {
-  const { categories } = useToolCategoriesStore();
-  const [fieldDefinitions, setFieldDefinitions] = useState([]);
-
-  useEffect(() => {
-    if (Array.isArray(definitions)) {
-      setFieldDefinitions(definitions);
-      return;
-    }
-    if (!categoryId || !categories || categories.length === 0) {
-      setFieldDefinitions([]);
-      return;
-    }
-    const category = categories.find(cat => cat.id === parseInt(categoryId));
-    if (category && category.custom_field_definitions) {
-      setFieldDefinitions(category.custom_field_definitions);
-    } else {
-      setFieldDefinitions([]);
-    }
-  }, [definitions, categoryId, categories]);
+export default function CustomFieldsDisplay({ definitions = [], customFields, heading = 'Zusätzliche Felder' }) {
+  const fieldDefinitions = Array.isArray(definitions) ? definitions : [];
 
   if (fieldDefinitions.length === 0 || !customFields || Object.keys(customFields).length === 0) {
     return null;

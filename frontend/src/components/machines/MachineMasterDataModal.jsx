@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMachineTypesStore } from '../../stores/machineTypesStore';
 import { useControlTypesStore } from '../../stores/controlTypesStore';
 import { toast } from '../Toaster';
-import CustomFieldDefinitionsEditor from '../tools/CustomFieldDefinitionsEditor';
+import CustomFieldDefinitionsEditor from '../common/CustomFieldDefinitionsEditor';
 
 const COLOR_OPTIONS = [
   { value: 'gray', label: 'Grau', classes: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },

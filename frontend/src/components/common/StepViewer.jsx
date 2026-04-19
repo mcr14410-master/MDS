@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function StepViewer({ fileUrl, fileName, className = '' }) {
   const containerRef = useRef(null);

@@ -3,7 +3,7 @@ import { useMachinesStore } from '../stores/machinesStore';
 import { useMachineTypesStore } from '../stores/machineTypesStore';
 import { useControlTypesStore } from '../stores/controlTypesStore';
 import { toast } from './Toaster';
-import CustomFieldsRenderer from './tools/CustomFieldsRenderer';
+import CustomFieldsRenderer from './common/CustomFieldsRenderer';
 
 export default function MachineForm({ machine, onClose, onSuccess }) {
   const { createMachine, updateMachine, loading } = useMachinesStore();

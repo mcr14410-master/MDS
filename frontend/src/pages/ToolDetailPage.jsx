@@ -17,7 +17,8 @@ import CompatibleInsertsList from '../components/tools/CompatibleInsertsList';
 import AddCompatibleInsertModal from '../components/tools/AddCompatibleInsertModal';
 import CreateStorageItemModal from '../components/tools/CreateStorageItemModal';
 import EditStorageItemModal from '../components/tools/EditStorageItemModal';
-import CustomFieldsDisplay from '../components/tools/CustomFieldsDisplay';
+import CustomFieldsDisplay from '../components/common/CustomFieldsDisplay';
+import { useToolCategoriesStore } from '../stores/toolCategoriesStore';
 import QRCodeDisplay from '../components/tools/QRCodeDisplay';
 import ToolSuppliersTab from '../components/tools/ToolSuppliersTab';
 
@@ -30,6 +31,7 @@ export default function ToolDetailPage() {
   const { compartments, fetchCompartments } = useStorageStore();
   const { documents, fetchDocuments } = useToolDocumentsStore();
   const { compatibleInserts, fetchCompatibleInserts } = useToolCompatibleInsertsStore();
+  const { categories, fetchCategories } = useToolCategoriesStore();
   const [showEditForm, setShowEditForm] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [showMovementModal, setShowMovementModal] = useState(false);
@@ -47,6 +49,7 @@ export default function ToolDetailPage() {
     fetchCompartments(); // Load all compartments for transfer operation
     fetchDocuments(id);
     fetchCompatibleInserts(id);
+    fetchCategories();
   }, [id]);
 
   const handleEdit = () => {
@@ -413,7 +416,7 @@ export default function ToolDetailPage() {
 
         {/* Custom Fields Display */}
         <CustomFieldsDisplay
-          categoryId={currentTool.category_id}
+          definitions={categories.find(c => c.id === parseInt(currentTool.category_id))?.custom_field_definitions || []}
           customFields={currentTool.custom_fields}
         />
 
