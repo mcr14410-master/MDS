@@ -15,46 +15,87 @@ const pool = new Pool({
  */
 exports.getAllParts = async (req, res) => {
   try {
-    const { customer_id, status, search } = req.query;
-    
+    const {
+      customer_id,
+      status,
+      search,
+      sort_by = 'created_at',
+      sort_order = 'desc',
+      page,
+      page_size
+    } = req.query;
+
+    const params = [];
+    let paramCount = 1;
+
+    let whereClause = "WHERE p.status != 'deleted'";
+
+    if (customer_id) {
+      whereClause += ` AND p.customer_id = $${paramCount}`;
+      params.push(customer_id);
+      paramCount++;
+    }
+
+    if (status) {
+      whereClause += ` AND p.status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+
+    if (search) {
+      whereClause += ` AND (p.part_number ILIKE $${paramCount} OR p.part_name ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+      paramCount++;
+    }
+
+    // Sortierung mit Whitelist
+    const sortColumnMap = {
+      part_number: 'p.part_number',
+      part_name: 'p.part_name',
+      customer_name: 'c.name',
+      created_at: 'p.created_at',
+      updated_at: 'p.updated_at'
+    };
+    const safeSortBy = sortColumnMap[sort_by] || 'p.created_at';
+    const safeSortOrder = String(sort_order).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    // Total count fuer Pagination
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM parts p
+      LEFT JOIN customers c ON p.customer_id = c.id
+      ${whereClause}
+    `;
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total, 10);
+
     let query = `
-      SELECT 
+      SELECT
         p.*,
         c.name as customer_name,
         c.customer_number,
         (SELECT COUNT(*) FROM operations WHERE part_id = p.id) as operation_count
       FROM parts p
       LEFT JOIN customers c ON p.customer_id = c.id
-      WHERE p.status != 'deleted'
+      ${whereClause}
+      ORDER BY ${safeSortBy} ${safeSortOrder} NULLS LAST, p.id ASC
     `;
-    const params = [];
-    let paramCount = 1;
 
-    if (customer_id) {
-      query += ` AND p.customer_id = $${paramCount}`;
-      params.push(customer_id);
-      paramCount++;
+    const pageInt = parseInt(page, 10);
+    const sizeInt = parseInt(page_size, 10);
+    if (Number.isFinite(pageInt) && pageInt > 0 && Number.isFinite(sizeInt) && sizeInt > 0) {
+      const offset = (pageInt - 1) * sizeInt;
+      query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      params.push(sizeInt, offset);
+      paramCount += 2;
     }
-
-    if (status) {
-      query += ` AND p.status = $${paramCount}`;
-      params.push(status);
-      paramCount++;
-    }
-
-    if (search) {
-      query += ` AND (p.part_number ILIKE $${paramCount} OR p.part_name ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-      paramCount++;
-    }
-
-    query += ' ORDER BY p.created_at DESC';
 
     const result = await pool.query(query, params);
 
     res.json({
       success: true,
       count: result.rows.length,
+      total,
       parts: result.rows
     });
   } catch (error) {
@@ -124,12 +165,7 @@ exports.getPartById = async (req, res) => {
     `;
     const docsCountResult = await pool.query(docsCountQuery, [id]);
     
-    const document_counts = {
-      cad_model: 0,
-      drawing: 0,
-      other: 0,
-      total: 0
-    };
+    const document_counts = { total: 0 };
     docsCountResult.rows.forEach(row => {
       document_counts[row.document_type] = parseInt(row.count);
       document_counts.total += parseInt(row.count);

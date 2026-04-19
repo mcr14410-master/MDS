@@ -12,18 +12,38 @@ import axios from '../utils/axios';
 import { toast } from './Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
 
-// Dokument-Typ Labels und Icons
+// Dokument-Typ Labels und Icons (Reihenfolge = Anzeige-Reihenfolge)
+// iconBg muss statisch sein, sonst purged Tailwind die Klasse
 const DOCUMENT_TYPES = {
-  cad_model: { label: 'CAD-Modelle', icon: '🔧', color: 'blue' },
-  drawing: { label: 'Zeichnungen', icon: '📐', color: 'green' },
-  other: { label: 'Sonstige', icon: '📄', color: 'gray' }
+  drawing:              { label: 'Zeichnungen',         icon: '📐', iconBg: 'bg-green-100 dark:bg-green-900/30' },
+  cad_model:            { label: 'CAD-Modelle',         icon: '🗂️', iconBg: 'bg-blue-100 dark:bg-blue-900/30' },
+  photo:                { label: 'Fotos / 3D-Ansicht',  icon: '📷', iconBg: 'bg-purple-100 dark:bg-purple-900/30' },
+  inspection_plan:      { label: 'Prüfpläne',           icon: '🔍', iconBg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  material_certificate: { label: 'Materialzertifikate', icon: '🏆', iconBg: 'bg-red-100 dark:bg-red-900/30' },
+  specification:        { label: 'Spezifikationen',     icon: '📋', iconBg: 'bg-indigo-100 dark:bg-indigo-900/30' },
+  other:                { label: 'Sonstiges',           icon: '📎', iconBg: 'bg-gray-100 dark:bg-gray-700' }
+};
+
+// Auto-Detect-Mapping fuer Upload (Extension -> Typ)
+const AUTO_DETECT_EXT = {
+  cad_model: ['step', 'stp', 'stl', 'obj', 'iges', 'igs', '3ds', 'gltf', 'glb', 'x_t', 'x_b', 'sat'],
+  drawing:   ['pdf', 'dxf', 'dwg', 'svg'],
+  photo:     ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tif', 'tiff'],
+};
+const detectType = (filename) => {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  for (const [type, exts] of Object.entries(AUTO_DETECT_EXT)) {
+    if (exts.includes(ext)) return type;
+  }
+  return 'other';
 };
 
 export default function PartDocuments({ partId, onDocumentChange }) {
-  const [documents, setDocuments] = useState({ cad_model: [], drawing: [], other: [] });
+  const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedType, setSelectedType] = useState('auto');
   const fileInputRef = useRef(null);
 
   // Dokumente laden
@@ -62,13 +82,19 @@ export default function PartDocuments({ partId, onDocumentChange }) {
         const formData = new FormData();
         formData.append('file', file);
 
+        // Typ bestimmen: manuell ausgewaehlt oder Auto-Detect
+        const docType = selectedType === 'auto' ? detectType(file.name) : selectedType;
+        formData.append('document_type', docType);
+
         // Erste CAD-Datei als primary setzen wenn noch keine existiert
-        if (documents.cad_model.length === 0 && /\.(step|stp|stl|obj|iges|igs|3ds|gltf|glb)$/i.test(file.name)) {
+        const cadDocs = documents.cad_model || [];
+        if (docType === 'cad_model' && cadDocs.length === 0) {
           formData.append('is_primary_cad', 'true');
         }
 
         // Erste Zeichnung als primary setzen wenn noch keine existiert
-        if (documents.drawing.length === 0 && /\.(pdf|png|jpg|jpeg|tif|tiff|dxf|dwg|svg)$/i.test(file.name)) {
+        const drawingDocs = documents.drawing || [];
+        if (docType === 'drawing' && drawingDocs.length === 0) {
           formData.append('is_primary_drawing', 'true');
         }
 
@@ -163,7 +189,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
     );
   }
 
-  const totalDocuments = documents.cad_model.length + documents.drawing.length + documents.other.length;
+  const totalDocuments = Object.values(documents).reduce((sum, arr) => sum + (arr?.length || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -173,9 +199,24 @@ export default function PartDocuments({ partId, onDocumentChange }) {
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <div className="mt-4">
+
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Dokumenttyp für Upload"
+            >
+              <option value="auto">Automatisch erkennen</option>
+              {Object.entries(DOCUMENT_TYPES).map(([type, config]) => (
+                <option key={type} value={type}>
+                  {config.icon} {config.label}
+                </option>
+              ))}
+            </select>
+
             <label className="cursor-pointer">
-              <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+              <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium inline-block">
                 Dateien auswählen
               </span>
               <input
@@ -184,15 +225,13 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                 multiple
                 onChange={handleUpload}
                 className="hidden"
-                accept=".step,.stp,.stl,.obj,.iges,.igs,.3ds,.gltf,.glb,.x_t,.x_b,.sat,.pdf,.png,.jpg,.jpeg,.tif,.tiff,.dxf,.dwg,.svg,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.7z"
+                accept=".step,.stp,.stl,.obj,.iges,.igs,.3ds,.gltf,.glb,.x_t,.x_b,.sat,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.tif,.tiff,.dxf,.dwg,.svg,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.7z"
               />
             </label>
           </div>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            CAD-Modelle, Zeichnungen oder andere Dokumente
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Max. 100 MB pro Datei
+
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            CAD-Modelle, Zeichnungen, Fotos, Prüfpläne, Zertifikate, Spezifikationen · Max. 100 MB
           </p>
         </div>
 
@@ -239,7 +278,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Icon */}
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${config.color}-100 dark:bg-${config.color}-900/30`}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.iconBg}`}>
                         <span className="text-lg">{config.icon}</span>
                       </div>
 
