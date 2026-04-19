@@ -5,6 +5,8 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import CustomerFormModal from '../components/customers/CustomerFormModal';
 import ContactFormModal from '../components/customers/ContactFormModal';
+import CustomerDocumentsSection from '../components/customers/CustomerDocumentsSection';
+import AuthImage from '../components/common/AuthImage';
 import axios from '../utils/axios';
 import API_BASE_URL from '../config/api';
 
@@ -20,6 +22,7 @@ export default function CustomerDetailPage() {
   const [contacts, setContacts] = useState([]);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [deleteMode, setDeleteMode] = useState(null); // 'soft' | 'hard' | null
+  const [primaryDoc, setPrimaryDoc] = useState(null);
 
   const fetchContacts = async () => {
     try {
@@ -33,10 +36,23 @@ export default function CustomerDetailPage() {
     }
   };
 
+  const fetchPrimaryDoc = async () => {
+    try {
+      const response = await axios.get(`/api/customers/${id}/documents`);
+      const docs = response.data.data || [];
+      const primary = docs.find((d) => d.is_primary && d.mime_type?.startsWith('image/'));
+      setPrimaryDoc(primary || null);
+    } catch (err) {
+      console.error('Error loading primary doc:', err);
+    }
+  };
+
   useEffect(() => {
     fetchCustomer(id);
     fetchContacts();
+    fetchPrimaryDoc();
     return () => clearCurrentCustomer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleEdit = () => {
@@ -193,8 +209,20 @@ export default function CustomerDetailPage() {
       {/* Customer Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Kundendaten</h2>
+        <div className="lg:col-span-2 relative bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          {primaryDoc && (
+            <div className="absolute top-4 right-4 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <AuthImage
+                apiPath={`/api/customers/documents/${primaryDoc.id}/view`}
+                alt={primaryDoc.file_name}
+                className="w-full h-full object-cover"
+                placeholderClassName="w-full h-full"
+              />
+            </div>
+          )}
+          <h2 className={`text-lg font-semibold text-gray-900 dark:text-white mb-4 ${primaryDoc ? 'pr-24' : ''}`}>
+            Kundendaten
+          </h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Kundennummer</dt>
@@ -395,6 +423,16 @@ export default function CustomerDetailPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Dokumente */}
+      <div className="lg:col-span-2">
+        <CustomerDocumentsSection
+          customer={currentCustomer}
+          canEdit={hasPermission('part.create')}
+          canDelete={hasPermission('part.delete')}
+          onUpdate={fetchPrimaryDoc}
+        />
       </div>
       </div>
 

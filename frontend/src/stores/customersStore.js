@@ -199,5 +199,46 @@ export const useCustomersStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   // Clear current customer
-  clearCurrentCustomer: () => set({ currentCustomer: null, customerParts: [] }),
+  clearCurrentCustomer: () => set({ currentCustomer: null, customerParts: [], customerDocuments: [] }),
+
+  // ============================================================================
+  // CUSTOMER DOCUMENTS
+  // ============================================================================
+  customerDocuments: [],
+
+  fetchCustomerDocuments: async (customerId) => {
+    try {
+      const response = await axios.get(`/api/customers/${customerId}/documents`);
+      set({ customerDocuments: response.data.data || [] });
+      return response.data.data || [];
+    } catch (error) {
+      console.error('fetchCustomerDocuments error:', error);
+      throw error;
+    }
+  },
+
+  uploadCustomerDocument: async (customerId, formData) => {
+    const response = await axios.post(
+      `/api/customers/${customerId}/documents/upload`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    set((state) => ({ customerDocuments: [response.data.data, ...state.customerDocuments] }));
+    return response.data.data;
+  },
+
+  updateCustomerDocument: async (docId, data) => {
+    const response = await axios.put(`/api/customers/documents/${docId}`, data);
+    set((state) => ({
+      customerDocuments: state.customerDocuments.map((d) =>
+        d.id === docId ? response.data.data : (data.is_primary ? { ...d, is_primary: false } : d)
+      )
+    }));
+    return response.data.data;
+  },
+
+  deleteCustomerDocument: async (docId) => {
+    await axios.delete(`/api/customers/documents/${docId}`);
+    set((state) => ({ customerDocuments: state.customerDocuments.filter((d) => d.id !== docId) }));
+  },
 }));
