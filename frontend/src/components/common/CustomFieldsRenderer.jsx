@@ -1,38 +1,16 @@
-import { useEffect, useState } from 'react';
 import { Info } from 'lucide-react';
-import { useToolCategoriesStore } from '../../stores/toolCategoriesStore';
 
 /**
  * CustomFieldsRenderer Component
- * Dynamically renders custom field inputs based on custom_field_definitions
+ * Dynamically renders custom field inputs based on custom_field_definitions.
  *
- * @param {Array}    [definitions]   Direct definitions array (preferred, generic)
- * @param {number}   [categoryId]    Legacy: tool category id (resolved via tool categories store)
- * @param {object}   customFields    Current custom field values {key: value}
- * @param {function} onChange        Callback when custom fields change
- * @param {string}   [heading]       Heading label (default: "Zusätzliche Felder (Kategorie-spezifisch)")
+ * @param {Array}    definitions    Array von Feld-Definitionen (key, label, type, ...)
+ * @param {object}   customFields   Aktuelle Werte {key: value}
+ * @param {function} onChange       Callback mit neuem customFields-Objekt
+ * @param {string}   [heading]      Ueberschrift (default: "Zusätzliche Felder (Kategorie-spezifisch)")
  */
-export default function CustomFieldsRenderer({ definitions, categoryId, customFields, onChange, heading = 'Zusätzliche Felder (Kategorie-spezifisch)' }) {
-  const { categories } = useToolCategoriesStore();
-  const [fieldDefinitions, setFieldDefinitions] = useState([]);
-
-  useEffect(() => {
-    // Direct definitions prop has priority
-    if (Array.isArray(definitions)) {
-      setFieldDefinitions(definitions);
-      return;
-    }
-    if (!categoryId || !categories || categories.length === 0) {
-      setFieldDefinitions([]);
-      return;
-    }
-    const category = categories.find(cat => cat.id === parseInt(categoryId));
-    if (category && category.custom_field_definitions) {
-      setFieldDefinitions(category.custom_field_definitions);
-    } else {
-      setFieldDefinitions([]);
-    }
-  }, [definitions, categoryId, categories]);
+export default function CustomFieldsRenderer({ definitions = [], customFields, onChange, heading = 'Zusätzliche Felder (Kategorie-spezifisch)' }) {
+  const fieldDefinitions = Array.isArray(definitions) ? definitions : [];
 
   // Handle field value change
   const handleFieldChange = (fieldKey, value) => {

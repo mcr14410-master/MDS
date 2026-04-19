@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../../stores/authStore';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 

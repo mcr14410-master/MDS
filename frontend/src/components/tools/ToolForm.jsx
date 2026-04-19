@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useToolCategoriesStore } from '../../stores/toolCategoriesStore';
-import CustomFieldsRenderer from './CustomFieldsRenderer';
+import CustomFieldsRenderer from '../common/CustomFieldsRenderer';
 
 /**
  * ToolForm Component
@@ -432,13 +432,16 @@ export default function ToolForm({ tool, onSave, onCancel, loading }) {
                 </div>
 
                 {/* Custom Fields Renderer */}
-                {formData.category_id && (
-                  <CustomFieldsRenderer
-                    categoryId={formData.category_id}
-                    customFields={formData.custom_fields}
-                    onChange={(newFields) => setFormData(prev => ({ ...prev, custom_fields: newFields }))}
-                  />
-                )}
+                {formData.category_id && (() => {
+                  const category = categories.find(c => c.id === parseInt(formData.category_id));
+                  return (
+                    <CustomFieldsRenderer
+                      definitions={category?.custom_field_definitions || []}
+                      customFields={formData.custom_fields}
+                      onChange={(newFields) => setFormData(prev => ({ ...prev, custom_fields: newFields }))}
+                    />
+                  );
+                })()}
               </div>
             )}
 

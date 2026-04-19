@@ -5,8 +5,8 @@ import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import OperationsAccordion from '../components/OperationsAccordion';
-import StepViewer from '../components/StepViewer';
-import PdfViewer from '../components/PdfViewer';
+import StepViewer from '../components/common/StepViewer';
+import PdfViewer from '../components/common/PdfViewer';
 import PartDocuments from '../components/PartDocuments';
 import API_BASE_URL from '../config/api';
 

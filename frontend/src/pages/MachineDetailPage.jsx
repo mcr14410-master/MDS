@@ -8,7 +8,7 @@ import MachineDocumentsTab from '../components/MachineDocumentsTab';
 import MachineImage from '../components/MachineImage';
 import MachineForm from '../components/MachineForm';
 import MachineWikiTab from '../components/MachineWikiTab';
-import CustomFieldsDisplay from '../components/tools/CustomFieldsDisplay';
+import CustomFieldsDisplay from '../components/common/CustomFieldsDisplay';
 
 export default function MachineDetailPage() {
   const { id } = useParams();

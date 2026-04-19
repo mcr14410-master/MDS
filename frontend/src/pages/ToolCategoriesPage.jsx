@@ -7,7 +7,7 @@ import CategoryCard from '../components/tools/CategoryCard';
 import CategoryForm from '../components/tools/CategoryForm';
 import SubcategoryCard from '../components/tools/SubcategoryCard';
 import SubcategoryForm from '../components/tools/SubcategoryForm';
-import CustomFieldDefinitionsEditor from '../components/tools/CustomFieldDefinitionsEditor';
+import CustomFieldDefinitionsEditor from '../components/common/CustomFieldDefinitionsEditor';
 import SortableCategoriesList from '../components/tools/SortableCategoriesList';
 import SortableSubcategoriesList from '../components/tools/SortableSubcategoriesList';
 
