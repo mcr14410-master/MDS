@@ -70,17 +70,17 @@ export default function PartDetailPage() {
     }
   }, [id, fetchPart]);
 
-  const handleDelete = async () => {
-    if (!window.confirm('Bist du sicher, dass du dieses Bauteil löschen möchtest?')) {
-      return;
-    }
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const confirmDelete = async () => {
     try {
       await deletePart(id);
       toast.success('Bauteil erfolgreich gelöscht');
+      setShowDeleteConfirm(false);
       navigate('/parts');
     } catch (err) {
       toast.error(err.message || 'Fehler beim Löschen');
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -97,7 +97,7 @@ export default function PartDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">Fehler</h2>
           <p className="text-red-600 dark:text-red-300">{error}</p>
@@ -114,7 +114,7 @@ export default function PartDetailPage() {
 
   if (!currentPart) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Nicht gefunden</h2>
           <p className="text-yellow-600 dark:text-yellow-300">Bauteil wurde nicht gefunden.</p>
@@ -132,93 +132,103 @@ export default function PartDetailPage() {
   const part = currentPart;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <Link
-          to="/parts"
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-2 mb-4"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Zurück zur Übersicht
-        </Link>
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{part.part_number}</h1>
-            <p className="mt-1 text-lg text-gray-600 dark:text-gray-400">{part.part_name}</p>
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => navigate('/parts')}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex-shrink-0"
+            title="Zurück zur Übersicht"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white font-mono truncate">
+              {part.part_number}
+            </h1>
+            {part.part_name && (
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate">
+                {part.part_name}
+              </p>
+            )}
           </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Status Dropdown */}
-            <div className="relative" ref={statusDropdownRef}>
-              <button
-                onClick={() => hasPermission('part.update') && setStatusDropdownOpen(!statusDropdownOpen)}
-                disabled={updatingStatus}
-                className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-all ${
-                  STATUS_CONFIG[part.status]?.bg || 'bg-gray-100 dark:bg-gray-700'
-                } ${STATUS_CONFIG[part.status]?.text || 'text-gray-800 dark:text-gray-300'} ${
-                  hasPermission('part.update') ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 dark:hover:ring-gray-600' : 'cursor-default'
-                }`}
-                title={hasPermission('part.update') ? 'Klicken zum Ändern' : ''}
-              >
-                {updatingStatus ? (
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                ) : null}
-                {STATUS_CONFIG[part.status]?.label || part.status}
-                {hasPermission('part.update') && !updatingStatus && (
-                  <svg className={`w-3 h-3 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                )}
-              </button>
+        </div>
 
-              {/* Dropdown Menu */}
-              {statusDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-                  {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
-                        part.status === status ? 'font-medium' : ''
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${config.bg}`}></span>
-                      <span className={part.status === status ? config.text : 'text-gray-700 dark:text-gray-300'}>
-                        {config.label}
-                      </span>
-                      {part.status === status && (
-                        <svg className="w-4 h-4 ml-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Status Dropdown */}
+          <div className="relative" ref={statusDropdownRef}>
+            <button
+              onClick={() => hasPermission('part.update') && setStatusDropdownOpen(!statusDropdownOpen)}
+              disabled={updatingStatus}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-all ${
+                STATUS_CONFIG[part.status]?.bg || 'bg-gray-100 dark:bg-gray-700'
+              } ${STATUS_CONFIG[part.status]?.text || 'text-gray-800 dark:text-gray-300'} ${
+                hasPermission('part.update') ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 dark:hover:ring-gray-600' : 'cursor-default'
+              }`}
+              title={hasPermission('part.update') ? 'Klicken zum Ändern' : ''}
+            >
+              {updatingStatus ? (
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              ) : null}
+              {STATUS_CONFIG[part.status]?.label || part.status}
+              {hasPermission('part.update') && !updatingStatus && (
+                <svg className={`w-3 h-3 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               )}
-            </div>
-            
-            {hasPermission('part.update') && (
-              <Link
-                to={`/parts/${id}/edit`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Bearbeiten
-              </Link>
-            )}
-            
-            {hasPermission('part.delete') && (
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Löschen
-              </button>
+            </button>
+
+            {statusDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
+                      part.status === status ? 'font-medium' : ''
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${config.bg}`}></span>
+                    <span className={part.status === status ? config.text : 'text-gray-700 dark:text-gray-300'}>
+                      {config.label}
+                    </span>
+                    {part.status === status && (
+                      <svg className="w-4 h-4 ml-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
+
+          {hasPermission('part.update') && (
+            <Link
+              to={`/parts/${id}/edit`}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Bearbeiten
+            </Link>
+          )}
+
+          {hasPermission('part.delete') && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center justify-center p-2 border border-red-300 dark:border-red-600 rounded-lg shadow-sm text-red-700 dark:text-red-300 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              title="Löschen"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -660,6 +670,37 @@ export default function PartDetailPage() {
           <PartHistory partId={id} />
         </div>
       ) : null}
+
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Bauteil löschen?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Das Bauteil <strong>{part.part_number}</strong>
+              {part.part_name && <> ({part.part_name})</>} wird gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

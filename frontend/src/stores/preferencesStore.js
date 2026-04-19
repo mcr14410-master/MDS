@@ -6,7 +6,7 @@ const STORAGE_KEY = 'mds-ui-preferences';
 const defaultPreferences = {
   viewModes: {
     customers: 'grid',
-    parts: 'grid',
+    parts: 'table',
     tools: 'grid',
     consumables: 'grid',
     suppliers: 'grid',
@@ -21,10 +21,13 @@ const defaultPreferences = {
     fixtures: 50,
     clampingDevices: 50,
     customers: 50,
+    parts: 50,
     // Weitere Seiten hier hinzufügen
   },
-  // Später erweiterbar:
-  // sidebarCollapsed: false,
+  // Persistierte Filter pro Seite (z.B. parts.customer_id)
+  savedFilters: {
+    parts: { customer_id: '' },
+  },
 };
 
 // Aus localStorage laden
@@ -44,6 +47,14 @@ const loadPreferences = () => {
         pageSizes: {
           ...defaultPreferences.pageSizes,
           ...(parsed.pageSizes || {}),
+        },
+        savedFilters: {
+          ...defaultPreferences.savedFilters,
+          ...(parsed.savedFilters || {}),
+          parts: {
+            ...defaultPreferences.savedFilters.parts,
+            ...(parsed.savedFilters?.parts || {}),
+          },
         },
       };
     }
@@ -101,6 +112,28 @@ const usePreferencesStore = create((set, get) => ({
 
   getPageSize: (page) => {
     return get().pageSizes[page] || 50;
+  },
+
+  // Persistierte Filter
+  getSavedFilter: (page, key) => {
+    return get().savedFilters?.[page]?.[key] ?? '';
+  },
+
+  setSavedFilter: (page, key, value) => {
+    set((state) => {
+      const newState = {
+        ...state,
+        savedFilters: {
+          ...state.savedFilters,
+          [page]: {
+            ...(state.savedFilters?.[page] || {}),
+            [key]: value,
+          },
+        },
+      };
+      savePreferences(newState);
+      return newState;
+    });
   },
 
   // Für spätere Erweiterungen

@@ -7,6 +7,7 @@ export const usePartsStore = create((set, get) => ({
   parts: [],
   currentPart: null,
   stats: null,
+  total: 0,
   loading: false,
   error: null,
 
@@ -21,27 +22,32 @@ export const usePartsStore = create((set, get) => ({
   fetchParts: async (filters = {}) => {
     try {
       set({ loading: true, error: null });
-      
-      // Build query string
+
       const params = new URLSearchParams();
       if (filters.customer_id) params.append('customer_id', filters.customer_id);
       if (filters.status) params.append('status', filters.status);
       if (filters.search) params.append('search', filters.search);
-      
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_order) params.append('sort_order', filters.sort_order);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.page_size) params.append('page_size', filters.page_size);
+
       const url = `${API_ENDPOINTS.PARTS}${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
-      
-      set({ 
+
+      set({
         parts: response.data.parts || [],
-        loading: false 
+        total: response.data.total ?? (response.data.parts?.length || 0),
+        loading: false
       });
     } catch (error) {
       console.error('fetchParts error:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Laden der Bauteile';
-      set({ 
-        loading: false, 
+      set({
+        loading: false,
         error: errorMessage,
-        parts: []
+        parts: [],
+        total: 0
       });
     }
   },

@@ -29,7 +29,11 @@ const UPLOAD_DIR = process.env.PART_DOCUMENTS_PATH || path.join(__dirname, '../.
 const ALLOWED_TYPES = {
   cad_model: ['.step', '.stp', '.stl', '.obj', '.iges', '.igs', '.3ds', '.gltf', '.glb', '.x_t', '.x_b', '.sat'],
   drawing: ['.pdf', '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.dxf', '.dwg', '.svg'],
-  other: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.zip', '.rar', '.7z']
+  photo: ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tif', '.tiff'],
+  inspection_plan: ['.pdf', '.doc', '.docx', '.xls', '.xlsx'],
+  material_certificate: ['.pdf', '.jpg', '.jpeg', '.png', '.tif', '.tiff'],
+  specification: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt'],
+  other: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.zip', '.rar', '.7z', '.png', '.jpg', '.jpeg']
 };
 
 // Max Dateigröße (100 MB)
@@ -97,19 +101,12 @@ exports.getPartDocuments = async (req, res) => {
 
     const result = await pool.query(query, params);
 
-    // Gruppieren nach Typ
-    const grouped = {
-      cad_model: [],
-      drawing: [],
-      other: []
-    };
-
+    // Gruppieren nach Typ (dynamisch, unterstuetzt alle Typen)
+    const grouped = {};
     result.rows.forEach(doc => {
-      if (grouped[doc.document_type]) {
-        grouped[doc.document_type].push(doc);
-      } else {
-        grouped.other.push(doc);
-      }
+      const t = doc.document_type || 'other';
+      if (!grouped[t]) grouped[t] = [];
+      grouped[t].push(doc);
     });
 
     res.json({
