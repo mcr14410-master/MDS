@@ -20,6 +20,7 @@ const defaultPreferences = {
     measuringEquipment: 50,
     fixtures: 50,
     clampingDevices: 50,
+    customers: 50,
     // Weitere Seiten hier hinzufügen
   },
   // Später erweiterbar:

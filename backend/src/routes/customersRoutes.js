@@ -24,6 +24,13 @@ router.use(authenticateToken);
 router.get('/', customersController.getAllCustomers);
 
 /**
+ * @route   GET /api/customers/stats
+ * @desc    Get aggregated customer counts (total/active/inactive)
+ * @access  Private
+ */
+router.get('/stats', customersController.getStats);
+
+/**
  * @route   GET /api/customers/:id
  * @desc    Get customer by ID
  * @access  Private

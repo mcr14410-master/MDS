@@ -1,6 +1,6 @@
 // frontend/src/pages/PartsPage.jsx
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
 import { useCustomersStore } from '../stores/customersStore';
 import { useAuthStore } from '../stores/authStore';
@@ -10,11 +10,15 @@ export default function PartsPage() {
   const { parts, loading, error, fetchParts, deletePart } = usePartsStore();
   const { customers, fetchCustomers } = useCustomersStore();
   const { hasPermission } = useAuthStore();
-  
+  const [searchParams] = useSearchParams();
+
+  // Initial-Filter aus URL-Parameter (z.B. ?customer_id=5)
+  const initialCustomerId = searchParams.get('customer_id') || '';
+
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    customer_id: '',
+    customer_id: initialCustomerId,
   });
   const [searchInput, setSearchInput] = useState('');
 

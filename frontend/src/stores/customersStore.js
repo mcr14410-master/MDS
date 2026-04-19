@@ -6,6 +6,8 @@ export const useCustomersStore = create((set, get) => ({
   customers: [],
   currentCustomer: null,
   customerParts: [],
+  stats: null,
+  total: 0,
   loading: false,
   error: null,
 
@@ -21,31 +23,46 @@ export const useCustomersStore = create((set, get) => ({
   fetchCustomers: async (filters = {}) => {
     try {
       set({ loading: true, error: null });
-      
-      // Build query string
+
       const params = new URLSearchParams();
-      if (filters.is_active !== null && filters.is_active !== undefined) {
+      if (filters.is_active !== null && filters.is_active !== undefined && filters.is_active !== '') {
         params.append('is_active', filters.is_active);
       }
       if (filters.search) params.append('search', filters.search);
       if (filters.sort_by) params.append('sort_by', filters.sort_by);
       if (filters.sort_order) params.append('sort_order', filters.sort_order);
-      
+      if (filters.page) params.append('page', filters.page);
+      if (filters.page_size) params.append('page_size', filters.page_size);
+
       const url = `/api/customers${params.toString() ? '?' + params.toString() : ''}`;
       const response = await axios.get(url);
-      
-      set({ 
+
+      set({
         customers: response.data.data || [],
-        loading: false 
+        total: response.data.total ?? (response.data.data?.length || 0),
+        loading: false
       });
     } catch (error) {
       console.error('fetchCustomers error:', error);
       const errorMessage = error.response?.data?.message || 'Fehler beim Laden der Kunden';
-      set({ 
-        loading: false, 
+      set({
+        loading: false,
         error: errorMessage,
-        customers: []
+        customers: [],
+        total: 0
       });
+    }
+  },
+
+  // Fetch stats
+  fetchStats: async () => {
+    try {
+      const response = await axios.get('/api/customers/stats');
+      set({ stats: response.data.data });
+      return response.data.data;
+    } catch (error) {
+      console.error('fetchStats error:', error);
+      throw error;
     }
   },
 

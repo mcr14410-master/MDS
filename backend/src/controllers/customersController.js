@@ -20,35 +20,30 @@ const pool = require('../config/db');
  */
 exports.getAllCustomers = async (req, res) => {
   try {
-    const { 
-      is_active, 
+    const {
+      is_active,
       search,
       sort_by = 'name',
-      sort_order = 'asc' 
+      sort_order = 'asc',
+      page,
+      page_size
     } = req.query;
 
-    let queryText = `
-      SELECT 
-        customers.*,
-        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id AND status != 'deleted') as part_count
-      FROM customers
-      WHERE 1=1
-    `;
-    
     const params = [];
     let paramCount = 1;
 
-    // Filters
-    if (is_active !== undefined) {
-      queryText += ` AND customers.is_active = $${paramCount}`;
+    let whereClause = 'WHERE 1=1';
+
+    if (is_active !== undefined && is_active !== '') {
+      whereClause += ` AND customers.is_active = $${paramCount}`;
       params.push(is_active === 'true');
       paramCount++;
     }
 
     if (search) {
-      queryText += ` AND (
-        customers.name ILIKE $${paramCount} OR 
-        customers.customer_number ILIKE $${paramCount} OR 
+      whereClause += ` AND (
+        customers.name ILIKE $${paramCount} OR
+        customers.customer_number ILIKE $${paramCount} OR
         customers.contact_person ILIKE $${paramCount} OR
         customers.email ILIKE $${paramCount}
       )`;
@@ -56,18 +51,43 @@ exports.getAllCustomers = async (req, res) => {
       paramCount++;
     }
 
-    // Sorting
+    // Sortierung mit Whitelist
     const validSortFields = ['name', 'customer_number', 'contact_person', 'created_at'];
     const sortField = validSortFields.includes(sort_by) ? sort_by : 'name';
-    const order = sort_order.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-    
-    queryText += ` ORDER BY ${sortField} ${order}`;
+    const order = String(sort_order).toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
+    // Total Count fuer Pagination
+    const countResult = await pool.query(
+      `SELECT COUNT(*) AS total FROM customers ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    // Pagination (optional)
+    let queryText = `
+      SELECT
+        customers.*,
+        (SELECT COUNT(*) FROM parts WHERE customer_id = customers.id AND status != 'deleted') as part_count
+      FROM customers
+      ${whereClause}
+      ORDER BY ${sortField} ${order}, customers.name ASC
+    `;
+
+    const pageInt = parseInt(page, 10);
+    const sizeInt = parseInt(page_size, 10);
+    if (Number.isFinite(pageInt) && pageInt > 0 && Number.isFinite(sizeInt) && sizeInt > 0) {
+      const offset = (pageInt - 1) * sizeInt;
+      queryText += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      params.push(sizeInt, offset);
+      paramCount += 2;
+    }
 
     const result = await pool.query(queryText, params);
 
     res.json({
       success: true,
       count: result.rows.length,
+      total,
       data: result.rows
     });
 
@@ -76,6 +96,39 @@ exports.getAllCustomers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching customers',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/customers/stats
+ * Kundenstatistik fuer Stats-Cards
+ */
+exports.getStats = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE is_active = true) AS active,
+        COUNT(*) FILTER (WHERE is_active = false) AS inactive
+      FROM customers
+    `);
+
+    const row = result.rows[0] || {};
+    res.json({
+      success: true,
+      data: {
+        total: parseInt(row.total, 10) || 0,
+        active: parseInt(row.active, 10) || 0,
+        inactive: parseInt(row.inactive, 10) || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching customer stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching customer stats',
       error: error.message
     });
   }
