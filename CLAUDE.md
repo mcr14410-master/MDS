@@ -36,6 +36,16 @@ Bei Problemen, Fehlern oder Bugs:
 - Keine Commits, Pushes oder Branch-Operationen ohne explizite Aufforderung
 - `git diff` und `git status` sind jederzeit erlaubt
 
+## Versionierung (SemVer)
+- Einzige Quelle: `version` in `backend/package.json` + `frontend/package.json` (immer synchron). Sidebar und Backend lesen daraus – nie hartcodieren.
+- Jeder PR: Eintrag unter `## [Unreleased]` in CHANGELOG.md (Added/Changed/Fixed/Removed)
+- Release = Deployment auf den Pi, nur auf Anfrage ("Release machen"):
+  1. Version bestimmen: Features → Minor (2.5.x → 2.6.0), nur Fixes → Patch (2.5.1 → 2.5.2)
+  2. `[Unreleased]` → `[X.Y.Z] - YYYY-MM-DD - Kurztitel`, neues leeres `[Unreleased]`
+  3. Version in beiden `package.json` setzen, Release-PR
+  4. Nach Merge: annotierter Tag `vX.Y.Z` auf den Merge-Commit, Push nach Freigabe
+- Bestehende Tags (inkl. `-dev`) nicht verändern
+
 ## Technische Konventionen
 
 ### Backend
