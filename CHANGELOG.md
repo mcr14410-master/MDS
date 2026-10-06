@@ -15,9 +15,21 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Neu: Ein Klick auf die Versionsnummer unten in der Seitenleiste zeigt „Was ist neu“ – eine Übersicht der Änderungen jeder Version.
+- Nach einem Update erscheint an der Versionsnummer ein „Neu“-Hinweis, bis die Übersicht geöffnet wurde.
+
+### Added
+- Seite `/changelog` („Was ist neu“): Anwender-Fassung für alle, technische Abschnitte für Admins (Toggle)
+- `GET /api/changelog`, `PUT /api/changelog/seen`; Parser-Service für `CHANGELOG.md` (Volume im Backend-Container)
+- Migration `users.last_seen_version`, Neu-Badge in der Sidebar pro Benutzer
+
 ---
 
 ## [2.5.1] - 2026-10-06 - Versionierung & Aufräumen
+
+### Für Anwender
+- Die aktuelle Programmversion steht jetzt unten in der Seitenleiste.
 
 ### Changed
 - Version wird zentral aus `package.json` gelesen (Backend + Frontend auf 2.5.1 synchronisiert)
@@ -33,6 +45,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ---
 
 ## [2.5.0] - 2026-04-19 - Stammdaten-Optimierung (PRs #66–#81)
+
+### Für Anwender
+- Vorrichtungen, Spannmittel, Maschinen, Kunden und Bauteile haben jetzt einheitliche Listen mit Kennzahlen, Schnellfilter, Kachel-/Tabellenansicht und Seitenweise-Anzeige.
+- Kunden und Bauteile: Dokumente können hochgeladen und nach Typ sortiert werden.
+- Maschinen: frei definierbare Zusatzfelder.
+- Neue Vorrichtungen bekommen ihre Nummer automatisch.
+- Wartung: Wartungstypen auf Deutsch und mit eigenem Symbol.
 
 ### Added
 - **Maschinen:** Stammdaten-Verwaltung, Custom-Fields in MachineForm + DetailPage (#75, #76)
@@ -57,6 +76,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [2.4.5] - 2026-04-16 - Entwicklungs-Setup (PRs #62–#65)
 
+### Für Anwender
+- Keine sichtbaren Änderungen (internes Entwicklungs-Setup).
+
 ### Added
 - `CLAUDE.md` mit Projekt-Konventionen und Ordner-Struktur
 - `.vscode`-Settings, Git-Workflow mit Branch-Namenskonvention
@@ -64,6 +86,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ---
 
 ## [2.4.4] - 2026-04-15 - Upload-Standard & Cron (PRs #56–#61)
+
+### Für Anwender
+- Bilder und Downloads in Bauteilen, Programmen, Wartung und Verbrauchsmaterial werden zuverlässiger angezeigt.
+- Wartungsaufgaben werden automatisch aus den Wartungsplänen erzeugt.
 
 ### Added
 - Cron-Jobs `fs_garbage_collection` und `generate_maintenance_tasks` (#61)
@@ -78,12 +104,19 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [2.4.3] - 2026-04-14 - Messmittel-Optimierungen (PR #55)
 
+### Für Anwender
+- Messmittel: mehrere Einträge auf einmal bearbeiten, Seitenweise-Anzeige, Tabellenansicht und erweiterte Etiketten.
+
 ### Added
 - Messmittel: Bulk-Aktionen, Paginierung, Tabellen-Layout, Etiketten-Erweiterungen
 
 ---
 
 ## [2.4.2] - 2026-03-01 – 2026-04-01 - Zeiterfassung & Urlaub (PRs #49–#54)
+
+### Für Anwender
+- Urlaub: Detailansicht pro Mitarbeiter, PDF-Exporte und genauere Aufschlüsselung im Kalender.
+- Zeitnachweis: Saldo aus dem Vormonat wird korrekt übernommen, nicht ausgestempelte Tage werden zur richtigen Uhrzeit geschlossen.
 
 ### Added
 - Urlaubsstatus-Aufschlüsselung, Kalender-Schraffur (#49)
@@ -101,6 +134,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [2.4.1] - 2026-02-07 – 2026-02-23 - Zeiterfassungs-Terminal (PRs #44–#48)
 
+### Für Anwender
+- Stempeln am Terminal per NFC-Karte oder PIN; mehrere Karten pro Mitarbeiter möglich.
+- Saldo-Berechnung und Lohnnachweis korrigiert.
+
 ### Added
 - Terminal-API mit API-Key-Auth (`authenticateTerminal`), Stempel-/Batch-/User-Info-Endpoints
 - Mehrere NFC-Chips pro Benutzer (`user_rfid_chips`)
@@ -114,6 +151,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [2.4.0] - 2026-02-06 - Zeiterfassung (PRs #41–#43)
 
+### Für Anwender
+- Neue Zeiterfassung: Kommen, Gehen und Pausen werden erfasst, offene Tage automatisch geprüft.
+- Lohnnachweis als PDF.
+
 ### Added
 - Zeiterfassungssystem mit Cron-Automatisierung und Selbst-Korrektur
 - Mitarbeiter-Einstellungen, Pausen-Einstellungen, Dashboard-Überarbeitung
@@ -122,6 +163,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ---
 
 ## [2.3.3] - 2026-01-29 - Messmittel-Etiketten (PRs #38–#40)
+
+### Für Anwender
+- Messmittel: Etiketten drucken (mit Vorlagen) und per Barcode-Scanner aufrufen.
 
 ### Added
 - Label-Generator mit Preset-System und Scanner-Integration
@@ -133,12 +177,18 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [2.3.2] - 2026-01-28 - Zerobot (PR #37)
 
+### Für Anwender
+- Neuer Positionsrechner für die Zerobot-Beladeroboter.
+
 ### Added
 - Positionsrechner für Beladeroboter
 
 ---
 
 ## [2.3.1] - 2026-01-25 - Urlaubs-Antrags-Workflow (PRs #35–#36)
+
+### Für Anwender
+- Urlaub kann jetzt beantragt und von Vorgesetzten genehmigt oder abgelehnt werden.
 
 ### Added
 - Antrags-Workflow (beantragen → genehmigen/ablehnen)
@@ -149,6 +199,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ---
 
 ## [2.3.0] - 2026-01-21 - Urlaubsplanung (PRs #32–#34)
+
+### Für Anwender
+- Neue Urlaubsplanung mit Kalender, Feiertagen und Warnung bei Überschneidungen.
 
 ### Added
 - Urlaubskalender (Monat/Jahr), Überschneidungs-Check, Feiertage aller Bundesländer, Urlaubsansprüche, Rollen-Limits

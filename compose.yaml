@@ -55,6 +55,7 @@ services:
     volumes:
       - /srv/mds/uploads:/app/uploads
       - /srv/mds/backups:/app/backups:ro
+      - ./CHANGELOG.md:/app/CHANGELOG.md:ro
     depends_on:
       db:
         condition: service_healthy

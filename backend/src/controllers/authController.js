@@ -186,6 +186,7 @@ async function login(req, res) {
         first_name: user.first_name,
         last_name: user.last_name,
         full_name: full_name,
+        last_seen_version: user.last_seen_version || null,
         roles: Object.keys(roles),
         permissions: [...new Set(rolesResult.rows.map(r => r.permission_name).filter(Boolean))]
       },
@@ -218,6 +219,7 @@ async function getProfile(req, res) {
         u.last_name,
         u.created_at, 
         u.last_login,
+        u.last_seen_version,
         COALESCE(json_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), '[]') as roles,
         COALESCE(json_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), '[]') as permissions
       FROM users u
@@ -226,7 +228,7 @@ async function getProfile(req, res) {
       LEFT JOIN role_permissions rp ON r.id = rp.role_id
       LEFT JOIN permissions p ON rp.permission_id = p.id
       WHERE u.id = $1
-      GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.created_at, u.last_login
+      GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.created_at, u.last_login, u.last_seen_version
     `, [userId]);
 
     if (result.rows.length === 0) {
