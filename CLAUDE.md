@@ -39,6 +39,7 @@ Bei Problemen, Fehlern oder Bugs:
 ## Versionierung (SemVer)
 - Einzige Quelle: `version` in `backend/package.json` + `frontend/package.json` (immer synchron). Sidebar und Backend lesen daraus – nie hartcodieren.
 - Jeder PR: Eintrag unter `## [Unreleased]` in CHANGELOG.md (Added/Changed/Fixed/Removed)
+- Jede Version hat als **ersten** Abschnitt `### Für Anwender` (2–5 verständliche Sätze, keine Datei-/Endpoint-Namen) – wird im MDS unter „Was ist neu“ allen Mitarbeitern angezeigt. Technische Abschnitte sehen nur Admins.
 - Release = Deployment auf den Pi, nur auf Anfrage ("Release machen"):
   1. Version bestimmen: Features → Minor (2.5.x → 2.6.0), nur Fixes → Patch (2.5.1 → 2.5.2)
   2. `[Unreleased]` → `[X.Y.Z] - YYYY-MM-DD - Kurztitel`, neues leeres `[Unreleased]`
