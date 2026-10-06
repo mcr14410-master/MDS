@@ -278,6 +278,8 @@ function NavSubItem({ to, label, badge, exact }) {
 export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, onLogout }) {
   const location = useLocation();
   const { user } = useAuthStore();
+  const appVersion = import.meta.env.VITE_APP_VERSION;
+  const hasUnseenChangelog = !!user && user.last_seen_version !== appVersion;
   const { isDark, toggleTheme } = useThemeStore();
   const { escalations, fetchEscalations } = useMaintenanceStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -585,19 +587,33 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             {/* Collapse Toggle */}
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex items-center gap-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="relative hidden lg:flex items-center gap-2 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               title={collapsed ? 'Erweitern' : 'Minimieren'}
             >
               {collapsed ? <Icons.ChevronDoubleRight /> : <Icons.ChevronDoubleLeft />}
               {!collapsed && <span className="text-xs">Minimieren</span>}
+              {collapsed && hasUnseenChangelog && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500" title="Neue Version – Was ist neu" />
+              )}
             </button>
           </div>
           
-          {/* Version */}
+          {/* Version → Was ist neu */}
           {!collapsed && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-1.5 border-t border-gray-200 dark:border-gray-700">
-              MDS v{import.meta.env.VITE_APP_VERSION}
-            </p>
+            <Link
+              to="/changelog"
+              onClick={onClose}
+              title="Was ist neu?"
+              className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 py-1.5 border-t border-gray-200 dark:border-gray-700 transition-colors"
+            >
+              <span>MDS v{appVersion}</span>
+              {hasUnseenChangelog && (
+                <span className="inline-flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Neu
+                </span>
+              )}
+            </Link>
           )}
         </div>
       </aside>
