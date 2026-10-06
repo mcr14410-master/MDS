@@ -13,6 +13,10 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
+# Windows-Batchdateien brauchen CRLF (cmd.exe)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 # Binärdateien nicht anfassen
 *.png binary
 *.jpg binary
