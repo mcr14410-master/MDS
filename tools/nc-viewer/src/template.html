@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NC-Viewer</title>
+<style>
+:root{
+  --bg:#14171b; --panel:#1d2127; --panel2:#252a31; --line:#323843; --text:#e6e9ee; --muted:#9aa3af;
+  --accent:#3b9eff; --warn:#f5a524; --err:#e5484d; --sel:#2b3a4f;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif; font-size:13px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:#4b5563}
+button.primary{background:var(--accent);border-color:var(--accent);color:#04121f;font-weight:600}
+input[type=number],select{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:3px 6px;width:90px}
+label{cursor:pointer}
+#app{display:grid;grid-template-columns:330px 1fr;grid-template-rows:46px 1fr auto;height:100%}
+header{grid-column:1/3;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+header .logo{font-weight:700;letter-spacing:.3px}
+header .logo span{color:var(--accent)}
+#title{color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.views{display:flex;gap:4px}
+.views button{padding:4px 8px}
+aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;border-radius:0;background:none;padding:10px 4px;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
+.pane{display:none;overflow:auto;flex:1;padding:10px}
+.pane.on{display:block}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed #2b3038}
+.kv span{color:var(--muted)} .kv b{font-weight:600;text-align:right}
+.sep{height:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stats div{background:var(--panel2);border-radius:8px;padding:9px 10px}
+.stats b{display:block;font-size:17px} .stats span{color:var(--muted);font-size:11.5px}
+.hint{color:var(--muted);font-size:11.5px;margin:8px 2px}
+.warn{background:#3a2e12;color:#f8d48a;border-radius:6px;padding:8px;margin-top:8px;font-size:12px}
+.row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;cursor:pointer}
+.row:hover{background:var(--panel2)} .row.sel{background:var(--sel)}
+.row .grow{flex:1;min-width:0} .row small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t{color:var(--muted);font-size:12px;white-space:nowrap}
+.sw{width:11px;height:11px;border-radius:3px;flex:none}
+.dia{display:flex;align-items:center;gap:3px;color:var(--muted);font-size:12px}
+.dia input{width:58px;padding:2px 4px}
+.group{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin:12px 2px 6px}
+.opts label{display:flex;align-items:center;gap:8px;padding:4px 2px}
+.offs{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center}
+#alignState{color:var(--muted);font-size:11.5px;margin:6px 2px}
+main{position:relative;min-height:0}
+#view{position:absolute;inset:0}
+#view canvas{display:block;width:100%;height:100%}
+#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#empty .box{pointer-events:auto;text-align:center;border:2px dashed #3a414c;border-radius:14px;padding:34px 40px;background:rgba(20,23,27,.75);max-width:520px}
+#empty h2{margin:0 0 8px;font-size:18px} #empty p{color:var(--muted);margin:6px 0 16px;line-height:1.45}
+body.has-prog #empty{display:none}
+#dropOverlay{position:absolute;inset:8px;border:3px dashed var(--accent);border-radius:14px;background:rgba(59,158,255,.08);display:none;align-items:center;justify-content:center;font-size:18px;color:var(--accent);pointer-events:none;z-index:5}
+body.dragging #dropOverlay{display:flex}
+#status{position:absolute;left:12px;top:10px;background:rgba(20,23,27,.8);padding:5px 9px;border-radius:6px;font-size:12.5px;pointer-events:none}
+#status:empty{display:none}
+.pl{color:#f8d48a;background:#3a2e12;border-radius:4px;padding:1px 6px;margin-left:6px;font-size:12px}
+.mono{font-family:Consolas,"Cascadia Mono",monospace;color:var(--muted);margin-left:6px}
+footer{grid-column:1/3;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:0}
+.player{display:flex;align-items:center;gap:6px;padding:8px 12px;grid-column:1/3}
+.player input[type=range]{flex:1;accent-color:var(--accent)}
+.player button{width:36px;padding:5px 0}
+#code{grid-column:1/3;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;padding:2px 0 8px;border-top:1px solid var(--line);max-height:132px;overflow:hidden}
+#code div{white-space:pre;padding:0 12px;color:#b8c0cc}
+#code div span{display:inline-block;width:52px;color:#5b6472;text-align:right;margin-right:14px}
+#code div.cur{background:#243246;color:#fff}
+body:not(.has-prog) footer{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;background:#2a3038;border:1px solid var(--line);padding:9px 14px;border-radius:8px;transition:.25s;z-index:20;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%)} #toast.err{border-color:var(--err);color:#ffb4b6}
+.legend{display:flex;gap:12px;color:var(--muted);font-size:12px;align-items:center}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;margin-right:5px;vertical-align:middle}
+@media (max-width:820px){#app{grid-template-columns:1fr;grid-template-rows:46px 45vh 1fr auto} aside{grid-row:3} main{grid-row:2} header .views{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">NC<span>-</span>Viewer</div>
+    <button class="primary" id="openBtn">Dateien öffnen</button>
+    <div id="title">Heidenhain-Programm (.H) und Aufspannung (.stp / .stl) hier hineinziehen</div>
+    <div class="legend"><span><i style="border-color:#3b9eff"></i>Vorschub</span><span><i style="border-color:#ff6b6b;border-top-style:dashed"></i>Eilgang</span></div>
+    <div class="views">
+      <button id="vIso" title="Isometrisch">Iso</button><button id="vTop" title="Draufsicht">Oben</button>
+      <button id="vFront" title="Vorderansicht">Vorne</button><button id="vRight" title="Seitenansicht">Rechts</button>
+      <button id="vFit" title="Alles zeigen (F)">⤢</button>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".h,.H,.nc,.txt,.stp,.step,.stl" hidden>
+  </header>
+
+  <aside>
+    <div class="tabs">
+      <button class="on" data-pane="infoPane">Info</button>
+      <button data-pane="toolPaneWrap">Werkzeuge</button>
+      <button data-pane="opPaneWrap">Schritte</button>
+      <button data-pane="modelPane">Ansicht</button>
+    </div>
+    <div class="pane on" id="infoPane"><p class="hint">Noch kein Programm geladen.</p></div>
+    <div class="pane" id="toolPaneWrap"><p class="hint">Klick auf ein Werkzeug zeigt nur dessen Bahnen. Nochmal klicken = alles.<br>Ø wird aus dem Werkzeugkommentar gelesen (z.&nbsp;B. „D6“) und gilt für die Radiuskorrektur – bei Bedarf hier überschreiben.</p><div id="toolPane"></div></div>
+    <div class="pane" id="opPaneWrap"><p class="hint">Klick auf einen Schritt zeigt nur diesen Abschnitt. Nochmal klicken = alles.</p><div id="opPane"></div></div>
+    <div class="pane" id="modelPane">
+      <div class="group">Anzeige</div>
+      <div class="opts">
+        <label><input type="checkbox" id="showPaths" checked> Werkzeugbahnen</label>
+        <label><input type="checkbox" id="showRapid" checked> Eilgang</label>
+        <label><input type="checkbox" id="showTool" checked> Werkzeug</label>
+        <label><input type="checkbox" id="radComp" checked> Radiuskorrektur RL/RR anwenden</label>
+        <label><input type="checkbox" id="showDatum" checked> Nullpunkt &amp; Achsen</label>
+        <label><input type="checkbox" id="showBlk" checked> Rohteil (BLK FORM)</label>
+        <label><input type="checkbox" id="fitModel"> Beim Zentrieren Modell einbeziehen</label>
+      </div>
+      <div class="group">Aufspannung <span id="partFile" style="text-transform:none;letter-spacing:0"></span></div>
+      <div class="opts"><label>Werkstück <input type="range" id="opWork" min="5" max="100" value="45" style="flex:1"></label>
+        <label>Spannmittel <input type="range" id="opClamp" min="5" max="100" value="100" style="flex:1"></label></div>
+      <div id="partPane"><p class="hint">Kein Modell geladen. STEP-Export der Bearbeitung aus TopSolid hineinziehen.</p></div>
+      <div class="group">Lage zum Programm-Nullpunkt</div>
+      <div class="offs">
+        <span>Versatz X</span><input type="number" id="offX" step="0.1">
+        <span>Versatz Y</span><input type="number" id="offY" step="0.1">
+        <span>Versatz Z</span><input type="number" id="offZ" step="0.1">
+      </div>
+      <div id="alignState"></div>
+      <button id="autoAlign">Automatisch ausrichten</button>
+      <div class="group">Laufzeitschätzung</div>
+      <div class="offs"><span>Eilgang mm/min</span><input type="number" id="rapidFeed" value="30000" step="1000"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="view"></div>
+    <div id="status"></div>
+    <div id="empty"><div class="box">
+      <h2>Programm ansehen – ohne TopSolid</h2>
+      <p>Heidenhain-Programm (<b>.H</b>) und optional die Aufspannung als <b>STEP</b> oder <b>STL</b> aus TopSolid hier hineinziehen.<br>Beide Dateien gleichzeitig ziehen geht auch.</p>
+      <button class="primary" id="emptyOpen">Dateien auswählen</button>
+    </div></div>
+    <div id="dropOverlay">Dateien loslassen zum Öffnen</div>
+  </main>
+
+  <footer>
+    <div class="player">
+      <button id="toStart" title="Anfang">⏮</button>
+      <button id="stepBack" title="Satz zurück (←)">◀</button>
+      <button id="play" title="Abspielen (Leertaste)">▶</button>
+      <button id="stepFwd" title="Satz vor (→)">▶|</button>
+      <button id="toEnd" title="Ende">⏭</button>
+      <input type="range" id="slider" min="0" max="0" value="0">
+      <select id="speed" title="Geschwindigkeit"><option value="0.25">0,25×</option><option value="1" selected>1×</option><option value="4">4×</option><option value="16">16×</option></select>
+      <button id="showAll" style="width:auto;padding:5px 10px">Alles</button>
+    </div>
+    <div id="code"></div>
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>/*HH*/</script>
+<script>/*OCCT*/</script>
+<script type="application/octet-stream" id="occt-wasm">/*WASM*/</script>
+<script>/*APP*/</script>
+</body>
+</html>
