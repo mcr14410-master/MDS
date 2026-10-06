@@ -1,0 +1,46 @@
+### Changelog API Tests ("Was ist neu")
+### Requires REST Client extension in VS Code
+### TOKEN = Admin-Token, USER_TOKEN = Token eines Nicht-Admins (z. B. operator)
+
+@baseUrl = http://localhost:5000/api
+@token = {{$dotenv TOKEN}}
+@userToken = {{$dotenv USER_TOKEN}}
+
+### 1. Admin: alle Versionen, alle Abschnitte (isAdmin: true, Changed/Fixed sichtbar)
+GET {{baseUrl}}/changelog
+Authorization: Bearer {{token}}
+
+### 2. Nicht-Admin: nur "Für Anwender", Versionen ohne Anwender-Abschnitt fehlen (isAdmin: false)
+GET {{baseUrl}}/changelog
+Authorization: Bearer {{userToken}}
+
+### 3. Ohne Token → 401
+GET {{baseUrl}}/changelog
+
+### 4. Ungültiger Token → 401
+GET {{baseUrl}}/changelog
+Authorization: Bearer invalid.token.value
+
+### 5. Als gesehen markieren → { lastSeenVersion: "<APP_VERSION>" }
+PUT {{baseUrl}}/changelog/seen
+Authorization: Bearer {{token}}
+
+### 6. Danach: lastSeenVersion == currentVersion
+GET {{baseUrl}}/changelog
+Authorization: Bearer {{token}}
+
+### 7. /me enthält last_seen_version
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### 8. /seen ohne Token → 401
+PUT {{baseUrl}}/changelog/seen
+
+### 9. Nicht-Admin markiert gesehen (eigener User)
+PUT {{baseUrl}}/changelog/seen
+Authorization: Bearer {{userToken}}
+
+### 10. Datei fehlt: Backend mit CHANGELOG_PATH=/nicht/da und ohne Fallback-Datei starten
+### → 200, available: false, versions: []
+GET {{baseUrl}}/changelog
+Authorization: Bearer {{token}}
