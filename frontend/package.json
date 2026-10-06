@@ -1,6 +1,6 @@
 {
   "name": "mds-frontend",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "MDS Frontend - Fertigungsdaten Management System",
   "private": true,
   "type": "module",
