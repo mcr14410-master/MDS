@@ -18,16 +18,9 @@ Bei Problemen, Fehlern oder Bugs:
 
 **NIEMALS** eigenständig Fixes anwenden ohne vorherige Rückfrage.
 
-### Nur auf Anfrage
-- Fixes und HowTos NUR erstellen wenn explizit angefragt
-- Dokumentation und Summaries NUR auf Anfrage
-- Keine ungefragten Refactorings oder Verbesserungsvorschläge
-- Keine unnötigen Erklärungen wie man eine Datei ersetzt
-
-### Änderungen minimal halten
-- Bei Änderungen NUR geänderte Dateien bereitstellen, nie das gesamte Projekt
-- Bei kleinen Änderungen NUR die betreffenden Zeilen/Abschnitte zeigen
-- Keine vollständigen Datei-Rewrites wenn nur 3 Zeilen betroffen sind
+### Scope-Disziplin
+- Keine ungefragten Refactorings oder "Nebenbei-Verbesserungen" – Vorschläge nur nennen, nicht umsetzen
+- Gezielte Edits statt kompletter Datei-Rewrites, Diffs klein halten
 
 ### Session-Workflow
 - Entwicklung folgt dem ROADMAP.md mit Wochen-Meilensteinen

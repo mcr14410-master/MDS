@@ -2,7 +2,7 @@
 
 **Zeitbudget:** 30-35h/Woche  
 **Start:** Januar 2025  
-**Stand:** Februar 2026 (~155h investiert, ~99.000+ Zeilen Code)
+**Stand:** Oktober 2026 (Aufwand zuletzt erfasst Feb 2026: ~155h, ~99.000+ Zeilen Code)
 
 > Detaillierte Dokumentation abgeschlossener Phasen: [ROADMAP_ARCHIVE.md](ROADMAP_ARCHIVE.md)
 
@@ -42,6 +42,16 @@ Sidebar-Layout, User-Verwaltung mit Rollen/Berechtigungen, Wartungssystem mit Pl
 - **Woche 24:** Kundenverwaltung (CRUD, Ansprechpartner, Bauteil-Zuordnung)
 - **Woche 25-26:** MachineDetailPage, Wiki-System (Kategorien, Volltext-Suche)
 - **Woche 27-28:** Wartung-Standalone Tasks, PWA-Support
+- **April 2026 – Stammdaten-Optimierung & Fixes (PRs #55–#81):**
+  - Einheitliches Listen-/Detail-Pattern (Stats-Cards, Live-Filter, Grid/Table, Pagination) für Messmittel, Vorrichtungen, Spannmittel, Maschinen, Kunden, Bauteile
+  - Messmittel: Bulk-Aktionen, Paginierung, Etiketten
+  - Maschinen: Stammdaten-Verwaltung, Custom-Fields, Legacy-Spalten entfernt (3-PR-Migration)
+  - Kunden + Bauteile: Dokumentenverwaltung / Dokumenttypen
+  - Vorrichtungen: automatische Vorrichtungsnummer
+  - Wartung: deutsche Wartungstyp-Bezeichnungen, dynamische Icons, Filter default offen
+  - File-Upload-Standard: Bilder/Downloads nur noch via `/view` + `/download`
+  - Cron: `fs_garbage_collection`, `generate_maintenance_tasks`
+  - Refactor: wiederverwendbare Komponenten nach `components/common/`
 
 ---
 
@@ -226,7 +236,7 @@ purchase_order_items (
 ---
 
 ### 🔄 Woche 37-38: Urlaubsplanung
-**Status:** 🔄 85% abgeschlossen
+**Status:** 🔄 95% abgeschlossen
 **Ziel:** Urlaub/Abwesenheiten im Kalender verwalten
 
 **Erledigt:**
@@ -259,7 +269,8 @@ purchase_order_items (
 - [x] Frontend: User-Einstellung "Urlaubsverwaltung aktiviert"
 
 **Offen:**
-- [ ] Antrags-Workflow (beantragen → genehmigen/ablehnen)
+- [x] Antrags-Workflow (beantragen → genehmigen/ablehnen) – PR #35/#36
+- [x] Detail-Modal, PDF-Exports, Saldo-Kaskadierung, Status-Aufschlüsselung (PRs #49–#52)
 - [ ] Integration Wartungssystem: User mit aktivem Urlaub/Krank automatisch ausblenden
 
 **Deliverable:** Urlaubskalender mit Überschneidungs-Check, Feiertage für alle Bundesländer
@@ -652,8 +663,8 @@ purchase_order_items (
 - [x] Route-Reihenfolge: `terminalRoutes` vor generischen `/api`-Catch-All Routes
 
 **Offen:**
-- [ ] Mehrere NFC-Karten/Tags pro User (Tabelle `user_rfid_chips`)
-- [ ] Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
+- [x] Mehrere NFC-Karten/Tags pro User (Tabelle `user_rfid_chips`)
+- [x] Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
 - [ ] PI-SETUP.md ins Terminal-Repo committen
 - [ ] Produktivbetrieb: Alle Mitarbeiter-NFC-Karten registrieren
 - [ ] Gehäuse fertigstellen + Terminal montieren
@@ -794,7 +805,7 @@ Phase 8 (Erweiterungen):  █████████████░░░░░
   └─ Normteile:           ░░░░░░░░░░░░░░░░░░░░ 0%
 
 Phase 9 (Erweiterungen):  ██░░░░░░░░░░░░░░░░░░ 12%
-  └─ Urlaubsplanung:      █████████████████░░░ 85% 🔄
+  └─ Urlaubsplanung:      ███████████████████░ 95% 🔄
   └─ Beladeroboter:       ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Revisionen:          ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Admin-Konfig:        ░░░░░░░░░░░░░░░░░░░░ 0%
@@ -815,11 +826,12 @@ Phase 11 (Shopfloor):     ██░░░░░░░░░░░░░░░░
 ## 🔧 Nächste Session
 
 **Zeit-Terminal abschließen:**
-1. Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
-2. PI-SETUP.md ins Terminal-Repo committen
-3. Mehrere NFC-Karten/Tags pro User (`user_rfid_chips` Tabelle)
-4. Gehäuse fertigstellen + Terminal montieren
-5. Alle Mitarbeiter-NFC-Karten registrieren
+1. PI-SETUP.md ins Terminal-Repo committen (prüfen)
+2. Gehäuse fertigstellen + Terminal montieren
+3. Alle Mitarbeiter-NFC-Karten registrieren
+
+**Urlaubsplanung abschließen:**
+1. Integration Wartungssystem: User mit aktivem Urlaub/Krank automatisch ausblenden
 
 **Phase 8 - Woche 29-30: Verbrauchsmaterial abschließen**
 
@@ -847,4 +859,4 @@ Bevor Rohmaterial/Normteile gestartet werden:
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-08
+**Letzte Aktualisierung:** 2026-10-06

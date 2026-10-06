@@ -7,6 +7,325 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+> **Hinweis:** Die Einträge 1.1.0 – 2.5.0 wurden am 2026-10-06 nachträglich aus der Git-Historie
+> (Commits + Pull Requests) rekonstruiert. Versionsnummern folgen den damaligen Branch-Namen
+> (`dev/vX.Y.Z-…`); 1.1.0–1.3.0 und 2.5.0 wurden nachträglich vergeben.
+
+---
+
+## [Unreleased]
+
+### Changed
+- `CLAUDE.md`: Arbeitsregeln an Claude-Code-Workflow angepasst (Abschnitt „Scope-Disziplin“)
+- `ROADMAP.md` auf Stand Oktober 2026 gebracht, CHANGELOG nachgetragen
+- `.claude/settings.local.json` in `.gitignore`
+
+---
+
+## [2.5.0] - 2026-04-19 - Stammdaten-Optimierung (PRs #66–#81)
+
+### Added
+- **Maschinen:** Stammdaten-Verwaltung, Custom-Fields in MachineForm + DetailPage (#75, #76)
+- **Kunden:** Dokumentenverwaltung (#79)
+- **Bauteile:** Dokumenttypen (#80)
+- **Vorrichtungen:** Vorrichtungsnummer wird beim Anlegen automatisch vergeben (#73)
+- **Wartung:** dynamische Icons pro Wartungstyp (#67)
+
+### Changed
+- Einheitliches Listen-/Detail-Pattern (Stats-Cards, Live-Filter, Grid/Table, Pagination, Foto-Preview) für Vorrichtungen, Spannmittel, Maschinen, Kunden, Bauteile (#71, #72, #75, #78, #80)
+- Wartungsplan-Liste: erweiterte Filter per default offen (#68)
+- Wiederverwendbare Komponenten (CustomFields*, PdfViewer, StepViewer) nach `components/common/` verschoben (#81)
+
+### Removed
+- Legacy-Spalten aus `machines` (Abschluss 3-PR-Migration) (#77)
+
+### Fixed
+- Deutsche Wartungstyp-Bezeichnung in Dropdown, Tasks und Dashboard (#66, #69)
+- Dark-Mode-Toggle in der Sidebar zeigt wieder dynamisches Icon (#74)
+
+---
+
+## [2.4.5] - 2026-04-16 - Entwicklungs-Setup (PRs #62–#65)
+
+### Added
+- `CLAUDE.md` mit Projekt-Konventionen und Ordner-Struktur
+- `.vscode`-Settings, Git-Workflow mit Branch-Namenskonvention
+
+---
+
+## [2.4.4] - 2026-04-15 - Upload-Standard & Cron (PRs #56–#61)
+
+### Added
+- Cron-Jobs `fs_garbage_collection` und `generate_maintenance_tasks` (#61)
+
+### Changed
+- MDS-weiter File-Upload-Standard: Bilder/Downloads nur noch via `/view` + `/download` hinter Auth (Bauteile, Programme, Wartung, Verbrauchsmaterial) (#57–#60)
+
+### Fixed
+- Setup-Sheet und Upload-Verzeichnis (#56)
+
+---
+
+## [2.4.3] - 2026-04-14 - Messmittel-Optimierungen (PR #55)
+
+### Added
+- Messmittel: Bulk-Aktionen, Paginierung, Tabellen-Layout, Etiketten-Erweiterungen
+
+---
+
+## [2.4.2] - 2026-03-01 – 2026-04-01 - Zeiterfassung & Urlaub (PRs #49–#54)
+
+### Added
+- Urlaubsstatus-Aufschlüsselung, Kalender-Schraffur (#49)
+- VacationDetailModal, PDF-Exports, Saldo-Kaskadierung, Adjustment-Tabelle (#50, #52)
+
+### Changed
+- Lohnnachweis umbenannt in Zeitnachweis (#49)
+
+### Fixed
+- `/check-overlap` (#51)
+- `auto_close_open_days` Zeitzonen-Fehler (#53)
+- Zeitnachweis-Export übernimmt Vormonats-Saldo korrekt (#54)
+
+---
+
+## [2.4.1] - 2026-02-07 – 2026-02-23 - Zeiterfassungs-Terminal (PRs #44–#48)
+
+### Added
+- Terminal-API mit API-Key-Auth (`authenticateTerminal`), Stempel-/Batch-/User-Info-Endpoints
+- Mehrere NFC-Chips pro Benutzer (`user_rfid_chips`)
+- Server-Status-Endpoint für das Terminal (#47)
+
+### Fixed
+- `time_current_status`-View: `break_end` → `present`
+- Saldo-Berechnung ohne offenen Tag, Lohnnachweis Timezone + Rundung (#48)
+
+---
+
+## [2.4.0] - 2026-02-06 - Zeiterfassung (PRs #41–#43)
+
+### Added
+- Zeiterfassungssystem mit Cron-Automatisierung und Selbst-Korrektur
+- Mitarbeiter-Einstellungen, Pausen-Einstellungen, Dashboard-Überarbeitung
+- Lohnnachweis-PDF-Export
+
+---
+
+## [2.3.3] - 2026-01-29 - Messmittel-Etiketten (PRs #38–#40)
+
+### Added
+- Label-Generator mit Preset-System und Scanner-Integration
+
+### Fixed
+- Etiketten-Vorschau mit Lagerort
+
+---
+
+## [2.3.2] - 2026-01-28 - Zerobot (PR #37)
+
+### Added
+- Positionsrechner für Beladeroboter
+
+---
+
+## [2.3.1] - 2026-01-25 - Urlaubs-Antrags-Workflow (PRs #35–#36)
+
+### Added
+- Antrags-Workflow (beantragen → genehmigen/ablehnen)
+
+### Changed
+- Urlaubsmodul mit Tabs und Einstellungs-Panel neu strukturiert
+
+---
+
+## [2.3.0] - 2026-01-21 - Urlaubsplanung (PRs #32–#34)
+
+### Added
+- Urlaubskalender (Monat/Jahr), Überschneidungs-Check, Feiertage aller Bundesländer, Urlaubsansprüche, Rollen-Limits
+
+---
+
+## [2.2.4] - 2026-01-19 - Messmittel-UI (PRs #29–#31)
+
+### Changed
+- Feld-Kategorien, Checkout-Modal, Inventarnummer-Lücken, Navigation nach Erstellen, TypesModal-Redesign
+
+---
+
+## [2.2.3] - 2026-01-14 - Operationen-Varianten (PRs #25–#28)
+
+### Added
+- Operationstypen und Varianten-System für Arbeitsgänge
+- pgAdmin-Setup in `init.sh`
+
+### Fixed
+- Löschen der primären OP-Variante
+
+---
+
+## [2.2.1] - 2025-12-11 - Bauteile & Suche (PRs #22–#24)
+
+### Added
+- Globale Suche, UI-Präferenzen
+- Bauteile: Status-Dropdown, Historie-Tab, Hauptdokumente-Schnellzugriff, PDF-Viewer
+
+---
+
+## [2.2.0] - 2025-12-09 - Verbrauchsmaterial
+
+### Added
+- Vereinfachtes Verbrauchsmaterial-System mit Integrationen
+
+---
+
+## [2.1.4] - 2025-12-03 - Wartung & PWA (PRs #16–#21)
+
+### Added
+- Wartung: Standalone-Tasks, verbesserter Task-Workflow
+- PWA-Support
+
+### Fixed
+- Hardcodierte API-URLs, MaintenanceWidget, Line-Endings auf LF normalisiert
+
+---
+
+## [2.1.3] - 2025-12-02 - Wiki & Maschinen-Dokumente
+
+### Added
+- Wiki-System (Kategorien, Volltext-Suche)
+- MachineDetailPage mit Dokumenten-System
+
+---
+
+## [2.1.2] - 2025-12-01 - Erstes Deployment (PRs #11–#14)
+
+### Added
+- Docker-Setup für Raspberry Pi, `deploy.sh` mit Migrationen, erweiterte Seeds
+
+---
+
+## [2.1.1] - 2025-11-30 - Kundenverwaltung (PR #10)
+
+### Added
+- Kunden mit Ansprechpartnern und Bauteil-Zuordnung
+
+---
+
+## [2.1.0] - 2025-11-30 - Wartungssystem (PR #9)
+
+### Added
+- Wartungspläne, Checklisten, Foto-Upload, Skill-Level
+
+---
+
+## [2.0.0] - 2025-11-29 - UI & Benutzerverwaltung
+
+### Added
+- Sidebar-Layout (UI-Optimierung)
+- User-Verwaltung mit Rollen und Berechtigungen
+
+---
+
+## [1.9.2] - 2025-11-29 - Vorrichtungen (PR #8)
+
+### Added
+- Vorrichtungs-Verwaltung mit Setup-Sheet-Integration
+
+---
+
+## [1.9.1] - 2025-11-28 - Spannmittel
+
+### Added
+- Spannmittel-Verwaltung mit Lager-Integration
+
+---
+
+## [1.9.0] - 2025-11-27 - Messmittel
+
+### Added
+- Messmittelverwaltung (Kalibrierung, Zertifikate, Checkout)
+
+---
+
+## [1.8.3] - 2025-11-25 - T-Nummern (PR #7)
+
+### Added
+- Werkzeug-Nummernlisten (T-Number-Management)
+
+---
+
+## [1.8.2] - 2025-11-24 - Bestellwesen (PR #6)
+
+### Added
+- Bestellungen (Purchase Orders)
+
+---
+
+## [1.8.1] - 2025-11-19 - Lieferanten
+
+### Added
+- Lieferantenverwaltung mit Werkzeug-Integration
+
+---
+
+## [1.8.0] - 2025-11-16 - Lager & Werkzeuge (PR #5)
+
+### Added
+- Lagerorte-System, Werkzeug-Datenbankschema, Lagerartikel mit Einzelgewichten
+
+---
+
+## [1.7.0] - 2025-11-09 - Werkzeuglisten & Prüfpläne (PR #4)
+
+### Added
+- Werkzeuglisten (Woche 11)
+- Prüfpläne mit allen Toleranzarten (Woche 12)
+
+---
+
+## [1.6.0] - 2025-11-08 - Setup Sheets
+
+### Added
+- Setup Sheets Backend + Frontend (Woche 10)
+
+---
+
+## [1.5.0] - 2025-11-07 - Workflow & Dark Mode
+
+### Added
+- Workflow-System (Woche 9)
+- Dark Mode für alle Komponenten
+
+---
+
+## [1.4.0] - 2025-11-06 - Maschinen (PRs #2–#3)
+
+### Added
+- Maschinen-Stammdaten Backend + Frontend (Woche 8)
+
+---
+
+## [1.3.0] - 2025-11-06 - Programm-Versionierung (PR #1)
+
+### Added
+- NC-Programm-Versionierung mit Diff-Viewer (Woche 7)
+
+---
+
+## [1.2.0] - 2025-11-05 - Programme
+
+### Added
+- Programme-Frontend mit Datei-Upload (Woche 6)
+
+---
+
+## [1.1.0] - 2025-11-04 - Arbeitsgänge
+
+### Added
+- Operations Backend CRUD + Frontend (Woche 5)
+
+---
+
 ## [1.0.0] - 2025-11-03 - 🎉 PHASE 1 KOMPLETT!
 
 ### ✅ Woche 4: Integration & Testing - ABGESCHLOSSEN

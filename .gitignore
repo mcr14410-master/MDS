@@ -150,3 +150,6 @@ $RECYCLE.BIN/
 *~
 .directory
 .Trash-*
+
+# Claude Code (lokale Einstellungen)
+.claude/settings.local.json
