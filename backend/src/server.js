@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
+const { version: APP_VERSION } = require('../package.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -120,8 +121,7 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-   //   version: '1.7.0',
-   //   phase: 'Phase 3, Week 11 - Tool Lists (Backend)',
+      version: APP_VERSION,
       dbTime: result.rows[0].now
     });
   } catch (error) {
@@ -224,7 +224,7 @@ app.get('/api/db/info', async (req, res) => {
       users: parseInt(usersResult.rows[0].count),
       roles: parseInt(rolesResult.rows[0].count),
       permissions: parseInt(permissionsResult.rows[0].count),
-      message: '🔄 Phase 3, Week 9 - Workflow-System Backend ready!'
+      version: APP_VERSION
     });
   } catch (error) {
     res.status(500).json({
@@ -237,8 +237,7 @@ app.get('/api/db/info', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'MDS - Manufacturing Data System',
-    version: '1.5.0',
-    phase: 'Phase 3, Week 9 - Workflow-System 🔄',
+    version: APP_VERSION,
     endpoints: {
       health: 'GET /api/health',
       dbInfo: 'GET /api/db/info',
@@ -354,7 +353,7 @@ app.listen(PORT, () => {
   console.log('\n🚀 ========================================');
   console.log(`   MDS Backend Server`);
   console.log('   ========================================');
-  console.log(`   MDS Backend v2.4.1 running on http://localhost:${PORT}`);
+  console.log(`   MDS Backend v${APP_VERSION} running on http://localhost:${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/api/health\n`);
   console.log('   ========================================');
   
