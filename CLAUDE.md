@@ -87,6 +87,7 @@ Bei Problemen, Fehlern oder Bugs:
 - Salden IMMER aus `time_balances` lesen (enthält Korrekturen), NICHT aus `overtime_minutes` in `time_daily_summary`
 
 ## Risiko-Patterns (aus Erfahrung)
+- **Repo ist öffentlich:** Kundendaten (STEP, NC-Programme), Werkzeugstamm-Exporte, TopSolid-DLLs/-Doku gehören nach `_lokal/` (per `.gitignore` ausgeschlossen), nie ins Repo. Vor jedem Commit `git status` auf solche Dateien prüfen. In Doku/Code/Beispielen Platzhalter statt echter Kunden-/Firmenbezüge: Teilenummer `TEIL-0001`, Kunde `KD00000`, Firmenname/Bibliotheken `FIRMA`, Seriennummern `SN…`, Netzlaufwerk-Pfade `Z:\NC\MASCHINE\…`. Echte Einstellungen in ignorierten `*.ini`, im Repo nur `*.example.ini`.
 - Großflächige automatisierte CSS-Änderungen (sed über 136+ Files) → hohes Risiko, lieber gezielte Fixes
 - View-in-new-tab mit Token-in-Query-Parameter → unlösbare Node.js Module-Caching-Issues, Feature wurde zurückgerollt. Download-only ist der stabile Ansatz.
 - Git aktiv für Recovery nutzen

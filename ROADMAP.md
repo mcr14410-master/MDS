@@ -19,6 +19,7 @@
 | Phase 9 | W35-48 | 🔄 12% | Urlaub 🔄, Roboter, Revisionen, Admin, Benachrichtigungen |
 | Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
 | Phase 11 | W57-70 | 🔄 10% | Shopfloor-Terminals + Zeiterfassung (Zeit-Terminal ✅) |
+| TopSolid | – | 🔄 Exporter ✅ | Werkzeugimport, NC-Viewer, Bauteil-Übernahme (siehe unten) |
 | Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
 
 ---
@@ -683,6 +684,47 @@ purchase_order_items (
 
 ---
 
+## 🔗 TopSolid-Integration (CAM ↔ MDS)
+
+**Status:** 🔄 Exporter und Werkzeuge fertig, MDS-Seite offen
+**Konzepte:** [TOPSOLID_TOOL_IMPORT_KONZEPT.md](TOPSOLID_TOOL_IMPORT_KONZEPT.md) (Werkzeugimport, ausgearbeitet) · [TOPSOLID_INTEGRATION_IDEEN.md](TOPSOLID_INTEGRATION_IDEEN.md) (Ideensammlung)
+**Code:** `tools/` (Quellcode; exe, DLLs und Daten nicht im Repo) · **Lokale Daten:** `_lokal/topsolid/` (Werkzeugstamm-Export, Testdaten – per `.gitignore` ausgeschlossen)
+**Reihenfolge:** Werkzeuge → Bauteile → NC-Programme
+
+### ✅ Fertig (außerhalb des MDS, Oktober 2026)
+- [x] **NC-Viewer** (`tools/nc-viewer`): Heidenhain-Programm + Aufspannung (STEP) in 3D, offline, eine HTML-Datei. Interpreter `hh.js` UI-unabhängig (auch im Backend nutzbar)
+- [x] **TS_SN_Generator** (`tools/ts-sn-generator`): Seriennummer-Gravur durchschalten, G-Code je Nummer
+- [x] **TS_ToolExport** (`tools/ts-tool-export`): Werkzeuge eines CAM-Dokuments (118 Parameter, STEP, glb)
+- [x] **TS_LibExport** (`tools/ts-lib-export`): Bibliotheken → `components.json` / `tools.json` (925 Komponenten, 761 Werkzeuge, 0 Fehler, 74 s)
+- [x] Mapping ISO 13399 → MDS, Ausspannlänge (`LPR` / `LPR_MIN` / `LPR_MAX`) geklärt
+- [ ] Datenbereinigung in TopSolid (18 doppelte T-Nummern, 69 doppelte Bestellnummern, Hersteller-Schreibweisen)
+
+### 📋 Phase 1 – Werkzeug-Stammdaten + T-Nummern (nächster Schritt)
+- [ ] Migration (Konzept Abschn. 4) – **Nummer `1737000111000`** (`…110000` ist durch `last_seen_version` belegt)
+- [ ] Backend: Parser/Validator `mds-tool-import/1`, Abgleich über PDM-ID, `preview` → `commit`, `tool_imports`-Protokoll
+- [ ] `.http`-Tests mit dem echten Export aus `_lokal/topsolid/werkzeugstamm/`
+- [ ] Frontend: „Aus TopSolid importieren“ in der T-Nummern-Liste, Vorschau mit Status (gleich/neu/geändert/fehlt/Konflikt)
+- [ ] Frontend: Aufnahme + Ausspannlänge in der T-Nummern-Ansicht
+- [ ] Zwei Listen: „TopSolid Werkzeuge“ und „Sonderwerkzeuge“
+
+### 📋 Phase 2 – 3D-Modelle
+- [ ] STEP/glb je T-Nummer (`tool_number_item_documents`), `/view` + `/download`, 3D-Vorschau
+
+### 📋 Phase 3 – NC-Programme
+- [ ] `TOOL CALL` per `hh.js` parsen → `tool_list_items`, Abgleich mit T-Nummern-Liste der Maschine
+- [ ] Ausspannlänge je Programm (`ShankDistance`), Abweichung im Rüstblatt markieren, außerhalb MIN/MAX = Fehler
+- [ ] „Alle Werkzeuge im Lager?“ vor Freigabe
+- [ ] NC-Viewer lädt Programm, STEP und Werkzeugdaten aus dem MDS
+
+### 💡 Ideen (nicht ausgearbeitet, siehe Ideensammlung)
+- [ ] Bestandsaufnahme Kundenprojekte → Bauteile ins MDS (nur lesend)
+- [ ] „In TopSolid anlegen“ aus dem MDS (Projekt aus Vorlage, STEP-Import, PDM-ID zurück)
+- [ ] Projekt-Umzug: ein TopSolid-Projekt je Bauteil statt je Kunde (Paket-Kopie, Pilot zuerst)
+
+**Leitplanken:** Lesen ist harmlos, Schreiben in TopSolid immer zuerst im Testprojekt. TopSolid-DLLs, Automation-Doku, Kundendaten und Werkzeugstamm nie ins öffentliche Repo.
+
+---
+
 ## 📋 Phase 12+: Optionale Features
 
 ### Shopfloor-UI Erweiterungen
@@ -819,11 +861,20 @@ Phase 11 (Shopfloor):     ██░░░░░░░░░░░░░░░░
   └─ Messraum-Terminal:     ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Maschinen-Terminal:    ░░░░░░░░░░░░░░░░░░░░ 0%
   └─ Zeit-Terminal:        ██████████████████░░ 90% ✅
+
+TopSolid-Integration:     ████░░░░░░░░░░░░░░░░ 20%
+  └─ Exporter + Tools:     ████████████████████ 100% ✅
+  └─ Werkzeugimport MDS:   ░░░░░░░░░░░░░░░░░░░░ 0%
+  └─ Modelle / Programme:  ░░░░░░░░░░░░░░░░░░░░ 0%
 ```
 
 ---
 
 ## 🔧 Nächste Session
+
+**TopSolid-Werkzeugimport, Phase 1** (siehe Abschnitt TopSolid-Integration):
+1. Ist-Stand im Konzept (Abschn. 2) gegen aktuellen Code prüfen
+2. Spec + Plan, dann Migration → Backend (preview/commit) → `.http`-Tests mit echtem Export → Frontend
 
 **Zeit-Terminal abschließen:**
 1. PI-SETUP.md ins Terminal-Repo committen (prüfen)

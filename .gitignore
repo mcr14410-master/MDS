@@ -153,3 +153,6 @@ $RECYCLE.BIN/
 
 # Claude Code (lokale Einstellungen)
 .claude/settings.local.json
+
+# Lokale Daten (Kundendaten, Werkzeugstamm, Exporte) – nie ins öffentliche Repo
+_lokal/

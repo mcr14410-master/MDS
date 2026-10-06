@@ -23,6 +23,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Seite `/changelog` („Was ist neu“): Anwender-Fassung für alle, technische Abschnitte für Admins (Toggle)
 - `GET /api/changelog`, `PUT /api/changelog/seen`; Parser-Service für `CHANGELOG.md` (Volume im Backend-Container)
 - Migration `users.last_seen_version`, Neu-Badge in der Sidebar pro Benutzer
+- `tools/`: TopSolid-Werkzeuge als Quellcode – NC-Viewer (`hh.js`-Interpreter + 3D), TS_SN_Generator, TS_ToolExport, TS_LibExport
+- Konzepte `TOPSOLID_TOOL_IMPORT_KONZEPT.md` und `TOPSOLID_INTEGRATION_IDEEN.md`, ROADMAP-Abschnitt „TopSolid-Integration“
+- `_lokal/` in `.gitignore` für Kundendaten und Werkzeugstamm-Exporte
 
 ---
 

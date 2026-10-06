@@ -1,0 +1,17 @@
+# Abhängigkeiten / Build
+nc-viewer/node_modules/
+ts-sn-generator/src/bin/
+ts-sn-generator/src/obj/
+*.exe
+# TopSolid-DLLs nie einchecken (Lizenz)
+*.dll
+# Kunden-/Testdaten nicht ins Repo
+_testdaten/
+*.stp
+*.step
+*.stl
+*.H
+
+# Echte Einstellungen (Firmen-Bibliotheken, Pfade) – nur lokal; Vorlage: *.example.ini
+ts-lib-export/TS_LibExport.ini
+ts-sn-generator/TS_SN_Generator.ini

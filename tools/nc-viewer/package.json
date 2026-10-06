@@ -1,0 +1,15 @@
+{
+  "name": "nc-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Heidenhain-NC-Programme + Aufspannung (STEP/STL) im Browser ansehen – offline, eine HTML-Datei",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/hh.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "occt-import-js": "0.0.23",
+    "three": "0.160.0"
+  }
+}
