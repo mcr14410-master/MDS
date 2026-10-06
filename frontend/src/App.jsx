@@ -24,6 +24,7 @@ import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailPage from './pages/SupplierDetailPage';
 import CustomersPage from './pages/CustomersPage';
 import CustomerDetailPage from './pages/CustomerDetailPage';
+import ChangelogPage from './pages/ChangelogPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
 import ToolNumberListsPage from './pages/ToolNumberListsPage';
@@ -243,6 +244,12 @@ function App() {
 		    path="/customers/:id" 
 		    element={
 		  	<CustomerDetailPage />
+			} 
+		   />
+		  <Route 
+		    path="/changelog" 
+		    element={
+		  	<ChangelogPage />
 			} 
 		   />
 		  <Route 
