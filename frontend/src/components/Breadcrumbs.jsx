@@ -20,6 +20,7 @@ const routeLabels = {
   'suppliers': 'Lieferanten',
   'purchase-orders': 'Bestellungen',
   'qr': 'QR-Code',
+  'changelog': 'Was ist neu',
 };
 
 // API-Endpunkte für dynamische Labels

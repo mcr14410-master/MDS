@@ -59,7 +59,7 @@ export default function ChangelogPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start gap-4">
+      <div className="flex flex-wrap justify-between items-start gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate(-1)}
