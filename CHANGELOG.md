@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.6.0] - 2026-10-06 - Was ist neu & TopSolid-Werkzeuge
+
 ### Für Anwender
 - Neu: Ein Klick auf die Versionsnummer unten in der Seitenleiste zeigt „Was ist neu“ – eine Übersicht der Änderungen jeder Version.
 - Nach einem Update erscheint an der Versionsnummer ein „Neu“-Hinweis, bis die Übersicht geöffnet wurde.
@@ -26,6 +30,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - `tools/`: TopSolid-Werkzeuge als Quellcode – NC-Viewer (`hh.js`-Interpreter + 3D), TS_SN_Generator, TS_ToolExport, TS_LibExport
 - Konzepte `TOPSOLID_TOOL_IMPORT_KONZEPT.md` und `TOPSOLID_INTEGRATION_IDEEN.md`, ROADMAP-Abschnitt „TopSolid-Integration“
 - `_lokal/` in `.gitignore` für Kundendaten und Werkzeugstamm-Exporte
+
+### Changed
+- `CLAUDE.md`: Regel „Repo ist öffentlich“ mit Platzhalter-Konvention, Release-Regel „Für Anwender“
+- `.gitattributes`: `.bat`/`.cmd` werden mit CRLF ausgecheckt
 
 ---
 
