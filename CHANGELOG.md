@@ -15,10 +15,20 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.5.1] - 2026-10-06 - Versionierung & Aufräumen
+
 ### Changed
-- `CLAUDE.md`: Arbeitsregeln an Claude-Code-Workflow angepasst (Abschnitt „Scope-Disziplin“)
+- Version wird zentral aus `package.json` gelesen (Backend + Frontend auf 2.5.1 synchronisiert)
+- Sidebar zeigt die Version aus `package.json` statt hartcodiertem `v2.4.2-dev`
+- Backend: Root-Endpoint, `/api/health`, `/api/db/info` und Startup-Log liefern die echte Version; veraltete „Phase 3, Week 9“-Angaben entfernt
+- `CLAUDE.md`: Arbeitsregeln an Claude-Code-Workflow angepasst (Abschnitt „Scope-Disziplin“), Versionierungs-Workflow dokumentiert
 - `ROADMAP.md` auf Stand Oktober 2026 gebracht, CHANGELOG nachgetragen
 - `.claude/settings.local.json` in `.gitignore`
+
+### Removed
+- Leere Dateien `mds-backend@1.0.0` und `node-pg-migrate` im Root (versehentlich durch npm-Befehle entstanden)
 
 ---
 
