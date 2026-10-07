@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, Info } from 'lucide-react';
+import { X, Plus, Info, Trash2 } from 'lucide-react';
 import SortableFieldsList from './SortableFieldsList';
 
 /**
