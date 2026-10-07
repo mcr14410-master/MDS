@@ -28,6 +28,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Interpreter-Test für `PLANE AXIAL`
 
 ### Changed
+- Abhängigkeiten ohne Breaking Changes aktualisiert (`npm audit fix`): Backend express 4.21.2 → 4.22.3 (behebt u. a. kritische Lücke in `proxy-addr`), Frontend axios 1.13 → 1.20, vite 7.1 → 7.3, react-router-dom 7.9 → 7.18, postcss, tailwindcss 3.4.19; Lücken Backend 16 → 5, Frontend 29 → 9 (Rest nur per Major-Update)
 - `package-lock.json` für Backend, Frontend und `tools/nc-viewer` jetzt im Repo; `backend/Dockerfile` nutzt `npm ci --omit=dev`, `deploy.sh` baut das Frontend nur noch mit `npm ci` (kein stiller Fallback auf `npm install`, kein `--legacy-peer-deps`)
 - ESLint: `eslint-plugin-react` mit Regel `react/jsx-no-undef` (fehlende Komponenten-Imports in JSX)
 - `docs/RELEASE-CHECKLISTE.md` mit Sonderschritten für das nächste Release
