@@ -687,7 +687,7 @@ purchase_order_items (
 ## 🔗 TopSolid-Integration (CAM ↔ MDS)
 
 **Status:** 🔄 Exporter und Werkzeuge fertig, MDS-Seite offen
-**Konzepte:** [TOPSOLID_TOOL_IMPORT_KONZEPT.md](TOPSOLID_TOOL_IMPORT_KONZEPT.md) (Werkzeugimport, ausgearbeitet) · [TOPSOLID_INTEGRATION_IDEEN.md](TOPSOLID_INTEGRATION_IDEEN.md) (Ideensammlung)
+**Konzepte:** [TOPSOLID_TOOL_IMPORT_KONZEPT.md](docs/konzepte/TOPSOLID_TOOL_IMPORT_KONZEPT.md) (Werkzeugimport, ausgearbeitet) · [TOPSOLID_INTEGRATION_IDEEN.md](docs/konzepte/TOPSOLID_INTEGRATION_IDEEN.md) (Ideensammlung)
 **Code:** `tools/` (Quellcode; exe, DLLs und Daten nicht im Repo) · **Lokale Daten:** `_lokal/topsolid/` (Werkzeugstamm-Export, Testdaten – per `.gitignore` ausgeschlossen)
 **Reihenfolge:** Werkzeuge → Bauteile → NC-Programme
 
