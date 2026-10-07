@@ -466,8 +466,8 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ## 🔧 Nächste Session
 
-0. **Nächstes Release (2.7.0) mit Sonderschritten:** [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md)
-1. **Offene Fixes** (siehe oben) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
+0. **Release 2.7.0** mit Sonderschritten: [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md) (Stand: [Session 07.10. abends](docs/sessions/SESSION-2026-10-07-aufraeumen-fixes.md))
+1. **Restliche Fixes** (siehe „Offene Fixes“) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
 2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
 4. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
