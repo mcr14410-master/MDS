@@ -45,6 +45,25 @@ sudo mkdir -p /srv/mds/uploads
 sudo mkdir -p /srv/mds/backups
 sudo chown -R 1001:1001 /srv/mds/uploads 2>/dev/null || true
 
+# Compose-Befehle aus dem Repo-Root (dort liegt die .env mit DB_PASSWORD/JWT_SECRET)
+cd "$REPO_ROOT"
+
+# --- Backend-Image bauen (laufender Container bleibt unverändert) ---
+echo "[deploy] 🐳 Backend-Image bauen..."
+docker compose -f "$REPO_ROOT/compose.yaml" build backend
+
+# --- Datenbank Migrations (Einmal-Container mit neuem Image, vor dem Umschalten) ---
+# Schlägt eine Migration fehl, bricht der Deploy ab – die bisherige Version läuft weiter.
+echo "[deploy] 🗃️  Datenbank Migrations..."
+if docker compose -f "$REPO_ROOT/compose.yaml" run --rm -T backend npm run migrate:up; then
+  echo "[deploy] ✅ Migrations erfolgreich"
+else
+  echo "[deploy] ❌ Migration fehlgeschlagen – Deploy abgebrochen."
+  echo "[deploy]    Die bisherige Version läuft unverändert weiter (Backend + Frontend)."
+  echo "[deploy]    Fehlermeldung oben prüfen, Migration korrigieren und erneut deployen."
+  exit 1
+fi
+
 # --- Frontend-Build im Container ---
 echo "[deploy] 🔨 Frontend-Build (im Container)..."
 UID_GID="$(id -u):$(id -g)"
@@ -73,22 +92,9 @@ docker run --rm \
     npm run build
   '
 
-# --- Backend-Image bauen ---
-echo "[deploy] 🐳 Backend-Image bauen..."
-pushd "$REPO_ROOT" >/dev/null
-docker compose build backend
-
-# --- Services starten/updaten ---
+# --- Services starten/updaten (erst jetzt geht die neue Version live) ---
 echo "[deploy] ▶️  Services starten..."
-docker compose up -d
-popd >/dev/null
-
-# --- Datenbank Migrations ---
-echo "[deploy] 🗃️  Datenbank Migrations..."
-sleep 3  # Warten bis Backend bereit
-docker compose -f "$REPO_ROOT/compose.yaml" exec -T backend npm run migrate:up 2>/dev/null \
-  && echo "[deploy] ✅ Migrations erfolgreich" \
-  || echo "[deploy] ⚠️  Migrations übersprungen (evtl. bereits aktuell)"
+docker compose -f "$REPO_ROOT/compose.yaml" up -d
 
 # --- Caddy reload (keine Downtime) ---
 CID="$(docker compose -f "$REPO_ROOT/compose.yaml" ps -q caddy 2>/dev/null || true)"
@@ -107,11 +113,23 @@ docker compose -f "$REPO_ROOT/compose.yaml" ps
 # --- Health-Check ---
 echo ""
 echo "[deploy] 🏥 Health-Check:"
-sleep 2
+HEALTH=""
+for _ in $(seq 1 15); do
+  if HEALTH="$(curl -fsS http://localhost:81/api/health 2>/dev/null)"; then
+    break
+  fi
+  HEALTH=""
+  sleep 2
+done
+if [ -z "$HEALTH" ]; then
+  echo "[deploy] ❌ Health-Check fehlgeschlagen (http://localhost:81/api/health nach 30 s nicht erreichbar)"
+  echo "[deploy]    Logs prüfen: docker compose logs --tail=50 backend"
+  exit 1
+fi
 if command -v jq >/dev/null 2>&1; then
-  curl -s http://localhost:81/api/health | jq . 2>/dev/null || echo "⚠️  Health-Check fehlgeschlagen"
+  echo "$HEALTH" | jq .
 else
-  curl -s http://localhost:81/api/health || echo "⚠️  Health-Check fehlgeschlagen"
+  echo "$HEALTH"
 fi
 
 echo ""

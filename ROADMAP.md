@@ -24,7 +24,11 @@
 
 - [x] **Custom-Fields:** „Option hinzufügen“ bei Dropdown-Feldern ließ das Frontend abstürzen (fehlender Icon-Import, auch Werkzeug-Kategorien; gleicher Fehler im Upload-Dialog Verbrauchsmaterial)
 - [x] **Urlaub:** Wochentage mit Soll-Zeit 0 wurden als Urlaubstag abgezogen (#92)
-- [ ] **`scripts/deploy.sh`:** verschluckt Migrationsfehler (`2>/dev/null … || echo "übersprungen"`) – Release meldet Erfolg trotz Fehler
+- [x] **`scripts/deploy.sh`:** verschluckte Migrationsfehler – jetzt Migration vor dem Umschalten, Abbruch bei Fehler, strenger Health-Check
+- [ ] **`deploy.sh`: DB-Backup direkt vor der Migration** (`scripts/backup.sh`) als Rückfall bei missglückter Migration
+- [ ] **`deploy.sh`: Frontend-Build** schreibt direkt nach `frontend/dist` (Vite leert den Ordner vorher) – bricht der Build ab, ist das Frontend weg. Besser in temporären Ordner bauen und erst bei Erfolg tauschen
+- [ ] **`deploy.sh`: Autostash** – `git stash pop || true` ignoriert Konflikte stillschweigend
+- [ ] **`backend/.migrationrc.json`** zeigt auf `./src/migrations` (Migrationen liegen in `backend/migrations`), wird von node-pg-migrate v6 nicht gelesen → entfernen oder korrigieren
 - [ ] **Lockfiles:** Root-`.gitignore` ignoriert `package-lock.json` überall → Pi-Build kann andere Paketversionen ziehen als lokal
 - [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
 - [ ] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`): fehlende Komponenten-Imports in JSX werden aktuell nicht erkannt und führen erst zur Laufzeit zum Absturz

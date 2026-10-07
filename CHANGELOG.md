@@ -38,6 +38,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - `QUICKSTART.md` (Stand Woche 3) und `CONTRIBUTING.md` – Inhalt in der README zusammengefasst
 
 ### Fixed
+- `scripts/deploy.sh`: Migrationsfehler wurden verschluckt (`2>/dev/null … || echo "übersprungen"`) und der Deploy meldete trotzdem Erfolg. Jetzt: Backend-Image bauen → Migration per `docker compose run --rm` mit dem neuen Image → Frontend-Build → `up -d`; bei Migrationsfehler Abbruch mit Meldung, die bisherige Version läuft weiter. Health-Check mit `curl -f` und Wiederholung, Abbruch bei Fehler
 - Custom-Fields-Editor: „Option hinzufügen“ bei Dropdown-Feldern stürzte ab (`Trash2` nicht importiert) – Maschinentypen und Werkzeug-Kategorien
 - Verbrauchsmaterial: Upload-Dialog für Dokumente stürzte beim Öffnen ab (`X` nicht importiert)
 - Urlaub: Urlaubstage (`calculated_days`) werden nach dem Zeitmodell des Mitarbeiters gezählt (Arbeitstag = Soll-Zeit > 0, ohne Zeitmodell weiter Mo–Fr) – betraf Eintragen, Bearbeiten, Vorschau, Antrag und erneutes Einreichen. Bestehende Einträge werden nicht neu berechnet
