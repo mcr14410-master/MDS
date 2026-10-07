@@ -6,9 +6,9 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-# Dependencies zuerst (besseres Caching)
+# Dependencies zuerst (besseres Caching), exakt nach package-lock.json
 COPY package*.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Nicht benötigte Build-Tools entfernen
 RUN apk del python3 make g++

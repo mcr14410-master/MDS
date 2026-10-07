@@ -80,14 +80,13 @@ docker run --rm \
       echo "[container] node_modules nicht beschreibbar -> entferne sie"
       rm -rf node_modules
     fi
-    # Lockfile respektieren
-    if [ -f package-lock.json ]; then
-      echo "[container] npm ci"
-      npm ci --no-audit --no-fund --legacy-peer-deps 2>/dev/null || npm install --no-audit --no-fund --legacy-peer-deps
-    else
-      echo "[container] npm install"
-      npm install --no-audit --no-fund --legacy-peer-deps
+    # Exakt die Versionen aus dem (eingecheckten) package-lock.json installieren
+    if [ ! -f package-lock.json ]; then
+      echo "[container] ❌ frontend/package-lock.json fehlt"
+      exit 1
     fi
+    echo "[container] npm ci"
+    npm ci --no-audit --no-fund
     echo "[container] npm run build"
     npm run build
   '

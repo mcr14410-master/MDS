@@ -29,9 +29,11 @@
 - [ ] **`deploy.sh`: Frontend-Build** schreibt direkt nach `frontend/dist` (Vite leert den Ordner vorher) – bricht der Build ab, ist das Frontend weg. Besser in temporären Ordner bauen und erst bei Erfolg tauschen
 - [ ] **`deploy.sh`: Autostash** – `git stash pop || true` ignoriert Konflikte stillschweigend
 - [ ] **`backend/.migrationrc.json`** zeigt auf `./src/migrations` (Migrationen liegen in `backend/migrations`), wird von node-pg-migrate v6 nicht gelesen → entfernen oder korrigieren
-- [ ] **Lockfiles:** Root-`.gitignore` ignoriert `package-lock.json` überall → Pi-Build kann andere Paketversionen ziehen als lokal
+- [x] **Lockfiles:** jetzt im Repo, Backend-Image und Frontend-Build mit `npm ci`
 - [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
-- [ ] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`): fehlende Komponenten-Imports in JSX werden aktuell nicht erkannt und führen erst zur Laufzeit zum Absturz
+- [x] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`) aktiv
+- [ ] **ESLint aufräumen:** 270 Fehler / 118 Warnungen im Frontend; `varsIgnorePattern: '^[A-Z_]'` durch `react/jsx-uses-vars` ersetzen
+- [ ] **`scripts/backup.sh`:** `pg_dump | gzip` ohne `pipefail` – ein fehlgeschlagener Dump erzeugt trotzdem eine (fast leere) Backup-Datei
 
 ---
 
@@ -464,6 +466,7 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ## 🔧 Nächste Session
 
+0. **Nächstes Release (2.7.0) mit Sonderschritten:** [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md)
 1. **Offene Fixes** (siehe oben) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
 2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
