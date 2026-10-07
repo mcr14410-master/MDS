@@ -13,6 +13,7 @@ Seit 2.6.0 hat sich der **Deploy-Ablauf selbst** geändert. Deshalb diesmal Schr
 - `deploy.sh` migriert jetzt **vor** dem Umschalten und bricht bei Fehlern ab; die bisherige Version läuft dann weiter
 - `package-lock.json` (Backend + Frontend) sind jetzt im Repo; Backend-Image und Frontend-Build nutzen `npm ci` → exakt die getesteten Paketversionen
 - `scripts/init.sh` ist jetzt ausführbar
+- Abhängigkeiten auf Patch-/Minor-Stand gebracht (u. a. express, axios, vite, react-router-dom) – Sicherheitslücken ohne Breaking Changes geschlossen
 - Keine neuen DB-Migrationen seit 2.6.0, keine Änderungen an `compose.yaml`, `Caddyfile`, `.env`
 
 ### Am Entwicklungs-PC
@@ -48,9 +49,10 @@ git pull
 ls -l scripts/*.sh
 # falls nicht:  chmod +x scripts/*.sh
 
-# 5. Deploy
-./scripts/deploy.sh
+# 5. Deploy – Ausgabe zusätzlich in eine Datei, damit nichts vorbeirauscht
+./scripts/deploy.sh 2>&1 | tee ~/deploy-2.7.0.log
 ```
+`npm warn deprecated …` und `N vulnerabilities` sind Warnungen, kein Fehler (Updates laufen bewusst über eigene PRs).
 
 **Was beim Deploy zu erwarten ist**
 - Backend-Image: `npm ci` statt `npm install` – beim ersten Mal ohne Cache etwas länger
@@ -82,6 +84,6 @@ Danach diesen Abschnitt auf „erledigt“ setzen bzw. entfernen.
 ## Allgemeiner Ablauf (jedes Release)
 
 1. Am PC: „Release machen“ (CHANGELOG, Versionen, Release-PR, Tag) – siehe CLAUDE.md
-2. Auf dem Pi: `cd ~/mds && ./scripts/backup.sh && ./scripts/deploy.sh`
+2. Auf dem Pi: `cd ~/mds && ./scripts/backup.sh && ./scripts/deploy.sh 2>&1 | tee ~/deploy.log`
 3. Auf `✅ Deploy abgeschlossen!` und die richtige Version im Health-Check achten
 4. Kurz im MDS prüfen: Login, „Was ist neu“, die geänderten Funktionen

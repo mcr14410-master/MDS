@@ -33,6 +33,9 @@
 - [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
 - [x] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`) aktiv
 - [ ] **ESLint aufräumen:** 270 Fehler / 118 Warnungen im Frontend; `varsIgnorePattern: '^[A-Z_]'` durch `react/jsx-uses-vars` ersetzen
+- [x] **Abhängigkeiten, Stufe 1:** `npm audit fix` ohne Breaking Changes (Backend 16 → 5 Lücken, kritisch behoben; Frontend 29 → 9)
+- [ ] **Abhängigkeiten, Stufe 2 (Major, einzeln prüfen):** `multer` 2.x (alle Uploads!), `exceljs`, `chokidar` (prüfen ob noch genutzt), `uuid`, `online-3d-viewer`; Tailwind 4 **nicht** (großer Umbau)
+- [ ] **Backend-Fehler-Handler** (`server.js`): antwortet bei jedem Fehler mit 500 – z. B. kaputtes JSON im Request sollte 400 sein (niedrig)
 - [ ] **`scripts/backup.sh`:** `pg_dump | gzip` ohne `pipefail` – ein fehlgeschlagener Dump erzeugt trotzdem eine (fast leere) Backup-Datei
 
 ---
