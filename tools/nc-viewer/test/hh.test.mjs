@@ -31,5 +31,10 @@ ok(cp.length && near(Math.min(...cp), 0.8, 1e-2) && near(Math.max(...cp), 0.8, 1
 r = HH.run('1 TOOL CALL 1 Z\n2 CYCL DEF 203 UNIVERSALBOHREN Q200=+2 Q201=-5 Q206=+100 Q203=+0 Q204=+10\n3 L X5 Y5 Z20 FMAX\n4 L X5 Y5 FMAX M99\n5 END PGM T MM');
 ok(r.info.holes === 1 && near(Math.min(...r.segs.map(s => s.b[2])), -5), 'Zyklus 203 bohrt auf Z-5');
 
+// 6) PLANE AXIAL (Horizontal-BAZ, z. B. GROB G350): A-90 -> Werkzeugachse +Y, Ebenen-Y -> -Z
+r = HH.run('1 BLK FORM 0.1 Z X-11 Y-6,5 Z-52\n2 BLK FORM 0.2 X10,986 Y6,5 Z0\n3 TOOL CALL 6301 Z S11141\n4 PLANE AXIAL A-90 B0 STAY\n5 L X3,367 Y39,696 A-90 B0 R0 FMAX\n6 L Z8,5 FMAX\n7 L Z6,15 F200\n8 END PGM T MM');
+const g = r.segs.filter(s => !s.rapid)[0];
+ok(g && near(g.b[0], 3.367) && near(g.b[1], 6.15) && near(g.b[2], -39.696) && near(g.ax[1], 1), 'PLANE AXIAL A-90: Gravur auf Y+-Flaeche (Y6,15 / Z-39,7)');
+
 console.log(fail ? `\n${fail} Test(s) fehlgeschlagen` : '\nAlle Tests ok');
 process.exit(fail ? 1 : 0);

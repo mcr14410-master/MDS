@@ -128,7 +128,29 @@ function resize() {
   camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(view);
-renderer.setAnimationLoop(() => { controls.update(); updateDatum(); renderer.render(scene, camera); });
+// Clipping-Ebenen laufend an Abstand + Szene anpassen, damit beim Rauszoomen nichts abgeschnitten wird
+const _sph = new THREE.Sphere(); let _pathSph = null, _pathProg = null;
+function updateClip() {
+  const d = camera.position.distanceTo(controls.target);
+  let far = d * 20;
+  modelGroup.children.forEach(o => {
+    if (!o.visible || !o.geometry) return;
+    if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+    _sph.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+    far = Math.max(far, camera.position.distanceTo(_sph.center) + _sph.radius * 1.1);
+  });
+  if (S.prog && S.prog !== _pathProg) {
+    _pathProg = S.prog; const box = new THREE.Box3();
+    S.prog.segs.forEach(sg => { box.expandByPoint(new THREE.Vector3(...sg.a)); box.expandByPoint(new THREE.Vector3(...sg.b)); });
+    _pathSph = box.isEmpty() ? null : box.getBoundingSphere(new THREE.Sphere());
+  }
+  if (_pathSph) far = Math.max(far, camera.position.distanceTo(_pathSph.center) + _pathSph.radius * 1.1);
+  const near = Math.max(d / 100, far / 50000);
+  if (Math.abs(camera.far - far) > far * 0.01 || Math.abs(camera.near - near) > near * 0.01) {
+    camera.near = near; camera.far = far; camera.updateProjectionMatrix();
+  }
+}
+renderer.setAnimationLoop(() => { controls.update(); updateClip(); updateDatum(); renderer.render(scene, camera); });
 
 // ---------------------------------------------------------------- Zustand
 const S = {
@@ -596,3 +618,13 @@ function toast(msg, err) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', err ? 6000 : 2500);
 }
 resize();
+
+// Vom Starter (NC-Viewer-Start.exe, Rechtsklick „Öffnen mit NC-Viewer“) eingebettete Dateien laden
+if (window.NC_PRELOAD && window.NC_PRELOAD.length) {
+  const files = window.NC_PRELOAD.map(p => {
+    const bin = atob(p.b64); const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return new File([u], p.name);
+  });
+  setTimeout(() => handleFiles(files), 0);
+}

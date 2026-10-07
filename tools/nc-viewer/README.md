@@ -16,6 +16,26 @@ Gedacht für Kollegen und Maschinenbediener: schneller Überblick über ein CAM-
 Bedienung: Leertaste = Abspielen · ←/→ = Satz zurück/vor (Shift = 100) · F = alles zeigen ·
 Tab „Schritte“/„Werkzeuge“: Klick = nur diesen Abschnitt, nochmal Klick = alles.
 
+### Per Rechtsklick öffnen (Windows)
+
+Einmal `launcher\Rechtsklick-Eintrag einrichten.bat` ausführen. Danach steht bei Rechtsklick auf `.H`/`.NC`-Dateien
+**„Öffnen mit NC-Viewer“** im Menü (Windows 11: unter „Weitere Optionen anzeigen“). Ohne Adminrechte, nur für den
+eigenen Benutzer (`HKCU\Software\Classes\SystemFileAssociations\.h|.nc\shell\NCViewer`). Entfernen mit
+`Rechtsklick-Eintrag entfernen.bat`.
+
+`NC-Viewer-Start.exe` muss neben `NC-Viewer.html` liegen (die bats rufen sie aus ihrem eigenen Ordner auf, also
+bats + exe + html zusammen ablegen). Ablauf: Die exe bettet die Datei(en) Base64-kodiert als `window.NC_PRELOAD`
+in eine Kopie des Viewers ein, schreibt diese nach `%TEMP%\NC-Viewer\` (Kopien älter als 1 Tag werden gelöscht)
+und öffnet sie im Standardbrowser. `app.js` lädt `NC_PRELOAD` beim Start wie per Drag & Drop.
+Eine STEP-Datei im selben Ordner, deren Name der Anfang des Programmnamens ist (`TEIL-0001.stp` →
+`TEIL-0001-SN22.H`), wird automatisch mitgeladen.
+
+Bauen (wie die TopSolid-Tools, .NET Framework 4.8, mono oder csc):
+
+```
+mcs -sdk:4.8 -target:winexe -out:NC-Viewer-Start.exe -r:System.Windows.Forms.dll -r:System.Core.dll launcher/NC-Viewer-Start.cs
+```
+
 ## Was er kann
 
 - Werkzeugbahnen je Werkzeug eingefärbt, Eilgang rot gestrichelt, Werkzeug fährt mit
@@ -23,7 +43,7 @@ Tab „Schritte“/„Werkzeuge“: Klick = nur diesen Abschnitt, nochmal Klick 
   an Innenecken; An-/Abfahrsatz direkt auf korrigierten Konturanfang/-ende). Durchmesser aus dem
   Werkzeugkommentar („… D6“), im Tab „Werkzeuge“ überschreibbar. Abschaltbar unter „Ansicht“.
 - `PLANE SPATIAL` (Reihenfolge A→B→C um raumfeste Achsen, R = Rz·Ry·Rx – am Modell verifiziert),
-  `PLANE RESET`, Zyklus 7 (Nullpunktverschiebung), `CALL LBL` / `REP`, `L`, `C`/`CC`, `CR`, `CP` (Helix)
+  `PLANE AXIAL` (Achswinkel, z. B. GROB G350 `A-90`), `PLANE RESET`, Zyklus 7 (Nullpunktverschiebung), `CALL LBL` / `REP`, `L`, `C`/`CC`, `CR`, `CP` (Helix)
 - Bohrzyklen 200/201/202/203/204/205/240 bei `M99` / `CYCL CALL`
 - Nullpunkt-Symbol + Achsen X/Y/Z, bei geschwenkten Bearbeitungen zusätzlich X′/Y′/Z′ mit Ebenen-Schild
 - **Automatische Ausrichtung** der Aufspannung: Bauteil mit den Maßen der `BLK FORM` wird gesucht und
@@ -33,6 +53,8 @@ Tab „Schritte“/„Werkzeuge“: Klick = nur diesen Abschnitt, nochmal Klick 
 
 ## Bekannte Grenzen
 
+- Darstellung immer im Werkstück-Koordinatensystem (Z oben), auch bei Horizontal-BAZ – nicht in Maschinenlage.
+- Rundachs-Wörter in Verfahrsätzen (`L … A-90 B0`) werden ignoriert, die Lage kommt aus `PLANE`.
 - Andere Zyklen (Taschen, Gewindefräszyklen, Konturzyklen …) werden **nicht** gezeichnet – Hinweis unter „Info“.
   TopSolid gibt bei uns fast alles als Bahnen aus, deshalb bisher kein Problem.
 - `M91`/`M92`-Sätze (Maschinenkoordinaten) werden ausgelassen; `CALL PGM` wird ignoriert; `FN`-Sprünge nicht ausgewertet.

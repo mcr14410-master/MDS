@@ -310,6 +310,16 @@
         st.pos = null;  // Ebene gewechselt: Position im neuen System unbekannt
         i++; continue;
       }
+      if (/^PLANE AXIAL/.test(t)) {
+        // Achswinkel direkt (z. B. „PLANE AXIAL A-90 B0 STAY“, GROB G350). Rotation wie PLANE SPATIAL mit denselben Winkeln –
+        // an einem echten Teil geprüft: A-90 → Werkzeugachse +Y des Rohteils, Gravur liegt auf der Y+-Fläche.
+        const ax = k => { const mm = t.match(new RegExp('\\b' + k + '([+-]?[\\d.,]+)')); return mm ? num(mm[1]) : 0; };
+        const A = ax('A'), B = ax('B'), C = ax('C');
+        st.plane = (A || B || C) ? planeMatrix(A, B, C, order) : IDENT;
+        st.planeName = (A || B || C) ? 'A' + A + ' B' + B + ' C' + C : '';
+        st.pos = null;
+        i++; continue;
+      }
       if ((m = t.match(/^CYCL DEF 7\.(\d)\s*(.*)$/))) {
         if (m[1] === '0') shiftDef = st.shift.slice();
         else { const ax = { '1': 0, '2': 1, '3': 2 }[m[1]]; const v = m[2].match(/[XYZ]([+-]?[\d.,]+)/); if (v && ax !== undefined) { shiftDef[ax] = num(v[1]); st.shift = shiftDef.slice(); } }
