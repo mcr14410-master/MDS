@@ -22,11 +22,12 @@
 
 ## 🐞 Offene Fixes
 
-- [ ] **Custom-Fields:** Maschinentypen → Felder bearbeiten → Feld hinzufügen → Feldtyp „Dropdown“ → „Optionen hinzufügen“ lässt das Frontend abstürzen
-- [ ] **Urlaub:** Wochentage mit Soll-Zeit 0 im Zeitmodell werden trotzdem als Urlaubstag abgezogen – auch im Antrags-Workflow
+- [x] **Custom-Fields:** „Option hinzufügen“ bei Dropdown-Feldern ließ das Frontend abstürzen (fehlender Icon-Import, auch Werkzeug-Kategorien; gleicher Fehler im Upload-Dialog Verbrauchsmaterial)
+- [x] **Urlaub:** Wochentage mit Soll-Zeit 0 wurden als Urlaubstag abgezogen (#92)
 - [ ] **`scripts/deploy.sh`:** verschluckt Migrationsfehler (`2>/dev/null … || echo "übersprungen"`) – Release meldet Erfolg trotz Fehler
 - [ ] **Lockfiles:** Root-`.gitignore` ignoriert `package-lock.json` überall → Pi-Build kann andere Paketversionen ziehen als lokal
 - [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
+- [ ] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`): fehlende Komponenten-Imports in JSX werden aktuell nicht erkannt und führen erst zur Laufzeit zum Absturz
 
 ---
 
@@ -451,6 +452,7 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 ## 🔧 Technical Debt / Refactoring-Kandidaten
 
 - Lager-Architektur: siehe „Offene Entscheidung“ unter Phase 8
+- [ ] **Workforce-Konsolidierung:** Urlaubs- und Zeitverwaltung zu einem System zusammenführen – [docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md](docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md) (~20–30h). Dabei berücksichtigen: Zeitmodell ohne Historie (kein „gültig ab“), Teilzeit mit wechselndem freien Tag (aktuell Workaround)
 - [ ] **Operations-Zeiteinheiten:** `cycle_time_seconds` (Sekunden in DB, Minuten im Frontend) → `cycle_time_minutes` wie `setup_time_minutes` (~2h, niedrig)
 - [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ – anderes Format / manuell editierbar? (~1h, niedrig)
 
