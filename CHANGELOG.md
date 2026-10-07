@@ -20,6 +20,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - NC-Viewer: `PLANE AXIAL` (Achswinkel, z. B. Horizontal-BAZ GROB G350 mit `A-90`) – Bahnen liegen jetzt auf der richtigen Werkstückseite
 - Interpreter-Test für `PLANE AXIAL`
 
+### Changed
+- Repo aufgeräumt: Konzepte aus dem Root nach `docs/konzepte/` (`docs/ARCHITECTURE.md` → `MARKTANALYSE.md`, `Roadmap_wartung_infos.md` → `WARTUNG_NOTIZEN.md`), erledigte Feature-Dokus nach `docs/archiv/`, Session-Dokus bis Nov. 2025 nach `docs/sessions/archiv/` (Dateinamen ohne Leerzeichen)
+- `backend/tests/`: `test-programs.http` = bisherige v6 (deckt v1–v5 ab), `test-parts.http` = bisherige `-FIXED`-Fassung
+
+### Removed
+- `backend/tests/test-programs-v2…v6.http`, `test-parts-FIXED.http`, `debug-parts.js`, ungenutztes `frontend/public/vite.svg`
+
 ### Fixed
 - NC-Viewer: Beim Herauszoomen verschwanden Aufspannung/Bahnen (Far-Clipping war an die zuletzt zentrierte Bahn gekoppelt) – Clipping-Ebenen werden jetzt laufend an Abstand und Szene angepasst
 

@@ -135,8 +135,8 @@ MDS/
 │   ├── public/              Statische Assets
 │   └── scripts/             Build-/Dev-Skripte
 │
-├── docs/                    Projekt-Doku (ARCHITECTURE.md, cron-system.md,
-│                            Feature-Guides, sessions/)
+├── docs/                    Projekt-Doku (cron-system.md, PGADMIN.md, PWA-WEBAPP.md,
+│                            konzepte/, archiv/, sessions/)
 ├── scripts/                 Ops-Skripte (init.sh, deploy.sh, migrate.sh,
 │                            backup.sh, restore.sh)
 │
