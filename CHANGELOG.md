@@ -15,10 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.7.0] - 2026-10-07 - Urlaub nach Zeitmodell & sicherer Deploy
+
 ### Für Anwender
 - Bei Teilzeit-Modellen (z. B. 4-Tage-Woche) werden freie Wochentage nicht mehr als Urlaubstag abgezogen – weder beim Eintragen noch bei Urlaubsanträgen.
 - Im Zeitmodell gibt es pro Wochentag (auch Samstag und Sonntag) einen Haken „Arbeitstag“.
 - Beim Anlegen von Auswahlfeldern (Dropdown) in Maschinentypen und Werkzeug-Kategorien stürzt die Seite nicht mehr ab.
+- Im Hintergrund wurden Sicherheits-Updates eingespielt und der Update-Ablauf des MDS abgesichert.
 
 ### Added
 - Zeitmodell-Formular: Checkbox „Arbeitstag“ je Wochentag inkl. Sa/So (aus = Soll-Zeit leer)
