@@ -1,8 +1,6 @@
 # Roadmap - MDS Fertigungsdaten Management System
 
-**Zeitbudget:** 30-35h/Woche  
-**Start:** Januar 2025  
-**Stand:** Oktober 2026 (Aufwand zuletzt erfasst Feb 2026: ~155h, ~99.000+ Zeilen Code)
+**Stand:** Oktober 2026 · Versionen und erledigte Änderungen: [CHANGELOG.md](CHANGELOG.md)
 
 > Detaillierte Dokumentation abgeschlossener Phasen: [ROADMAP_ARCHIVE.md](ROADMAP_ARCHIVE.md)
 
@@ -10,465 +8,142 @@
 
 ## 📊 Übersicht
 
-| Phase | Wochen | Status | Inhalt |
-|-------|--------|--------|--------|
-| Phase 1-3 | W1-12 | ✅ 100% | Fundament, Kern, Work Instructions |
-| Phase 4-6 | W13-20 | ✅ 100% | Werkzeuge, Messmittel, Spannmittel |
-| Phase 7 | W21-23 | ✅ 100% | UI, User-Verwaltung, Wartungssystem |
-| Phase 8 | W24-34 | 🔄 65% | Kunden ✅, Wiki ✅, PWA ✅, Verbrauchsmaterial 🔄 |
-| Phase 9 | W35-48 | 🔄 12% | Urlaub 🔄, Roboter, Revisionen, Admin, Benachrichtigungen |
-| Phase 10 | W49-56 | 📋 Geplant | Auftragsverwaltung |
-| Phase 11 | W57-70 | 🔄 10% | Shopfloor-Terminals + Zeiterfassung (Zeit-Terminal ✅) |
-| TopSolid | – | 🔄 Exporter ✅ | Werkzeugimport, NC-Viewer, Bauteil-Übernahme (siehe unten) |
-| Phase 12+ | W69+ | 📋 Optional | Reports, Parser, ERP-Integration |
+| Phase | Status | Inhalt |
+|-------|--------|--------|
+| Phase 1-7 | ✅ | Fundament, Kern, Work Instructions, Werkzeuge, Messmittel, Spannmittel, User-Verwaltung, Wartung |
+| Phase 8 | 🔄 | Kunden ✅, Wiki ✅, PWA ✅, Stammdaten-Optimierung ✅, Verbrauchsmaterial 🔄 |
+| Phase 9 | 🔄 | Urlaub ✅ (Fix offen), Zerobot-Setups, Revisionen, Admin, Benachrichtigungen, Werkzeug-Icons, HTTPS |
+| Phase 10 | 🔄 | Shopfloor-Terminals (Zeit-Terminal ✅ im Einsatz) |
+| Phase 11 | 📋 | Auftragsverwaltung |
+| TopSolid & NC | 🔄 | Exporter ✅, NC-Viewer ✅, Werkzeugimport, NC-Programm-Auswertung (auch ohne TopSolid) |
+| Phase 12+ | 💡 | Ideen: Lager-Erweiterungen, Reports, Parser, ERP-Integration |
+
+---
+
+## 🐞 Offene Fixes
+
+- [ ] **Custom-Fields:** Maschinentypen → Felder bearbeiten → Feld hinzufügen → Feldtyp „Dropdown“ → „Optionen hinzufügen“ lässt das Frontend abstürzen
+- [ ] **Urlaub:** Wochentage mit Soll-Zeit 0 im Zeitmodell werden trotzdem als Urlaubstag abgezogen – auch im Antrags-Workflow
+- [ ] **`scripts/deploy.sh`:** verschluckt Migrationsfehler (`2>/dev/null … || echo "übersprungen"`) – Release meldet Erfolg trotz Fehler
+- [ ] **Lockfiles:** Root-`.gitignore` ignoriert `package-lock.json` überall → Pi-Build kann andere Paketversionen ziehen als lokal
+- [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
 
 ---
 
 ## ✅ Abgeschlossene Phasen (Zusammenfassung)
 
-### Phase 1-3: Basis-System (W1-12) ✅
+### Phase 1-3: Basis-System ✅
 Fundament mit PostgreSQL, JWT-Auth, React-Frontend. Bauteile, Operationen, NC-Programme mit Versionierung, Maschinen-Stammdaten, Workflow-System, Setup Sheets, Tool Lists, Prüfpläne.
 
-### Phase 4-6: Asset Management (W13-20) ✅
+### Phase 4-6: Asset Management ✅
 Werkzeugverwaltung (Stammdaten, Lager, Bestellungen), Messmittelverwaltung (Kalibrierung, Checkout), Spannmittel & Vorrichtungen mit Lager-Integration.
 
-### Phase 7: Erweiterungen (W21-23) ✅
+### Phase 7: Erweiterungen ✅
 Sidebar-Layout, User-Verwaltung mit Rollen/Berechtigungen, Wartungssystem mit Plänen, Checklisten, Foto-Upload.
 
----
-
-## 🔄 Phase 8: Erweiterungen (Wochen 24-34) - IN ARBEIT
-
-### ✅ Abgeschlossen
-- **Woche 24:** Kundenverwaltung (CRUD, Ansprechpartner, Bauteil-Zuordnung)
-- **Woche 25-26:** MachineDetailPage, Wiki-System (Kategorien, Volltext-Suche)
-- **Woche 27-28:** Wartung-Standalone Tasks, PWA-Support
-- **April 2026 – Stammdaten-Optimierung & Fixes (PRs #55–#81):**
-  - Einheitliches Listen-/Detail-Pattern (Stats-Cards, Live-Filter, Grid/Table, Pagination) für Messmittel, Vorrichtungen, Spannmittel, Maschinen, Kunden, Bauteile
-  - Messmittel: Bulk-Aktionen, Paginierung, Etiketten
-  - Maschinen: Stammdaten-Verwaltung, Custom-Fields, Legacy-Spalten entfernt (3-PR-Migration)
-  - Kunden + Bauteile: Dokumentenverwaltung / Dokumenttypen
-  - Vorrichtungen: automatische Vorrichtungsnummer
-  - Wartung: deutsche Wartungstyp-Bezeichnungen, dynamische Icons, Filter default offen
-  - File-Upload-Standard: Bilder/Downloads nur noch via `/view` + `/download`
-  - Cron: `fs_garbage_collection`, `generate_maintenance_tasks`
-  - Refactor: wiederverwendbare Komponenten nach `components/common/`
+### Phase 8 (Teil): Kunden, Wiki, PWA, Stammdaten-Optimierung ✅
+Kundenverwaltung, MachineDetailPage, Wiki, Wartung-Standalone-Tasks, PWA; April 2026 einheitliches Listen-/Detail-Pattern für alle Stammdaten, File-Upload-Standard, Custom-Fields (Details im Archiv).
 
 ---
 
-### 🔄 Woche 29-30: Lagersystem erweitern (Verbrauchsmaterial)
-**Status:** 🔄 In Arbeit
-**Ziel:** Verbrauchsmaterial verwalten
+## 🔄 Phase 8: Verbrauchsmaterial
 
-- [x] DB: `consumables` Tabelle (Typ, Kategorie, Einheit, Mindestbestand)
-- [x] DB: `consumable_categories` Tabelle (Kühlschmierstoff, Öl, Reiniger, etc.)
-- [x] DB: `consumable_stock` Tabelle (Bestand pro Lagerort, Chargen, MHD)
-- [x] DB: `consumable_transactions` Tabelle (Ein/Ausgang, Verbrauch)
-- [x] DB: `consumable_documents` Tabelle (SDB, TDB, Bilder)
-- [x] DB: Views (consumables_with_stock, low_stock_alerts, expiry_alerts)
-- [x] DB: Bestellsystem erweitert (purchase_order_items.item_type, consumable_id)
-- [x] Backend: Consumable Categories CRUD API
-- [x] Backend: Consumables CRUD API
-- [x] Backend: Stock CRUD + Buchungen (receipt, issue, adjustment, maintenance)
-- [x] Backend: Documents Upload/Download API
-- [x] Backend: Alerts API (low-stock, expiry)
-- [x] Frontend: Store (consumablesStore.js)
-- [x] Frontend: ConsumablesPage (Übersicht mit Filter)
-- [x] Frontend: ConsumableDetailPage (Tabs: Übersicht, Bestand, Dokumente)
-- [x] Frontend: ConsumableForm (Erstellen/Bearbeiten)
-- [x] Frontend: ConsumableStockTab (Bestand, Buchungen, Historie)
-- [x] Frontend: ConsumableDocumentsTab (Upload, Download, Preview)
-- [x] Frontend: Sidebar Integration
-- [ ] Integration: Wartungssystem (Verbrauch bei Wartung buchen) - UI
-- [ ] Testing lokal
+**Status:** 🔄 Umgesetzt, noch nicht im Einsatz
 
-**Deliverable:** Lagerverwaltung für Verbrauchsmaterial mit Warnungen
+Erledigt: DB (Kategorien, Bestand mit Chargen/MHD, Buchungen, Dokumente, Alert-Views, Bestellsystem-Anbindung), Backend-API (CRUD, Buchungen, Dokumente, Low-Stock/MHD-Alerts), Frontend (Übersicht, Detail mit Bestand/Dokumente, Formular, Sidebar).
+
+Offen:
+- [ ] Lokal testen (Migration, API, Frontend) und in Betrieb nehmen
+- [ ] Integration Wartungssystem: Verbrauch bei Wartung buchen (UI)
+- [ ] Dashboard-Alarme (Mindestbestand, MHD) einbinden
 
 ---
 
-### ⚠️ ARCHITEKTUR-ENTSCHEIDUNG VOR WEITEREN LAGERKATEGORIEN
+### ⚠️ Offene Entscheidung: Lager-Architektur
 
-**Status:** 🔴 Vor Woche 31 zu klären!
+**Vor Rohmaterial/Normteile (siehe Ideen) zu treffen.** Aktuell hat jede Lagerkategorie eigene Tabellen, Controller, Store und Seiten (`tool_master`/`storage_items`, `consumables`/`consumable_stock`); das Bestellsystem braucht pro Kategorie eine eigene FK-Spalte. Eine weitere Kategorie kostet so ~20–30h.
 
-**Aktuelle Situation:**
-Nach Implementierung von Verbrauchsmaterial wurde deutlich, dass die aktuelle Architektur bei jeder neuen Lagerkategorie erheblichen Mehraufwand verursacht:
+| Option | Inhalt |
+|---|---|
+| **A** | Separate Tabellen beibehalten – ok für 3–4 Kategorien |
+| **B** | Generisches `inventory_items` + typ-spezifische Detail-Tabellen, ein Bestand, eine Buchungstabelle (~20–24h einmalig, danach ~2–4h pro Kategorie) |
+| **C** | Zwei-Systeme-Architektur: Mengen-Inventory (Werkzeuge, Verbrauchsmaterial, Rohmaterial, Normteile) getrennt von Einzelstück-Assets (Messmittel, Spannmittel, Vorrichtungen) – [docs/konzepte/INVENTORY_SYSTEM_KONZEPT.md](docs/konzepte/INVENTORY_SYSTEM_KONZEPT.md) |
 
-```
-Aktuell (separate Tabellen pro Kategorie):
-├── Tools:       tool_master → storage_items → compartments
-├── Consumables: consumables → consumable_stock → compartments  
-├── (Geplant)    raw_materials → raw_material_stock → ...
-└── (Geplant)    standard_parts → standard_part_stock → ...
-
-Bestellsystem wird komplexer:
-purchase_order_items (
-  item_type,          -- 'tool' | 'consumable' | 'raw_material' | ...
-  storage_item_id,    -- FK für Tools
-  consumable_id,      -- FK für Consumables
-  raw_material_id,    -- FK für Rohmaterial (neu)
-  standard_part_id    -- FK für Normteile (neu)
-)
-```
-
-**Probleme:**
-| Problem | Auswirkung |
-|---------|------------|
-| Duplizierter Code | Jede Kategorie = eigene Controller, Routes, Store, Pages |
-| Bestellsystem wächst | Jede neue Kategorie = neue Spalte + if/else überall |
-| Wartungsaufwand | Feature-Änderung muss an 4+ Stellen gemacht werden |
-| Inkonsistenz-Risiko | Stock-Logik, Transaktionen, Alerts - alles separat |
-
-**Alternative: Generisches Inventory-System**
-```sql
--- Gemeinsame Basis für ALLE Lagerarten
-inventory_items (
-  id, item_type, name, article_number, 
-  supplier_id, category_id, unit, is_active, ...
-)
-
--- Typ-spezifische Erweiterungen (1:1)
-inventory_tool_details (inventory_id, coating, material, diameter, ...)
-inventory_consumable_details (inventory_id, is_hazardous, has_expiry, ...)
-inventory_raw_material_details (inventory_id, material_grade, form, ...)
-inventory_standard_part_details (inventory_id, din_number, iso_number, ...)
-
--- EIN gemeinsamer Stock für ALLE
-inventory_stock (
-  id, inventory_item_id, compartment_id,
-  quantity, batch_number, expiry_date, min_quantity, ...
-)
-
--- EINE Transaktions-Tabelle
-inventory_transactions (...)
-
--- Bestellsystem: EINE Spalte statt 4+
-purchase_order_items (
-  inventory_item_id,  -- Fertig. Keine Typ-Unterscheidung nötig.
-  quantity, unit_price, ...
-)
-```
-
-**Vorteile generisches System:**
-- Ein Controller, eine Route, ein Store für Stock-Operationen
-- Ein Frontend für Bestandsverwaltung (mit typ-spezifischen Tabs)
-- Bestellsystem bleibt einfach
-- Neue Kategorien = neuer item_type + optionale Detail-Tabelle
-- Einheitliche Alerts, Reports, Dashboard-Widgets
-
-**Nachteile generisches System:**
-- Initiales Refactoring aufwändig (~16-24h Arbeit)
-- Mehr JOINs für typ-spezifische Daten
-- Generische UI muss Sonderfälle handhaben
-
-**Empfehlung:**
-1. **Option A:** Aktuellen Ansatz beibehalten - OK für 3-4 Kategorien, mehr Arbeit pro Kategorie
-2. **Option B:** Jetzt auf generisches System umstellen - Einmal-Aufwand, danach einfacher
-3. **Option C:** Paralleles Test-Projekt - Generisches System in separatem Branch/Projekt testen
-
-**TODO vor Woche 31:**
-- [ ] Entscheidung treffen: Option A, B oder C
-- [ ] Bei Option C: Test-Branch erstellen, generisches Schema entwerfen
-- [ ] Bei Option B: Migrationsstrategie planen (bestehende Daten?)
+- [ ] Entscheidung treffen und hier dokumentieren
+- [ ] Bei B/C: Schema in Test-Branch erproben, Migrationsstrategie für bestehende Daten planen (3-PR-Ansatz)
 
 ---
 
-### 📋 Woche 31-32: Lagersystem erweitern (Rohmaterial)
-**Status:** 📋 Geplant | ⚠️ Abhängig von Architektur-Entscheidung
-**Ziel:** Rohmaterial-Verwaltung mit Bestandsführung
+## 📋 Phase 9: Erweiterungen
 
-- [ ] DB: `raw_materials` Tabelle (Material, Güte, Form)
-- [ ] DB: `raw_material_stock` Tabelle (Abmessungen, Bestand, Lagerort, Charge)
-- [ ] DB: `raw_material_transactions` Tabelle (Eingang/Ausgang/Verbrauch)
-- [ ] Backend: Raw Materials CRUD API
-- [ ] Backend: Bestandswarnung bei Mindestbestand
-- [ ] Backend: Chargen-Verfolgung
-- [ ] Frontend: Rohmaterial-Übersicht (Material, Güte, Abmessungen)
-- [ ] Frontend: Bestandsbuchung (Wareneingang, Entnahme)
-- [ ] Frontend: Lagerort-Verwaltung
-- [ ] Frontend: Mindestbestand-Alarme im Dashboard
-- [ ] Integration: Bauteil → Rohmaterial Zuordnung
-- [ ] Integration: Lieferanten verknüpfen
+### 🔄 Urlaubsplanung
+**Status:** ✅ Im Einsatz (Kalender, Antrags-Workflow, Feiertage aller Bundesländer, Ansprüche, PDF-Exports – Details im Archiv)
 
-**Deliverable:** Rohmaterial-Lagerverwaltung mit Chargen-Tracking
-
----
-
-### 📋 Woche 33-34: Lagersystem erweitern (Normteile)
-**Status:** 📋 Geplant | ⚠️ Abhängig von Architektur-Entscheidung
-**Ziel:** Normteile und Zukaufteile verwalten
-
-- [ ] DB: `standard_parts` Tabelle (DIN/ISO-Norm, Beschreibung, Abmessungen)
-- [ ] DB: `standard_part_categories` Tabelle (Schrauben, Muttern, Stifte, O-Ringe, etc.)
-- [ ] DB: `standard_part_stock` Tabelle (Bestand, Lagerort, Mindestbestand)
-- [ ] DB: `standard_part_transactions` Tabelle (Ein/Ausgang)
-- [ ] Backend: Standard Parts CRUD API
-- [ ] Backend: Bestandswarnung bei Mindestbestand
-- [ ] Frontend: Normteile-Übersicht mit Kategorien
-- [ ] Frontend: Artikel-Formular (DIN/ISO-Suche)
-- [ ] Frontend: Bestandsbuchung (Eingang/Ausgang)
-- [ ] Frontend: Mindestbestand-Alarme im Dashboard
-- [ ] Integration: Lieferanten verknüpfen
-- [ ] Optional: Stücklisten-Verknüpfung
-
-**Deliverable:** Normteile-Lagerverwaltung mit DIN/ISO-Katalog
-
----
-
-## 📋 Phase 9: Erweiterungen (Wochen 35-48)
-
-### 📋 Woche 35-36: Beladeroboter Setup System
-**Status:** 📋 Geplant
-**Ziel:** Robot-Setups pro Operation dokumentieren
-
-- [ ] DB: `robot_setups` Tabelle (operation_id, greifer, rack, programm)
-- [ ] DB: `robot_setup_images` Tabelle (Setup-Fotos)
-- [ ] DB: `gripper_types` Tabelle (Greifer-Stammdaten)
-- [ ] DB: `rack_configurations` Tabelle (Rack-Konfigurationen)
-- [ ] Backend: Robot Setup CRUD API
-- [ ] Backend: Bild-Upload für Setup-Dokumentation
-- [ ] Frontend: Robot Setup in Operation-Detail
-- [ ] Frontend: Setup-Formular (Greifer, Rack, Programm)
-- [ ] Frontend: Setup-Galerie (Bilder)
-- [ ] Frontend: Greifer/Rack Stammdaten-Verwaltung
-- [ ] Integration: Setup Sheet Verknüpfung
-
-**Deliverable:** Beladeroboter-Dokumentation pro Operation
-
----
-
-### 🔄 Woche 37-38: Urlaubsplanung
-**Status:** 🔄 95% abgeschlossen
-**Ziel:** Urlaub/Abwesenheiten im Kalender verwalten
-
-**Erledigt:**
-- [x] DB: `vacations` Tabelle (user_id, start_date, end_date, type, status)
-- [x] DB: `vacation_types` Tabelle (Urlaub, Krank, Schulung, etc.)
-- [x] DB: `vacation_entitlements` Tabelle (Jahres-Urlaubsansprüche)
-- [x] DB: `vacation_settings` Tabelle (Standard-Urlaubstage, Bundesland)
-- [x] DB: `vacation_role_limits` Tabelle (dynamische Limits pro Rolle)
-- [x] DB: `holidays` Tabelle (Feiertage alle Bundesländer, halbe Tage)
-- [x] DB: `users.vacation_tracking_enabled` (User aus Urlaubsverwaltung ausschließen)
-- [x] Backend: Vacations CRUD API mit Status-Workflow
-- [x] Backend: Vacation Types CRUD API
-- [x] Backend: Entitlements CRUD API + Jahr initialisieren
-- [x] Backend: Role Limits CRUD API (dynamische Überschneidungs-Prüfung)
-- [x] Backend: Holidays API (alle 16 Bundesländer, bewegliche Feiertage)
-- [x] Backend: Überschneidungs-Check (Warnung statt Blockade)
-- [x] Backend: Jahresübersicht/Kalender API
-- [x] Frontend: VacationsPage mit Kalender-Ansicht (Monat/Jahr)
-- [x] Frontend: VacationCalendar Komponente (visuelle Darstellung)
-- [x] Frontend: VacationFormModal (Urlaub erstellen/bearbeiten)
-- [x] Frontend: VacationSettingsModal (4 Tabs)
-- [x] Frontend: Überschneidungs-Warnung mit überlappenden Tagen
-- [x] Frontend: Kalender-Markierung bei Überschreitung (orange Ecke)
-- [x] Frontend: Mitarbeiter-Filter
-- [x] Frontend: Bundesland-Auswahl für Feiertage
-- [x] Frontend: Dynamisches Jahr-Dropdown (-1 bis +5 Jahre)
-- [x] Frontend: Halbe Feiertage (Heiligabend, Silvester)
-- [x] Frontend: "Mein Urlaub" Bereich mit eigenen Daten
-- [x] Frontend: Resturlaub nur mit vacations.manage sichtbar
-- [x] Frontend: User-Einstellung "Urlaubsverwaltung aktiviert"
-
-**Offen:**
-- [x] Antrags-Workflow (beantragen → genehmigen/ablehnen) – PR #35/#36
-- [x] Detail-Modal, PDF-Exports, Saldo-Kaskadierung, Status-Aufschlüsselung (PRs #49–#52)
 - [ ] Integration Wartungssystem: User mit aktivem Urlaub/Krank automatisch ausblenden
 
-**Deliverable:** Urlaubskalender mit Überschneidungs-Check, Feiertage für alle Bundesländer
+---
+
+### 📋 Beladeroboter: Zerobot-Setups speichern
+**Status:** 🔄 Zerobot-Positionsrechner vorhanden (Standalone-Tool, Werte werden nicht gespeichert)
+
+- [ ] Errechnete und eingestellte Werte pro Arbeitsgang speichern (Greifer, Rack, Positionen, Programm)
+- [ ] Zerobot-Rechner aus dem Arbeitsgang öffnen, gespeichertes Setup laden
+- [ ] Setup-Fotos, Verknüpfung zum Rüstblatt
+- [ ] Greifer/Rack-Stammdaten (falls nötig)
 
 ---
 
-### 📋 Woche 39-40: Bauteil-Revisionsverwaltung
-**Status:** 📋 Geplant
-**Ziel:** Revisionen/Änderungsstände von Bauteilen verwalten
-
-- [ ] DB: `part_revisions` Tabelle (part_id, revision, change_description, effective_date)
-- [ ] DB: Verknüpfung zu NC-Programmen pro Revision
-- [ ] Backend: Revisions CRUD API
-- [ ] Backend: Aktive Revision setzen
-- [ ] Backend: Revisions-Historie
-- [ ] Frontend: Revisions-Tab in PartDetailPage
-- [ ] Frontend: Revision erstellen (mit Änderungsbeschreibung)
-- [ ] Frontend: Programme pro Revision anzeigen
-- [ ] Frontend: Revision freigeben/sperren
-- [ ] Integration: Setup Sheets pro Revision
-- [ ] Integration: Tool Lists pro Revision
-
-**Deliverable:** Bauteil-Änderungsverwaltung mit Programm-Zuordnung
+### 📋 Bauteil-Revisionsverwaltung
+- [ ] Revisionen pro Bauteil (Änderungsbeschreibung, gültig ab, aktive Revision)
+- [ ] NC-Programme, Rüstblätter und Werkzeuglisten je Revision
+- [ ] Revision freigeben/sperren, Historie
 
 ---
 
-### 📋 Woche 41-42: Admin-Konfigurationsbereich
-**Status:** 📋 Geplant
-**Ziel:** Zentrale Einstellungen für Administratoren
-
-- [ ] DB: `system_settings` Tabelle (key, value, type, category)
-- [ ] Backend: Settings CRUD API (nur Admin)
-- [ ] Backend: Settings-Cache für Performance
-- [ ] Frontend: Admin → Einstellungen Seite
-- [ ] Kategorien: Allgemein, Wartung, Lager, Benachrichtigungen
-- [ ] Einstellungen: Firmenname, Logo, Sprache
-- [ ] Einstellungen: Standard-Werte (Skill-Level, Prioritäten)
-- [ ] Einstellungen: Intervalle (Kalibrierung, Wartung)
-- [ ] Einstellungen: Schwellwerte (Mindestbestände, Warnungen)
-- [ ] Frontend: Einstellungs-Formulare nach Kategorie
-
-**Deliverable:** Zentraler Admin-Bereich für System-Einstellungen
+### 📋 Admin-Konfigurationsbereich
+Ideensammlung: [docs/konzepte/SETTINGS-WISHLIST.md](docs/konzepte/SETTINGS-WISHLIST.md)
+- [ ] `system_settings` (key/value/category) + Admin-API mit Cache
+- [ ] Admin → Einstellungen: Firmenname/Logo, Standardwerte, Intervalle, Schwellwerte
 
 ---
 
-### 📋 Woche 43-44: Benachrichtigungs-System
-**Status:** 📋 Geplant
-**Ziel:** In-App Benachrichtigungen und Alerts
-
-- [ ] DB: `notifications` Tabelle (user_id, type, title, message, read, link)
-- [ ] DB: `notification_settings` Tabelle (user_id, type, enabled)
-- [ ] Backend: Notifications CRUD API
-- [ ] Backend: Auto-Generierung bei Events (Wartung fällig, Kalibrierung, etc.)
-- [ ] Backend: WebSocket für Echtzeit-Updates (optional)
-- [ ] Frontend: Notification Bell im Header
-- [ ] Frontend: Notification Dropdown (ungelesene Nachrichten)
-- [ ] Frontend: Notification Center (alle Nachrichten)
-- [ ] Frontend: Mark as read / Mark all as read
-- [ ] Frontend: Notification Settings pro User
-- [ ] Trigger: Wartung überfällig, Kalibrierung fällig, Bestand niedrig
-
-**Deliverable:** In-App Benachrichtigungssystem mit User-Einstellungen
+### 📋 Benachrichtigungs-System
+Tabelle `notifications` existiert seit der ersten Migration, wird aber nicht genutzt.
+- [ ] Auto-Generierung bei Events (Wartung überfällig, Kalibrierung fällig, Bestand niedrig)
+- [ ] Glocke im Header, Dropdown, Benachrichtigungs-Center, gelesen/alle gelesen
+- [ ] Einstellungen pro User
 
 ---
 
-### 📋 Woche 45-46: Maschinen-Erweiterungen
-**Status:** 📋 Geplant
-**Ziel:** Maschinentypen und Detail-Eingabefelder erweitern
-
-- [ ] DB: `machine_types` Tabelle erweitern (spezifische Felder pro Typ)
-- [ ] DB: `machine_custom_fields` Tabelle (dynamische Felder)
-- [ ] Backend: Machine Types CRUD mit Feld-Definition
-- [ ] Backend: Custom Fields API
-- [ ] Frontend: Maschinentyp-Verwaltung (Admin)
-- [ ] Frontend: Dynamische Formularfelder je nach Typ
-- [ ] Felder für Fräsmaschinen: Achsen, Spindel, Werkzeugmagazin
-- [ ] Felder für Drehmaschinen: Spindeln, Revolver, Gegenspindel
-- [ ] Felder für Messmaschinen: Messbereich, Genauigkeit
-- [ ] Frontend: Typ-spezifische Detail-Ansicht
-
-**Deliverable:** Flexible Maschinentypen mit dynamischen Feldern
+### 📋 Werkzeug-Icons
+`tool_categories.icon` existiert, eigene Icons fehlen.
+- [ ] SVG-Icon-Set für Werkzeugtypen (Fräser, Bohrer, Wendeschneidplatten …)
+- [ ] Icons in Werkzeugstamm, Werkzeuglisten, Auswahl bei Erstellung
 
 ---
 
-### 📋 Woche 47: Werkzeug-Icons
-**Status:** 📋 Geplant
-**Ziel:** Eigene Icons für Werkzeugkategorien
-
-- [ ] Icon-Set für Werkzeugtypen (Fräser, Bohrer, Wendeschneidplatten, etc.)
-- [ ] SVG-Icons erstellen oder lizenzfreie finden
-- [ ] Frontend: Icon-Komponente für Werkzeuge
-- [ ] Frontend: Icons in Tool Master Liste
-- [ ] Frontend: Icons in Tool Lists
-- [ ] Frontend: Icon-Auswahl bei Werkzeug-Erstellung
-- [ ] Optional: Icon-Upload für eigene Icons
-
-**Deliverable:** Visuelle Werkzeug-Unterscheidung durch Icons
+### 📋 HTTPS
+Browser zeigen „nicht sicher“; PWA (Service Worker) und Kamera-Zugriff (QR-Scan) brauchen HTTPS.
+- [ ] Caddy mit `tls internal` (eigene CA) oder mkcert, HTTP → HTTPS
+- [ ] Root-Zertifikat auf Clients/Tablets verteilen, Anleitung in DEPLOYMENT.md
 
 ---
 
-### 📋 Woche 48: HTTPS/SSL Setup
-**Status:** 📋 Geplant
-**Ziel:** Sichere Verbindung für internes Netzwerk
-
-- [ ] Option A: Selbst-signiertes Zertifikat
-- [ ] Option B: mkcert (lokale CA)
-- [ ] Nginx Reverse Proxy Konfiguration
-- [ ] Docker-Compose für SSL anpassen
-- [ ] Automatische HTTP → HTTPS Weiterleitung
-- [ ] Dokumentation für Zertifikat-Installation auf Clients
-- [ ] PWA Update (HTTPS erforderlich für Service Worker)
-
-**Deliverable:** HTTPS-Verbindung ohne Browser-Warnung
-
----
-
-## 🏭 Phase 10: Auftragsverwaltung (Wochen 49-56)
-
-### 📋 Woche 49-50: Auftrags-Grundsystem
-**Status:** 📋 Geplant
-**Ziel:** Fertigungsaufträge anlegen und verwalten
-
-- [ ] DB: `production_orders` Tabelle (Auftragsnummer, Kunde, Bauteil, Menge, Termin)
-- [ ] DB: `production_order_status` Tabelle (geplant, freigegeben, in Arbeit, fertig)
-- [ ] DB: `production_order_operations` Tabelle (Arbeitsgang-Fortschritt)
-- [ ] Backend: Production Orders CRUD API
-- [ ] Backend: Status-Workflow (Statusübergänge)
-- [ ] Backend: Termin-Berechnung
-- [ ] Frontend: Auftrags-Übersicht (Liste, Filter, Suche)
-- [ ] Frontend: Auftrags-Formular (Kunde, Bauteil, Menge, Termin)
-- [ ] Frontend: Auftrags-Detail-Seite
-- [ ] Frontend: Status-Badge und Fortschrittsanzeige
-
-**Deliverable:** Basis-Auftragsverwaltung mit Status-Workflow
-
----
-
-### 📋 Woche 51-52: Auftrags-Verfolgung
-**Status:** 📋 Geplant
-**Ziel:** Fertigungsfortschritt verfolgen
-
-- [ ] DB: `production_order_logs` Tabelle (Zeitstempel, Aktion, User)
-- [ ] DB: `production_order_times` Tabelle (Ist-Zeiten pro Arbeitsgang)
-- [ ] Backend: Fortschritts-Tracking API
-- [ ] Backend: Ist-Zeit Erfassung
-- [ ] Backend: Soll/Ist Vergleich
-- [ ] Frontend: Fortschritts-Timeline
-- [ ] Frontend: Arbeitsgang-Abhaken (Start/Stop/Fertig)
-- [ ] Frontend: Zeit-Erfassung pro Arbeitsgang
-- [ ] Frontend: Soll/Ist Vergleich Anzeige
-- [ ] Frontend: Auftrags-Historie
-
-**Deliverable:** Echtzeit-Fortschrittsverfolgung mit Zeiterfassung
-
----
-
-### 📋 Woche 53-54: Auftrags-Planung
-**Status:** 📋 Geplant
-**Ziel:** Kapazitätsplanung und Terminierung
-
-- [ ] DB: `machine_capacity` Tabelle (Verfügbarkeit pro Maschine)
-- [ ] Backend: Kapazitäts-Berechnung
-- [ ] Backend: Terminierungs-Algorithmus
-- [ ] Backend: Engpass-Erkennung
-- [ ] Frontend: Planungs-Übersicht (Gantt-artig)
-- [ ] Frontend: Maschinen-Auslastung
-- [ ] Frontend: Termin-Konflikte anzeigen
-- [ ] Frontend: Drag & Drop Umplanung (optional)
-- [ ] Integration: Urlaub/Abwesenheiten berücksichtigen
-
-**Deliverable:** Kapazitätsplanung mit Terminübersicht
-
----
-
-### 📋 Woche 55-56: Auftrags-Dashboard & Reporting
-**Status:** 📋 Geplant
-**Ziel:** Übersichten und Auswertungen
-
-- [ ] Backend: Dashboard-Statistiken API
-- [ ] Backend: Report-Generierung (PDF/Excel)
-- [ ] Frontend: Auftrags-Dashboard
-- [ ] Frontend: KPIs (Durchlaufzeit, Termintreue, Auslastung)
-- [ ] Frontend: Auftrags-Kalender
-- [ ] Frontend: Überfällige Aufträge Warnung
-- [ ] Frontend: Export-Funktionen
-- [ ] Integration: Dashboard-Widget auf Startseite
-
-**Deliverable:** Management-Dashboard mit KPIs und Reports
-
----
-
-## 📱 Phase 11: Shopfloor-Terminals + Zeiterfassung (Wochen 57-70)
+## 📱 Phase 10: Shopfloor-Terminals
 
 > **Fokus: Usability** - Die Terminals sollen den Bedienern helfen, nicht zusätzlich belasten.
 > Große Touch-Buttons, wenig Text, schnelle Workflows, minimale Eingaben.
+>
+> **Vor der Auftragsverwaltung (Phase 11):** Wo unten „Auftrag scannen“ / `production_order_id` steht, arbeiten die Terminals zunächst mit **Bauteil + Arbeitsgang** (`operation_id`). Die Auftrags-Verknüpfung kommt mit Phase 11 nach.
 
-### 📋 Woche 57-58: Shopfloor Basis-System
+### ✅ Zeiterfassungs-Terminal ⏱️
+**Status:** ✅ Seit Monaten im Einsatz (Raspberry Pi 4, NFC, Offline-Queue, eigenes Repo `mds-time-terminal` – Details im Archiv)
+
+- [ ] PI-SETUP.md im Terminal-Repo prüfen
+
+---
+
+### 📋 Shopfloor Basis-System
 **Status:** 📋 Geplant
 **Ziel:** Grundlagen für alle Terminals
 
@@ -496,7 +171,7 @@ purchase_order_items (
 
 ---
 
-### 📋 Woche 59-61: Werkzeug-Terminal 🔧
+### 📋 Werkzeug-Terminal 🔧
 **Status:** 📋 Geplant
 **Ziel:** Komplettes Werkzeug-Terminal an Werkzeugschränken
 
@@ -528,7 +203,7 @@ purchase_order_items (
 
 ---
 
-### 📋 Woche 62-63: Messraum-Terminal 📏
+### 📋 Messraum-Terminal 📏
 **Status:** 📋 Geplant
 **Ziel:** Messmittel-Ausgabe im Messraum
 
@@ -549,7 +224,7 @@ purchase_order_items (
 
 ---
 
-### 📋 Woche 64-68: Maschinen-Terminal 🏭
+### 📋 Maschinen-Terminal 🏭
 **Status:** 📋 Geplant
 **Ziel:** Produktions-Terminal an jeder Maschine
 
@@ -616,75 +291,82 @@ purchase_order_items (
 
 ---
 
-### ✅ Woche 69-70: Zeiterfassungs-Terminal ⏱️
-**Status:** ✅ 90% abgeschlossen (Hardware + Software produktionsbereit)
-**Ziel:** Stempelterminal für Mitarbeiter-Zeiterfassung (Testbetrieb)
+## 🏭 Phase 11: Auftragsverwaltung
 
-**Hardware:**
-- [x] Raspberry Pi 4 (2GB) mit Pi Touch Display 2 (7", 1280×720)
-- [x] PN532 NFC-Reader (I2C, Firmware 1.6)
-- [x] KY-006 Passiv-Piezo Buzzer (PWM GPIO 18)
-- [x] Gehäuse (in Arbeit)
-- [x] Kiosk-Modus: X11/xinit + Chromium + unclutter (Cursor versteckt)
-- [x] Landscape-Rotation (Display + Touch kalibriert)
-- [x] Systemd Services (mds-terminal + kiosk, Auto-Start)
-- [x] PI-SETUP.md Dokumentation
+### 📋 Auftrags-Grundsystem
+**Status:** 📋 Geplant
+**Ziel:** Fertigungsaufträge anlegen und verwalten
 
-**Terminal-Software (Python/FastAPI, eigenes Repo `mds-time-terminal`):**
-- [x] Offline-first Architektur (SQLite Queue + Background Sync)
-- [x] WebSocket für NFC-Events und Echtzeit-UI-Updates
-- [x] NFC-Polling (0.3s Intervall, 2s Debounce)
-- [x] Buzzer-Feedback (Success/Error/Scan, optimierte Frequenzen 2400-3200Hz)
-- [x] User-Cache (alle 5 Min vom Server aktualisiert)
-- [x] Stempel-Sync (alle 30s, 409-Duplikat-Handling)
-- [x] REST API (Stamp, PIN-Login, User-Status, User-Info)
+- [ ] DB: `production_orders` Tabelle (Auftragsnummer, Kunde, Bauteil, Menge, Termin)
+- [ ] DB: `production_order_status` Tabelle (geplant, freigegeben, in Arbeit, fertig)
+- [ ] DB: `production_order_operations` Tabelle (Arbeitsgang-Fortschritt)
+- [ ] Backend: Production Orders CRUD API
+- [ ] Backend: Status-Workflow (Statusübergänge)
+- [ ] Backend: Termin-Berechnung
+- [ ] Frontend: Auftrags-Übersicht (Liste, Filter, Suche)
+- [ ] Frontend: Auftrags-Formular (Kunde, Bauteil, Menge, Termin)
+- [ ] Frontend: Auftrags-Detail-Seite
+- [ ] Frontend: Status-Badge und Fortschrittsanzeige
 
-**Terminal-UI (Vanilla HTML/JS/CSS):**
-- [x] Idle-Screen: Uhr, Datum, NFC-Aufforderung, PIN-Button
-- [x] PIN-Screen: 4-stellige Eingabe mit Auto-Submit
-- [x] Action-Screen: KOMMEN/GEHEN/PAUSE/WEITER Buttons (nur gültige sichtbar)
-- [x] Success-Screen: Bestätigung mit Arbeitszeit + Saldo (bei Gehen)
-- [x] Info-Screen: Zeitkonto (Heute/Woche/Monat/Saldo/Resturlaub/letzte Buchungen)
-- [x] Error-Screen: Fehlermeldung mit Auto-Reset
-- [x] Alle Icons als inline SVG (kein Unicode-Rendering-Problem)
-- [x] Status-Indikatoren (NFC, Server, Sync)
-- [x] Auto-Reset Timer mit Countdown-Bar
-- [x] Quick-Stamp (Karte erneut auflegen = häufigste Aktion)
-
-**MDS Backend-Erweiterungen:**
-- [x] Terminal-API mit API-Key Authentifizierung (X-Terminal-Key Header)
-- [x] Middleware: `authenticateTerminal` in authMiddleware.js
-- [x] Endpoints: `/api/terminal/users`, `/api/terminal/stamp`, `/api/terminal/stamp/batch`
-- [x] Endpoints: `/api/terminal/register`, `/api/terminal/list`, `/api/terminal/info`
-- [x] Endpoint: `/api/terminal/user-info/:id` (Zeitkonto, Saldo, Urlaub, letzte Buchungen)
-- [x] Migration: `time_terminals` um `api_key` + `terminal_type` erweitert
-- [x] `timeEntriesController._helpers` exportiert für Terminal-Endpoint
-- [x] Bugfix: `getCurrentBalance()` parseInt für numerische Berechnung
-- [x] Bugfix: `time_current_status` View - `break_end` → `present` statt `absent`
-- [x] Route-Reihenfolge: `terminalRoutes` vor generischen `/api`-Catch-All Routes
-
-**Offen:**
-- [x] Mehrere NFC-Karten/Tags pro User (Tabelle `user_rfid_chips`)
-- [x] Backend-Änderungen committen (terminalController, Routes, authMiddleware, server.js)
-- [ ] PI-SETUP.md ins Terminal-Repo committen
-- [ ] Produktivbetrieb: Alle Mitarbeiter-NFC-Karten registrieren
-- [ ] Gehäuse fertigstellen + Terminal montieren
-- [ ] Langzeit-Test im Betrieb
-
-**Schnell-Workflow (Primär):**
-```
-[KOMMEN] → Badge/NFC → ✓ "Guten Morgen Max, 07:32"
-[GEHEN]  → Badge/NFC → ✓ "Arbeitszeit: 8:15 · Saldo heute: +0:15 · Zeitkonto: +12:30"
-[PAUSE]  → Badge/NFC → ✓ "Pause gestartet" / "Pause beendet (32 Min)"
-[INFO]   → Badge/NFC → Zeitkonto-Übersicht anzeigen
-```
-> 2 Sekunden pro Buchung - kein PIN, keine Auswahl
-
-**Deliverable:** ✅ Funktionsfähiges Stempel-Terminal für Pilotphase
+**Deliverable:** Basis-Auftragsverwaltung mit Status-Workflow
 
 ---
 
-## 🔗 TopSolid-Integration (CAM ↔ MDS)
+### 📋 Auftrags-Verfolgung
+**Status:** 📋 Geplant
+**Ziel:** Fertigungsfortschritt verfolgen
+
+- [ ] DB: `production_order_logs` Tabelle (Zeitstempel, Aktion, User)
+- [ ] DB: `production_order_times` Tabelle (Ist-Zeiten pro Arbeitsgang)
+- [ ] Backend: Fortschritts-Tracking API
+- [ ] Backend: Ist-Zeit Erfassung
+- [ ] Backend: Soll/Ist Vergleich
+- [ ] Frontend: Fortschritts-Timeline
+- [ ] Frontend: Arbeitsgang-Abhaken (Start/Stop/Fertig)
+- [ ] Frontend: Zeit-Erfassung pro Arbeitsgang
+- [ ] Frontend: Soll/Ist Vergleich Anzeige
+- [ ] Frontend: Auftrags-Historie
+
+**Deliverable:** Echtzeit-Fortschrittsverfolgung mit Zeiterfassung
+
+---
+
+### 📋 Auftrags-Planung
+**Status:** 📋 Geplant
+**Ziel:** Kapazitätsplanung und Terminierung
+
+- [ ] DB: `machine_capacity` Tabelle (Verfügbarkeit pro Maschine)
+- [ ] Backend: Kapazitäts-Berechnung
+- [ ] Backend: Terminierungs-Algorithmus
+- [ ] Backend: Engpass-Erkennung
+- [ ] Frontend: Planungs-Übersicht (Gantt-artig)
+- [ ] Frontend: Maschinen-Auslastung
+- [ ] Frontend: Termin-Konflikte anzeigen
+- [ ] Frontend: Drag & Drop Umplanung (optional)
+- [ ] Integration: Urlaub/Abwesenheiten berücksichtigen
+
+**Deliverable:** Kapazitätsplanung mit Terminübersicht
+
+---
+
+### 📋 Auftrags-Dashboard & Reporting
+**Status:** 📋 Geplant
+**Ziel:** Übersichten und Auswertungen
+
+- [ ] Backend: Dashboard-Statistiken API
+- [ ] Backend: Report-Generierung (PDF/Excel)
+- [ ] Frontend: Auftrags-Dashboard
+- [ ] Frontend: KPIs (Durchlaufzeit, Termintreue, Auslastung)
+- [ ] Frontend: Auftrags-Kalender
+- [ ] Frontend: Überfällige Aufträge Warnung
+- [ ] Frontend: Export-Funktionen
+- [ ] Integration: Dashboard-Widget auf Startseite
+
+**Deliverable:** Management-Dashboard mit KPIs und Reports
+
+---
+
+## 🔗 TopSolid-Integration & NC-Programme (CAM ↔ MDS)
 
 **Status:** 🔄 Exporter und Werkzeuge fertig, MDS-Seite offen
 **Konzepte:** [TOPSOLID_TOOL_IMPORT_KONZEPT.md](docs/konzepte/TOPSOLID_TOOL_IMPORT_KONZEPT.md) (Werkzeugimport, ausgearbeitet) · [TOPSOLID_INTEGRATION_IDEEN.md](docs/konzepte/TOPSOLID_INTEGRATION_IDEEN.md) (Ideensammlung)
@@ -692,7 +374,7 @@ purchase_order_items (
 **Reihenfolge:** Werkzeuge → Bauteile → NC-Programme
 
 ### ✅ Fertig (außerhalb des MDS, Oktober 2026)
-- [x] **NC-Viewer** (`tools/nc-viewer`): Heidenhain-Programm + Aufspannung (STEP) in 3D, offline, eine HTML-Datei. Interpreter `hh.js` UI-unabhängig (auch im Backend nutzbar)
+- [x] **NC-Viewer / 3D-G-Code-Viewer** (`tools/nc-viewer`): Heidenhain-Programm + Aufspannung (STEP) in 3D, offline, eine HTML-Datei. Interpreter `hh.js` UI-unabhängig (auch im Backend nutzbar)
 - [x] NC-Viewer: Rechtsklick „Öffnen mit NC-Viewer“ (Windows, `launcher/`), `PLANE AXIAL` (Horizontal-BAZ), Clipping-Fix (#87)
 - [ ] NC-Viewer am Arbeitsplatz: Rechtsklick-Eintrag einrichten, `PLANE AXIAL` mit echtem G350-Programm prüfen
 - [x] **TS_SN_Generator** (`tools/ts-sn-generator`): Seriennummer-Gravur durchschalten, G-Code je Nummer
@@ -718,8 +400,16 @@ purchase_order_items (
 - [ ] „Alle Werkzeuge im Lager?“ vor Freigabe
 - [ ] NC-Viewer lädt Programm, STEP und Werkzeugdaten aus dem MDS
 
+### 📋 Ohne TopSolid (Grundfunktion für alle NC-Programme)
+Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehen auch ohne TopSolid-Export:
+- [ ] Werkzeug-Extraktion beim Programm-Upload (`TOOL CALL` → T-Nummern, Beschreibung) → Werkzeugliste vorbefüllen
+- [ ] Nullpunkt-Extraktion (Preset/`CYCL DEF 247`, G54 …) → Rüstblatt vorbefüllen
+- [ ] Laufzeit-Abschätzung und Plausibilitätsprüfung beim Upload
+- [ ] Weitere Steuerungen: Siemens (Drehen), ggf. Mazatrol
+
 ### 💡 Ideen (nicht ausgearbeitet, siehe Ideensammlung)
 - [ ] Bestandsaufnahme Kundenprojekte → Bauteile ins MDS (nur lesend)
+- [ ] CAM-Ausgabeordner überwachen (File Watcher) → Programme automatisch zum Import anbieten
 - [ ] „In TopSolid anlegen“ aus dem MDS (Projekt aus Vorlage, STEP-Import, PDM-ID zurück)
 - [ ] Projekt-Umzug: ein TopSolid-Projekt je Bauteil statt je Kunde (Paket-Kopie, Pilot zuerst)
 
@@ -727,7 +417,11 @@ purchase_order_items (
 
 ---
 
-## 📋 Phase 12+: Optionale Features
+## 💡 Phase 12+: Ideen / Optionale Features
+
+### Lager-Erweiterungen (erst nach der Lager-Architektur-Entscheidung)
+- [ ] **Rohmaterial:** Material, Güte, Form, Abmessungen; Bestand mit Chargen-Verfolgung; Wareneingang/Entnahme; Bauteil → Rohmaterial-Zuordnung; Lieferanten
+- [ ] **Normteile / Zukaufteile:** DIN/ISO-Katalog, Kategorien (Schrauben, Muttern, Stifte, O-Ringe …), Bestand + Mindestbestand, Lieferanten; optional Stücklisten
 
 ### Shopfloor-UI Erweiterungen
 - [ ] Weitere Terminal-Typen (Lager, Versand, QS)
@@ -742,33 +436,13 @@ purchase_order_items (
 - [ ] Werkzeug-Bestandsreport
 - [ ] Audit-Trail Export (PDF/Excel)
 
-### NC-Programm Parser
-- [ ] Heidenhain DIN/ISO Format Parser
-- [ ] Siemens Format Parser
-- [ ] Werkzeug-Extraktion (T-Nummern, Beschreibung)
-- [ ] Nullpunkt-Extraktion (G54, Preset)
-- [ ] Tool List Auto-Fill
-- [ ] Setup Sheet Auto-Fill
-
-### QR-Codes & CAM-Integration
-- [ ] QR-Code Generierung pro Operation
-- [ ] File Watcher (chokidar)
-- [ ] CAM-Ordner überwachen
-- [ ] Auto-Import Dialog
-
-### Deployment & Optimierung
-- [ ] Docker-Setup optimieren
-- [ ] Raspberry Pi Deployment
-- [ ] Backup-Strategie
-- [ ] Performance-Optimierung
-- [ ] Dokumentation vervollständigen
-- [ ] Schulungs-Material
+### Dokumentation & Qualität
+- [ ] Schulungs-Material für Mitarbeiter
 - [ ] ISO-Checkliste finalisieren
 
 ### Erweiterte Features
 - [ ] Machine Monitoring (MTConnect/OPC UA)
 - [ ] DNC-Integration
-- [ ] 3D G-Code Viewer
 - [ ] Mobile App (React Native)
 - [ ] ERP-Integration
 
@@ -776,139 +450,19 @@ purchase_order_items (
 
 ## 🔧 Technical Debt / Refactoring-Kandidaten
 
-### 🔴 Lager-Architektur (Hohe Priorität - vor Woche 31 klären!)
-
-**Falls aktueller Ansatz beibehalten wird (separate Tabellen):**
-
-Für JEDE neue Lagerkategorie nötig:
-- [ ] DB: `{category}_categories` Tabelle
-- [ ] DB: `{category}` Stammdaten-Tabelle  
-- [ ] DB: `{category}_stock` Tabelle
-- [ ] DB: `{category}_transactions` Tabelle
-- [ ] DB: `{category}_documents` Tabelle (optional)
-- [ ] DB: Views für Alerts
-- [ ] DB: `purchase_order_items.{category}_id` Spalte + Check-Constraint anpassen
-- [ ] Backend: 4-5 Controller
-- [ ] Backend: 4-5 Routes
-- [ ] Backend: server.js erweitern
-- [ ] Backend: purchaseOrdersController anpassen (createOrder, updateOrder, getOrderById)
-- [ ] Frontend: Store
-- [ ] Frontend: Pages (Übersicht, Detail)
-- [ ] Frontend: Components (Form, Stock, Documents)
-- [ ] Frontend: App.jsx Routes
-- [ ] Frontend: Sidebar.jsx
-- [ ] Frontend: OrderForm.jsx (Typ hinzufügen)
-- [ ] Frontend: PurchaseOrderDetailPage.jsx (Sektion hinzufügen)
-- [ ] Frontend: AddToOrderModal für neue Kategorie
-
-**Geschätzter Aufwand pro Kategorie:** ~20-30h
-
-**Falls generisches System implementiert wird:**
-- [ ] Einmalig: Schema-Migration (~4h)
-- [ ] Einmalig: Backend Refactoring (~8h)
-- [ ] Einmalig: Frontend Refactoring (~8h)
-- [ ] Pro neue Kategorie: Detail-Tabelle + UI-Tab (~2-4h)
-
-**Geschätzter Einmal-Aufwand:** ~20-24h
-**Aufwand pro weitere Kategorie:** ~2-4h
-
----
-
-### Weitere Technical Debt
-
-- [ ] **Operations Zeit-Einheiten vereinheitlichen:** 
-  - Aktuell: setup_time_minutes (Minuten) + cycle_time_seconds (Sekunden in DB, aber Minuten im Frontend)
-  - Ziel: Beide in Minuten in DB speichern (cycle_time_seconds → cycle_time_minutes)
-  - Aufwand: ~2h (Migration + Backend + Frontend + Tests)
-  - Priorität: Low (funktioniert aktuell mit Frontend-Konvertierung)
-
-- [ ] **Program Number Format überdenken:**
-  - Aktuell: Auto-generiert als "OP10-001", "OP10-002", etc.
-  - Überlegungen: Anderes Format? Manuell editierbar? Prefix/Suffix?
-  - Aufwand: ~1h (Backend Logik anpassen)
-  - Priorität: Low (funktioniert aktuell gut)
-
-- [ ] **Werkzeug-Extraktion aus G-Code:**
-  - Parser für Heidenhain DIN/ISO entwickeln
-  - Automatische Werkzeugliste aus NC-Programm
-  - TODO später: CAM-Postprozessor Dokumentation
-  - Aufwand: ~8h (Parser + Tests)
-  - Priorität: Medium
-
----
-
-## 📊 Fortschritt
-
-```
-Phase 1-7:                ████████████████████ 100% ✅
-
-Phase 8 (Erweiterungen):  █████████████░░░░░░░ 65%
-  └─ Kunden, Wiki, PWA:   ████████████████████ 100% ✅
-  └─ Verbrauchsmaterial:  ████████████████░░░░ 80% 🔄
-  └─ Rohmaterial:         ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Normteile:           ░░░░░░░░░░░░░░░░░░░░ 0%
-
-Phase 9 (Erweiterungen):  ██░░░░░░░░░░░░░░░░░░ 12%
-  └─ Urlaubsplanung:      ███████████████████░ 95% 🔄
-  └─ Beladeroboter:       ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Revisionen:          ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Admin-Konfig:        ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Benachrichtigungen:  ░░░░░░░░░░░░░░░░░░░░ 0%
-
-Phase 10 (Aufträge):      ░░░░░░░░░░░░░░░░░░░░ 0%
-
-Phase 11 (Shopfloor):     ██░░░░░░░░░░░░░░░░░░ 10%
-  └─ Shopfloor Basis:      ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Werkzeug-Terminal:     ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Messraum-Terminal:     ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Maschinen-Terminal:    ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Zeit-Terminal:        ██████████████████░░ 90% ✅
-
-TopSolid-Integration:     ████░░░░░░░░░░░░░░░░ 20%
-  └─ Exporter + Tools:     ████████████████████ 100% ✅
-  └─ Werkzeugimport MDS:   ░░░░░░░░░░░░░░░░░░░░ 0%
-  └─ Modelle / Programme:  ░░░░░░░░░░░░░░░░░░░░ 0%
-```
+- Lager-Architektur: siehe „Offene Entscheidung“ unter Phase 8
+- [ ] **Operations-Zeiteinheiten:** `cycle_time_seconds` (Sekunden in DB, Minuten im Frontend) → `cycle_time_minutes` wie `setup_time_minutes` (~2h, niedrig)
+- [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ – anderes Format / manuell editierbar? (~1h, niedrig)
 
 ---
 
 ## 🔧 Nächste Session
 
-**TopSolid-Werkzeugimport, Phase 1** (siehe Abschnitt TopSolid-Integration):
-1. Ist-Stand im Konzept (Abschn. 2) gegen aktuellen Code prüfen
-2. Spec + Plan, dann Migration → Backend (preview/commit) → `.http`-Tests mit echtem Export → Frontend
-
-**Zeit-Terminal abschließen:**
-1. PI-SETUP.md ins Terminal-Repo committen (prüfen)
-2. Gehäuse fertigstellen + Terminal montieren
-3. Alle Mitarbeiter-NFC-Karten registrieren
-
-**Urlaubsplanung abschließen:**
-1. Integration Wartungssystem: User mit aktivem Urlaub/Krank automatisch ausblenden
-
-**Phase 8 - Woche 29-30: Verbrauchsmaterial abschließen**
-
-1. Lokal testen (Migration, API, Frontend)
-2. Wartungssystem-Integration (Verbrauch bei Wartung buchen)
-3. Dashboard-Alarme einbinden
-
-**⚠️ WICHTIG: Architektur-Entscheidung vor Woche 31**
-
-Bevor Rohmaterial/Normteile gestartet werden:
-1. Aktuellen Ansatz vs. generisches Inventory-System abwägen
-2. Option C erwägen: Paralleler Test-Branch für generisches System
-3. Entscheidung dokumentieren
-
-**Bei Entscheidung für generisches System:**
-- Separaten Branch/Test-Projekt erstellen
-- Generisches Schema entwerfen und testen
-- Migrationsstrategie für bestehende Daten planen
-- Bei Erfolg: In Hauptprojekt integrieren
-
-**Bei Entscheidung für aktuellen Ansatz:**
-- Weiter mit Woche 31-32 (Rohmaterial)
-- Akzeptieren: ~25h Aufwand pro Kategorie
-- Shared Components wo möglich extrahieren
+1. **Offene Fixes** (siehe oben) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
+2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+4. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+5. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz einrichten
 
 ---
 

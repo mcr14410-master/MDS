@@ -23,6 +23,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Changed
 - Repo aufgeräumt: Konzepte aus dem Root nach `docs/konzepte/` (`docs/ARCHITECTURE.md` → `MARKTANALYSE.md`, `Roadmap_wartung_infos.md` → `WARTUNG_NOTIZEN.md`), erledigte Feature-Dokus nach `docs/archiv/`, Session-Dokus bis Nov. 2025 nach `docs/sessions/archiv/` (Dateinamen ohne Leerzeichen)
 - `backend/tests/`: `test-programs.http` = bisherige v6 (deckt v1–v5 ab), `test-parts.http` = bisherige `-FIXED`-Fassung
+- ROADMAP aufgeräumt: Wochen-Nummern und Fortschrittsbalken entfernt, Abschnitt „Offene Fixes“, Shopfloor-Terminals vor Auftragsverwaltung, NC-Parser/Werkzeug-Extraktion in „TopSolid-Integration & NC-Programme“, Rohmaterial/Normteile in die Ideen, Erledigtes (Stammdaten-Optimierung, Urlaub, Zeit-Terminal) ins Archiv
 - README neu geschrieben (Stand Okt. 2026): Module, Technik, lokale Entwicklung, Deployment, Projektstruktur – ohne Fortschrittsangaben, die auf ROADMAP/CHANGELOG verweisen
 
 ### Removed
