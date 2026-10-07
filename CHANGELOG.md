@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- NC-Viewer: Rechtsklick „Öffnen mit NC-Viewer“ für `.H`/`.NC` unter Windows (`tools/nc-viewer/launcher`, Starter `NC-Viewer-Start.exe`, Einrichtung per bat ohne Adminrechte); passende STEP-Datei im selben Ordner wird automatisch mitgeladen
+- NC-Viewer: `PLANE AXIAL` (Achswinkel, z. B. Horizontal-BAZ GROB G350 mit `A-90`) – Bahnen liegen jetzt auf der richtigen Werkstückseite
+- Interpreter-Test für `PLANE AXIAL`
+
+### Fixed
+- NC-Viewer: Beim Herauszoomen verschwanden Aufspannung/Bahnen (Far-Clipping war an die zuletzt zentrierte Bahn gekoppelt) – Clipping-Ebenen werden jetzt laufend an Abstand und Szene angepasst
+
 ---
 
 ## [2.6.0] - 2026-10-06 - Was ist neu & TopSolid-Werkzeuge
