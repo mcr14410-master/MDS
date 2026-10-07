@@ -18,6 +18,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Bei Teilzeit-Modellen (z. B. 4-Tage-Woche) werden freie Wochentage nicht mehr als Urlaubstag abgezogen – weder beim Eintragen noch bei Urlaubsanträgen.
 - Im Zeitmodell gibt es pro Wochentag (auch Samstag und Sonntag) einen Haken „Arbeitstag“.
+- Beim Anlegen von Auswahlfeldern (Dropdown) in Maschinentypen und Werkzeug-Kategorien stürzt die Seite nicht mehr ab.
 
 ### Added
 - Zeitmodell-Formular: Checkbox „Arbeitstag“ je Wochentag inkl. Sa/So (aus = Soll-Zeit leer)
@@ -37,6 +38,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - `QUICKSTART.md` (Stand Woche 3) und `CONTRIBUTING.md` – Inhalt in der README zusammengefasst
 
 ### Fixed
+- Custom-Fields-Editor: „Option hinzufügen“ bei Dropdown-Feldern stürzte ab (`Trash2` nicht importiert) – Maschinentypen und Werkzeug-Kategorien
+- Verbrauchsmaterial: Upload-Dialog für Dokumente stürzte beim Öffnen ab (`X` nicht importiert)
 - Urlaub: Urlaubstage (`calculated_days`) werden nach dem Zeitmodell des Mitarbeiters gezählt (Arbeitstag = Soll-Zeit > 0, ohne Zeitmodell weiter Mo–Fr) – betraf Eintragen, Bearbeiten, Vorschau, Antrag und erneutes Einreichen. Bestehende Einträge werden nicht neu berechnet
 - NC-Viewer: Beim Herauszoomen verschwanden Aufspannung/Bahnen (Far-Clipping war an die zuletzt zentrierte Bahn gekoppelt) – Clipping-Ebenen werden jetzt laufend an Abstand und Szene angepasst
 

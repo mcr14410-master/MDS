@@ -9,7 +9,8 @@ import {
   Download,
   Trash2,
   Star,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import AuthImage from '../common/AuthImage';
 import ImageLightbox from '../common/ImageLightbox';
