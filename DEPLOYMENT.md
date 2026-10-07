@@ -117,17 +117,19 @@ cd ~/mds
 
 Das Script macht automatisch:
 1. `git pull` mit Autostash (lokale Änderungen werden gesichert)
-2. Frontend im Container neu bauen
-3. Backend-Image neu bauen
-4. Container neu starten (Caddy reload ohne Downtime)
-5. Health-Check
+2. Backend-Image neu bauen (die laufende Version bleibt dabei aktiv)
+3. **Datenbank-Migrationen** mit dem neuen Image in einem Einmal-Container
+4. Frontend im Container neu bauen
+5. Container neu starten – erst jetzt geht die neue Version live (Caddy reload ohne Downtime)
+6. Health-Check (bis zu 30 s) – erst danach erscheint „✅ Deploy abgeschlossen!“
 
-### Nach DB-Änderungen (neue Migrations)
+**Schlägt eine Migration fehl**, bricht das Script mit `❌ Migration fehlgeschlagen` und der Fehlermeldung ab.
+Backend und Frontend laufen dann in der bisherigen Version weiter. Migration korrigieren und erneut deployen.
 
-```bash
-./scripts/deploy.sh
-docker compose exec backend npm run migrate:up
-```
+**Schlägt der Health-Check fehl**, endet das Script mit `❌ Health-Check fehlgeschlagen` –
+dann `docker compose logs --tail=50 backend` prüfen.
+
+Migrationen einzeln (ohne Deploy): `./scripts/migrate.sh`
 
 ---
 
