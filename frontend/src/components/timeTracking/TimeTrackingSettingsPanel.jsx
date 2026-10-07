@@ -298,22 +298,39 @@ export default function TimeTrackingSettingsPanel() {
                   Soll-Stunden pro Tag
                 </label>
                 <div className="grid grid-cols-7 gap-2">
-                  {WEEKDAYS.map(day => (
-                    <div key={day.key} className="text-center">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{day.short}</div>
-                      <input
-                        type="text"
-                        value={minutesToTime(modelForm[`${day.key}_minutes`])}
-                        onChange={(e) => setModelForm(f => ({ 
-                          ...f, 
-                          [`${day.key}_minutes`]: timeToMinutes(e.target.value) 
-                        }))}
-                        className="w-full px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 
-                                 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        placeholder="0:00"
-                      />
-                    </div>
-                  ))}
+                  {WEEKDAYS.map(day => {
+                    const field = `${day.key}_minutes`;
+                    const isWorkday = modelForm[field] > 0;
+                    return (
+                      <div key={day.key} className="text-center">
+                        <label className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1 cursor-pointer"
+                               title="Arbeitstag (zählt bei Urlaub/Abwesenheit)">
+                          <input
+                            type="checkbox"
+                            checked={isWorkday}
+                            onChange={(e) => setModelForm(f => ({
+                              ...f,
+                              [field]: e.target.checked ? 480 : null
+                            }))}
+                            className="h-3 w-3 rounded border-gray-300 dark:border-gray-600"
+                          />
+                          {day.short}
+                        </label>
+                        <input
+                          type="text"
+                          value={minutesToTime(modelForm[field])}
+                          onChange={(e) => setModelForm(f => ({
+                            ...f,
+                            [field]: timeToMinutes(e.target.value)
+                          }))}
+                          className={`w-full px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600
+                                   rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                   ${isWorkday ? '' : 'opacity-40'}`}
+                          placeholder="frei"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="text-right text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Woche: {formatMinutes(calculateWeeklyMinutes(modelForm))} ({(calculateWeeklyMinutes(modelForm) / 60).toFixed(1)}h)

@@ -15,7 +15,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Bei Teilzeit-Modellen (z. B. 4-Tage-Woche) werden freie Wochentage nicht mehr als Urlaubstag abgezogen – weder beim Eintragen noch bei Urlaubsanträgen.
+- Im Zeitmodell gibt es pro Wochentag (auch Samstag und Sonntag) einen Haken „Arbeitstag“.
+
 ### Added
+- Zeitmodell-Formular: Checkbox „Arbeitstag“ je Wochentag inkl. Sa/So (aus = Soll-Zeit leer)
+- `backend/tests/test-working-days.js` (Arbeitstage nach Zeitmodell, Feiertage, DST)
 - NC-Viewer: Rechtsklick „Öffnen mit NC-Viewer“ für `.H`/`.NC` unter Windows (`tools/nc-viewer/launcher`, Starter `NC-Viewer-Start.exe`, Einrichtung per bat ohne Adminrechte); passende STEP-Datei im selben Ordner wird automatisch mitgeladen
 - NC-Viewer: `PLANE AXIAL` (Achswinkel, z. B. Horizontal-BAZ GROB G350 mit `A-90`) – Bahnen liegen jetzt auf der richtigen Werkstückseite
 - Interpreter-Test für `PLANE AXIAL`
@@ -31,6 +37,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - `QUICKSTART.md` (Stand Woche 3) und `CONTRIBUTING.md` – Inhalt in der README zusammengefasst
 
 ### Fixed
+- Urlaub: Urlaubstage (`calculated_days`) werden nach dem Zeitmodell des Mitarbeiters gezählt (Arbeitstag = Soll-Zeit > 0, ohne Zeitmodell weiter Mo–Fr) – betraf Eintragen, Bearbeiten, Vorschau, Antrag und erneutes Einreichen. Bestehende Einträge werden nicht neu berechnet
 - NC-Viewer: Beim Herauszoomen verschwanden Aufspannung/Bahnen (Far-Clipping war an die zuletzt zentrierte Bahn gekoppelt) – Clipping-Ebenen werden jetzt laufend an Abstand und Szene angepasst
 
 ---
