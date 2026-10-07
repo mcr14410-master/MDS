@@ -20,6 +20,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - NC-Viewer: `PLANE AXIAL` (Achswinkel, z. B. Horizontal-BAZ GROB G350 mit `A-90`) – Bahnen liegen jetzt auf der richtigen Werkstückseite
 - Interpreter-Test für `PLANE AXIAL`
 
+### Changed
+- README neu geschrieben (Stand Okt. 2026): Module, Technik, lokale Entwicklung, Deployment, Projektstruktur – ohne Fortschrittsangaben, die auf ROADMAP/CHANGELOG verweisen
+
+### Removed
+- `QUICKSTART.md` (Stand Woche 3) und `CONTRIBUTING.md` – Inhalt in der README zusammengefasst
+
 ### Fixed
 - NC-Viewer: Beim Herauszoomen verschwanden Aufspannung/Bahnen (Far-Clipping war an die zuletzt zentrierte Bahn gekoppelt) – Clipping-Ebenen werden jetzt laufend an Abstand und Szene angepasst
 
