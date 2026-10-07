@@ -2,7 +2,7 @@
  * Vacations Controller
  * 
  * Manages absence entries with:
- * - Automatic day calculation (excluding weekends and holidays)
+ * - Automatic day calculation (time model working days, excluding holidays)
  * - Concurrent absence checks per role
  * - Partial day support (time entries)
  * - Approval workflow for requests
@@ -10,6 +10,7 @@
 
 const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
+const { countWorkingDays } = require('../utils/workingDays');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -156,45 +157,36 @@ async function userHasPermission(userId, permission) {
 }
 
 /**
- * Calculate working days between two dates (excluding weekends and holidays)
- * @param {string} startDate 
- * @param {string} endDate 
- * @param {string} region 
+ * Calculate working days between two dates for a user
+ * (days with target time > 0 in the user's time model, excluding holidays;
+ * without time model: Monday–Friday)
+ * @param {number} userId
+ * @param {string} startDate
+ * @param {string} endDate
+ * @param {string} region
  * @returns {Promise<number>}
  */
-async function calculateWorkingDays(startDate, endDate, region = 'BY') {
-  // Ensure holidays exist for the years in range
-  const startYear = new Date(startDate).getFullYear();
-  const endYear = new Date(endDate).getFullYear();
-  
+async function calculateWorkingDays(userId, startDate, endDate, region = 'BY') {
   // Get holidays in range
   const holidaysResult = await pool.query(
     `SELECT date FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3`,
     [startDate, endDate, region]
   );
-  
+
   const holidays = new Set(holidaysResult.rows.map(h => {
     const d = h.date instanceof Date ? h.date : new Date(h.date);
     return d.toISOString().split('T')[0];
   }));
-  
-  let workingDays = 0;
-  const current = new Date(startDate);
-  const end = new Date(endDate);
-  
-  while (current <= end) {
-    const dayOfWeek = current.getDay();
-    const dateStr = current.toISOString().split('T')[0];
-    
-    // Skip weekends (0 = Sunday, 6 = Saturday) and holidays
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.has(dateStr)) {
-      workingDays++;
-    }
-    
-    current.setDate(current.getDate() + 1);
-  }
-  
-  return workingDays;
+
+  // Zeitmodell des Users (Arbeitstag = Soll-Zeit > 0)
+  const modelResult = await pool.query(`
+    SELECT tm.* FROM users u
+    JOIN time_models tm ON u.time_model_id = tm.id
+    WHERE u.id = $1
+  `, [userId]);
+  const model = modelResult.rows[0] || null;
+
+  return countWorkingDays(startDate, endDate, model, holidays);
 }
 
 /**
@@ -567,7 +559,7 @@ const createVacation = async (req, res) => {
     }
     
     // Calculate working days
-    const calculatedDays = await calculateWorkingDays(start_date, end_date);
+    const calculatedDays = await calculateWorkingDays(user_id, start_date, end_date);
     const calculatedHours = calculateHours(start_time, end_time);
     
     // Determine status:
@@ -671,7 +663,7 @@ const updateVacation = async (req, res) => {
     let calculatedHours = currentVacation.calculated_hours;
     
     if (start_date || end_date) {
-      calculatedDays = await calculateWorkingDays(newStartDate, newEndDate);
+      calculatedDays = await calculateWorkingDays(newUserId, newStartDate, newEndDate);
     }
     
     if (start_time !== undefined || end_time !== undefined) {
@@ -753,7 +745,7 @@ const checkOverlap = async (req, res) => {
     }
     
     const result = await checkConcurrentAbsences(user_id, start_date, end_date, exclude_id);
-    const workingDays = await calculateWorkingDays(start_date, end_date);
+    const workingDays = await calculateWorkingDays(user_id, start_date, end_date);
     
     res.json({
       ...result,
@@ -871,7 +863,7 @@ const requestVacation = async (req, res) => {
     }
     
     // Calculate working days
-    const calculatedDays = await calculateWorkingDays(start_date, end_date);
+    const calculatedDays = await calculateWorkingDays(user_id, start_date, end_date);
     const calculatedHours = calculateHours(start_time, end_time);
     
     // Always create as pending - this is a request, not direct entry
@@ -1078,7 +1070,7 @@ const resubmitVacation = async (req, res) => {
     // Calculate working days for new dates
     const newStartDate = start_date || vacation.start_date;
     const newEndDate = end_date || vacation.end_date;
-    const calculatedDays = await calculateWorkingDays(newStartDate, newEndDate);
+    const calculatedDays = await calculateWorkingDays(vacation.user_id, newStartDate, newEndDate);
     
     // Update the vacation
     const result = await pool.query(
