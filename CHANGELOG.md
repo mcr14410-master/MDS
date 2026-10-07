@@ -28,6 +28,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Interpreter-Test für `PLANE AXIAL`
 
 ### Changed
+- `package-lock.json` für Backend, Frontend und `tools/nc-viewer` jetzt im Repo; `backend/Dockerfile` nutzt `npm ci --omit=dev`, `deploy.sh` baut das Frontend nur noch mit `npm ci` (kein stiller Fallback auf `npm install`, kein `--legacy-peer-deps`)
+- ESLint: `eslint-plugin-react` mit Regel `react/jsx-no-undef` (fehlende Komponenten-Imports in JSX)
+- `docs/RELEASE-CHECKLISTE.md` mit Sonderschritten für das nächste Release
 - Repo aufgeräumt: Konzepte aus dem Root nach `docs/konzepte/` (`docs/ARCHITECTURE.md` → `MARKTANALYSE.md`, `Roadmap_wartung_infos.md` → `WARTUNG_NOTIZEN.md`), erledigte Feature-Dokus nach `docs/archiv/`, Session-Dokus bis Nov. 2025 nach `docs/sessions/archiv/` (Dateinamen ohne Leerzeichen)
 - `backend/tests/`: `test-programs.http` = bisherige v6 (deckt v1–v5 ab), `test-parts.http` = bisherige `-FIXED`-Fassung
 - ROADMAP aufgeräumt: Wochen-Nummern und Fortschrittsbalken entfernt, Abschnitt „Offene Fixes“, Shopfloor-Terminals vor Auftragsverwaltung, NC-Parser/Werkzeug-Extraktion in „TopSolid-Integration & NC-Programme“, Rohmaterial/Normteile in die Ideen, Erledigtes (Stammdaten-Optimierung, Urlaub, Zeit-Terminal) ins Archiv

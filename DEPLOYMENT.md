@@ -108,6 +108,8 @@ Login: admin / admin123
 
 ## Updates
 
+> Vor einem Release: [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md) – das nächste Release (2.7.0) hat einmalige Zusatzschritte.
+
 Updates sind einfach - ein Befehl:
 
 ```bash
