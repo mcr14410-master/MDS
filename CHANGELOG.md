@@ -21,9 +21,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Interpreter-Test für `PLANE AXIAL`
 
 ### Changed
+- Repo aufgeräumt: Konzepte aus dem Root nach `docs/konzepte/` (`docs/ARCHITECTURE.md` → `MARKTANALYSE.md`, `Roadmap_wartung_infos.md` → `WARTUNG_NOTIZEN.md`), erledigte Feature-Dokus nach `docs/archiv/`, Session-Dokus bis Nov. 2025 nach `docs/sessions/archiv/` (Dateinamen ohne Leerzeichen)
+- `backend/tests/`: `test-programs.http` = bisherige v6 (deckt v1–v5 ab), `test-parts.http` = bisherige `-FIXED`-Fassung
 - README neu geschrieben (Stand Okt. 2026): Module, Technik, lokale Entwicklung, Deployment, Projektstruktur – ohne Fortschrittsangaben, die auf ROADMAP/CHANGELOG verweisen
 
 ### Removed
+- `backend/tests/test-programs-v2…v6.http`, `test-parts-FIXED.http`, `debug-parts.js`, ungenutztes `frontend/public/vite.svg`
 - `QUICKSTART.md` (Stand Woche 3) und `CONTRIBUTING.md` – Inhalt in der README zusammengefasst
 
 ### Fixed

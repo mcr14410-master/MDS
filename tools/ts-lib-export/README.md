@@ -6,7 +6,7 @@ Stand: 06.10.2026
 
 | Ordner / Datei | Was | Ins Repo? |
 |---|---|---|
-| `TOPSOLID_TOOL_IMPORT_KONZEPT.md` | Konzept: Datenmodell, Migration, Feld-Mapping, Import-Ablauf, Phasen | ✅ (Repo-Root, wie die anderen `*_KONZEPT.md`) |
+| `TOPSOLID_TOOL_IMPORT_KONZEPT.md` | Konzept: Datenmodell, Migration, Feld-Mapping, Import-Ablauf, Phasen | ✅ (`docs/konzepte/`, wie die anderen `*_KONZEPT.md`) |
 | `TS_LibExport/` | Exporter für die TopSolid-Bibliotheken (Quellcode + exe + bat/ini) | ✅ Quellcode, z. B. nach `tools/topsolid/` |
 | `TS_ToolExport/` | Exporter für die Werkzeuge eines CAM-Dokuments (Programm-Werkzeugliste, Phase 3) | ✅ Quellcode |
 | `Daten_NICHT_INS_REPO/` | echter Export (Werkzeugstamm) + Datenprüfung | ❌ **nicht committen**, das Repo ist öffentlich. Lokal oder in einen Ordner in `.gitignore` legen |
