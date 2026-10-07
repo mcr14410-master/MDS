@@ -180,6 +180,7 @@ Content-Type: application/json
   "status": "draft"
 }
 
+### Extract Workflow Part ID
 @workflowPartId = {{workflowPart.response.body.part.id}}
 
 ### Workflow Step 3: Get Part Details
