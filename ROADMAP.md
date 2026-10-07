@@ -693,6 +693,8 @@ purchase_order_items (
 
 ### ✅ Fertig (außerhalb des MDS, Oktober 2026)
 - [x] **NC-Viewer** (`tools/nc-viewer`): Heidenhain-Programm + Aufspannung (STEP) in 3D, offline, eine HTML-Datei. Interpreter `hh.js` UI-unabhängig (auch im Backend nutzbar)
+- [x] NC-Viewer: Rechtsklick „Öffnen mit NC-Viewer“ (Windows, `launcher/`), `PLANE AXIAL` (Horizontal-BAZ), Clipping-Fix (#87)
+- [ ] NC-Viewer am Arbeitsplatz: Rechtsklick-Eintrag einrichten, `PLANE AXIAL` mit echtem G350-Programm prüfen
 - [x] **TS_SN_Generator** (`tools/ts-sn-generator`): Seriennummer-Gravur durchschalten, G-Code je Nummer
 - [x] **TS_ToolExport** (`tools/ts-tool-export`): Werkzeuge eines CAM-Dokuments (118 Parameter, STEP, glb)
 - [x] **TS_LibExport** (`tools/ts-lib-export`): Bibliotheken → `components.json` / `tools.json` (925 Komponenten, 761 Werkzeuge, 0 Fehler, 74 s)
@@ -910,4 +912,4 @@ Bevor Rohmaterial/Normteile gestartet werden:
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-06
+**Letzte Aktualisierung:** 2026-10-07
