@@ -35,6 +35,12 @@
 - [ ] **ESLint aufräumen:** 270 Fehler / 118 Warnungen im Frontend; `varsIgnorePattern: '^[A-Z_]'` durch `react/jsx-uses-vars` ersetzen
 - [x] **Abhängigkeiten, Stufe 1:** `npm audit fix` ohne Breaking Changes (Backend 16 → 5 Lücken, kritisch behoben; Frontend 29 → 9)
 - [ ] **Abhängigkeiten, Stufe 2 (Major, einzeln prüfen):** `multer` 2.x (alle Uploads!), `exceljs`, `chokidar` (prüfen ob noch genutzt), `uuid`, `online-3d-viewer`; Tailwind 4 **nicht** (großer Umbau)
+- [ ] **Urlaub über den Jahreswechsel:** Ein Urlaub vom Dezember bis in den Januar wird komplett dem **Startjahr** angerechnet – die View `vacation_balances` gruppiert nach `EXTRACT(YEAR FROM start_date)`, `calculated_days` ist eine Gesamtzahl. Tage müssen je Kalenderjahr aufgeteilt werden (Berechnung je Jahr, Anzeige im Kalender + Resturlaub + PDFs prüfen)
+- [ ] **Eigene Urlaubsanträge bearbeiten/zurückziehen,** solange sie noch nicht genehmigt sind – aktuell erfordern Bearbeiten und Löschen `vacations.manage`, Mitarbeiter können nur abgelehnte Anträge erneut einreichen
+- [ ] **Deaktivierte Maschinen in Auswahllisten:** `GET /api/machines` liefert ohne Filter auch inaktive Maschinen; mehrere Formulare (Arbeitsgang, Rüstblatt, Wiki, Varianten, Spannmittel, Vorrichtungen …) filtern nicht bzw. uneinheitlich. Einheitlich nur aktive anbieten (bestehende Zuordnungen weiter anzeigen); dazu Löschen vs. Deaktivieren prüfen und alte Testdaten-Maschinen auf dem Pi bereinigen
+- [ ] **Wartungspläne kopieren:** Plan (inkl. Checkliste, Intervalle, Skill-Level) auf eine andere Maschine übernehmen – viele Maschinen haben gleiche Pläne; aktuell keine Kopierfunktion
+- [ ] **Rollen:** selbst erstellte Rollen haben keine Farbe (Farben fest nach Rollenname im Frontend, sonst grau) → Farbe je Rolle wählbar und speichern; Rollen deaktivieren können statt nur löschen
+- [ ] **Berechtigungen per Migration anlegen:** `storage.*` (von 43 API-Stellen verlangt) und weitere stehen nur in `scripts/init.sh`, in keiner Migration – eine nur per Migration aufgesetzte DB (z. B. lokal) hat sie nicht. Admin-Zugang zurücksetzen / Berechtigungen nachziehen bis dahin: `./scripts/init.sh` (ersetzt die früheren Skripte `seed-storage-permissions.js` und `test-reset-password.js`)
 - [ ] **Backend-Fehler-Handler** (`server.js`): antwortet bei jedem Fehler mit 500 – z. B. kaputtes JSON im Request sollte 400 sein (niedrig)
 - [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
 - [ ] **Backup-Konzept außerhalb des Pi** (DB, Backups und Uploads liegen auf derselben SSD) – Ziel-Netzlaufwerk klären (SMB-Fileserver/NAS, vom Pi erreichbar? selbst gesichert?). Stand Pi 08.10.2026: OS auf SD-Karte (58 GB, 20 GB belegt), Daten auf SSD `/srv` (112 GB, 1 % belegt), Uploads 67 MB, DB-Backup ~0,7 MB/Tag
@@ -468,6 +474,14 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 ### Lager-Erweiterungen (erst nach der Lager-Architektur-Entscheidung)
 - [ ] **Rohmaterial:** Material, Güte, Form, Abmessungen; Bestand mit Chargen-Verfolgung; Wareneingang/Entnahme; Bauteil → Rohmaterial-Zuordnung; Lieferanten
 - [ ] **Normteile / Zukaufteile:** DIN/ISO-Katalog, Kategorien (Schrauben, Muttern, Stifte, O-Ringe …), Bestand + Mindestbestand, Lieferanten; optional Stücklisten
+
+### Texte gestalten (Rich-Text-Editor)
+Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumbrüchen). Idee: kleine Werkzeugleiste wie in Foren – fett/kursiv/unterstrichen, Überschriften, Listen, Farben, Tabellen.
+- [ ] Gemeinsamer Editor-Baustein in `components/common/` (z. B. TipTap; Alternative: Markdown mit Werkzeugleiste) – bewusst kleiner Funktionsumfang, feste Farbpalette (z. B. Rot für Warnungen) statt freier Farbwahl, später Bilder
+- [ ] Gespeichertes HTML beim Anzeigen bereinigen (z. B. DOMPurify) – Schutz vor eingeschleustem Code
+- [ ] Gezielt einsetzen, nicht in allen Feldern: Wiki, Arbeitsanweisungen, Hinweise in Rüstblättern
+- [ ] Prüfen, wo die Texte zusätzlich erscheinen (PDF-Ausgaben, Terminals) und dort mit darstellen; bestehende Texte werden übernommen
+- Aufwand grob: Baustein ~1 Tag, danach je Modul
 
 ### Shopfloor-UI Erweiterungen
 - [ ] Weitere Terminal-Typen (Lager, Versand, QS)
