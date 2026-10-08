@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.7.1] - 2026-10-08 - Datensicherung repariert
+
+### Für Anwender
+- Die nächtliche Datensicherung des MDS wurde repariert und wird jetzt jeden Tag automatisch auf Vollständigkeit geprüft.
+- Administratoren sehen unter „Automatische Aufgaben“ sofort eine rote Fehlermeldung, falls eine Sicherung fehlt oder unvollständig ist.
+
 ### Fixed
 - `scripts/backup.sh`: Die nächtlichen Backups waren leer (20 Bytes) – Cron startet in `/root`, `docker compose` fand die `compose.yaml` nicht, und ohne `pipefail` meldete das Script trotzdem Erfolg. Jetzt: Wechsel in den Repo-Ordner, `set -euo pipefail`, Prüfung auf Mindestgröße + Endmarke `PostgreSQL database dump complete`, ungültige Backups werden verworfen (Exit 1), alte Backups nur nach Erfolg gelöscht, klare Meldung ohne Schreibrechte, Zeitstempel im Log
 - Backup-Monitor (`backup_monitor`): prüfte nur Existenz und Alter, leere Backups galten als „✓“. Jetzt eigenes Modul `services/backupMonitor.js` – neuestes Backup muss vollständig (Größe + Endmarke) und ≤ 26 h alt sein, sonst wird der Lauf als Fehler protokolliert (rot, mit letztem gültigen Backup in der Meldung)
