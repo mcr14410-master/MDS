@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Removed
+- `backend/tests/seed-storage-permissions.js` und `test-reset-password.js` – überholt durch `scripts/init.sh` (legt Berechtigungen an, setzt Admin-Passwort zurück); enthielten fest eingetragene Zugangsdaten der Entwicklungs-DB
+
+### Changed
+- ROADMAP: Idee „Texte gestalten (Rich-Text-Editor)“, Fix-Liste um Urlaub über den Jahreswechsel, eigene Anträge bearbeiten, deaktivierte Maschinen in Auswahllisten, Wartungspläne kopieren, Rollenfarben/-deaktivierung und Berechtigungen per Migration ergänzt
+
 ---
 
 ## [2.7.1] - 2026-10-08 - Datensicherung repariert
