@@ -41,6 +41,7 @@
   - [ ] **Ebene 1 – Datenbank:** täglichen `pg_dump` zusätzlich aufs Netzlaufwerk, dort längere Aufbewahrung (z. B. 30 Tage + monatlich)
   - [ ] **Ebene 2 – Dateien:** `/srv/mds/uploads` + `.env` vom Pi (Secrets, nicht im Repo) täglich per `rsync` mit Versionsständen
   - [ ] **Ebene 3 – Pi-System:** Image der SD-Karte monatlich und vor größeren Änderungen (Datei aufs Netzlaufwerk oder bootfähiger Klon auf Ersatz-SD/USB)
+  - [ ] **Ebene 3b – Terminals:** Image des **Zeiterfassungs-Terminals** (Raspberry Pi 4, Repo `mds-time-terminal`) und künftiger Shopfloor-Terminals – nach Einrichtung und nach Änderungen. Dazu je Terminal die individuelle Konfiguration sichern (Terminal-API-Key/`.env`, Kiosk-/systemd-Einstellungen); offene Stempel in der SQLite-Queue werden alle 30 s synchronisiert, sind also kein Dauerbestand. Ziel: ein **Standard-Image** für alle Terminals + kleine Konfig-Datei je Gerät, damit ein defektes Terminal schnell ersetzt werden kann
   - [ ] Zugangsdaten nur in geschützter Datei auf dem Pi (z. B. `/root/.smbcredentials`, `chmod 600`)
   - [ ] Backup-Monitor im MDS erweitern: Netzlaufwerk-Kopie vorhanden und aktuell?
   - [ ] Wiederherstellungs-Anleitung in DEPLOYMENT.md (frischer Pi → OS, Docker, Repo, `.env`, DB, Uploads) und einmal testen
