@@ -76,3 +76,22 @@
 - **Backup-Konzept** in 3 Ebenen (DB, Uploads + `.env`, Pi-Image) aufs Netzlaufwerk – Ziel klären; Details auf der Fix-Liste
 - `restore.sh` wie `backup.sh` absichern; Stash vom 01.12.2025 auf dem Pi sichern + entfernen; `~/mds-dist-2.6.0` löschen, wenn 2.7.x stabil
 - Restliche Fix-Liste (ESLint aufräumen, Major-Updates multer/exceljs/chokidar, Fehler-Handler 400 statt 500, `deploy.sh`-Kleinkram, Hinweis „Neue Version verfügbar“)
+
+### Später am 08.10. – Planung und Ideen (PRs #102 – #105)
+
+| PR | Inhalt |
+|---|---|
+| #102 | Backup-Konzept Ebene 3b: Images der Terminals (Zeit-Terminal, künftige Shopfloor-Terminals) |
+| #103 | Phase 10: Architektur je Terminal-Typ als offene Entscheidung (Kiosk-Browser / lokaler Dienst + Web-Oberfläche / eigene App); Maschinen-Terminal braucht voraussichtlich lokalen Dienst. Backup 3b: Basis → Image je Typ → Konfig je Gerät |
+| #104 | Gestaltungsidee Maschinen-Terminal angelehnt an TNC 640 (Statuszeile, Betriebsarten, Softkeys, Touch + F-Tasten) + [klickbares Mockup](https://claude.ai/artifact/14mBps9zgedsokXc6YB1of) |
+| #105 | Idee Rich-Text-Editor; Fix-Liste: Urlaub über Jahreswechsel, eigene Anträge bearbeiten, deaktivierte Maschinen, Wartungspläne kopieren, Rollenfarben, Berechtigungen per Migration; überholte Skripte `seed-storage-permissions.js` / `test-reset-password.js` entfernt (→ `init.sh`) |
+
+- Remote Control für den Pi-Deploy vom Firmenlaptop aus hat gut funktioniert (Ausgaben per Screenshot/Kopie direkt in die Session); danach wieder ausgeschaltet
+- Mockup ist privat; zum Zeigen erst über das Teilen-Menü freigeben
+
+## Nächste Session
+
+1. **Backup-Kontrolle:** `tail -4 /srv/mds/backups/backup.log` (erste Nachtläufe mit „✅ … geprüft“), Backup-Status im MDS grün
+2. **Urlaub über den Jahreswechsel** (Fix-Liste) – falsche Zahlen im Urlaubskonto, vor dem nächsten Jahreswechsel lösen
+3. Danach: eigene Anträge bearbeiten / deaktivierte Maschinen, oder TopSolid-Werkzeugimport Phase 1
+4. Sobald das Netzlaufwerk geklärt ist: Backup-Konzept umsetzen
