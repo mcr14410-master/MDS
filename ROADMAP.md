@@ -266,6 +266,14 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 **Status:** 📋 Geplant
 **Ziel:** Produktions-Terminal an jeder Maschine
 
+**Gestaltungsidee: angelehnt an die Heidenhain-Bedienung (TNC 640, Touch + Tasten)** – vertraut für die Bediener, kaum Einarbeitung:
+- Statuszeile oben (Betriebsart, Maschine, Netz/Sync, Uhrzeit), feste Statusanzeige (Arbeitsgang, Programm, Rüst-/Produktionszeit, Stück)
+- Betriebsarten statt Menüs: Rüsten, Produktion, Messen, Programme, Wartung
+- Kontextabhängige Softkey-Leiste unten (8 Softkeys, je Betriebsart wechselnd), bedienbar per Touch **und** Tasten (F1–F8, auch mit Handschuhen)
+- Industrielle, kontrastreiche Farbwelt, gut lesbar aus Bedienabstand; NC-Viewer im Terminal einbindbar
+- „Angelehnt“, nicht kopiert: eigenes Design, keine Heidenhain-Logos/-Namen; später ggf. Erscheinungsbild je Steuerung (Siemens, Mazatrol) auf gemeinsamem Grundgerüst
+- Erstes klickbares Mockup (08.10.2026): Arbeitsgang scannen → Rüsten (Werkzeugliste, Checkliste) → Produktion (Stück fertig, Zeiten) → Unterbrechung mit Grund, Messen, Programme, Wartung
+
 **NC-Programm Transfer (Kernfunktion):**
 - [ ] Programm laden: DB → Maschine (einzeln oder alle zur OP)
 - [ ] Programm senden: Maschine → DB als neue Version
