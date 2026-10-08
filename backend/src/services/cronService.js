@@ -1,10 +1,9 @@
 const cron = require('node-cron');
-const fs = require('fs');
-const path = require('path');
 const pool = require('../config/db');
 const { autoCloseOpenDays, generateAbsenceEntries } = require('../controllers/timeEntriesController');
 const { generateDueTasks } = require('../controllers/maintenanceTasksController');
 const { runGarbageCollection } = require('./fsGarbageCollector');
+const { checkBackupStatus } = require('./backupMonitor');
 
 // ============================================
 // Job Registry
@@ -208,48 +207,6 @@ registerJob(
 );
 
 /**
- * Backup-Monitor: Prüft ob ein aktuelles Backup vorhanden ist
- * Läuft täglich um 03:00 (nach dem Backup um 02:30)
- */
-async function checkBackupStatus() {
-  const BACKUP_DIR = '/app/backups';
-  const MAX_AGE_HOURS = 26;
-
-  const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.startsWith('mds_backup_') && f.endsWith('.sql.gz'))
-    .map(f => ({
-      name: f,
-      size: fs.statSync(path.join(BACKUP_DIR, f)).size,
-      mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtime
-    }))
-    .sort((a, b) => b.mtime - a.mtime);
-
-  const result = {
-    backup_count: files.length,
-    latest: null,
-    total_size_mb: 0,
-    status: 'no_backups'
-  };
-
-  if (files.length === 0) return result;
-
-  const latest = files[0];
-  const ageHours = (Date.now() - latest.mtime.getTime()) / (1000 * 60 * 60);
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
-
-  result.latest = {
-    name: latest.name,
-    size_mb: (latest.size / 1024 / 1024).toFixed(1),
-    age_hours: Math.round(ageHours),
-    date: latest.mtime.toISOString()
-  };
-  result.total_size_mb = (totalBytes / 1024 / 1024).toFixed(1);
-  result.status = ageHours <= MAX_AGE_HOURS ? 'ok' : 'stale';
-
-  return result;
-}
-
-/**
  * Wartungsaufgaben aus fälligen Plänen generieren
  * Läuft täglich um 02:30 (nach absences, vor backup_monitor)
  */
@@ -272,11 +229,12 @@ registerJob(
   'Wartungsaufgaben aus fälligen Plänen generieren (täglich 02:30)'
 );
 
+// Backup-Monitor: neuestes Backup muss vollständig und < 26 h alt sein, sonst Fehler
 registerJob(
   'backup_monitor',
   '0 3 * * *',
-  checkBackupStatus,
-  'Backup-Status prüfen (täglich 03:00)'
+  async () => checkBackupStatus(),
+  'Backup-Status prüfen – Größe, Vollständigkeit, Alter (täglich 03:00)'
 );
 
 registerJob(

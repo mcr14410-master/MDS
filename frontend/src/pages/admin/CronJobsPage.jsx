@@ -42,9 +42,11 @@ function formatResult(jobName, result) {
     return `${result.processed || 0} User geprüft, ${result.closed || 0} Tage abgeschlossen`;
   }
   if (jobName === 'backup_monitor') {
+    // Ungültig / veraltet / keine Backups kommen als Fehler-Lauf mit Meldung (backupMonitor.js)
     if (result.status === 'no_backups') return '⚠ Keine Backups gefunden';
     const latest = result.latest;
-    return `${result.status === 'ok' ? '✓' : '⚠'} ${result.backup_count} Backups, neuestes: ${latest?.size_mb} MB (vor ${latest?.age_hours}h), gesamt: ${result.total_size_mb} MB`;
+    const valid = result.valid_count !== undefined ? `${result.valid_count}/${result.backup_count} gültig` : `${result.backup_count} Backups`;
+    return `${result.status === 'ok' ? '✓' : '⚠'} ${valid}, neuestes: ${latest?.size_mb} MB (vor ${latest?.age_hours}h), gesamt: ${result.total_size_mb} MB`;
   }
   if (jobName === 'generate_absence_entries') {
     let text = `${result.processed || 0} User geprüft, ${result.created || 0} Einträge erstellt`;
