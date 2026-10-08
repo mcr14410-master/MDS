@@ -165,19 +165,24 @@ Migrationen einzeln (ohne Deploy): `./scripts/migrate.sh`
 ### Manuelles Backup
 
 ```bash
-./scripts/backup.sh
+cd ~/mds && sudo ./scripts/backup.sh
 ```
+`sudo`, weil `/srv/mds/backups` root gehört. Das Script prüft jedes Backup (Mindestgröße + pg_dump-Endmarke
+`PostgreSQL database dump complete`); ein unvollständiges Backup wird verworfen, es endet mit `❌` und Exit 1.
+Alte Backups werden nur nach einem erfolgreichen Backup gelöscht.
 
 ### Automatisches Backup (Cronjob)
 
-```bash
-crontab -e
-
-# Täglich um 2:00 Uhr:
-0 2 * * * /home/pi/mds/scripts/backup.sh >> /var/log/mds-backup.log 2>&1
+Eintrag in der **root**-Crontab (`sudo crontab -e`):
 ```
+30 2 * * * /home/rpi01/mds/scripts/backup.sh >> /srv/mds/backups/backup.log 2>&1
+```
+Das Script wechselt selbst in den Repo-Ordner (Cron startet in `/root`). Log prüfen:
+`tail -20 /srv/mds/backups/backup.log`
 
 Backups werden unter `/srv/mds/backups/` gespeichert (7 Tage aufbewahrt).
+Im MDS prüft der Cron-Job **Backup-Status** (Administration → Automatische Aufgaben, täglich 03:00),
+ob das neueste Backup vollständig und höchstens 26 h alt ist – sonst wird der Lauf rot als Fehler angezeigt.
 
 ### Backup wiederherstellen
 
@@ -282,7 +287,7 @@ docker compose ps
 docker compose logs -f backend
 
 # Backup
-./scripts/backup.sh
+sudo ./scripts/backup.sh
 
 # Admin-Reset
 ./scripts/init.sh

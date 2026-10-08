@@ -36,7 +36,10 @@
 - [x] **Abhängigkeiten, Stufe 1:** `npm audit fix` ohne Breaking Changes (Backend 16 → 5 Lücken, kritisch behoben; Frontend 29 → 9)
 - [ ] **Abhängigkeiten, Stufe 2 (Major, einzeln prüfen):** `multer` 2.x (alle Uploads!), `exceljs`, `chokidar` (prüfen ob noch genutzt), `uuid`, `online-3d-viewer`; Tailwind 4 **nicht** (großer Umbau)
 - [ ] **Backend-Fehler-Handler** (`server.js`): antwortet bei jedem Fehler mit 500 – z. B. kaputtes JSON im Request sollte 400 sein (niedrig)
-- [ ] **`scripts/backup.sh`:** `pg_dump | gzip` ohne `pipefail` – ein fehlgeschlagener Dump erzeugt trotzdem eine (fast leere) Backup-Datei
+- [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
+- [ ] **Backups außerhalb des Pi** (DB + Backups liegen auf derselben SSD) – Ziel klären (Netzlaufwerk/Fileserver, vom Pi erreichbar?)
+- [ ] **`scripts/restore.sh`:** nutzt `docker compose` ohne `cd` ins Repo – nur aus `~/mds` heraus aufrufen bzw. wie `backup.sh` absichern
+- [ ] **Hinweis „Neue Version verfügbar“** im Frontend (Version aus `/api/health` mit eigener vergleichen) – offene Tabs/Web-App zeigen sonst bis zum Reload die alte Version
 
 ---
 
@@ -469,7 +472,7 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ## 🔧 Nächste Session
 
-0. **Release 2.7.0** mit Sonderschritten: [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md) (Stand: [Session 07.10. abends](docs/sessions/SESSION-2026-10-07-aufraeumen-fixes.md))
+0. **Release 2.7.1 zeitnah** (Backup-Fix + Backup-Monitor) – bis dahin laufen die nächtlichen Backups weiter leer; Ablauf: [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md)
 1. **Restliche Fixes** (siehe „Offene Fixes“) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
 2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
