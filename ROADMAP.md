@@ -519,12 +519,16 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-0. **Backup-Kontrolle:** erster Nachtlauf nach 2.7.1 (`backup.log`, Monitor grün), dann Backups außerhalb des Pi (Fix-Liste) – Stand: [Session 07./08.10.](docs/sessions/SESSION-2026-10-07-aufraeumen-fixes.md)
-1. **Restliche Fixes** (siehe „Offene Fixes“) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
-2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
-4. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
-5. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz einrichten
+Stand: [Session 07./08.10.2026](docs/sessions/SESSION-2026-10-07-aufraeumen-fixes.md) – v2.7.1 läuft auf dem Pi
+
+0. **Backup-Kontrolle:** erste Nachtläufe nach 2.7.1 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
+1. **Urlaub über den Jahreswechsel** (Fix-Liste) – vor dem nächsten Jahreswechsel lösen
+2. **Weitere Fixes** (siehe „Offene Fixes“) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR; Kandidaten: eigene Urlaubsanträge bearbeiten, deaktivierte Maschinen in Auswahllisten
+3. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+4. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
+5. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+6. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+7. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
