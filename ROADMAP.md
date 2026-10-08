@@ -37,7 +37,14 @@
 - [ ] **Abhängigkeiten, Stufe 2 (Major, einzeln prüfen):** `multer` 2.x (alle Uploads!), `exceljs`, `chokidar` (prüfen ob noch genutzt), `uuid`, `online-3d-viewer`; Tailwind 4 **nicht** (großer Umbau)
 - [ ] **Backend-Fehler-Handler** (`server.js`): antwortet bei jedem Fehler mit 500 – z. B. kaputtes JSON im Request sollte 400 sein (niedrig)
 - [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
-- [ ] **Backups außerhalb des Pi** (DB + Backups liegen auf derselben SSD) – Ziel klären (Netzlaufwerk/Fileserver, vom Pi erreichbar?)
+- [ ] **Backup-Konzept außerhalb des Pi** (DB, Backups und Uploads liegen auf derselben SSD) – Ziel-Netzlaufwerk klären (SMB-Fileserver/NAS, vom Pi erreichbar? selbst gesichert?). Stand Pi 08.10.2026: OS auf SD-Karte (58 GB, 20 GB belegt), Daten auf SSD `/srv` (112 GB, 1 % belegt), Uploads 67 MB, DB-Backup ~0,7 MB/Tag
+  - [ ] **Ebene 1 – Datenbank:** täglichen `pg_dump` zusätzlich aufs Netzlaufwerk, dort längere Aufbewahrung (z. B. 30 Tage + monatlich)
+  - [ ] **Ebene 2 – Dateien:** `/srv/mds/uploads` + `.env` vom Pi (Secrets, nicht im Repo) täglich per `rsync` mit Versionsständen
+  - [ ] **Ebene 3 – Pi-System:** Image der SD-Karte monatlich und vor größeren Änderungen (Datei aufs Netzlaufwerk oder bootfähiger Klon auf Ersatz-SD/USB)
+  - [ ] Zugangsdaten nur in geschützter Datei auf dem Pi (z. B. `/root/.smbcredentials`, `chmod 600`)
+  - [ ] Backup-Monitor im MDS erweitern: Netzlaufwerk-Kopie vorhanden und aktuell?
+  - [ ] Wiederherstellungs-Anleitung in DEPLOYMENT.md (frischer Pi → OS, Docker, Repo, `.env`, DB, Uploads) und einmal testen
+  - [ ] Zwischenlösung bis dahin erwägen: Backups zusätzlich auf die SD-Karte kopieren (anderes physisches Medium als die SSD)
 - [ ] **`scripts/restore.sh`:** nutzt `docker compose` ohne `cd` ins Repo – nur aus `~/mds` heraus aufrufen bzw. wie `backup.sh` absichern
 - [ ] **Hinweis „Neue Version verfügbar“** im Frontend (Version aus `/api/health` mit eigener vergleichen) – offene Tabs/Web-App zeigen sonst bis zum Reload die alte Version
 
@@ -472,7 +479,7 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ## 🔧 Nächste Session
 
-0. **Release 2.7.1 zeitnah** (Backup-Fix + Backup-Monitor) – bis dahin laufen die nächtlichen Backups weiter leer; Ablauf: [docs/RELEASE-CHECKLISTE.md](docs/RELEASE-CHECKLISTE.md)
+0. **Backup-Kontrolle:** erster Nachtlauf nach 2.7.1 (`backup.log`, Monitor grün), dann Backups außerhalb des Pi (Fix-Liste) – Stand: [Session 07./08.10.](docs/sessions/SESSION-2026-10-07-aufraeumen-fixes.md)
 1. **Restliche Fixes** (siehe „Offene Fixes“) – je Fix: Diagnose → Lösung abstimmen → eigener Branch/PR
 2. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 3. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
@@ -481,4 +488,4 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-07
+**Letzte Aktualisierung:** 2026-10-08
