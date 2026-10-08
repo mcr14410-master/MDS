@@ -46,3 +46,33 @@
 
 1. **Release 2.7.0** nach Checkliste (auf Zuruf „Release machen“)
 2. Danach: restliche Fixes **oder** TopSolid-Werkzeugimport Phase 1 (siehe ROADMAP „Nächste Session“)
+
+---
+
+## Nachtrag 08. Oktober 2026 – Releases 2.7.0 + 2.7.1, Backup-Fund
+
+**PRs:** #97 – #100 · **Releases:** v2.7.0 und v2.7.1 deployt (Tags gepusht)
+
+| PR | Inhalt |
+|---|---|
+| #97 | Sicherheits-Updates ohne Breaking Changes (`npm audit fix`): express 4.22.3 (kritische Lücke `proxy-addr`), axios, vite, react-router-dom u. a.; Lücken Backend 16 → 5, Frontend 29 → 9 |
+| #98 | Release **v2.7.0** – Urlaub nach Zeitmodell & sicherer Deploy |
+| #99 | **Nacht-Backups waren leer** → `backup.sh` (Repo-Ordner, `pipefail`, Prüfung Größe + Endmarke, Aufräumen nur nach Erfolg) + Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot |
+| #100 | Release **v2.7.1** – Datensicherung repariert |
+
+### Deploy 2.7.0 auf dem Pi (per Remote Control vom Firmenlaptop begleitet)
+- Sonderschritte nach Checkliste: Backup, Frontend-Sicherung, altes ungetracktes `frontend/package-lock.json` (vom 29.01.) gelöscht, manuell `git pull`, dann `deploy.sh` → Migrationen ok, Health 2.7.0, Nachkontrolle ok
+- Offene Tabs / Web-App zeigten erst nach Reload die neue Version (normal für SPA) → Idee „Neue Version verfügbar“ auf der Fix-Liste
+
+### Backup-Fund
+- `backup.sh` lief per **root-Crontab** (`30 2 * * *`) in `/root` → `no configuration file provided`, `pg_dump` lief nie, `gzip` schrieb **20-Byte-Dateien**, ohne `pipefail` trotzdem „✅“. `backup.log` mit über 1200 Zeilen – über lange Zeit **kein brauchbares Backup**
+- Der Backup-Monitor im MDS zeigte dabei „✓ 9 Backups, neuestes 0.0 MB“ (prüfte nur Existenz + Alter)
+- Manuelles Backup vor dem Deploy ins Home-Verzeichnis (`~/mds_backup_vor_2.7.0.sql.gz`, 711 KB, 101 Tabellen, Endmarke ok)
+- Nach #99: `git pull` + `sudo ./scripts/backup.sh` → 712 KB geprüft, leere Dateien entfernt; nach Deploy 2.7.1 Monitor grün „✓ 2/2 gültig“
+- Endmarke: neuere `pg_dump` schreiben nach „dump complete“ noch `\unrestrict <Schlüssel>` – normal
+
+### Offen
+- **Morgen:** `tail -4 /srv/mds/backups/backup.log` → erster Nachtlauf mit „✅ … geprüft“; Monitor 03:00 grün
+- **Backup-Konzept** in 3 Ebenen (DB, Uploads + `.env`, Pi-Image) aufs Netzlaufwerk – Ziel klären; Details auf der Fix-Liste
+- `restore.sh` wie `backup.sh` absichern; Stash vom 01.12.2025 auf dem Pi sichern + entfernen; `~/mds-dist-2.6.0` löschen, wenn 2.7.x stabil
+- Restliche Fix-Liste (ESLint aufräumen, Major-Updates multer/exceljs/chokidar, Fehler-Handler 400 statt 500, `deploy.sh`-Kleinkram, Hinweis „Neue Version verfügbar“)
