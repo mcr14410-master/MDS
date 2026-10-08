@@ -41,7 +41,7 @@
   - [ ] **Ebene 1 – Datenbank:** täglichen `pg_dump` zusätzlich aufs Netzlaufwerk, dort längere Aufbewahrung (z. B. 30 Tage + monatlich)
   - [ ] **Ebene 2 – Dateien:** `/srv/mds/uploads` + `.env` vom Pi (Secrets, nicht im Repo) täglich per `rsync` mit Versionsständen
   - [ ] **Ebene 3 – Pi-System:** Image der SD-Karte monatlich und vor größeren Änderungen (Datei aufs Netzlaufwerk oder bootfähiger Klon auf Ersatz-SD/USB)
-  - [ ] **Ebene 3b – Terminals:** Image des **Zeiterfassungs-Terminals** (Raspberry Pi 4, Repo `mds-time-terminal`) und künftiger Shopfloor-Terminals – nach Einrichtung und nach Änderungen. Dazu je Terminal die individuelle Konfiguration sichern (Terminal-API-Key/`.env`, Kiosk-/systemd-Einstellungen); offene Stempel in der SQLite-Queue werden alle 30 s synchronisiert, sind also kein Dauerbestand. Ziel: ein **Standard-Image** für alle Terminals + kleine Konfig-Datei je Gerät, damit ein defektes Terminal schnell ersetzt werden kann
+  - [ ] **Ebene 3b – Terminals:** Images des **Zeiterfassungs-Terminals** (Raspberry Pi 4, Repo `mds-time-terminal`) und künftiger Shopfloor-Terminals – nach Einrichtung und nach Änderungen. Aufbau in drei Schichten: **gemeinsame Basis** (Raspberry Pi OS, Kiosk/X11 + Chromium, Touch/Display, Zeitzone, Updates, SSH) → **ein Image je Terminal-Typ** (Rolle, z. B. Zeit-Terminal mit Python-Dienst + NFC, Kiosk-Terminal mit MDS-URL – Typen ergeben sich aus der Architektur-Entscheidung in Phase 10) → **Konfig-Datei je Gerät** (Hostname, Terminal-ID/API-Key bzw. `.env`, Maschine/Schrank). Offene Stempel in der SQLite-Queue werden alle 30 s synchronisiert, sind also kein Dauerbestand. Ziel: defektes Terminal schnell ersetzen (Image des Typs + Konfig-Datei)
   - [ ] Zugangsdaten nur in geschützter Datei auf dem Pi (z. B. `/root/.smbcredentials`, `chmod 600`)
   - [ ] Backup-Monitor im MDS erweitern: Netzlaufwerk-Kopie vorhanden und aktuell?
   - [ ] Wiederherstellungs-Anleitung in DEPLOYMENT.md (frischer Pi → OS, Docker, Repo, `.env`, DB, Uploads) und einmal testen
@@ -156,6 +156,23 @@ Browser zeigen „nicht sicher“; PWA (Service Worker) und Kamera-Zugriff (QR-S
 > Große Touch-Buttons, wenig Text, schnelle Workflows, minimale Eingaben.
 >
 > **Vor der Auftragsverwaltung (Phase 11):** Wo unten „Auftrag scannen“ / `production_order_id` steht, arbeiten die Terminals zunächst mit **Bauteil + Arbeitsgang** (`operation_id`). Die Auftrags-Verknüpfung kommt mit Phase 11 nach.
+
+### ⚠️ Offene Entscheidung: Architektur je Terminal-Typ
+
+Nicht pauschal „Kiosk-Browser“ – je Terminal-Typ entscheiden (spätestens beim Start des jeweiligen Terminals):
+
+| Option | Beschreibung | Passt z. B. für |
+|---|---|---|
+| **Kiosk-Browser** | MDS-Seite im Vollbild, keine eigene Software auf dem Gerät; Scanner als Tastatur | Werkzeug-, Messraum-Terminal |
+| **Lokaler Dienst + Web-Oberfläche** | wie das Zeiterfassungs-Terminal (Python/FastAPI-Dienst + HTML im Kiosk): Hardware, Offline-Queue, Sync | Geräte mit eigener Hardware oder Offline-Bedarf |
+| **Eigene App** | z. B. Electron oder nativ, auf einem lokalen Dienst aufbauend | wenn die Oberfläche mehr braucht als ein Browser kann |
+
+**Maschinen-Terminal** (das umfangreichste) braucht voraussichtlich mindestens einen **lokalen Dienst**:
+- NC-Programme an die Steuerung übertragen (SMB/FTP/SFTP, USB-Fallback) – geht nicht direkt aus dem Browser
+- Offline weiterarbeiten (Rüst-/Stückzeiten, Unterbrechungen), Timer überstehen Neustarts
+- Maschinendaten später direkt abgreifen (MTConnect/OPC UA), weitere Hardware am Gerät
+
+Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Terminals entschieden.
 
 ### ✅ Zeiterfassungs-Terminal ⏱️
 **Status:** ✅ Seit Monaten im Einsatz (Raspberry Pi 4, NFC, Offline-Queue, eigenes Repo `mds-time-terminal` – Details im Archiv)
