@@ -25,6 +25,15 @@ const formatDateTime = (date) => {
   return new Date(date).toLocaleString('de-DE');
 };
 
+// Anteil eines Urlaubs am Berichtsjahr (Urlaub über den Jahreswechsel)
+const daysInYear = (v, year) => parseFloat(v.days_by_year?.[year] ?? 0);
+
+const formatDays = (v, year) => {
+  const total = parseFloat(v.calculated_days || 0);
+  const inYear = daysInYear(v, year);
+  return inYear === total ? `${v.calculated_days}` : `${inYear} von ${total}`;
+};
+
 const getStatusText = (status) => {
   const labels = {
     pending: 'Ausstehend',
@@ -104,33 +113,33 @@ exports.exportMyYear = async (req, res) => {
         ve.carried_over,
         (ve.total_days + COALESCE(ve.carried_over, 0)) as available_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'approved' AND v.end_date < CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as taken_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as approved_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'pending'
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as pending_days
       FROM vacation_entitlements ve
@@ -162,7 +171,7 @@ exports.exportMyYear = async (req, res) => {
       LEFT JOIN users creator ON creator.id = v.created_by
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
-        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)
         AND v.status IN ('approved', 'pending')
       ORDER BY v.start_date
     `, [userId, year]);
@@ -177,7 +186,7 @@ exports.exportMyYear = async (req, res) => {
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
-        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)
         AND v.status = 'rejected'
       ORDER BY v.start_date
     `, [userId, year]);
@@ -270,7 +279,7 @@ exports.exportMyYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, yy, { width: 115 });
         doc.text(v.type_name, 175, yy, { width: 110 });
-        doc.text(`${v.calculated_days}`, 290, yy, { width: 45 });
+        doc.text(formatDays(v, year), 290, yy, { width: 45 });
 
         const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
         doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
@@ -278,7 +287,7 @@ exports.exportMyYear = async (req, res) => {
 
         doc.text(v.approved_by_name || '–', 430, yy, { width: 110 });
         
-        total += parseFloat(v.calculated_days || 0);
+        total += daysInYear(v, year);
         yy += 18;
       }
 
@@ -349,7 +358,7 @@ exports.exportMyYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, y, { width: 115 });
         doc.text(r.type_name, 175, y, { width: 110 });
-        doc.text(`${r.calculated_days}`, 290, y, { width: 45 });
+        doc.text(formatDays(r, year), 290, y, { width: 45 });
         doc.text(r.rejection_reason || '–', 340, y, { width: 200 });
         y += 18;
       }
@@ -387,43 +396,43 @@ exports.exportAll = async (req, res) => {
         ve.carried_over,
         (ve.total_days + COALESCE(ve.carried_over, 0)) as available_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
              AND v.status = 'approved' AND v.end_date < CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $1),
+             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
           0
         ) as taken_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
              AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $1),
+             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
           0
         ) as approved_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
              AND v.status = 'pending'
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $1),
+             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
           0
         ) as pending_days,
         (ve.total_days + COALESCE(ve.carried_over, 0) - COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = u.id 
              AND v.status IN ('approved', 'pending')
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $1),
+             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
           0
         )) as remaining_days,
         COALESCE(
@@ -456,6 +465,7 @@ exports.exportAll = async (req, res) => {
         v.start_date,
         v.end_date,
         v.calculated_days,
+        v.days_by_year,
         v.status,
         v.note,
         v.approved_at,
@@ -466,7 +476,7 @@ exports.exportAll = async (req, res) => {
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.status IN ('approved', 'pending')
-        AND EXTRACT(YEAR FROM v.start_date) = $1
+        AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)
       ORDER BY v.start_date
     `, [year]);
 
@@ -483,7 +493,7 @@ exports.exportAll = async (req, res) => {
     const pendingResult = await pool.query(`
       SELECT user_id, COUNT(*) as count
       FROM vacations
-      WHERE status = 'pending' AND EXTRACT(YEAR FROM start_date) = $1
+      WHERE status = 'pending' AND start_date <= make_date($1::int, 12, 31) AND end_date >= make_date($1::int, 1, 1)
       GROUP BY user_id
     `, [year]);
     const pendingByUser = {};
@@ -689,7 +699,7 @@ exports.exportAll = async (req, res) => {
           doc.fillColor('#000000');
           doc.text(dateRange, 55, yy, { width: 120 });
           doc.text(v.type_name, 180, yy, { width: 115 });
-          doc.text(`${v.calculated_days}`, 300, yy, { width: 50 });
+          doc.text(formatDays(v, year), 300, yy, { width: 50 });
 
           const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
           doc.fillColor(statusColor).text(getStatusText(v.status), 355, yy, { width: 80 });
@@ -697,7 +707,7 @@ exports.exportAll = async (req, res) => {
 
           doc.text(v.approved_by_name || '–', 440, yy, { width: 100 });
           
-          totalDays += parseFloat(v.calculated_days || 0);
+          totalDays += daysInYear(v, year);
           yy += 16;
         }
 
@@ -795,33 +805,33 @@ exports.exportUserYear = async (req, res) => {
         ve.adjustment,
         (ve.total_days + COALESCE(ve.carried_over, 0) + COALESCE(ve.adjustment, 0)) as available_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'approved' AND v.end_date < CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as taken_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as approved_days,
         COALESCE(
-          (SELECT SUM(v.calculated_days)
+          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
            FROM vacations v
            JOIN vacation_types vt ON vt.id = v.type_id
            WHERE v.user_id = $1 
              AND v.status = 'pending'
              AND vt.affects_balance = true
-             AND EXTRACT(YEAR FROM v.start_date) = $2),
+             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
           0
         ) as pending_days
       FROM vacation_entitlements ve
@@ -847,7 +857,7 @@ exports.exportUserYear = async (req, res) => {
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
-        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)
         AND v.status IN ('approved', 'pending')
       ORDER BY v.start_date
     `, [userId, year]);
@@ -951,7 +961,7 @@ exports.exportUserYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, yy, { width: 115 });
         doc.text(v.type_name, 175, yy, { width: 110 });
-        doc.text(`${v.calculated_days}`, 290, yy, { width: 45 });
+        doc.text(formatDays(v, year), 290, yy, { width: 45 });
         
         const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
         doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
@@ -989,7 +999,7 @@ exports.exportUserYear = async (req, res) => {
       y += 5;
       doc.font('Helvetica-Bold').fontSize(9);
       doc.text('Gesamt:', 55, y);
-      const total = entries.reduce((sum, v) => sum + parseFloat(v.calculated_days || 0), 0);
+      const total = entries.reduce((sum, v) => sum + daysInYear(v, year), 0);
       doc.text(`${total} Tage`, 290, y);
       y += 25;
     };

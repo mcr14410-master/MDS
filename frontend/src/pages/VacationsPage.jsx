@@ -658,6 +658,9 @@ export default function VacationsPage({ view: propView }) {
                               <span className="font-medium">Dauer:</span>{' '}
                               {v.calculated_days} Arbeitstag{v.calculated_days !== 1 ? 'e' : ''}
                               {v.calculated_hours && ` (${v.calculated_hours}h)`}
+                              {v.days_in_year !== undefined && v.days_in_year !== parseFloat(v.calculated_days) && (
+                                <>, davon {v.days_in_year} in {myVacationYear}</>
+                              )}
                             </p>
                             {v.note && (
                               <p>

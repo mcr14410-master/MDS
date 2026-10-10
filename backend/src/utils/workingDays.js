@@ -43,4 +43,21 @@ function countWorkingDays(startDate, endDate, model, holidays) {
   return workingDays;
 }
 
-module.exports = { countWorkingDays };
+/**
+ * Arbeitstage je Kalenderjahr (für Urlaub über den Jahreswechsel).
+ * Jedes vom Zeitraum berührte Jahr bekommt einen Eintrag, auch mit 0 Tagen.
+ * @returns {Object<string, number>} z. B. { "2026": 8, "2027": 4 }
+ */
+function countWorkingDaysByYear(startDate, endDate, model, holidays) {
+  const start = toDateStr(startDate);
+  const end = toDateStr(endDate);
+  const byYear = {};
+  for (let year = Number(start.slice(0, 4)); year <= Number(end.slice(0, 4)); year++) {
+    const from = year === Number(start.slice(0, 4)) ? start : `${year}-01-01`;
+    const to = year === Number(end.slice(0, 4)) ? end : `${year}-12-31`;
+    byYear[year] = countWorkingDays(from, to, model, holidays);
+  }
+  return byYear;
+}
+
+module.exports = { countWorkingDays, countWorkingDaysByYear };

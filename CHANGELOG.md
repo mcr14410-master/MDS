@@ -15,6 +15,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Urlaub über den Jahreswechsel wird jetzt richtig verbucht: Die Tage im Dezember zählen zum alten Jahr, die Tage im Januar zum neuen. Bisher wurde der ganze Urlaub dem Startjahr abgezogen.
+- Ein solcher Urlaub erscheint in beiden Jahren, mit dem Hinweis, wie viele Tage auf das jeweilige Jahr entfallen. Das gilt auch in den PDF-Übersichten.
+
+### Fixed
+- Urlaub über den Jahreswechsel: Tage werden je Kalenderjahr aufgeteilt (neue Spalte `vacations.days_by_year`, Migration mit Backfill). `vacation_balances`, Übertrag beim Initialisieren, die drei PDF-Reports sowie die Jahresfilter von `GET /api/vacations` und `/my-requests` rechnen mit dem Anteil des Jahres statt nach Startjahr; Listen liefern `days_in_year`
+- Terminal-Benutzerinfo (`/api/time-tracking/entries/user-info`): Resturlaub war immer leer – Abfrage auf nicht existierende View `vacation_balances_view`
+
+### Added
+- `countWorkingDaysByYear` in `utils/workingDays.js` + 6 Tests; `.http`-Szenarien JW-1 bis JW-18 in `test-vacations.http`
+
 ### Removed
 - `backend/tests/seed-storage-permissions.js` und `test-reset-password.js` – überholt durch `scripts/init.sh` (legt Berechtigungen an, setzt Admin-Passwort zurück); enthielten fest eingetragene Zugangsdaten der Entwicklungs-DB
 

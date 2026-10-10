@@ -3,7 +3,7 @@
  * Ausführen: node backend/tests/test-working-days.js
  */
 const assert = require('node:assert/strict');
-const { countWorkingDays } = require('../src/utils/workingDays');
+const { countWorkingDays, countWorkingDaysByYear } = require('../src/utils/workingDays');
 
 let passed = 0;
 function test(name, fn) {
@@ -82,6 +82,50 @@ test('Datum mit Zeitanteil wird auf den Tag gekürzt', () => {
 
 test('Ende vor Start = 0 Tage', () => {
   assert.equal(countWorkingDays(FR, MO, VOLLZEIT, KEINE_FEIERTAGE), 0);
+});
+
+console.log('\ncountWorkingDaysByYear');
+
+// Bayern: 25./26.12., 01.01., 06.01.
+const FEIERTAGE_JAHRESWECHSEL = new Set(['2026-12-25', '2026-12-26', '2027-01-01', '2027-01-06']);
+
+test('Urlaub über den Jahreswechsel wird je Jahr aufgeteilt', () => {
+  // Mo 21.12.2026 – Fr 08.01.2027: 8 Tage in 2026, 4 Tage in 2027
+  assert.deepEqual(
+    countWorkingDaysByYear('2026-12-21', '2027-01-08', null, FEIERTAGE_JAHRESWECHSEL),
+    { 2026: 8, 2027: 4 }
+  );
+});
+
+test('Summe je Jahr = Gesamtzahl', () => {
+  const byYear = countWorkingDaysByYear('2026-12-21', '2027-01-08', VIER_TAGE_FR_FREI, FEIERTAGE_JAHRESWECHSEL);
+  const total = Object.values(byYear).reduce((a, b) => a + b, 0);
+  assert.equal(total, countWorkingDays('2026-12-21', '2027-01-08', VIER_TAGE_FR_FREI, FEIERTAGE_JAHRESWECHSEL));
+});
+
+test('Urlaub innerhalb eines Jahres = ein Eintrag', () => {
+  assert.deepEqual(countWorkingDaysByYear(MO, SO, VOLLZEIT, KEINE_FEIERTAGE), { 2026: 5 });
+});
+
+test('berührtes Jahr ohne Arbeitstag bekommt 0', () => {
+  // Mo 28.12.2026 – Fr 01.01.2027 (Neujahr Feiertag)
+  assert.deepEqual(
+    countWorkingDaysByYear('2026-12-28', '2027-01-01', null, FEIERTAGE_JAHRESWECHSEL),
+    { 2026: 4, 2027: 0 }
+  );
+});
+
+test('über mehrere Jahre', () => {
+  const byYear = countWorkingDaysByYear('2026-12-31', '2028-01-03', null, KEINE_FEIERTAGE);
+  assert.deepEqual(Object.keys(byYear), ['2026', '2027', '2028']);
+  assert.equal(byYear[2026], 1);
+  assert.equal(byYear[2028], 1); // Mo 03.01.2028
+});
+
+test('Date-Objekte werden als Berliner Kalendertag gelesen', () => {
+  // 01.01.2027 00:00 Berlin = 31.12.2026 23:00 UTC
+  const start = new Date('2026-12-31T23:00:00Z');
+  assert.deepEqual(countWorkingDaysByYear(start, '2027-01-04', null, KEINE_FEIERTAGE), { 2027: 2 });
 });
 
 console.log(`\n${passed} Tests bestanden`);

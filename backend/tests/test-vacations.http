@@ -271,3 +271,143 @@ Content-Type: {{contentType}}
   "max_concurrent_helper": "1",
   "max_concurrent_operator": "2"
 }
+
+### ============================================
+### URLAUB ÜBER DEN JAHRESWECHSEL
+### Tage werden je Kalenderjahr aufgeteilt (days_by_year),
+### Saldo/Listen/PDFs rechnen mit dem Anteil des Jahres
+### Voraussetzung: Feiertage 2026/2027 (BY) generiert, Anspruch 2026/2027 für User 2
+### ============================================
+
+### JW-1: Anlegen 21.12.2026–08.01.2027 → calculated_days 12, days_by_year {"2026": 8, "2027": 4}
+# @name jwCreate
+POST {{baseUrl}}/vacations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "type_id": 1,
+  "start_date": "2026-12-21",
+  "end_date": "2027-01-08",
+  "skip_overlap_check": true
+}
+
+### JW-2: Daten ändern 28.12.2026–15.01.2027 → {"2026": 4, "2027": 9}
+PUT {{baseUrl}}/vacations/{{jwCreate.response.body.id}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "start_date": "2026-12-28",
+  "end_date": "2027-01-15",
+  "skip_overlap_check": true
+}
+
+### JW-3: Nur Notiz ändern → days_by_year bleibt
+PUT {{baseUrl}}/vacations/{{jwCreate.response.body.id}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "note": "nur Notiz"
+}
+
+### JW-4: Liste 2026 → enthält den Urlaub, days_in_year 4
+GET {{baseUrl}}/vacations?year=2026&user_id=2
+Authorization: Bearer {{token}}
+
+### JW-5: Liste 2027 → enthält den Urlaub ebenfalls, days_in_year 9
+GET {{baseUrl}}/vacations?year=2027&user_id=2
+Authorization: Bearer {{token}}
+
+### JW-6: Liste 2025 → Urlaub nicht enthalten
+GET {{baseUrl}}/vacations?year=2025&user_id=2
+Authorization: Bearer {{token}}
+
+### JW-7: Saldo 2026 → nur 4 Tage angerechnet
+GET {{baseUrl}}/vacation-entitlements/balance/2?year=2026
+Authorization: Bearer {{token}}
+
+### JW-8: Saldo 2027 → 9 Tage angerechnet
+GET {{baseUrl}}/vacation-entitlements/balance/2?year=2027
+Authorization: Bearer {{token}}
+
+### JW-9: Eigener Antrag 30.12.2026–04.01.2027 → pending, {"2026": 2, "2027": 1}
+# @name jwRequest
+POST {{baseUrl}}/vacations/request
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 1,
+  "start_date": "2026-12-30",
+  "end_date": "2027-01-04"
+}
+
+### JW-10: Meine Anträge 2027 → Antrag enthalten, days_in_year 1
+GET {{baseUrl}}/vacations/my-requests?year=2027
+Authorization: Bearer {{token}}
+
+### JW-11: Ablehnen
+POST {{baseUrl}}/vacations/{{jwRequest.response.body.id}}/reject
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Test Jahreswechsel"
+}
+
+### JW-12: Erneut einreichen mit neuen Daten → {"2026": 8, "2027": 4}
+POST {{baseUrl}}/vacations/{{jwRequest.response.body.id}}/resubmit
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "start_date": "2026-12-21",
+  "end_date": "2027-01-08"
+}
+
+### JW-13: check-overlap → calculatedDays weiterhin Gesamtzahl (12)
+POST {{baseUrl}}/vacations/check-overlap
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "start_date": "2026-12-21",
+  "end_date": "2027-01-08"
+}
+
+### JW-14: PDF Mitarbeiter 2027 → Zeile "9 von 13", Gesamt/Rest nur mit Anteil 2027
+GET {{baseUrl}}/vacations/export/user/2?year=2027
+Authorization: Bearer {{token}}
+
+### JW-15: PDF alle Mitarbeiter 2027
+GET {{baseUrl}}/vacations/export/all?year=2027
+Authorization: Bearer {{token}}
+
+### JW-16: PDF eigenes Jahr 2027
+GET {{baseUrl}}/vacations/export/my-year?year=2027
+Authorization: Bearer {{token}}
+
+### JW-17: Jahr 2028 initialisieren → Übertrag = Rest 2027 (mit Anteil gerechnet)
+POST {{baseUrl}}/vacation-entitlements/initialize
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "year": 2028
+}
+
+### JW-18: Terminal-Info → vacation_days_remaining gefüllt (vorher immer null)
+GET {{baseUrl}}/time-tracking/entries/user-info?pin_code=1234
+Authorization: Bearer {{token}}
+
+### JW-Aufräumen
+DELETE {{baseUrl}}/vacations/{{jwCreate.response.body.id}}
+Authorization: Bearer {{token}}
+
+###
+DELETE {{baseUrl}}/vacations/{{jwRequest.response.body.id}}
+Authorization: Bearer {{token}}
