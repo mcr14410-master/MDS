@@ -85,7 +85,8 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
       const key = v.type_name || 'Sonstige';
       if (!groups[key]) groups[key] = { color: v.type_color, entries: [], totalDays: 0 };
       groups[key].entries.push(v);
-      if (v.status !== 'rejected') groups[key].totalDays += parseFloat(v.calculated_days) || 0;
+      // Bei Urlaub über den Jahreswechsel nur den Anteil dieses Jahres zählen
+      if (v.status !== 'rejected') groups[key].totalDays += parseFloat(v.days_in_year ?? v.calculated_days) || 0;
     });
     return groups;
   };
@@ -126,7 +127,9 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
                 )}
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-xs shrink-0 ml-2">
-                {v.calculated_days} T
+                {v.days_in_year !== undefined && v.days_in_year !== parseFloat(v.calculated_days)
+                  ? `${v.days_in_year} von ${parseFloat(v.calculated_days)} T`
+                  : `${v.calculated_days} T`}
               </span>
             </div>
           );

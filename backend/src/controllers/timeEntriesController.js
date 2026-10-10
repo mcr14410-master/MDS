@@ -954,7 +954,7 @@ async function getCurrentBalance(userId) {
 async function getVacationBalance(userId) {
   try {
     const result = await pool.query(`
-      SELECT remaining_days FROM vacation_balances_view
+      SELECT remaining_days FROM vacation_balances
       WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)
     `, [userId]);
     return result.rows[0]?.remaining_days || null;

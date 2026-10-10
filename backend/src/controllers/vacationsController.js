@@ -10,7 +10,7 @@
 
 const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
-const { countWorkingDays } = require('../utils/workingDays');
+const { countWorkingDaysByYear } = require('../utils/workingDays');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -157,16 +157,16 @@ async function userHasPermission(userId, permission) {
 }
 
 /**
- * Calculate working days between two dates for a user
+ * Calculate working days between two dates for a user, split by calendar year
  * (days with target time > 0 in the user's time model, excluding holidays;
  * without time model: Monday–Friday)
  * @param {number} userId
  * @param {string} startDate
  * @param {string} endDate
  * @param {string} region
- * @returns {Promise<number>}
+ * @returns {Promise<Object<string, number>>} z. B. { "2026": 8, "2027": 4 }
  */
-async function calculateWorkingDays(userId, startDate, endDate, region = 'BY') {
+async function calculateWorkingDaysByYear(userId, startDate, endDate, region = 'BY') {
   // Get holidays in range
   const holidaysResult = await pool.query(
     `SELECT date FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3`,
@@ -186,7 +186,27 @@ async function calculateWorkingDays(userId, startDate, endDate, region = 'BY') {
   `, [userId]);
   const model = modelResult.rows[0] || null;
 
-  return countWorkingDays(startDate, endDate, model, holidays);
+  return countWorkingDaysByYear(startDate, endDate, model, holidays);
+}
+
+function sumDays(daysByYear) {
+  return Object.values(daysByYear).reduce((sum, days) => sum + days, 0);
+}
+
+/**
+ * Anteil eines Urlaubs am angefragten Jahr ergänzen (days_in_year)
+ */
+function withDaysInYear(vacation, year) {
+  const days = vacation.days_by_year?.[year];
+  return { ...vacation, days_in_year: days !== undefined ? parseFloat(days) : 0 };
+}
+
+/**
+ * Calculate working days between two dates for a user (total)
+ * @returns {Promise<number>}
+ */
+async function calculateWorkingDays(userId, startDate, endDate, region = 'BY') {
+  return sumDays(await calculateWorkingDaysByYear(userId, startDate, endDate, region));
 }
 
 /**
@@ -371,8 +391,10 @@ const getVacations = async (req, res) => {
     const params = [];
     
     if (year) {
+      // Urlaub über den Jahreswechsel erscheint in beiden Jahren
       params.push(year);
-      query += ` AND EXTRACT(YEAR FROM v.start_date) = $${params.length}`;
+      query += ` AND v.start_date <= make_date($${params.length}::int, 12, 31)
+        AND v.end_date >= make_date($${params.length}::int, 1, 1)`;
     }
     
     if (user_id) {
@@ -398,7 +420,7 @@ const getVacations = async (req, res) => {
     query += ' ORDER BY v.start_date DESC';
     
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json(year ? result.rows.map(v => withDaysInYear(v, year)) : result.rows);
   } catch (error) {
     console.error('Error fetching vacations:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Abwesenheiten' });
@@ -559,7 +581,8 @@ const createVacation = async (req, res) => {
     }
     
     // Calculate working days
-    const calculatedDays = await calculateWorkingDays(user_id, start_date, end_date);
+    const daysByYear = await calculateWorkingDaysByYear(user_id, start_date, end_date);
+    const calculatedDays = sumDays(daysByYear);
     const calculatedHours = calculateHours(start_time, end_time);
     
     // Determine status:
@@ -571,8 +594,8 @@ const createVacation = async (req, res) => {
       `INSERT INTO vacations (
         user_id, type_id, start_date, end_date, 
         start_time, end_time, calculated_days, calculated_hours,
-        note, status, created_by, approved_by, approved_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        note, status, created_by, approved_by, approved_at, days_by_year
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         user_id, type_id, start_date, end_date,
@@ -580,7 +603,8 @@ const createVacation = async (req, res) => {
         calculatedDays, calculatedHours,
         note, status, req.user?.id || null,
         status === 'approved' ? (req.user?.id || null) : null,
-        status === 'approved' ? new Date() : null
+        status === 'approved' ? new Date() : null,
+        daysByYear
       ]
     );
     
@@ -660,10 +684,12 @@ const updateVacation = async (req, res) => {
     
     // Recalculate days if dates changed
     let calculatedDays = currentVacation.calculated_days;
+    let daysByYear = currentVacation.days_by_year;
     let calculatedHours = currentVacation.calculated_hours;
     
     if (start_date || end_date) {
-      calculatedDays = await calculateWorkingDays(newUserId, newStartDate, newEndDate);
+      daysByYear = await calculateWorkingDaysByYear(newUserId, newStartDate, newEndDate);
+      calculatedDays = sumDays(daysByYear);
     }
     
     if (start_time !== undefined || end_time !== undefined) {
@@ -685,6 +711,7 @@ const updateVacation = async (req, res) => {
         calculated_hours = $8,
         note = COALESCE($9, note),
         status = COALESCE($10, status),
+        days_by_year = $12,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $11
       RETURNING *`,
@@ -692,7 +719,8 @@ const updateVacation = async (req, res) => {
         user_id, type_id, start_date, end_date,
         start_time, end_time,
         calculatedDays, calculatedHours,
-        note, status, id
+        note, status, id,
+        daysByYear
       ]
     );
     
@@ -863,7 +891,8 @@ const requestVacation = async (req, res) => {
     }
     
     // Calculate working days
-    const calculatedDays = await calculateWorkingDays(user_id, start_date, end_date);
+    const daysByYear = await calculateWorkingDaysByYear(user_id, start_date, end_date);
+    const calculatedDays = sumDays(daysByYear);
     const calculatedHours = calculateHours(start_time, end_time);
     
     // Always create as pending - this is a request, not direct entry
@@ -873,14 +902,14 @@ const requestVacation = async (req, res) => {
       `INSERT INTO vacations (
         user_id, type_id, start_date, end_date, 
         start_time, end_time, calculated_days, calculated_hours,
-        note, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        note, status, created_by, days_by_year
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         user_id, type_id, start_date, end_date,
         start_time || null, end_time || null, 
         calculatedDays, calculatedHours,
-        note, status, req.user.id
+        note, status, req.user.id, daysByYear
       ]
     );
     
@@ -1020,13 +1049,14 @@ const getMyRequests = async (req, res) => {
       JOIN vacation_types vt ON vt.id = v.type_id
       LEFT JOIN users approver ON approver.id = v.approved_by
       WHERE v.user_id = $1 
-        AND EXTRACT(YEAR FROM v.start_date) = $2
+        AND v.start_date <= make_date($2, 12, 31)
+        AND v.end_date >= make_date($2, 1, 1)
         AND v.status IN ('pending', 'rejected')
       ORDER BY v.created_at DESC`,
       [userId, year]
     );
     
-    res.json(result.rows);
+    res.json(result.rows.map(v => withDaysInYear(v, year)));
   } catch (error) {
     console.error('Error fetching my requests:', error);
     res.status(500).json({ error: 'Fehler beim Laden meiner Anträge' });
@@ -1070,7 +1100,8 @@ const resubmitVacation = async (req, res) => {
     // Calculate working days for new dates
     const newStartDate = start_date || vacation.start_date;
     const newEndDate = end_date || vacation.end_date;
-    const calculatedDays = await calculateWorkingDays(vacation.user_id, newStartDate, newEndDate);
+    const daysByYear = await calculateWorkingDaysByYear(vacation.user_id, newStartDate, newEndDate);
+    const calculatedDays = sumDays(daysByYear);
     
     // Update the vacation
     const result = await pool.query(
@@ -1079,6 +1110,7 @@ const resubmitVacation = async (req, res) => {
            start_date = $1,
            end_date = $2,
            calculated_days = $3,
+           days_by_year = $6,
            note = $4,
            rejection_reason = NULL,
            approved_by = NULL,
@@ -1086,7 +1118,7 @@ const resubmitVacation = async (req, res) => {
            updated_at = NOW()
        WHERE id = $5
        RETURNING *`,
-      [newStartDate, newEndDate, calculatedDays, note || vacation.note, id]
+      [newStartDate, newEndDate, calculatedDays, note || vacation.note, id, daysByYear]
     );
     
     // Fetch full data
