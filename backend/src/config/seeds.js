@@ -20,9 +20,9 @@ async function seed() {
     await client.query(`
       INSERT INTO customers (name, customer_number, contact_person, email, phone, address)
       VALUES 
-        ('Airbus Defence & Space GmbH', 'K-001', 'Max Mustermann', 'max.mustermann@airbus.com', '+49 89 1234567', 'München, Deutschland'),
-        ('BMW AG', 'K-002', 'Anna Schmidt', 'anna.schmidt@bmw.de', '+49 89 7654321', 'München, Deutschland'),
-        ('Siemens AG', 'K-003', 'Thomas Weber', 'thomas.weber@siemens.com', '+49 89 9876543', 'München, Deutschland')
+        ('Musterkunde Luftfahrt GmbH', 'KD00001', 'Max Mustermann', 'max.mustermann@kunde1.example', '+49 000 0000001', 'Musterstadt, Deutschland'),
+        ('Musterkunde Fahrzeugbau AG', 'KD00002', 'Anna Schmidt', 'anna.schmidt@kunde2.example', '+49 000 0000002', 'Musterstadt, Deutschland'),
+        ('Musterkunde Industrie AG', 'KD00003', 'Thomas Weber', 'thomas.weber@kunde3.example', '+49 000 0000003', 'Musterstadt, Deutschland')
       ON CONFLICT DO NOTHING;
     `);
 
@@ -93,16 +93,22 @@ async function seed() {
     const machineId = machineResult.rows[0]?.id;
 
     if (partId && machineId && userId) {
+      // Kein Unique-Constraint auf (part_id, op_number) mehr (Varianten), daher NOT EXISTS
       await client.query(`
         INSERT INTO operations (
           part_id, op_number, op_name, machine_id,
           setup_time_minutes, cycle_time_seconds, description, sequence, created_by
         )
-        VALUES 
-          ($1, 'OP10', 'Schruppen Oberseite', $2, 45, 180.5, 'Schruppen der Oberseite mit Aufmaß 0.5mm', 1, $3),
-          ($1, 'OP20', 'Schlichten Oberseite', $2, 30, 240.3, 'Schlichtbearbeitung Oberseite auf Endmaß', 2, $3),
-          ($1, 'OP30', 'Taschen und Bohrungen', $2, 20, 156.8, 'Taschen fräsen und Bohrungen M6 und M8', 3, $3)
-        ON CONFLICT (part_id, op_number) DO NOTHING;
+        SELECT $1::integer, v.op_number, v.op_name, $2::integer,
+               v.setup_time_minutes, v.cycle_time_seconds, v.description, v.sequence, $3::integer
+        FROM (VALUES
+          ('OP10', 'Schruppen Oberseite', 45, 180.5, 'Schruppen der Oberseite mit Aufmaß 0.5mm', 1),
+          ('OP20', 'Schlichten Oberseite', 30, 240.3, 'Schlichtbearbeitung Oberseite auf Endmaß', 2),
+          ('OP30', 'Taschen und Bohrungen', 20, 156.8, 'Taschen fräsen und Bohrungen M6 und M8', 3)
+        ) AS v(op_number, op_name, setup_time_minutes, cycle_time_seconds, description, sequence)
+        WHERE NOT EXISTS (
+          SELECT 1 FROM operations o WHERE o.part_id = $1::integer AND o.op_number = v.op_number
+        );
       `, [partId, machineId, userId]);
     }
 
@@ -148,8 +154,10 @@ async function seed() {
           operation_id, program_number, program_name, description,
           workflow_state_id, created_by
         )
-        VALUES ($1, 'O1234', 'GEHAEUSE_OP10', 'Schruppprogramm für Gehäuse', $2, $3)
-        ON CONFLICT DO NOTHING
+        SELECT $1::integer, 'O1234', 'GEHAEUSE_OP10', 'Schruppprogramm für Gehäuse', $2::integer, $3::integer
+        WHERE NOT EXISTS (
+          SELECT 1 FROM programs WHERE operation_id = $1::integer AND program_number = 'O1234'
+        )
         RETURNING id;
       `, [operationId, stateId, userId]);
 
@@ -188,15 +196,17 @@ async function seed() {
           required_skill_level, estimated_duration_minutes,
           priority, instructions, created_by
         )
-        VALUES (
-          $1, $2, 'Tägliche Sichtkontrolle DMG DMU 50',
+        SELECT
+          $1::integer, $2::integer, 'Tägliche Sichtkontrolle DMG DMU 50',
           'Tägliche Überprüfung von Kühlmittelstand, Schmierung und Sauberkeit',
           'days', 1, NOW() + INTERVAL '1 day',
           'helper', 15, 'normal',
           '1. Kühlmittelstand prüfen\n2. Späne entfernen\n3. Sichtprüfung auf Leckagen',
-          $3
+          $3::integer
+        WHERE NOT EXISTS (
+          SELECT 1 FROM maintenance_plans
+          WHERE machine_id = $1::integer AND title = 'Tägliche Sichtkontrolle DMG DMU 50'
         )
-        ON CONFLICT DO NOTHING
         RETURNING id;
       `, [machineId, maintenanceTypeId, userId]);
 
@@ -237,11 +247,11 @@ async function seed() {
     await client.query(`
       INSERT INTO suppliers (name, supplier_code, contact_person, email, phone, website, address_line1, postal_code, city, country, payment_terms, delivery_time_days, is_preferred, is_active)
       VALUES 
-        ('Gühring KG', 'LF-001', 'Herr Schmidt', 'vertrieb@guehring.de', '+49 7443 17-0', 'www.guehring.de', 'Herderstraße 50-54', '72458', 'Albstadt', 'Deutschland', '30 Tage netto', 3, true, true),
-        ('Hoffmann Group', 'LF-002', 'Frau Weber', 'service@hoffmann-group.com', '+49 89 8391-0', 'www.hoffmann-group.com', 'Haberlandstraße 55', '81241', 'München', 'Deutschland', '14 Tage 2% Skonto', 2, true, true),
-        ('Mitutoyo Deutschland', 'LF-003', 'Herr Müller', 'info@mitutoyo.de', '+49 2104 4868-0', 'www.mitutoyo.de', 'Borsigstraße 8-10', '41469', 'Neuss', 'Deutschland', '30 Tage netto', 5, false, true),
-        ('Schunk GmbH', 'LF-004', 'Frau Bauer', 'info@schunk.com', '+49 7133 103-0', 'www.schunk.com', 'Bahnhofstraße 106-134', '74348', 'Lauffen', 'Deutschland', '30 Tage netto', 7, true, true),
-        ('Emuge-Franken', 'LF-005', 'Herr Fischer', 'info@emuge.de', '+49 9131 87-0', 'www.emuge.de', 'Nürnberger Straße 96-100', '91207', 'Lauf', 'Deutschland', '30 Tage netto', 4, false, true)
+        ('Musterlieferant Zerspanung GmbH', 'LF-001', 'Herr Schmidt', 'vertrieb@lieferant1.example', '+49 000 0000101', 'www.lieferant1.example', 'Musterstraße 1', '00000', 'Musterstadt', 'Deutschland', '30 Tage netto', 3, true, true),
+        ('Musterlieferant Werkstattbedarf', 'LF-002', 'Frau Weber', 'service@lieferant2.example', '+49 000 0000102', 'www.lieferant2.example', 'Musterstraße 2', '00000', 'Musterstadt', 'Deutschland', '14 Tage 2% Skonto', 2, true, true),
+        ('Musterlieferant Messtechnik', 'LF-003', 'Herr Müller', 'info@lieferant3.example', '+49 000 0000103', 'www.lieferant3.example', 'Musterstraße 3', '00000', 'Musterstadt', 'Deutschland', '30 Tage netto', 5, false, true),
+        ('Musterlieferant Spanntechnik GmbH', 'LF-004', 'Frau Bauer', 'info@lieferant4.example', '+49 000 0000104', 'www.lieferant4.example', 'Musterstraße 4', '00000', 'Musterstadt', 'Deutschland', '30 Tage netto', 7, true, true),
+        ('Musterlieferant Gewindetechnik', 'LF-005', 'Herr Fischer', 'info@lieferant5.example', '+49 000 0000105', 'www.lieferant5.example', 'Musterstraße 5', '00000', 'Musterstadt', 'Deutschland', '30 Tage netto', 4, false, true)
       ON CONFLICT (name) DO NOTHING;
     `);
 
@@ -332,7 +342,7 @@ async function seed() {
     await client.query('COMMIT');
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📊 Erstellte Testdaten:');
-    console.log('   • 3 Kunden (Airbus, BMW, Siemens)');
+    console.log('   • 3 Musterkunden (KD00001–KD00003)');
     console.log('   • 3 Maschinen (DMG DMU 50, Hermle C42U, Mazak Integrex)');
     console.log('   • 3 Bauteile mit Arbeitsgängen');
     console.log('   • 3 Werkzeuge');
