@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useWikiStore } from '../stores/wikiStore';
 import { useMachinesStore } from '../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
 import { toast } from './Toaster';
 import axios from '../utils/axios';
 import { API_ENDPOINTS } from '../config/api';
@@ -208,9 +209,9 @@ export default function WikiArticleForm({ article, categories, onClose, onSucces
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                 >
                   <option value="">Allgemein (keine Maschine)</option>
-                  {machines.filter(m => m.is_active).map(machine => (
+                  {selectableMachines(machines, article?.machine_id || initialData?.machine_id).map(machine => (
                     <option key={machine.id} value={machine.id}>
-                      {machine.name}
+                      {machine.name}{inactiveSuffix(machine)}
                     </option>
                   ))}
                 </select>

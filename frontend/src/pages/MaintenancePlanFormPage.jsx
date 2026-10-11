@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useMachinesStore } from '../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
 import API_BASE_URL from '../config/api';
 import AuthImage from '../components/common/AuthImage';
 
@@ -279,9 +280,9 @@ export default function MaintenancePlanFormPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Maschine wählen...</option>
-                {machines.map(m => (
+                {selectableMachines(machines, isEdit ? currentPlan?.machine_id : null).map(m => (
                   <option key={m.id} value={m.id}>
-                    {m.name} {m.location ? `(${m.location})` : ''}
+                    {m.name} {m.location ? `(${m.location})` : ''}{inactiveSuffix(m)}
                   </option>
                 ))}
               </select>
