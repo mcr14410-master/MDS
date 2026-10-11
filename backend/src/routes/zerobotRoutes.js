@@ -28,8 +28,8 @@ router.get('/config/jaws', zerobotController.getJawConfig);
 // Get machine-specific parameters
 router.get('/config/machines', zerobotController.getMachineConfig);
 
-// Update a config parameter (admin only)
-router.put('/config/:id', requirePermission('admin'), zerobotController.updateConfig);
+// Update a config parameter
+router.put('/config/:id', requirePermission('zerobot.manage'), zerobotController.updateConfig);
 
 // ============================================
 // Machine Management Routes
@@ -38,21 +38,21 @@ router.put('/config/:id', requirePermission('admin'), zerobotController.updateCo
 // Get list of available machines
 router.get('/machines', zerobotController.getMachineList);
 
-// Add a new machine (admin only)
-router.post('/machines', requirePermission('admin'), zerobotController.addMachine);
+// Add a new machine
+router.post('/machines', requirePermission('zerobot.manage'), zerobotController.addMachine);
 
-// Delete a machine (admin only)
-router.delete('/machines/:name', requirePermission('admin'), zerobotController.deleteMachine);
+// Delete a machine
+router.delete('/machines/:name', requirePermission('zerobot.manage'), zerobotController.deleteMachine);
 
 // ============================================
 // Jaw Management Routes
 // ============================================
 
-// Add a new jaw type (admin only)
-router.post('/jaws', requirePermission('admin'), zerobotController.addJaw);
+// Add a new jaw type
+router.post('/jaws', requirePermission('zerobot.manage'), zerobotController.addJaw);
 
-// Delete a jaw type (admin only)
-router.delete('/jaws/:id', requirePermission('admin'), zerobotController.deleteJaw);
+// Delete a jaw type
+router.delete('/jaws/:id', requirePermission('zerobot.manage'), zerobotController.deleteJaw);
 
 // ============================================
 // Calculation Route

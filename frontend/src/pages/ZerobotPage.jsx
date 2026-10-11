@@ -14,8 +14,8 @@ import { InfoButton, DiagramModal, ZerobotExplanationDiagram } from '../componen
 
 export default function ZerobotPage() {
   const [activeTab, setActiveTab] = useState('calculate');
-  const { hasRole } = useAuthStore();
-  const isAdmin = hasRole('admin');
+  const { hasPermission } = useAuthStore();
+  const isAdmin = hasPermission('zerobot.manage');
 
   return (
     <div className="space-y-6">

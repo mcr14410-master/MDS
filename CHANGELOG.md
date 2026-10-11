@@ -19,9 +19,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - `npm run dev:init` (`backend/src/config/dev-init.js`): macht eine frisch migrierte Entwicklungs-DB benutzbar – setzt das Passwort von `admin` (verdeckte Eingabe oder `DEV_ADMIN_PASSWORD`, legt den User bei Bedarf an), weist die Rolle `admin` zu und gibt ihr alle vorhandenen Berechtigungen; wiederholbar, verweigert `NODE_ENV=production`
 - Migration `1737000113000_add-tool-storage-stock-permissions`: legt `tools.*`, `storage.*` und `stock.*` (16 Berechtigungen, bisher nur in `scripts/init.sh`) an und weist sie der Rolle `admin` zu; in Produktion ohne Wirkung (`ON CONFLICT DO NOTHING`), `down` bewusst leer
 - Migration `1737000114000_grant-all-permissions-to-admin`: Rolle `admin` erhält alle vorhandenen Berechtigungen – gleicht Migrationen aus, die ihre Rechte nicht (`maintenance.*`, `time_tracking.manage/settings`) oder an nicht existierende Rollennamen (`measuring.*` an `Administrator`) vergeben haben; in Produktion ohne Wirkung, `down` bewusst leer
+- Migration `1737000115000_add-zerobot-manage-permission`: Berechtigung `zerobot.manage` (Zerobot-Parameter, Maschinen und Backen verwalten), der Rolle `admin` zugewiesen
 
 ### Fixed
 - `npm run seed` brach mit 42P10 ab: `ON CONFLICT (part_id, op_number)` auf `operations`, der Constraint wurde in Migration `1737000072000` entfernt. Arbeitsgänge, Programm und Wartungsplan jetzt per `WHERE NOT EXISTS` – ein zweiter Lauf erzeugt keine Duplikate mehr (vorher Arbeitsgänge, Programm/Revision, Wartungsplan/Checkliste doppelt)
+- Zerobot-Rechner: Parameter ändern sowie Maschinen und Backen anlegen/löschen lieferte für alle Benutzer 403 – auch für den Admin. Die Routen verlangten `requirePermission('admin')`, eine Berechtigung `admin` gab es nie. Sie verlangen jetzt `zerobot.manage`; die Seite blendet die Bearbeiten-Funktionen über dieselbe Berechtigung ein statt über die Rolle `admin`
 
 ### Changed
 - Seed: echte Firmennamen und Kontaktdaten bei Kunden und Lieferanten durch Platzhalter ersetzt (`KD00001`–`KD00003`, `*.example`)
