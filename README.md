@@ -59,7 +59,7 @@ npm install
 cp .env.example .env        # DB-Zugang und JWT_SECRET anpassen
 npm run migrate:up          # Schema anlegen
 npm run dev:init            # Admin-Passwort setzen, Admin erhält alle Berechtigungen
-npm run seed                # optional: Testdaten
+npm run seed                # optional: Testdaten (Migrationen legen keine an)
 npm run dev
 ```
 

@@ -116,15 +116,17 @@ Setzt das Passwort des Users `admin` (verdeckte Eingabe oder `DEV_ADMIN_PASSWORD
 npm run seed
 ```
 
-Wiederholbar ohne Duplikate.
+Wiederholbar ohne Duplikate. Die Migrationen selbst legen keine Testdaten an – eine frisch migrierte DB enthält nur Stammdaten (Rollen, Berechtigungen, Typen, Kategorien, Einstellungen) und den User `admin`. In Produktion fragt `scripts/init.sh` optional nach den Testdaten.
 
 **Test-Daten umfassen:**
 - ✅ 3 Musterkunden (KD00001–KD00003)
 - ✅ 3 Maschinen (DMG, Hermle, Mazak)
 - ✅ 3 Bauteile mit Arbeitsgängen
-- ✅ Test-Werkzeuge
-- ✅ Beispiel-Programm mit Revision
-- ✅ Wartungsplan
+- ✅ Test-Werkzeuge und 5 Einträge im Werkzeugstamm
+- ✅ Beispiel-Programm mit Revision, Werkzeugliste und Rüstblatt
+- ✅ Prüfplan, Wartungsplan
+- ✅ Lagerorte, Lieferanten, Messmittel, Spannmittel, Vorrichtungen
+- ✅ Optional je Rolle ein Testbenutzer (`programmer1`, `reviewer1`, `operator1`, `helper1`) – nur mit `SEED_TEST_USER_PASSWORD=… npm run seed`, nie bei `NODE_ENV=production`
 
 ---
 
