@@ -178,14 +178,17 @@ async function calculateWorkingDaysByYear(userId, startDate, endDate, region = '
 
   // Get holidays in range
   const holidaysResult = await pool.query(
-    `SELECT date FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3`,
+    `SELECT date, is_half_day FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3`,
     [startDate, endDate, region]
   );
 
-  const holidays = new Set(holidaysResult.rows.map(h => {
-    const d = h.date instanceof Date ? h.date : new Date(h.date);
+  const toKey = (date) => {
+    const d = date instanceof Date ? date : new Date(date);
     return d.toISOString().split('T')[0];
-  }));
+  };
+  // Halbe Feiertage (Heiligabend, Silvester) zählen als halber Urlaubstag
+  const holidays = new Set(holidaysResult.rows.filter(h => !h.is_half_day).map(h => toKey(h.date)));
+  const halfDayHolidays = new Set(holidaysResult.rows.filter(h => h.is_half_day).map(h => toKey(h.date)));
 
   // Zeitmodell des Users (Arbeitstag = Soll-Zeit > 0)
   const modelResult = await pool.query(`
@@ -195,7 +198,7 @@ async function calculateWorkingDaysByYear(userId, startDate, endDate, region = '
   `, [userId]);
   const model = modelResult.rows[0] || null;
 
-  return countWorkingDaysByYear(startDate, endDate, model, holidays);
+  return countWorkingDaysByYear(startDate, endDate, model, holidays, halfDayHolidays);
 }
 
 function sumDays(daysByYear) {
