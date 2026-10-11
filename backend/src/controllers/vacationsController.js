@@ -1317,5 +1317,6 @@ module.exports = {
   withdrawRequest,
   // Export helpers for testing
   calculateWorkingDays,
+  calculateWorkingDaysByYear,
   checkConcurrentAbsences
 };

@@ -540,6 +540,185 @@ function formatMinsExport(mins) {
   return `${sign}${h}:${m.toString().padStart(2, '0')}`;
 }
 
+// ============================================
+// Zeitnachweis (Payroll): Stichtag = Ende des gewählten Monats
+// ============================================
+
+function monthEndStr(year, month) {
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+}
+
+function formatStichtag(dateStr) {
+  const [, m, d] = dateStr.split('-');
+  return `${d}.${m}.`;
+}
+
+/**
+ * Urlaubskonto zum Stichtag (Monatsende) – unabhängig vom Druckdatum.
+ * Genommen = genehmigter Urlaub bis zum Stichtag (Urlaub über das Monatsende anteilig),
+ * Rest = Verfügbar − genommen. Danach genehmigter / beantragter Urlaub nur als Info.
+ */
+async function getPayrollVacation(userId, year, month) {
+  // Lazy require: vacationsController lädt seinerseits diesen Controller
+  const { calculateWorkingDaysByYear } = require('./vacationsController');
+  const stichtag = monthEndStr(year, month);
+
+  const entitlementResult = await pool.query(`
+    SELECT total_days, carried_over, adjustment, available_days
+    FROM vacation_balances WHERE user_id = $1 AND year = $2 LIMIT 1
+  `, [userId, year]);
+  const entitlement = entitlementResult.rows[0] || {
+    total_days: 0, carried_over: 0, adjustment: 0, available_days: 0
+  };
+
+  const vacationsResult = await pool.query(`
+    SELECT v.start_date::text AS start_date, v.end_date::text AS end_date, v.status,
+           COALESCE((v.days_by_year->>($2::int)::text)::numeric, 0) AS share
+    FROM vacations v
+    JOIN vacation_types vt ON vt.id = v.type_id
+    WHERE v.user_id = $1 AND v.status IN ('approved', 'pending') AND vt.affects_balance = true
+      AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)
+  `, [userId, year]);
+
+  let taken = 0;
+  let plannedAfter = 0;
+  let pending = 0;
+  for (const v of vacationsResult.rows) {
+    const share = parseFloat(v.share);
+    if (v.status === 'pending') { pending += share; continue; }
+    if (v.end_date <= stichtag) {
+      taken += share;
+    } else if (v.start_date > stichtag) {
+      plannedAfter += share;
+    } else {
+      // läuft über den Stichtag: Anteil bis Stichtag (innerhalb des Jahres)
+      const from = v.start_date < `${year}-01-01` ? `${year}-01-01` : v.start_date;
+      const byYear = await calculateWorkingDaysByYear(userId, from, stichtag);
+      const part = Math.min(share, byYear[year] || 0);
+      taken += part;
+      plannedAfter += share - part;
+    }
+  }
+
+  const available = parseFloat(entitlement.available_days || 0);
+  return {
+    stichtag: formatStichtag(stichtag),
+    total_days: parseFloat(entitlement.total_days || 0),
+    carried_over: parseFloat(entitlement.carried_over || 0),
+    adjustment: parseFloat(entitlement.adjustment || 0),
+    available_days: available,
+    taken_days: taken,
+    planned_after_days: plannedAfter,
+    pending_days: pending,
+    remaining_days: available - taken
+  };
+}
+
+/**
+ * Zeitkonto des Monats inkl. Korrektur und Auszahlung aus time_balances
+ * (Saldo neu = Saldo Vormonat + Überstunden des Monats + Korrektur − Auszahlung)
+ */
+async function getPayrollTimeAccount(user, year, month) {
+  let prevMonth = month - 1;
+  let prevYear = year;
+  if (prevMonth === 0) { prevMonth = 12; prevYear = year - 1; }
+
+  const prevBalanceResult = await pool.query(`
+    SELECT balance_minutes FROM time_balances
+    WHERE user_id = $1 AND year = $2 AND month = $3
+  `, [user.id, prevYear, prevMonth]);
+  const saldoVormonat = prevBalanceResult.rows.length > 0
+    ? prevBalanceResult.rows[0].balance_minutes
+    : (user.time_balance_carryover || 0);
+
+  const monthSumResult = await pool.query(`
+    SELECT COALESCE(SUM(worked_minutes), 0) as total_worked,
+           COALESCE(SUM(target_minutes), 0) as total_target,
+           COALESCE(SUM(overtime_minutes), 0) as total_overtime
+    FROM time_daily_summary
+    WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 AND EXTRACT(MONTH FROM date) = $3
+  `, [user.id, year, month]);
+  const monthSum = monthSumResult.rows[0];
+
+  const monthBalanceResult = await pool.query(`
+    SELECT adjustment_minutes, payout_minutes FROM time_balances
+    WHERE user_id = $1 AND year = $2 AND month = $3
+  `, [user.id, year, month]);
+  const adjustment = parseInt(monthBalanceResult.rows[0]?.adjustment_minutes || 0);
+  const payout = parseInt(monthBalanceResult.rows[0]?.payout_minutes || 0);
+
+  const monthOvertime = parseInt(monthSum.total_overtime || 0);
+  return {
+    target: parseInt(monthSum.total_target),
+    worked: parseInt(monthSum.total_worked),
+    saldoVormonat,
+    monthOvertime,
+    adjustment,
+    payout,
+    saldoNeu: saldoVormonat + monthOvertime + adjustment - payout
+  };
+}
+
+/**
+ * Kästen „Urlaubskonto“ und „Zeitkonto“ im Zeitnachweis
+ * @returns {number} Höhe der Kästen
+ */
+function drawPayrollBoxes(doc, boxTop, vacation, account, monthName) {
+  const boxHeight = 140;
+  const boxWidth = 250;
+  const valueOpts = { width: 100, align: 'right' };
+  const line = (label, value, x, y, color) => {
+    doc.text(label, x, y);
+    if (color) doc.fillColor(color);
+    doc.text(value, x + 130, y, valueOpts);
+    doc.fillColor('black');
+  };
+  const days = (n) => `${Number(n).toFixed(2).replace(/\.?0+$/, '')} Tage`;
+
+  // Urlaubskonto (links) – Stand Monatsende
+  doc.save();
+  doc.roundedRect(40, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
+  doc.restore();
+  doc.fontSize(10).font('Helvetica-Bold').text(`Urlaubskonto (Stand ${vacation.stichtag})`, 50, boxTop + 8);
+  doc.font('Helvetica').fontSize(9);
+  let y = boxTop + 25;
+  line('Jahresanspruch:', days(vacation.total_days), 50, y); y += 13;
+  line('Übertrag Vorjahr:', days(vacation.carried_over), 50, y); y += 13;
+  if (vacation.adjustment !== 0) { line('Korrektur:', days(vacation.adjustment), 50, y); y += 13; }
+  line(`Genommen bis ${vacation.stichtag}:`, days(vacation.taken_days), 50, y); y += 13;
+  doc.font('Helvetica-Bold');
+  line(`Resturlaub ${vacation.stichtag}:`, days(vacation.remaining_days), 50, y,
+    vacation.remaining_days >= 0 ? '#16a34a' : '#dc2626');
+  doc.font('Helvetica'); y += 17;
+  doc.fontSize(8).fillColor('#6b7280');
+  line('Genehmigt, nach Stichtag:', days(vacation.planned_after_days), 50, y, '#6b7280'); y += 11;
+  doc.fillColor('#6b7280');
+  line('Beantragt:', days(vacation.pending_days), 50, y, '#6b7280');
+  doc.fontSize(9);
+
+  // Zeitkonto (rechts)
+  doc.save();
+  doc.roundedRect(305, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
+  doc.restore();
+  doc.fontSize(10).font('Helvetica-Bold').text('Zeitkonto', 315, boxTop + 8);
+  doc.font('Helvetica').fontSize(9);
+  const sign = (m) => (m >= 0 ? '#16a34a' : '#dc2626');
+  y = boxTop + 25;
+  line(`Soll ${monthName}:`, formatMinsExport(account.target), 315, y); y += 13;
+  line(`Ist ${monthName}:`, formatMinsExport(account.worked), 315, y); y += 13;
+  line('Saldo Vormonat:', formatMinsExport(account.saldoVormonat), 315, y, sign(account.saldoVormonat)); y += 13;
+  line(`+/- ${monthName}:`, formatMinsExport(account.monthOvertime), 315, y, sign(account.monthOvertime)); y += 13;
+  if (account.adjustment !== 0) { line('Korrektur:', formatMinsExport(account.adjustment), 315, y, sign(account.adjustment)); y += 13; }
+  if (account.payout !== 0) { line('Auszahlung:', formatMinsExport(-account.payout), 315, y, '#dc2626'); y += 13; }
+  doc.moveTo(315, y + 3).lineTo(545, y + 3).stroke(); y += 10;
+  doc.font('Helvetica-Bold');
+  line('Saldo neu:', formatMinsExport(account.saldoNeu), 315, y, sign(account.saldoNeu));
+  doc.font('Helvetica');
+
+  return boxHeight;
+}
+
 /**
  * Gemeinsame Daten-Abfrage für alle Export-Formate
  */
@@ -974,61 +1153,11 @@ async function exportPayrollPDF(req, res) {
     const user = userResult.rows[0];
     const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
 
-    // 2. Urlaubskonto für das Jahr
-    const vacationResult = await pool.query(`
-      SELECT 
-        total_days,
-        carried_over,
-        adjustment,
-        available_days,
-        taken_days,
-        approved_days,
-        pending_days,
-        used_days,
-        remaining_days
-      FROM vacation_balances 
-      WHERE user_id = $1 AND year = $2
-      LIMIT 1
-    `, [userId, targetYear]);
-    
-    const vacation = vacationResult.rows[0] || {
-      total_days: 0, carried_over: 0, adjustment: 0,
-      available_days: 0, taken_days: 0, approved_days: 0, pending_days: 0, remaining_days: 0
-    };
-
-    // 3. Zeitkonto - Saldo Vormonat berechnen
-    let prevMonth = targetMonth - 1;
-    let prevYear = targetYear;
-    if (prevMonth === 0) {
-      prevMonth = 12;
-      prevYear = targetYear - 1;
-    }
-    
-    // Saldo Vormonat aus time_balances (enthält Überstunden + Anpassungen + Auszahlungen)
-    const prevBalanceResult = await pool.query(`
-      SELECT balance_minutes FROM time_balances
-      WHERE user_id = $1 AND year = $2 AND month = $3
-    `, [userId, prevYear, prevMonth]);
-    
-    const saldoVormonat = prevBalanceResult.rows.length > 0
-      ? prevBalanceResult.rows[0].balance_minutes
-      : (user.time_balance_carryover || 0);
-
-    // 4. Aktueller Monat Summe
-    const monthSumResult = await pool.query(`
-      SELECT 
-        COALESCE(SUM(worked_minutes), 0) as total_worked,
-        COALESCE(SUM(target_minutes), 0) as total_target,
-        COALESCE(SUM(overtime_minutes), 0) as total_overtime
-      FROM time_daily_summary
-      WHERE user_id = $1 
-        AND EXTRACT(YEAR FROM date) = $2 
-        AND EXTRACT(MONTH FROM date) = $3
-    `, [userId, targetYear, targetMonth]);
-    
-    const monthSum = monthSumResult.rows[0];
-    const monthOvertime = parseInt(monthSum.total_overtime || 0);
-    const saldoNeu = saldoVormonat + monthOvertime;
+    // 2.–4. Urlaubskonto zum Monatsende, Zeitkonto inkl. Korrektur/Auszahlung
+    const vacation = await getPayrollVacation(userId, targetYear, targetMonth);
+    const account = await getPayrollTimeAccount({ ...user, id: userId }, targetYear, targetMonth);
+    const { saldoVormonat, monthOvertime } = account;
+    const monthSum = { total_target: account.target, total_worked: account.worked };
 
     // 5. Tagesbuchungen
     const dailyResult = await pool.query(`
@@ -1087,73 +1216,7 @@ async function exportPayrollPDF(req, res) {
 
     // === ZWEI BOXEN NEBENEINANDER ===
     const boxTop = 125;
-    const boxHeight = 125;
-    const boxWidth = 250;
-    
-    // Box 1: Urlaubskonto (links)
-    doc.save();
-    doc.roundedRect(40, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
-    doc.restore();
-    
-    doc.fontSize(10).font('Helvetica-Bold')
-       .text('Urlaubskonto', 50, boxTop + 8);
-    doc.font('Helvetica').fontSize(9);
-    
-    let yBox = boxTop + 25;
-    doc.text(`Jahresanspruch:`, 50, yBox);
-    doc.text(`${vacation.total_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    yBox += 13;
-    doc.text(`Übertrag Vorjahr:`, 50, yBox);
-    doc.text(`${vacation.carried_over} Tage`, 180, yBox, { width: 100, align: 'right' });
-    yBox += 13;
-    doc.text(`Genommen:`, 50, yBox);
-    doc.text(`${vacation.taken_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    yBox += 13;
-    doc.text(`Genehmigt:`, 50, yBox);
-    doc.fillColor('#16a34a').text(`${vacation.approved_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black');
-    yBox += 13;
-    doc.text(`Beantragt:`, 50, yBox);
-    doc.fillColor('#d97706').text(`${vacation.pending_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black');
-    yBox += 13;
-    doc.text(`Resturlaub:`, 50, yBox);
-    doc.font('Helvetica-Bold').fillColor(vacation.remaining_days >= 0 ? '#16a34a' : '#dc2626');
-    doc.text(`${vacation.remaining_days} Tage`, 180, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black').font('Helvetica');
-
-    // Box 2: Zeitkonto (rechts)
-    doc.save();
-    doc.roundedRect(305, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
-    doc.restore();
-    
-    doc.fontSize(10).font('Helvetica-Bold')
-       .text('Zeitkonto', 315, boxTop + 8);
-    doc.font('Helvetica').fontSize(9);
-    
-    yBox = boxTop + 25;
-    doc.text(`Soll ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox);
-    doc.text(formatMinsExport(parseInt(monthSum.total_target)), 445, yBox, { width: 100, align: 'right' });
-    yBox += 13;
-    doc.text(`Ist ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox);
-    doc.text(formatMinsExport(parseInt(monthSum.total_worked)), 445, yBox, { width: 100, align: 'right' });
-    yBox += 13;
-    doc.text(`Saldo Vormonat:`, 315, yBox);
-    doc.fillColor(saldoVormonat >= 0 ? '#16a34a' : '#dc2626');
-    doc.text(formatMinsExport(saldoVormonat), 445, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black');
-    yBox += 13;
-    doc.text(`+/- ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox);
-    doc.fillColor(monthOvertime >= 0 ? '#16a34a' : '#dc2626');
-    doc.text(formatMinsExport(monthOvertime), 445, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black');
-    yBox += 13;
-    doc.moveTo(315, yBox + 3).lineTo(545, yBox + 3).stroke();
-    yBox += 10;
-    doc.font('Helvetica-Bold').text(`Saldo neu:`, 315, yBox);
-    doc.fillColor(saldoNeu >= 0 ? '#16a34a' : '#dc2626');
-    doc.text(formatMinsExport(saldoNeu), 445, yBox, { width: 100, align: 'right' });
-    doc.fillColor('black').font('Helvetica');
+    const boxHeight = drawPayrollBoxes(doc, boxTop, vacation, account, MONTH_NAMES[targetMonth - 1]);
 
     // === TAGESÜBERSICHT TABELLE ===
     let tableTop = boxTop + boxHeight + 20;
@@ -1333,43 +1396,11 @@ async function exportPayrollAllPDF(req, res) {
 
       if (i > 0) doc.addPage();
 
-      // Urlaubskonto
-      const vacationResult = await pool.query(`
-        SELECT total_days, carried_over, adjustment, available_days, taken_days, approved_days, pending_days, used_days, remaining_days
-        FROM vacation_balances WHERE user_id = $1 AND year = $2 LIMIT 1
-      `, [userId, targetYear]);
-      
-      const vacation = vacationResult.rows[0] || {
-        total_days: 0, carried_over: 0, adjustment: 0,
-        available_days: 0, taken_days: 0, approved_days: 0, pending_days: 0, remaining_days: 0
-      };
-
-      // Zeitkonto Vormonat
-      let prevMonth = targetMonth - 1;
-      let prevYear = targetYear;
-      if (prevMonth === 0) { prevMonth = 12; prevYear = targetYear - 1; }
-      
-      const prevBalanceResult = await pool.query(`
-        SELECT balance_minutes FROM time_balances
-        WHERE user_id = $1 AND year = $2 AND month = $3
-      `, [userId, prevYear, prevMonth]);
-      
-      const saldoVormonat = prevBalanceResult.rows.length > 0
-        ? prevBalanceResult.rows[0].balance_minutes
-        : (user.time_balance_carryover || 0);
-
-      // Monatssumme
-      const monthSumResult = await pool.query(`
-        SELECT COALESCE(SUM(worked_minutes), 0) as total_worked,
-               COALESCE(SUM(target_minutes), 0) as total_target,
-               COALESCE(SUM(overtime_minutes), 0) as total_overtime
-        FROM time_daily_summary
-        WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 AND EXTRACT(MONTH FROM date) = $3
-      `, [userId, targetYear, targetMonth]);
-      
-      const monthSum = monthSumResult.rows[0];
-      const monthOvertime = parseInt(monthSum.total_overtime || 0);
-      const saldoNeu = saldoVormonat + monthOvertime;
+      // Urlaubskonto zum Monatsende, Zeitkonto inkl. Korrektur/Auszahlung
+      const vacation = await getPayrollVacation(userId, targetYear, targetMonth);
+      const account = await getPayrollTimeAccount(user, targetYear, targetMonth);
+      const { monthOvertime } = account;
+      const monthSum = { total_target: account.target, total_worked: account.worked };
 
       // Tagesbuchungen
       const dailyResult = await pool.query(`
@@ -1395,38 +1426,7 @@ async function exportPayrollAllPDF(req, res) {
 
       // Boxen
       const boxTop = 125;
-      const boxHeight = 125;
-      const boxWidth = 250;
-      
-      // Urlaubskonto Box
-      doc.roundedRect(40, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
-      doc.fontSize(10).font('Helvetica-Bold').text('Urlaubskonto', 50, boxTop + 8);
-      doc.font('Helvetica').fontSize(9);
-      let yBox = boxTop + 25;
-      doc.text(`Jahresanspruch:`, 50, yBox); doc.text(`${vacation.total_days} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Übertrag Vorjahr:`, 50, yBox); doc.text(`${vacation.carried_over} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Genommen:`, 50, yBox); doc.text(`${vacation.taken_days} Tage`, 180, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Genehmigt:`, 50, yBox); doc.fillColor('#16a34a').text(`${vacation.approved_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
-      doc.text(`Beantragt:`, 50, yBox); doc.fillColor('#d97706').text(`${vacation.pending_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
-      doc.text(`Resturlaub:`, 50, yBox); doc.font('Helvetica-Bold').fillColor(vacation.remaining_days >= 0 ? '#16a34a' : '#dc2626');
-      doc.text(`${vacation.remaining_days} Tage`, 180, yBox, { width: 100, align: 'right' }); doc.fillColor('black').font('Helvetica');
-
-      // Zeitkonto Box
-      doc.roundedRect(305, boxTop, boxWidth, boxHeight, 5).stroke('#d1d5db');
-      doc.fontSize(10).font('Helvetica-Bold').text('Zeitkonto', 315, boxTop + 8);
-      doc.font('Helvetica').fontSize(9);
-      yBox = boxTop + 25;
-      doc.text(`Soll ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox);
-      doc.text(formatMinsExport(parseInt(monthSum.total_target)), 445, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Ist ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox);
-      doc.text(formatMinsExport(parseInt(monthSum.total_worked)), 445, yBox, { width: 100, align: 'right' }); yBox += 13;
-      doc.text(`Saldo Vormonat:`, 315, yBox); doc.fillColor(saldoVormonat >= 0 ? '#16a34a' : '#dc2626');
-      doc.text(formatMinsExport(saldoVormonat), 445, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
-      doc.text(`+/- ${MONTH_NAMES[targetMonth - 1]}:`, 315, yBox); doc.fillColor(monthOvertime >= 0 ? '#16a34a' : '#dc2626');
-      doc.text(formatMinsExport(monthOvertime), 445, yBox, { width: 100, align: 'right' }); doc.fillColor('black'); yBox += 13;
-      doc.moveTo(315, yBox + 3).lineTo(545, yBox + 3).stroke(); yBox += 10;
-      doc.font('Helvetica-Bold').text(`Saldo neu:`, 315, yBox); doc.fillColor(saldoNeu >= 0 ? '#16a34a' : '#dc2626');
-      doc.text(formatMinsExport(saldoNeu), 445, yBox, { width: 100, align: 'right' }); doc.fillColor('black').font('Helvetica');
+      const boxHeight = drawPayrollBoxes(doc, boxTop, vacation, account, MONTH_NAMES[targetMonth - 1]);
 
       // Tabelle
       let tableTop = boxTop + boxHeight + 20;
