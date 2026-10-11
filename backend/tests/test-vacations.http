@@ -411,3 +411,125 @@ Authorization: Bearer {{token}}
 ###
 DELETE {{baseUrl}}/vacations/{{jwRequest.response.body.id}}
 Authorization: Bearer {{token}}
+
+### ============================================
+### EIGENE ANTRÄGE BEARBEITEN / ZURÜCKZIEHEN
+### Nur eigene Anträge mit Status pending/rejected (Recht vacations.read).
+### Bearbeiten eines abgelehnten Antrags reicht ihn erneut ein,
+### Zurückziehen setzt status = 'cancelled' (zählt nirgends mehr).
+### ============================================
+
+### EA-1: Eigenen Antrag stellen
+# @name eaRequest
+POST {{baseUrl}}/vacations/request
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 1,
+  "start_date": "2026-11-02",
+  "end_date": "2026-11-06",
+  "note": "alt"
+}
+
+### EA-2: Ausstehenden Antrag ändern → 200, bleibt pending, Tage neu (4)
+PUT {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 1,
+  "start_date": "2026-11-09",
+  "end_date": "2026-11-12",
+  "note": "neu"
+}
+
+### EA-3: Ende vor Start → 400
+PUT {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 1,
+  "start_date": "2026-11-12",
+  "end_date": "2026-11-09"
+}
+
+### EA-4: Typ nur per Direkteintrag (z. B. Krank) → 400
+PUT {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 2,
+  "start_date": "2026-11-09",
+  "end_date": "2026-11-12"
+}
+
+### EA-5: Pflichtfelder fehlen → 400
+PUT {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "note": "nur Notiz"
+}
+
+### EA-6: Unbekannte ID → 404
+POST {{baseUrl}}/vacations/999999/withdraw
+Authorization: Bearer {{token}}
+
+### EA-7: Antrag eines anderen Mitarbeiters (ID anpassen) → 403
+PUT {{baseUrl}}/vacations/2/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 1,
+  "start_date": "2026-11-16",
+  "end_date": "2026-11-17"
+}
+
+### EA-8: Ablehnen (als Genehmiger)
+POST {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/reject
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Engpass"
+}
+
+### EA-9: Abgelehnten Antrag ändern → wieder pending, rejection_reason/approved_by geleert
+PUT {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/own
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "type_id": 5,
+  "start_date": "2026-11-30",
+  "end_date": "2026-12-01"
+}
+
+### EA-10: Zurückziehen → status cancelled
+POST {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/withdraw
+Authorization: Bearer {{token}}
+
+### EA-11: Erneut zurückziehen → 400
+POST {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/withdraw
+Authorization: Bearer {{token}}
+
+### EA-12: Zurückgezogenen genehmigen → 400
+POST {{baseUrl}}/vacations/{{eaRequest.response.body.id}}/approve
+Authorization: Bearer {{token}}
+
+### EA-13: Liste ohne status-Filter → zurückgezogener Antrag nicht enthalten
+GET {{baseUrl}}/vacations?year=2026&user_id=1
+Authorization: Bearer {{token}}
+
+### EA-14: Liste mit status=cancelled → enthalten
+GET {{baseUrl}}/vacations?status=cancelled&user_id=1
+Authorization: Bearer {{token}}
+
+### EA-15: Genehmigten eigenen Urlaub zurückziehen (ID anpassen) → 400
+POST {{baseUrl}}/vacations/1/withdraw
+Authorization: Bearer {{token}}

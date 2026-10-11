@@ -268,11 +268,21 @@ export default function VacationsPage({ view: propView }) {
     setShowFormModal(true);
   };
 
+  // Edit own request (pending/rejected)
+  const handleEditRequest = (request) => {
+    setEditingVacation({ ...request, isRequest: true });
+    setShowFormModal(true);
+  };
+
   // Close form modal and refresh data
   const handleCloseForm = () => {
     setShowFormModal(false);
     setEditingVacation(null);
-    
+    refreshMyData();
+  };
+
+  // Refresh my balance, vacations and requests
+  const refreshMyData = () => {
     // Refresh my data
     if (user) {
       axios.get(`/api/vacation-entitlements/balance/${user.id}?year=${myVacationYear}`)
@@ -718,7 +728,8 @@ export default function VacationsPage({ view: propView }) {
               <MyRequestsPanel 
                 requests={myRequests} 
                 year={myVacationYear}
-                onRefresh={refreshRequests}
+                onRefresh={refreshMyData}
+                onEdit={handleEditRequest}
               />
             </div>
           </div>

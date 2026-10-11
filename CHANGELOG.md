@@ -16,6 +16,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Für Anwender
+- Eigene Urlaubsanträge lassen sich jetzt selbst ändern oder zurückziehen, solange sie noch nicht genehmigt sind – unter „Mein Bereich“ → „Meine Anträge“. Ein abgelehnter Antrag kann mit neuen Daten erneut eingereicht werden.
 - Urlaub über den Jahreswechsel wird jetzt richtig verbucht: Die Tage im Dezember zählen zum alten Jahr, die Tage im Januar zum neuen. Bisher wurde der ganze Urlaub dem Startjahr abgezogen.
 - Ein solcher Urlaub erscheint in beiden Jahren, mit dem Hinweis, wie viele Tage auf das jeweilige Jahr entfallen. Das gilt auch in den PDF-Übersichten.
 
@@ -24,12 +25,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Terminal-Benutzerinfo (`/api/time-tracking/entries/user-info`): Resturlaub war immer leer – Abfrage auf nicht existierende View `vacation_balances_view`
 
 ### Added
+- Eigene Urlaubsanträge bearbeiten/zurückziehen: `PUT /api/vacations/:id/own` (Art, Zeitraum, Uhrzeit, Notiz; nur eigene, Status `pending`/`rejected`, abgelehnte werden dabei erneut eingereicht) und `POST /api/vacations/:id/withdraw` (setzt Status `cancelled`), beide mit `vacations.read`; Buttons „Bearbeiten“ und „Zurückziehen“ in „Meine Anträge“, `.http`-Szenarien EA-1 bis EA-15
 - `countWorkingDaysByYear` in `utils/workingDays.js` + 6 Tests; `.http`-Szenarien JW-1 bis JW-18 in `test-vacations.http`
 
 ### Removed
 - `backend/tests/seed-storage-permissions.js` und `test-reset-password.js` – überholt durch `scripts/init.sh` (legt Berechtigungen an, setzt Admin-Passwort zurück); enthielten fest eingetragene Zugangsdaten der Entwicklungs-DB
 
 ### Changed
+- `GET /api/vacations` liefert zurückgezogene Anträge (`cancelled`) nur noch bei ausdrücklichem `status=cancelled`; „Meine Anträge“ aktualisiert nach Aktionen auch Saldo und Abwesenheiten
 - ROADMAP: Idee „Texte gestalten (Rich-Text-Editor)“, Fix-Liste um Urlaub über den Jahreswechsel, eigene Anträge bearbeiten, deaktivierte Maschinen in Auswahllisten, Wartungspläne kopieren, Rollenfarben/-deaktivierung und Berechtigungen per Migration ergänzt
 
 ---
