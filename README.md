@@ -58,6 +58,7 @@ cd backend
 npm install
 cp .env.example .env        # DB-Zugang und JWT_SECRET anpassen
 npm run migrate:up          # Schema anlegen
+npm run dev:init            # Admin-Passwort setzen, Admin erhält alle Berechtigungen
 npm run seed                # optional: Testdaten
 npm run dev
 ```
@@ -72,8 +73,11 @@ npm run dev
 
 In VS Code startet der Task **„MDS-Start (Backend + Frontend)“** beides zusammen.
 
-**Erster Login:** Benutzer `admin`, Passwort `admin123` (wird von der ersten Migration angelegt –
-im Betrieb sofort ändern).
+**Erster Login:** Benutzer `admin` mit dem Passwort aus `npm run dev:init` (fragt verdeckt nach,
+alternativ per `DEV_ADMIN_PASSWORD`). Das Skript ist beliebig oft wiederholbar, z. B. nach neuen
+Migrationen, und läuft nicht mit `NODE_ENV=production`. Produktion wird über `scripts/init.sh`
+eingerichtet – das setzt das Admin-Passwort bei jedem Lauf auf `admin123` zurück, also nicht auf
+einem laufenden System erneut ausführen.
 
 **API-Tests:** `.http`-Dateien für die VS-Code-Erweiterung REST Client liegen in
 [`backend/tests/`](./backend/tests/).

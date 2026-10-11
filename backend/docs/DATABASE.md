@@ -102,15 +102,24 @@ npx node-pg-migrate up
 > 1737000004000_create-maintenance-system ........... OK
 ```
 
-### 4. Test-Daten laden (Optional)
+### 4. Admin einrichten (Entwicklung)
+
+```bash
+npm run dev:init
+```
+
+Setzt das Passwort des Users `admin` (verdeckte Eingabe oder `DEV_ADMIN_PASSWORD`) und gibt der Rolle `admin` alle vorhandenen Berechtigungen. Wiederholbar, verweigert `NODE_ENV=production`.
+
+### 5. Test-Daten laden (Optional)
 
 ```bash
 npm run seed
 ```
 
+Wiederholbar ohne Duplikate.
+
 **Test-Daten umfassen:**
-- ✅ Admin-User (username: `admin`, password: `admin123`)
-- ✅ 3 Kunden (Airbus, BMW, Siemens)
+- ✅ 3 Musterkunden (KD00001–KD00003)
 - ✅ 3 Maschinen (DMG, Hermle, Mazak)
 - ✅ 3 Bauteile mit Arbeitsgängen
 - ✅ Test-Werkzeuge
@@ -288,13 +297,12 @@ ORDER BY tablename, indexname;
 
 ### Standard Admin-Credentials
 
-**⚠️ WICHTIG: Sofort nach erstem Login ändern!**
-
 ```
 Username: admin
 Email: admin@example.com
-Password: admin123
 ```
+
+Der Passwort-Hash aus der ersten Migration passt zu keinem dokumentierten Passwort. Entwicklung: Passwort mit `npm run dev:init` setzen. Produktion: `scripts/init.sh` setzt `admin123` – **sofort nach dem ersten Login ändern** und `init.sh` danach nicht erneut ausführen (setzt das Passwort wieder zurück).
 
 ### Passwort ändern
 
@@ -315,7 +323,7 @@ INSERT INTO users (username, email, password_hash, first_name, last_name)
 VALUES (
   'max.mustermann', 
   'max.mustermann@example.com',
-  '$2a$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', -- admin123
+  '$2a$10$NEW_BCRYPT_HASH_HERE',
   'Max', 
   'Mustermann'
 );
