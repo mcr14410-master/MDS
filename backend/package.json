@@ -10,7 +10,8 @@
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
     "migrate:create": "node-pg-migrate create",
-    "seed": "node src/config/seeds.js"
+    "seed": "node src/config/seeds.js",
+    "dev:init": "node src/config/dev-init.js"
   },
   "keywords": [
     "fertigung",
