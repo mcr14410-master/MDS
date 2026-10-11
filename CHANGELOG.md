@@ -15,6 +15,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- `npm run dev:init` (`backend/src/config/dev-init.js`): macht eine frisch migrierte Entwicklungs-DB benutzbar – setzt das Passwort von `admin` (verdeckte Eingabe oder `DEV_ADMIN_PASSWORD`, legt den User bei Bedarf an), weist die Rolle `admin` zu und gibt ihr alle vorhandenen Berechtigungen; wiederholbar, verweigert `NODE_ENV=production`
+- Migration `1737000113000_add-tool-storage-stock-permissions`: legt `tools.*`, `storage.*` und `stock.*` (16 Berechtigungen, bisher nur in `scripts/init.sh`) an und weist sie der Rolle `admin` zu; in Produktion ohne Wirkung (`ON CONFLICT DO NOTHING`), `down` bewusst leer
+
+### Fixed
+- `npm run seed` brach mit 42P10 ab: `ON CONFLICT (part_id, op_number)` auf `operations`, der Constraint wurde in Migration `1737000072000` entfernt. Arbeitsgänge, Programm und Wartungsplan jetzt per `WHERE NOT EXISTS` – ein zweiter Lauf erzeugt keine Duplikate mehr (vorher Arbeitsgänge, Programm/Revision, Wartungsplan/Checkliste doppelt)
+
+### Changed
+- Seed: echte Firmennamen und Kontaktdaten bei Kunden und Lieferanten durch Platzhalter ersetzt (`KD00001`–`KD00003`, `*.example`)
+- README/`backend/docs/DATABASE.md`: Admin-Passwort `admin123` stimmte nicht (Hash der ersten Migration passt nicht dazu); Ablauf `migrate:up` → `dev:init` → `seed` dokumentiert, Hinweis dass `scripts/init.sh` das Admin-Passwort bei jedem Lauf zurücksetzt
+
 ---
 
 ## [2.8.0] - 2026-10-11 - Urlaubsberechnung und eigene Anträge
