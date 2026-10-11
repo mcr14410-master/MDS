@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useMaintenanceStore } from '../stores/maintenanceStore';
 import { useMachinesStore } from '../stores/machinesStore';
+import { inactiveSuffix } from '../utils/machineOptions';
 
 const MAINTENANCE_TYPE_ICONS = {
   ClipboardCheck,
@@ -225,7 +226,7 @@ export default function MaintenancePlansPage() {
             >
               <option value="">Alle Maschinen</option>
               {machines.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
+                <option key={m.id} value={m.id}>{m.name}{inactiveSuffix(m)}</option>
               ))}
             </select>
 

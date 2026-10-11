@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useFixturesStore } from '../../stores/fixturesStore';
 import { usePartsStore } from '../../stores/partsStore';
 import { useMachinesStore } from '../../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../../utils/machineOptions';
 import { toast } from '../Toaster';
 import axios from '../../utils/axios';
 
@@ -392,9 +393,9 @@ export default function FixtureFormModal({ fixture, types, onClose }) {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">Keine Maschine</option>
-                    {machines?.filter(m => m.is_active).map((machine) => (
+                    {selectableMachines(machines, fixture?.machine_id).map((machine) => (
                       <option key={machine.id} value={machine.id}>
-                        {machine.machine_id}: {machine.name}
+                        {machine.name}{inactiveSuffix(machine)}
                       </option>
                     ))}
                   </select>

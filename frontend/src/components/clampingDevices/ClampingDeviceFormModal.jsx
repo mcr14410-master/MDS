@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useClampingDevicesStore } from '../../stores/clampingDevicesStore';
 import { useSuppliersStore } from '../../stores/suppliersStore';
 import { useMachinesStore } from '../../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../../utils/machineOptions';
 import { toast } from '../Toaster';
 
 export default function ClampingDeviceFormModal({ device, types, onClose }) {
@@ -308,8 +309,8 @@ export default function ClampingDeviceFormModal({ device, types, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Keine feste Zuordnung --</option>
-                  {machines.filter(m => m.is_active).map(machine => (
-                    <option key={machine.id} value={machine.id}>{machine.name}</option>
+                  {selectableMachines(machines, device?.machine_id).map(machine => (
+                    <option key={machine.id} value={machine.id}>{machine.name}{inactiveSuffix(machine)}</option>
                   ))}
                 </select>
               </div>

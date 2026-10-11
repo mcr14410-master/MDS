@@ -1,6 +1,7 @@
 // frontend/src/components/SetupSheetForm.jsx
 import { useState, useEffect } from 'react';
 import { useMachinesStore } from '../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
 import { useProgramsStore } from '../stores/programsStore';
 
 export default function SetupSheetForm({ 
@@ -157,9 +158,9 @@ export default function SetupSheetForm({
             }`}
           >
             <option value="">-- Maschine auswählen --</option>
-            {machines.map(machine => (
+            {selectableMachines(machines, initialData?.machine_id).map(machine => (
               <option key={machine.id} value={machine.id}>
-                {machine.name} ({machine.serial_number})
+                {machine.name} ({machine.serial_number}){inactiveSuffix(machine)}
               </option>
             ))}
           </select>

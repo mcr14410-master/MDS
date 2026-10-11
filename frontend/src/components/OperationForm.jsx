@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useOperationsStore } from '../stores/operationsStore';
 import { useOperationTypesStore } from '../stores/operationTypesStore';
 import { useMachinesStore } from '../stores/machinesStore';
+import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
 import { toast } from './Toaster';
 
 // Feature-Definitionen
@@ -361,11 +362,10 @@ export default function OperationForm({ partId, operation, onClose, onSuccess })
               disabled={loading}
             >
               <option value="">-- Keine Maschine --</option>
-              {machines
-                .filter(m => m.is_active !== false)
+              {selectableMachines(machines, operation?.machine_id)
                 .map(machine => (
                   <option key={machine.id} value={machine.id}>
-                    {machine.name} {machine.control_type_name ? `(${machine.control_type_name})` : ''}
+                    {machine.name} {machine.control_type_name ? `(${machine.control_type_name})` : ''}{inactiveSuffix(machine)}
                   </option>
                 ))
               }
