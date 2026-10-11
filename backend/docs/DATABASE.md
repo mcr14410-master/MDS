@@ -304,7 +304,7 @@ Username: admin
 Email: admin@example.com
 ```
 
-Der Passwort-Hash aus der ersten Migration passt zu keinem dokumentierten Passwort. Entwicklung: Passwort mit `npm run dev:init` setzen. Produktion: `scripts/init.sh` setzt `admin123` – **sofort nach dem ersten Login ändern** und `init.sh` danach nicht erneut ausführen (setzt das Passwort wieder zurück).
+Der Passwort-Hash aus der ersten Migration passt zu keinem dokumentierten Passwort. Entwicklung: Passwort mit `npm run dev:init` setzen. Produktion: `scripts/init.sh` setzt beim ersten Lauf `admin123` – **sofort nach dem ersten Login ändern**. Weitere Läufe lassen das Passwort unverändert; zurücksetzen nur mit `ADMIN_PASSWORD_RESET=1 ./scripts/init.sh`.
 
 ### Passwort ändern
 

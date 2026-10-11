@@ -1,6 +1,8 @@
 #!/bin/bash
 # MDS Erstinstallation
-# Führt Migrations aus und erstellt Admin-User mit allen Permissions
+# Führt Migrations aus (inkl. aller Permissions) und legt den Admin-User an.
+# Ein bestehender Admin behält sein Passwort. Zurücksetzen auf admin123 nur ausdrücklich:
+#   ADMIN_PASSWORD_RESET=1 ./scripts/init.sh
 
 set -e
 
@@ -26,82 +28,15 @@ if ! docker compose ps | grep -q "backend.*Up"; then
     sleep 10
 fi
 
-# Migrations
+# Migrations (legen auch alle Permissions an und weisen sie der Rolle admin zu)
 echo ""
 echo "📦 Führe Migrations aus..."
 docker compose exec backend npm run migrate:up
 
-# Permissions, Admin-User und Rollen-Zuweisung
+# Admin-User anlegen bzw. prüfen
 echo ""
-echo "🔐 Erstelle Permissions und Admin-User..."
-docker compose exec db psql -U mds -d mds << 'EOSQL'
-
--- Alle benötigten Permissions einfügen
-INSERT INTO permissions (name) VALUES
-  ('part.read'),
-  ('part.create'),
-  ('part.update'),
-  ('part.delete'),
-  ('program.read'),
-  ('program.create'),
-  ('program.update'),
-  ('program.delete'),
-  ('program.release'),
-  ('program.download'),
-  ('program.upload'),
-  ('machine.read'),
-  ('machine.create'),
-  ('machine.update'),
-  ('machine.delete'),
-  ('maintenance.read'),
-  ('maintenance.create'),
-  ('maintenance.update'),
-  ('maintenance.complete'),
-  ('maintenance.escalate'),
-  ('maintenance.assign'),
-  ('maintenance.view_all'),
-  ('maintenance.manage_plans'),
-  ('maintenance.view_dashboard'),
-  ('maintenance.record_hours'),
-  ('maintenance.resolve_escalation'),
-  ('user.read'),
-  ('user.create'),
-  ('user.update'),
-  ('user.delete'),
-  ('audit.read'),
-  ('report.read'),
-  ('report.export'),
-  ('storage.view'),
-  ('storage.create'),
-  ('storage.edit'),
-  ('storage.delete'),
-  ('tools.view'),
-  ('tools.categories.manage'),
-  ('tools.create'),
-  ('tools.edit'),
-  ('tools.delete'),
-  ('stock.issue'),
-  ('stock.receive'),
-  ('stock.transfer'),
-  ('stock.adjust'),
-  ('stock.scrap'),
-  ('tools.documents.upload'),
-  ('tools.documents.delete')
-ON CONFLICT (name) DO NOTHING;
-
--- Admin-Rolle alle Permissions geben
-DELETE FROM role_permissions WHERE role_id = (SELECT id FROM roles WHERE name = 'admin');
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r CROSS JOIN permissions p WHERE r.name = 'admin';
-
-EOSQL
-
-echo "✅ Permissions erstellt"
-
-# Admin-User erstellen/zurücksetzen
-echo ""
-echo "👤 Erstelle Admin-User..."
-docker compose exec backend node -e "
+echo "👤 Prüfe Admin-User..."
+docker compose exec -e ADMIN_PASSWORD_RESET="${ADMIN_PASSWORD_RESET:-}" backend node -e "
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 
@@ -114,24 +49,36 @@ const pool = new Pool({
 
 (async () => {
   try {
-    const hash = await bcrypt.hash('admin123', 10);
-    
-    // Prüfen ob Admin existiert
-    const check = await pool.query(\"SELECT id FROM users WHERE username = 'admin'\");
-    
+    let showLogin = false;
+
+    // Prüfen ob Admin existiert und noch den Platzhalter-Hash aus der ersten Migration hat
+    // (Passwort unbekannt, also noch nicht eingerichtet)
+    const check = await pool.query(\`
+      SELECT id, password_hash = '\$2a\$10\$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa' AS uninitialized
+      FROM users WHERE username = 'admin'
+    \`);
+
     if (check.rows.length === 0) {
       // Admin erstellen
+      const hash = await bcrypt.hash('admin123', 10);
       await pool.query(\`
         INSERT INTO users (username, email, password_hash, first_name, last_name, is_active)
         VALUES ('admin', 'admin@example.com', \\\$1, 'System', 'Administrator', true)
       \`, [hash]);
       console.log('✅ Admin-User erstellt');
-    } else {
-      // Passwort zurücksetzen
+      showLogin = true;
+    } else if (check.rows[0].uninitialized || process.env.ADMIN_PASSWORD_RESET === '1') {
+      // Erstes Passwort setzen bzw. nur auf ausdrücklichen Wunsch zurücksetzen
+      const hash = await bcrypt.hash('admin123', 10);
       await pool.query(\"UPDATE users SET password_hash = \\\$1 WHERE username = 'admin'\", [hash]);
-      console.log('✅ Admin-Passwort zurückgesetzt');
+      console.log(check.rows[0].uninitialized
+        ? '✅ Admin-Passwort gesetzt'
+        : '✅ Admin-Passwort zurückgesetzt (ADMIN_PASSWORD_RESET=1)');
+      showLogin = true;
+    } else {
+      console.log('✅ Admin-User existiert – Passwort unverändert');
     }
-    
+
     // Admin-Rolle zuweisen (user_roles Tabelle)
     await pool.query(\`
       INSERT INTO user_roles (user_id, role_id)
@@ -141,25 +88,30 @@ const pool = new Pool({
       ON CONFLICT DO NOTHING
     \`);
     console.log('✅ Admin-Rolle zugewiesen');
-    
+
     // Ergebnis prüfen
     const permCount = await pool.query(\`
-      SELECT COUNT(*) as cnt FROM role_permissions rp
-      JOIN roles r ON rp.role_id = r.id WHERE r.name = 'admin'
+      SELECT
+        (SELECT COUNT(*) FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.name = 'admin') AS cnt,
+        (SELECT COUNT(*) FROM permissions) AS total
     \`);
-    console.log('✅ Admin hat ' + permCount.rows[0].cnt + ' Permissions');
-    
-    console.log('');
-    console.log('╔════════════════════════════════╗');
-    console.log('║  Login-Daten:                  ║');
-    console.log('║  Username: admin               ║');
-    console.log('║  Passwort: admin123            ║');
-    console.log('╚════════════════════════════════╝');
-    
+    console.log('✅ Admin hat ' + permCount.rows[0].cnt + ' von ' + permCount.rows[0].total + ' Permissions');
+
+    if (showLogin) {
+      console.log('');
+      console.log('╔════════════════════════════════╗');
+      console.log('║  Login-Daten:                  ║');
+      console.log('║  Username: admin               ║');
+      console.log('║  Passwort: admin123            ║');
+      console.log('╚════════════════════════════════╝');
+      console.log('⚠️  Passwort nach dem ersten Login ändern!');
+    }
+
   } catch (err) {
     console.error('❌ Fehler:', err.message);
+    process.exitCode = 1;
   } finally {
-    pool.end();
+    await pool.end();
   }
 })();
 "
