@@ -43,6 +43,7 @@ export default function VacationsPage({ view: propView }) {
     calendarData,
     vacationTypes,
     balances,
+    balancesYear,
     roleLimits,
     filters,
     loading,
@@ -53,6 +54,7 @@ export default function VacationsPage({ view: propView }) {
     navigateMonth,
     navigateYear,
     clearError,
+    fetchBalances,
     fetchMyRequests,
     fetchPendingRequests
   } = useVacationsStore();
@@ -297,6 +299,14 @@ export default function VacationsPage({ view: propView }) {
     // Refresh requests
     refreshRequests();
   };
+
+  // Salden passend zum angezeigten Jahr halten (z. B. nach Einstellungen → Ansprüche mit anderem Jahr)
+  useEffect(() => {
+    if (activeView === 'admin' && (adminTab === 'overview' || adminTab === 'vacation')
+        && balancesYear !== null && balancesYear !== filters.year) {
+      fetchBalances(filters.year).catch(() => {});
+    }
+  }, [activeView, adminTab, filters.year, balancesYear, fetchBalances]);
 
   // Filter balances by search (for all employees section)
   const filteredBalances = balances.filter(b => 
@@ -838,7 +848,7 @@ export default function VacationsPage({ view: propView }) {
                     </div>
                   </div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Resturlaub</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Resturlaub {filters.year}</div>
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {balances.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0).toFixed(0)}d
                     </div>
@@ -1043,7 +1053,7 @@ export default function VacationsPage({ view: propView }) {
                   </div>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Resturlaub gesamt</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Resturlaub gesamt {filters.year}</div>
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
                     {balances.reduce((sum, b) => sum + parseFloat(b.remaining_days || 0), 0)} Tage
                   </div>
@@ -1058,7 +1068,24 @@ export default function VacationsPage({ view: propView }) {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                         <Sun className="h-5 w-5 text-yellow-500" />
-                        Resturlaub {filters.year}
+                        Resturlaub
+                        <span className="inline-flex items-center gap-0.5 font-normal">
+                          <button
+                            onClick={() => navigateYear(-1)}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                            title="Vorjahr"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <span className="font-semibold text-gray-900 dark:text-white tabular-nums">{filters.year}</span>
+                          <button
+                            onClick={() => navigateYear(1)}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+                            title="Folgejahr"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </span>
                       </h3>
                       <button
                         onClick={handleExportAll}
