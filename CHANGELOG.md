@@ -15,17 +15,24 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.8.0] - 2026-10-11 - Urlaubsberechnung und eigene Anträge
+
 ### Für Anwender
-- Eigene Urlaubsanträge lassen sich jetzt selbst ändern oder zurückziehen, solange sie noch nicht genehmigt sind – unter „Mein Bereich“ → „Meine Anträge“. Ein abgelehnter Antrag kann mit neuen Daten erneut eingereicht werden.
-- Urlaub über den Jahreswechsel wird jetzt richtig verbucht: Die Tage im Dezember zählen zum alten Jahr, die Tage im Januar zum neuen. Bisher wurde der ganze Urlaub dem Startjahr abgezogen.
-- Ein solcher Urlaub erscheint in beiden Jahren, mit dem Hinweis, wie viele Tage auf das jeweilige Jahr entfallen. Das gilt auch in den PDF-Übersichten.
-- Feiertage werden bei der Urlaubsberechnung jetzt immer berücksichtigt, auch für Jahre, die noch niemand im Kalender geöffnet hat. Bisher konnten z. B. Neujahr oder Heilige Drei Könige als Urlaubstage abgezogen werden.
-- Deaktivierte Maschinen werden in Auswahlfeldern nicht mehr angeboten. Ist einem Arbeitsgang, Einrichteblatt, Spannmittel, einer Vorrichtung, einem Wiki-Artikel oder Wartungsplan bereits eine deaktivierte Maschine zugeordnet, bleibt sie beim Bearbeiten sichtbar und ist als „(inaktiv)“ gekennzeichnet.
-- Schlägt das Erstellen einer PDF-Übersicht (Urlaub, Zeitnachweis, Messmittel-Berichte) fehl, bricht nur dieser Download ab. Bisher wurde dabei das ganze MDS für einige Sekunden neu gestartet.
-- Heiligabend und Silvester zählen bei Urlaub jetzt als halber Urlaubstag (bisher als ganz frei). Bereits eingetragene Urlaube ab 2026 wurden entsprechend angepasst.
-- In der Urlaubsverwaltung passt der angezeigte Resturlaub jetzt immer zum angezeigten Jahr. Neben „Resturlaub“ lässt sich das Jahr direkt mit Pfeilen wechseln.
-- Die PDF-Urlaubsübersichten berücksichtigen jetzt Korrekturen am Urlaubsanspruch und zeigen sie an – Resturlaub im PDF und im MDS stimmen überein.
-- Zeitnachweise (einzeln und gesammelt) zeigen das Urlaubskonto jetzt zum Ende des gewählten Monats – egal, wann gedruckt wird: genommener Urlaub und Resturlaub bis zum Monatsende, später geplanter Urlaub nur als Hinweis. Im Zeitkonto erscheinen Korrekturen und Auszahlungen des Monats, der neue Saldo berücksichtigt sie.
+- Eigene Urlaubsanträge lassen sich unter „Mein Bereich“ → „Meine Anträge“ jetzt selbst ändern oder zurückziehen, solange sie noch nicht genehmigt sind.
+- Urlaubstage werden genauer berechnet: Urlaub über den Jahreswechsel wird auf beide Jahre aufgeteilt, Feiertage werden immer berücksichtigt, und Heiligabend und Silvester zählen als halber Urlaubstag.
+- Zeitnachweise zeigen das Urlaubskonto zum Ende des gewählten Monats und berücksichtigen Korrekturen und Auszahlungen; auch die Urlaubs-PDFs enthalten jetzt Korrekturen am Anspruch.
+- In der Urlaubsverwaltung passt der Resturlaub immer zum angezeigten Jahr, das sich direkt neben „Resturlaub“ wechseln lässt.
+- Deaktivierte Maschinen werden in Auswahlfeldern nicht mehr angeboten, und ein Fehler beim Erstellen eines PDFs startet das MDS nicht mehr neu.
+
+### Added
+- Eigene Urlaubsanträge bearbeiten/zurückziehen: `PUT /api/vacations/:id/own` (Art, Zeitraum, Uhrzeit, Notiz; nur eigene, Status `pending`/`rejected`, abgelehnte werden dabei erneut eingereicht) und `POST /api/vacations/:id/withdraw` (setzt Status `cancelled`), beide mit `vacations.read`; Buttons „Bearbeiten“ und „Zurückziehen“ in „Meine Anträge“, `.http`-Szenarien EA-1 bis EA-15
+- `countWorkingDaysByYear` in `utils/workingDays.js` + 6 Tests; `.http`-Szenarien JW-1 bis JW-18 in `test-vacations.http`
+
+### Changed
+- `GET /api/vacations` liefert zurückgezogene Anträge (`cancelled`) nur noch bei ausdrücklichem `status=cancelled`; „Meine Anträge“ aktualisiert nach Aktionen auch Saldo und Abwesenheiten
+- ROADMAP: Idee „Texte gestalten (Rich-Text-Editor)“, Fix-Liste um Urlaub über den Jahreswechsel, eigene Anträge bearbeiten, deaktivierte Maschinen in Auswahllisten, Wartungspläne kopieren, Rollenfarben/-deaktivierung und Berechtigungen per Migration ergänzt
 
 ### Fixed
 - Zeitnachweis-PDFs (`exportPayrollPDF`, `exportPayrollAllPDF`): Urlaubskasten las `vacation_balances` und damit den Stand zum Druckdatum (genommen/genehmigt nach `CURRENT_DATE`, alle geplanten Tage vom Rest abgezogen). Jetzt Stichtag Monatsende (`getPayrollVacation`): genommen = genehmigter Urlaub bis Stichtag (über das Monatsende anteilig), Rest = Verfügbar − genommen, danach genehmigt/beantragt als Info; Korrektur angezeigt. „Saldo neu“ ohne Korrektur/Auszahlung des Monats – jetzt Saldo Vormonat + Überstunden + `adjustment_minutes` − `payout_minutes` aus `time_balances` mit eigenen Zeilen (`getPayrollTimeAccount`). Kästen beider Exporte in `drawPayrollBoxes` zusammengeführt
@@ -38,16 +45,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Urlaub über den Jahreswechsel: Tage werden je Kalenderjahr aufgeteilt (neue Spalte `vacations.days_by_year`, Migration mit Backfill). `vacation_balances`, Übertrag beim Initialisieren, die drei PDF-Reports sowie die Jahresfilter von `GET /api/vacations` und `/my-requests` rechnen mit dem Anteil des Jahres statt nach Startjahr; Listen liefern `days_in_year`
 - Terminal-Benutzerinfo (`/api/time-tracking/entries/user-info`): Resturlaub war immer leer – Abfrage auf nicht existierende View `vacation_balances_view`
 
-### Added
-- Eigene Urlaubsanträge bearbeiten/zurückziehen: `PUT /api/vacations/:id/own` (Art, Zeitraum, Uhrzeit, Notiz; nur eigene, Status `pending`/`rejected`, abgelehnte werden dabei erneut eingereicht) und `POST /api/vacations/:id/withdraw` (setzt Status `cancelled`), beide mit `vacations.read`; Buttons „Bearbeiten“ und „Zurückziehen“ in „Meine Anträge“, `.http`-Szenarien EA-1 bis EA-15
-- `countWorkingDaysByYear` in `utils/workingDays.js` + 6 Tests; `.http`-Szenarien JW-1 bis JW-18 in `test-vacations.http`
-
 ### Removed
 - `backend/tests/seed-storage-permissions.js` und `test-reset-password.js` – überholt durch `scripts/init.sh` (legt Berechtigungen an, setzt Admin-Passwort zurück); enthielten fest eingetragene Zugangsdaten der Entwicklungs-DB
-
-### Changed
-- `GET /api/vacations` liefert zurückgezogene Anträge (`cancelled`) nur noch bei ausdrücklichem `status=cancelled`; „Meine Anträge“ aktualisiert nach Aktionen auch Saldo und Abwesenheiten
-- ROADMAP: Idee „Texte gestalten (Rich-Text-Editor)“, Fix-Liste um Urlaub über den Jahreswechsel, eigene Anträge bearbeiten, deaktivierte Maschinen in Auswahllisten, Wartungspläne kopieren, Rollenfarben/-deaktivierung und Berechtigungen per Migration ergänzt
 
 ---
 
