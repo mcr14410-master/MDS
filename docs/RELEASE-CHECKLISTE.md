@@ -38,6 +38,11 @@ Gesammelt seit 2.7.1. Nach dem Deploy abarbeiten, dann diesen Abschnitt nach „
   ```bash
   docker compose exec -T db psql -U mds -d mds -c "SELECT v.id, v.user_id, v.start_date, v.end_date, v.calculated_days, v.status, h.date AS feiertag FROM vacations v JOIN holidays h ON h.date BETWEEN v.start_date AND v.end_date AND h.region = 'BY' WHERE h.created_at > v.created_at AND v.status IN ('approved', 'pending') ORDER BY v.start_date;"
   ```
+- [ ] **Halbe Feiertage (Migration `1737000112000`):** Im Deploy-Log stehen die angepassten Urlaube (`Urlaub …: X → Y Tage`) und ggf. Warnungen `… erst nach dem Antrag angelegt – übersprungen` (diese Urlaube gezielt prüfen). **Falls 2027 schon initialisiert ist:** Der Übertrag nach 2027 wurde mit dem alten Rest 2026 gebucht und ist um die zusätzlichen halben Tage zu hoch – vor dem Deploy prüfen:
+  ```bash
+  docker compose exec -T db psql -U mds -d mds -c "SELECT count(*) FROM vacation_entitlements WHERE year = 2027;"
+  ```
+  Bei Treffern nach dem Deploy die betroffenen Mitarbeiter (Log) in der Urlaubsverwaltung bei „Übertrag 2027“ korrigieren
 - [ ] **Eigene Urlaubsanträge (#108):** Mit einem Mitarbeiter-Konto ohne Verwaltungsrechte einen Antrag stellen, ändern und zurückziehen
 - [ ] **Inaktive Maschinen (#110):** Alte Testmaschinen deaktivieren (Maschine → „Deaktivieren“), Auswahlfelder stichprobenartig prüfen (Arbeitsgang, Einrichteblatt, Spannmittel)
 

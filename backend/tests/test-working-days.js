@@ -128,4 +128,34 @@ test('Date-Objekte werden als Berliner Kalendertag gelesen', () => {
   assert.deepEqual(countWorkingDaysByYear(start, '2027-01-04', null, KEINE_FEIERTAGE), { 2027: 2 });
 });
 
+console.log('\nhalbe Feiertage');
+
+const HALBE = new Set(['2026-12-24', '2026-12-31']);
+const GANZE = new Set(['2026-12-25', '2026-12-26']);
+
+test('Heiligabend (Do) als halber Feiertag = 0,5 Tage', () => {
+  assert.equal(countWorkingDays('2026-12-24', '2026-12-24', null, GANZE, HALBE), 0.5);
+});
+
+test('Urlaub 21.–31.12.2026: 6 volle + 2 halbe Tage = 7', () => {
+  // Mo–Mi 21.–23. (3), Do 24. halb, Fr 25. frei, Mo–Mi 28.–30. (3), Do 31. halb
+  assert.equal(countWorkingDays('2026-12-21', '2026-12-31', null, GANZE, HALBE), 7);
+});
+
+test('halber Feiertag an freiem Tag laut Zeitmodell = 0', () => {
+  // 2027: Fr 24.12. bei 4-Tage-Woche (Fr frei)
+  assert.equal(countWorkingDays('2027-12-24', '2027-12-24', VIER_TAGE_FR_FREI, new Set(), new Set(['2027-12-24'])), 0);
+});
+
+test('ohne halbe Feiertage unverändert (Parameter optional)', () => {
+  assert.equal(countWorkingDays('2026-12-21', '2026-12-31', null, GANZE), 8);
+});
+
+test('je Jahr: 28.12.2026–05.01.2027 mit Silvester halb', () => {
+  assert.deepEqual(
+    countWorkingDaysByYear('2026-12-28', '2027-01-05', null, new Set(['2027-01-01']), HALBE),
+    { 2026: 3.5, 2027: 2 }
+  );
+});
+
 console.log(`\n${passed} Tests bestanden`);
