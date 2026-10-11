@@ -24,7 +24,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Changed
 - Seed: echte Firmennamen und Kontaktdaten bei Kunden und Lieferanten durch Platzhalter ersetzt (`KD00001`–`KD00003`, `*.example`)
+- Seed erweitert um 5 Einträge im Werkzeugstamm (aus Migration `1737000023000`), Rüstblatt, Werkzeugliste und Prüfplan für das Beispielteil sowie optional je Rolle einen Testbenutzer (`programmer1`, `reviewer1`, `operator1`, `helper1`) – nur mit `SEED_TEST_USER_PASSWORD`, nie bei `NODE_ENV=production`. Die Audit-Beispiele aus Migration `1737000020000` werden bewusst nicht übernommen
 - README/`backend/docs/DATABASE.md`: Admin-Passwort `admin123` stimmte nicht (Hash der ersten Migration passt nicht dazu); Ablauf `migrate:up` → `dev:init` → `seed` dokumentiert, Hinweis dass `scripts/init.sh` das Admin-Passwort bei jedem Lauf zurücksetzt
+
+### Removed
+- Testdaten aus Migrationen: `1737000005000_seed-test-customers` und `1737000020000_seed-comprehensive-testdata` sind jetzt leer (`up`/`down` ohne Wirkung), in `1737000023000_create-tool-master` entfallen die Beispielwerkzeuge. Eine frisch migrierte DB enthält nur noch Stammdaten und den User `admin`; Testdaten kommen ausschließlich über `npm run seed` (in Produktion optional über `scripts/init.sh`). Bereits migrierte DBs sind nicht betroffen – node-pg-migrate führt gelaufene Migrationen nicht erneut aus
 
 ---
 

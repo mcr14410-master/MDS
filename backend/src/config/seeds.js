@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const { hashPassword } = require('../utils/password');
 
 dotenv.config();
 
@@ -339,6 +340,170 @@ async function seed() {
       `, [aufspannTypeId]);
     }
 
+    // 13. Werkzeugstamm (Beispiele)
+    console.log('Creating tool master examples...');
+    await client.query(`
+      INSERT INTO tool_master (
+        article_number, tool_name, category_id, subcategory_id,
+        item_type, tool_category, diameter, length, flutes,
+        material, coating, substrate_grade, manufacturer,
+        manufacturer_part_number, uses_inserts, custom_fields, created_by
+      )
+      VALUES
+        ('T001', 'Schaftfräser D10 Z2 HSS-E TiAlN',
+         (SELECT id FROM tool_categories WHERE name = 'Milling'),
+         (SELECT id FROM tool_subcategories WHERE name = 'End Mill'),
+         'tool', 'standard', 10.0, 100.0, 2, 'HSS-E', 'TiAlN', NULL, 'Garant', 'GAR-10-HSS-TiAlN', false,
+         '{"corner_radius": 0.2, "helix_angle": 30, "center_cutting": true}'::jsonb, $1),
+
+        ('T002', 'Spiralbohrer D8.5 HSS-Co DIN338',
+         (SELECT id FROM tool_categories WHERE name = 'Drilling'),
+         (SELECT id FROM tool_subcategories WHERE name = 'Twist Drill'),
+         'tool', 'standard', 8.5, 120.0, NULL, 'HSS-Co', 'TiN', NULL, 'Dormer', 'DOR-850-HSS-Co', false,
+         NULL, $1),
+
+        ('I001', 'SEKT 1204 AZ TiAlN',
+         (SELECT id FROM tool_categories WHERE name = 'Inserts'),
+         (SELECT id FROM tool_subcategories WHERE name = 'SEKT'),
+         'insert', 'standard', 12.0, NULL, NULL, 'Carbide', 'TiAlN', 'K20', 'Sandvik', 'SEKT1204AZ-TN', false,
+         '{"insert_shape": "SEKT", "insert_size": "1204", "nose_radius": 0.4, "cutting_edges": 4}'::jsonb, $1),
+
+        ('T003', 'Gewindebohrer M10x1.5 HSS-E',
+         (SELECT id FROM tool_categories WHERE name = 'Threading'),
+         (SELECT id FROM tool_subcategories WHERE name = 'Thread Tap'),
+         'tool', 'standard', 10.0, 90.0, NULL, 'HSS-E', 'TiN', NULL, 'OSG', 'OSG-M10-1.5', false,
+         '{"thread_size": "M10x1.5", "thread_type": "metric"}'::jsonb, $1),
+
+        ('T100', 'Spezial-Formfräser Kontur-XY',
+         (SELECT id FROM tool_categories WHERE name = 'Milling'),
+         (SELECT id FROM tool_subcategories WHERE name = 'Slot Mill'),
+         'tool', 'special', 25.0, 150.0, 4, 'Carbide', 'AlTiN', NULL, 'Sonderanfertigung', 'SPECIAL-FORM-001', false,
+         '{"special_profile": "custom_contour_xy"}'::jsonb, $1)
+      ON CONFLICT (article_number) DO NOTHING;
+    `, [userId || null]);
+
+    // 14. Rüstblatt (P-12345 OP10)
+    console.log('Creating setup sheet...');
+    const programRow = await client.query(
+      "SELECT id FROM programs WHERE operation_id = $1 AND program_number = 'O1234'",
+      [operationId || null]
+    );
+    const programId = programRow.rows[0]?.id;
+    const fixtureRow = await client.query("SELECT id FROM fixtures WHERE fixture_number = 'V00001'");
+    const fixtureId = fixtureRow.rows[0]?.id;
+
+    if (operationId && machineId && userId) {
+      await client.query(`
+        INSERT INTO setup_sheets (
+          operation_id, machine_id, program_id, fixture_id,
+          fixture_description, clamping_description,
+          control_type, preset_number, wcs_x, wcs_y, wcs_z, reference_point,
+          raw_material_dimensions, material_specification,
+          setup_instructions, special_notes,
+          status, created_by, updated_by
+        )
+        SELECT
+          $1::integer, $2::integer, $3::integer, $4::integer,
+          'Aufspannvorrichtung V00001 (Gehäuse OP10)',
+          'Hydraulische Niederzugspanner 4x, Anzugsmoment 50 Nm',
+          'heidenhain', 15, 100.000, 75.000, 80.000,
+          'Nullpunkt: Oberkante Rohteil, Mitte Bohrung Ø12 vorne links',
+          '210x160x85 mm', 'AlMgSi1 F28, gesägt',
+          'EINRICHTUNG:\n1. Vorrichtung V00001 mit 4x M12 befestigen\n2. Rohteil einlegen, Anschlag hinten und links\n3. Niederzugspanner aktivieren (50 Nm)\n4. Preset 15 antasten: Oberkante + Mitte Ø12\n5. Werkzeugliste prüfen\n6. Programm O1234 laden\n\nPRÜFUNG NACH SPANNUNG:\n- Rohteil auf festen Sitz prüfen\n- Ausrichtung mit Messuhr ±0.02 mm',
+          'ACHTUNG:\n- Bei Vibrationen sofort Stopp, Spannung nachprüfen\n- Kühlmittel: Emulsion 8 %, mind. 40 l/min\n- Nach jedem Teil Späne aus der Vorrichtung entfernen',
+          'active', $5::integer, $5::integer
+        WHERE NOT EXISTS (SELECT 1 FROM setup_sheets WHERE operation_id = $1::integer);
+      `, [operationId, machineId, programId || null, fixtureId || null, userId]);
+    }
+
+    // 15. Werkzeugliste (Programm O1234)
+    console.log('Creating tool list...');
+    if (programId && userId) {
+      const toolListResult = await client.query(`
+        INSERT INTO tool_lists (program_id, created_by)
+        VALUES ($1, $2)
+        ON CONFLICT (program_id) DO NOTHING
+        RETURNING id;
+      `, [programId, userId]);
+
+      if (toolListResult.rows.length > 0) {
+        await client.query(`
+          INSERT INTO tool_list_items (
+            tool_list_id, tool_number, description, tool_type,
+            manufacturer, order_number, tool_holder, notes, sequence
+          )
+          VALUES
+            ($1, 'T01', 'Planfräser D63 Z4', 'Planfräser', 'ISCAR', 'F90LN D063-05-31.75-R-N15', 'HSK-A63', 'Planen Oberseite, Wendeschneidplatten APKT 1604', 1),
+            ($1, 'T02', 'Schaftfräser D16 VHM', 'Schaftfräser', 'Gühring', '5510-16.000', 'HSK-A63 Spannzange ER32', 'Schruppen Oberseite', 2),
+            ($1, 'T03', 'Bohrer D8.0 VHM', 'Bohrer', 'Gühring', '5512-8.000', 'HSK-A63 Spannzange ER32', 'Bohrungen vorbohren', 3);
+        `, [toolListResult.rows[0].id]);
+      }
+    }
+
+    // 16. Prüfplan (P-12345 OP20)
+    console.log('Creating inspection plan...');
+    const op20Result = await client.query(`
+      SELECT o.id
+      FROM operations o
+      JOIN parts p ON o.part_id = p.id
+      WHERE p.part_number = 'P-12345' AND o.op_number = 'OP20'
+    `);
+    const op20Id = op20Result.rows[0]?.id;
+
+    if (op20Id && userId) {
+      const planRes = await client.query(`
+        INSERT INTO inspection_plans (operation_id, notes, created_by, updated_by)
+        VALUES ($1, 'Erstmuster vollständig prüfen, danach jedes 10. Teil. Messprotokoll ablegen.', $2, $2)
+        ON CONFLICT (operation_id) DO NOTHING
+        RETURNING id;
+      `, [op20Id, userId]);
+
+      if (planRes.rows.length > 0) {
+        await client.query(`
+          INSERT INTO inspection_plan_items (
+            inspection_plan_id, sequence_number, measurement_description,
+            tolerance, min_value, max_value, nominal_value, mean_value,
+            measuring_tool, instruction
+          )
+          VALUES
+            ($1, 1, 'Gesamtlänge', '±0.1 mm', 199.90, 200.10, 200.00, 200.00, 'Messschieber 0-300 mm', 'Auf Messplatte, 20 °C ±2 °C'),
+            ($1, 2, 'Gesamtbreite', '±0.1 mm', 149.90, 150.10, 150.00, 150.00, 'Messschieber 0-300 mm', 'An 3 Stellen messen, Mittelwert bilden'),
+            ($1, 3, 'Höhe', 'ISO 2768-m (±0.3 mm)', 79.70, 80.30, 80.00, 80.00, 'Messschieber 0-150 mm', NULL),
+            ($1, 4, 'Bohrung Ø12 H7 (Referenzbohrung)', 'H7', 12.000, 12.018, 12.009, 12.009, 'Grenzlehrdorn Ø12 H7', 'Gut-Seite muss durchgehen, Ausschuss-Seite nicht'),
+            ($1, 5, 'Ebenheit Oberseite', '0.05 mm', NULL, 0.05, NULL, NULL, 'Messuhr auf Messplatte', 'Messuhr über die gesamte Fläche führen'),
+            ($1, 6, 'Rauheit Ra Funktionsflächen', 'Ra ≤ 1.6 µm', NULL, 1.6, NULL, NULL, 'Rauheitsmessgerät', 'An 3 Messpunkten'),
+            ($1, 7, 'Kanten entgratet', 'Grat max. 0.1 mm', NULL, 0.1, NULL, NULL, 'Sichtprüfung', 'Scharfe Kanten nicht zulässig');
+        `, [planRes.rows[0].id]);
+      }
+    }
+
+    // 17. Testbenutzer je Rolle (optional, nur mit eigenem Passwort, nie in Produktion)
+    console.log('Creating test users...');
+    let testUsersCreated = false;
+    if (process.env.NODE_ENV === 'production') {
+      console.log('   übersprungen (NODE_ENV=production)');
+    } else if (!process.env.SEED_TEST_USER_PASSWORD) {
+      console.log('   übersprungen (Passwort per SEED_TEST_USER_PASSWORD übergeben)');
+    } else {
+      const testHash = await hashPassword(process.env.SEED_TEST_USER_PASSWORD);
+      await client.query(`
+        INSERT INTO users (username, email, password_hash, first_name, last_name, is_active)
+        VALUES
+          ('programmer1', 'programmer1@example.com', $1, 'Hans', 'Müller', true),
+          ('reviewer1', 'reviewer1@example.com', $1, 'Anna', 'Schmidt', true),
+          ('operator1', 'operator1@example.com', $1, 'Michael', 'Weber', true),
+          ('helper1', 'helper1@example.com', $1, 'Thomas', 'Meyer', true)
+        ON CONFLICT (username) DO NOTHING;
+      `, [testHash]);
+      await client.query(`
+        INSERT INTO user_roles (user_id, role_id)
+        SELECT u.id, r.id FROM users u JOIN roles r ON r.name = regexp_replace(u.username, '1$', '')
+        WHERE u.username IN ('programmer1', 'reviewer1', 'operator1', 'helper1')
+        ON CONFLICT DO NOTHING;
+      `);
+      testUsersCreated = true;
+    }
+
     await client.query('COMMIT');
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📊 Erstellte Testdaten:');
@@ -353,7 +518,12 @@ async function seed() {
     console.log('   • 5 Messmittel');
     console.log('   • 5 Spannmittel');
     console.log('   • 4 Vorrichtungen');
-    
+    console.log('   • 5 Einträge im Werkzeugstamm');
+    console.log('   • 1 Rüstblatt, 1 Werkzeugliste, 1 Prüfplan');
+    if (testUsersCreated) {
+      console.log('   • 4 Testbenutzer (programmer1, reviewer1, operator1, helper1)');
+    }
+
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Error seeding database:', error);
