@@ -29,26 +29,39 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 ---
 
-## Release 2.8.0 – zusätzliche Schritte
+## Nächstes Release – zusätzliche Schritte
 
-Gesammelt seit 2.7.1 (Migrationen `1737000111000` und `1737000112000`). Punkt „Halbe Feiertage“ **vor** dem Deploy prüfen, die übrigen danach abarbeiten, dann diesen Abschnitt nach „Erledigt“ verschieben.
+Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-- [ ] **Migration `days_by_year` (#107):** Im Deploy-Log nach Warnungen `Urlaub …: Neuberechnung … ≠ gespeichert` suchen (Urlaube über den Jahreswechsel, deren Neuberechnung von der gespeicherten Gesamtzahl abweicht – Differenz wurde dem Startjahr zugeschlagen). Resturlaub von 2–3 Mitarbeitern stichprobenartig mit dem Stand vor dem Release vergleichen
-- [ ] **Feiertage nachträglich angelegt (#109):** Prüfabfrage ausführen – Treffer = Urlaube, bei deren Berechnung ein Feiertag noch fehlte (zu viele Tage abgezogen); bei Treffern gezielt neu berechnen
-  ```bash
-  docker compose exec -T db psql -U mds -d mds -c "SELECT v.id, v.user_id, v.start_date, v.end_date, v.calculated_days, v.status, h.date AS feiertag FROM vacations v JOIN holidays h ON h.date BETWEEN v.start_date AND v.end_date AND h.region = 'BY' WHERE h.created_at > v.created_at AND v.status IN ('approved', 'pending') ORDER BY v.start_date;"
-  ```
-- [ ] **Halbe Feiertage (Migration `1737000112000`):** Im Deploy-Log stehen die angepassten Urlaube (`Urlaub …: X → Y Tage`) und ggf. Warnungen `… erst nach dem Antrag angelegt – übersprungen` (diese Urlaube gezielt prüfen). **Falls 2027 schon initialisiert ist:** Der Übertrag nach 2027 wurde mit dem alten Rest 2026 gebucht und ist um die zusätzlichen halben Tage zu hoch – vor dem Deploy prüfen:
-  ```bash
-  docker compose exec -T db psql -U mds -d mds -c "SELECT count(*) FROM vacation_entitlements WHERE year = 2027;"
-  ```
-  Bei Treffern nach dem Deploy die betroffenen Mitarbeiter (Log) in der Urlaubsverwaltung bei „Übertrag 2027“ korrigieren
-- [ ] **Eigene Urlaubsanträge (#108):** Mit einem Mitarbeiter-Konto ohne Verwaltungsrechte einen Antrag stellen, ändern und zurückziehen
-- [ ] **Inaktive Maschinen (#110):** Alte Testmaschinen deaktivieren (Maschine → „Deaktivieren“), Auswahlfelder stichprobenartig prüfen (Arbeitsgang, Einrichteblatt, Spannmittel)
-- [ ] **PDF-Exporte (#111, #114, #115):** einmal erzeugen und prüfen
-  - Zeitnachweis eines abgeschlossenen Monats für einen Mitarbeiter mit Urlaub über das Monatsende bzw. Auszahlung – mit der Buchhaltung gegenprüfen (Urlaubskonto „Stand Monatsende“, Saldo neu inkl. Korrektur/Auszahlung)
-  - Urlaubs-Gesamtübersicht mit „Verwaltung → Urlaub“ vergleichen (Spalte „Korr.“, Rest)
-  - ein Messmittel-Datenblatt
+- (noch keine)
+
+---
+
+## Erledigt: Release 2.8.0 (11.10.2026)
+
+Migrationen `days_by_year` und halbe Feiertage problemlos; 2027 war noch nicht initialisiert. Warnung bei einem Urlaub über den Jahreswechsel (Mitarbeiter mit 4-Tage-Woche, Antrag vor dem Zeitmodell mit Mo–Fr berechnet) – zwei Urlaube per „Öffnen + Speichern“ neu berechnet, Urlaube aus der Zeit vor dem Zeitmodell bewusst nicht. Feiertags-Prüfabfrage ohne Treffer, Klicktests ohne Befund. Details: Session-Doku 11.10.2026.
+
+Lese-Prüfung „gespeicherte Urlaubstage ≠ heutige Berechnung“ (für spätere Kontrollen):
+```bash
+docker compose exec -T backend node - <<'EOF'
+const pool = require('./src/config/db');
+const { calculateWorkingDaysByYear } = require('./src/controllers/vacationsController');
+(async () => {
+  const r = await pool.query(`SELECT v.id, v.user_id, v.start_date::text s, v.end_date::text e, v.calculated_days, v.days_by_year, v.status, vt.name typ
+    FROM vacations v JOIN vacation_types vt ON vt.id = v.type_id
+    WHERE v.status IN ('approved','pending') AND v.end_date >= '2026-01-01' ORDER BY v.user_id, v.start_date`);
+  for (const v of r.rows) {
+    const b = await calculateWorkingDaysByYear(v.user_id, v.s, v.e);
+    const t = Object.values(b).reduce((a, c) => a + c, 0);
+    if (Math.abs(t - parseFloat(v.calculated_days)) > 0.001)
+      console.log(`#${v.id} MA ${v.user_id} ${v.typ} ${v.s}–${v.e} ${v.status}: gespeichert ${v.calculated_days} ${JSON.stringify(v.days_by_year)} | heute ${t} ${JSON.stringify(b)}`);
+  }
+  console.log('Prüfung fertig');
+  await pool.end();
+})();
+EOF
+```
+Achtung: rechnet mit dem **aktuellen** Zeitmodell – Abweichungen bei Urlauben vor einem Modellwechsel sind erwartet.
 
 ---
 
