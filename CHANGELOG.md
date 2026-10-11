@@ -19,8 +19,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Eigene Urlaubsanträge lassen sich jetzt selbst ändern oder zurückziehen, solange sie noch nicht genehmigt sind – unter „Mein Bereich“ → „Meine Anträge“. Ein abgelehnter Antrag kann mit neuen Daten erneut eingereicht werden.
 - Urlaub über den Jahreswechsel wird jetzt richtig verbucht: Die Tage im Dezember zählen zum alten Jahr, die Tage im Januar zum neuen. Bisher wurde der ganze Urlaub dem Startjahr abgezogen.
 - Ein solcher Urlaub erscheint in beiden Jahren, mit dem Hinweis, wie viele Tage auf das jeweilige Jahr entfallen. Das gilt auch in den PDF-Übersichten.
+- Feiertage werden bei der Urlaubsberechnung jetzt immer berücksichtigt, auch für Jahre, die noch niemand im Kalender geöffnet hat. Bisher konnten z. B. Neujahr oder Heilige Drei Könige als Urlaubstage abgezogen werden.
 
 ### Fixed
+- Urlaubstage: Feiertage eines Jahres wurden erst beim Aufruf des Kalenders erzeugt (`GET /api/holidays`). Fehlten sie bei der Berechnung, zählten Feiertage als Urlaubstage – dauerhaft gespeichert, auch nach späterem Erzeugen/Initialisieren. Jetzt erzeugt `calculateWorkingDaysByYear` fehlende Jahre vorab (`ensureHolidaysForYear`), für Anlegen, Antrag, Bearbeiten, erneutes Einreichen und Vorschau; `.http`-Szenarien FT-1 bis FT-3
 - Urlaub über den Jahreswechsel: Tage werden je Kalenderjahr aufgeteilt (neue Spalte `vacations.days_by_year`, Migration mit Backfill). `vacation_balances`, Übertrag beim Initialisieren, die drei PDF-Reports sowie die Jahresfilter von `GET /api/vacations` und `/my-requests` rechnen mit dem Anteil des Jahres statt nach Startjahr; Listen liefern `days_in_year`
 - Terminal-Benutzerinfo (`/api/time-tracking/entries/user-info`): Resturlaub war immer leer – Abfrage auf nicht existierende View `vacation_balances_view`
 

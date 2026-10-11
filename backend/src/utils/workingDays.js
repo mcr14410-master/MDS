@@ -60,4 +60,4 @@ function countWorkingDaysByYear(startDate, endDate, model, holidays) {
   return byYear;
 }
 
-module.exports = { countWorkingDays, countWorkingDaysByYear };
+module.exports = { countWorkingDays, countWorkingDaysByYear, toDateStr };

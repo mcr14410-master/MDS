@@ -10,7 +10,8 @@
 
 const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
-const { countWorkingDaysByYear } = require('../utils/workingDays');
+const { countWorkingDaysByYear, toDateStr } = require('../utils/workingDays');
+const { ensureHolidaysForYear } = require('./holidaysController');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -167,6 +168,14 @@ async function userHasPermission(userId, permission) {
  * @returns {Promise<Object<string, number>>} z. B. { "2026": 8, "2027": 4 }
  */
 async function calculateWorkingDaysByYear(userId, startDate, endDate, region = 'BY') {
+  // Feiertage werden sonst erst beim Aufruf des Kalenders erzeugt – fehlen sie
+  // für ein Jahr, würden z. B. Neujahr oder Heilige Drei Könige als Urlaubstage zählen
+  const startYear = Number(toDateStr(startDate).slice(0, 4));
+  const endYear = Number(toDateStr(endDate).slice(0, 4));
+  for (let year = startYear; year <= endYear; year++) {
+    await ensureHolidaysForYear(year, region);
+  }
+
   // Get holidays in range
   const holidaysResult = await pool.query(
     `SELECT date FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3`,
