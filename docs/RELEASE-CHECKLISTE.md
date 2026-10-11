@@ -29,9 +29,9 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 ---
 
-## Nächstes Release – zusätzliche Schritte
+## Release 2.8.0 – zusätzliche Schritte
 
-Gesammelt seit 2.7.1. Nach dem Deploy abarbeiten, dann diesen Abschnitt nach „Erledigt“ verschieben.
+Gesammelt seit 2.7.1 (Migrationen `1737000111000` und `1737000112000`). Punkt „Halbe Feiertage“ **vor** dem Deploy prüfen, die übrigen danach abarbeiten, dann diesen Abschnitt nach „Erledigt“ verschieben.
 
 - [ ] **Migration `days_by_year` (#107):** Im Deploy-Log nach Warnungen `Urlaub …: Neuberechnung … ≠ gespeichert` suchen (Urlaube über den Jahreswechsel, deren Neuberechnung von der gespeicherten Gesamtzahl abweicht – Differenz wurde dem Startjahr zugeschlagen). Resturlaub von 2–3 Mitarbeitern stichprobenartig mit dem Stand vor dem Release vergleichen
 - [ ] **Feiertage nachträglich angelegt (#109):** Prüfabfrage ausführen – Treffer = Urlaube, bei deren Berechnung ein Feiertag noch fehlte (zu viele Tage abgezogen); bei Treffern gezielt neu berechnen
