@@ -45,6 +45,10 @@ Gesammelt seit 2.7.1. Nach dem Deploy abarbeiten, dann diesen Abschnitt nach „
   Bei Treffern nach dem Deploy die betroffenen Mitarbeiter (Log) in der Urlaubsverwaltung bei „Übertrag 2027“ korrigieren
 - [ ] **Eigene Urlaubsanträge (#108):** Mit einem Mitarbeiter-Konto ohne Verwaltungsrechte einen Antrag stellen, ändern und zurückziehen
 - [ ] **Inaktive Maschinen (#110):** Alte Testmaschinen deaktivieren (Maschine → „Deaktivieren“), Auswahlfelder stichprobenartig prüfen (Arbeitsgang, Einrichteblatt, Spannmittel)
+- [ ] **PDF-Exporte (#111, #114, #115):** einmal erzeugen und prüfen
+  - Zeitnachweis eines abgeschlossenen Monats für einen Mitarbeiter mit Urlaub über das Monatsende bzw. Auszahlung – mit der Buchhaltung gegenprüfen (Urlaubskonto „Stand Monatsende“, Saldo neu inkl. Korrektur/Auszahlung)
+  - Urlaubs-Gesamtübersicht mit „Verwaltung → Urlaub“ vergleichen (Spalte „Korr.“, Rest)
+  - ein Messmittel-Datenblatt
 
 ---
 
