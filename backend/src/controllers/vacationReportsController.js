@@ -107,56 +107,18 @@ exports.exportMyYear = async (req, res) => {
     }
     const user = userResult.rows[0];
 
-    // Fetch balance
+    // Saldo aus der View vacation_balances – wie in der Oberfläche (inkl. Korrektur)
     const balanceResult = await pool.query(`
-      SELECT 
-        ve.total_days,
-        ve.carried_over,
-        (ve.total_days + COALESCE(ve.carried_over, 0)) as available_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as taken_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as approved_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'pending'
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as pending_days
-      FROM vacation_entitlements ve
-      WHERE ve.user_id = $1 AND ve.year = $2
+      SELECT total_days, carried_over, adjustment, available_days,
+             taken_days, approved_days, pending_days, used_days, remaining_days
+      FROM vacation_balances
+      WHERE user_id = $1 AND year = $2
     `, [userId, year]);
 
     const balance = balanceResult.rows[0] || {
-      total_days: 0,
-      carried_over: 0,
-      available_days: 0,
-      taken_days: 0,
-      approved_days: 0,
-      pending_days: 0
+      total_days: 0, carried_over: 0, adjustment: 0, available_days: 0,
+      taken_days: 0, approved_days: 0, pending_days: 0, used_days: 0, remaining_days: 0
     };
-    balance.used_days = parseFloat(balance.taken_days) + parseFloat(balance.approved_days) + parseFloat(balance.pending_days);
-    balance.remaining_days = balance.available_days - balance.used_days;
 
     // Fetch all vacations (approved + pending)
     const vacationsResult = await pool.query(`
@@ -227,6 +189,14 @@ exports.exportMyYear = async (req, res) => {
     
     doc.font('Helvetica').text('Übertrag:', col2, y + 30);
     doc.font('Helvetica-Bold').text(`${balance.carried_over || 0} Tage`, col2, y + 45);
+
+    if (balance.adjustment && parseFloat(balance.adjustment) !== 0) {
+      doc.font('Helvetica').text('Korrektur:', col3, y + 30);
+      doc.font('Helvetica-Bold').text(`${balance.adjustment} Tage`, col3, y + 45);
+    }
+
+    doc.font('Helvetica').text('Verfügbar:', col4, y + 30);
+    doc.font('Helvetica-Bold').text(`${balance.available_days} Tage`, col4, y + 45);
 
     doc.font('Helvetica').text('Genommen:', col1, y + 60);
     doc.font('Helvetica-Bold').text(`${balance.taken_days} Tage`, col1, y + 75);
@@ -388,55 +358,14 @@ exports.exportAll = async (req, res) => {
   try {
     const year = parseInt(req.query.year) || new Date().getFullYear();
 
-    // Fetch all balances
+    // Salden aus der View vacation_balances – wie in der Oberfläche (inkl. Korrektur)
     const balancesResult = await pool.query(`
       SELECT 
-        u.id as user_id,
-        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vb.user_id,
+        vb.display_name,
         u.first_name, u.last_name,
-        ve.total_days,
-        ve.carried_over,
-        (ve.total_days + COALESCE(ve.carried_over, 0)) as available_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = u.id 
-             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
-          0
-        ) as taken_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = u.id 
-             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
-          0
-        ) as approved_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = u.id 
-             AND v.status = 'pending'
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
-          0
-        ) as pending_days,
-        (ve.total_days + COALESCE(ve.carried_over, 0) - COALESCE(
-          (SELECT SUM((v.days_by_year->>($1::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = u.id 
-             AND v.status IN ('approved', 'pending')
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($1::int, 12, 31) AND v.end_date >= make_date($1::int, 1, 1)),
-          0
-        )) as remaining_days,
+        vb.total_days, vb.carried_over, vb.adjustment, vb.available_days,
+        vb.taken_days, vb.approved_days, vb.pending_days, vb.remaining_days,
         COALESCE(
           (SELECT json_agg(r.name ORDER BY r.name)
            FROM user_roles ur
@@ -444,10 +373,9 @@ exports.exportAll = async (req, res) => {
            WHERE ur.user_id = u.id),
           '[]'::json
         ) as roles
-      FROM users u
-      JOIN vacation_entitlements ve ON ve.user_id = u.id AND ve.year = $1
-      WHERE u.is_active = true
-        AND u.vacation_tracking_enabled = true
+      FROM vacation_balances vb
+      JOIN users u ON u.id = vb.user_id
+      WHERE vb.year = $1 AND u.is_active = true
       ORDER BY u.last_name, u.first_name
     `, [year]);
 
@@ -538,8 +466,9 @@ exports.exportAll = async (req, res) => {
       doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
       doc.text('Mitarbeiter', 45, yPos + 6);
       doc.text('Rollen', 195, yPos + 6);
-      doc.text('Anspruch', 370, yPos + 6);
-      doc.text('Übertrag', 430, yPos + 6);
+      doc.text('Anspruch', 320, yPos + 6);
+      doc.text('Übertrag', 378, yPos + 6);
+      doc.text('Korr.', 436, yPos + 6);
       doc.text('Verfügbar', 490, yPos + 6);
       doc.text('Genomm.', 555, yPos + 6);
       doc.text('Genehm.', 615, yPos + 6);
@@ -585,9 +514,10 @@ exports.exportAll = async (req, res) => {
       }
 
       doc.text(b.display_name, 45, y, { width: 145 });
-      doc.text(roles, 195, y, { width: 170 });
-      doc.text(`${b.total_days}`, 370, y, { width: 55 });
-      doc.text(`${b.carried_over || 0}`, 430, y, { width: 55 });
+      doc.text(roles, 195, y, { width: 120 });
+      doc.text(`${b.total_days}`, 320, y, { width: 55 });
+      doc.text(`${b.carried_over || 0}`, 378, y, { width: 55 });
+      doc.text(`${b.adjustment || 0}`, 436, y, { width: 50 });
       doc.text(`${b.available_days}`, 490, y, { width: 55 });
       doc.text(`${b.taken_days}`, 555, y, { width: 55 });
       doc.fillColor('#16a34a').text(`${b.approved_days}`, 615, y, { width: 55 });
@@ -643,6 +573,14 @@ exports.exportAll = async (req, res) => {
       
       doc.font('Helvetica').text('Übertrag:', col2, y + 28);
       doc.font('Helvetica-Bold').text(`${b.carried_over || 0} Tage`, col2, y + 42);
+
+      if (b.adjustment && parseFloat(b.adjustment) !== 0) {
+        doc.font('Helvetica').text('Korrektur:', col3, y + 28);
+        doc.font('Helvetica-Bold').text(`${b.adjustment} Tage`, col3, y + 42);
+      }
+
+      doc.font('Helvetica').text('Verfügbar:', col4, y + 28);
+      doc.font('Helvetica-Bold').text(`${b.available_days} Tage`, col4, y + 42);
 
       doc.font('Helvetica').text('Genommen:', col1, y + 55);
       doc.font('Helvetica-Bold').text(`${b.taken_days}`, col1, y + 67);
@@ -800,53 +738,18 @@ exports.exportUserYear = async (req, res) => {
     }
     const user = userResult.rows[0];
 
-    // Fetch balance (nur affects_balance Typen)
+    // Saldo aus der View vacation_balances – wie in der Oberfläche (inkl. Korrektur)
     const balanceResult = await pool.query(`
-      SELECT 
-        ve.total_days,
-        ve.carried_over,
-        ve.adjustment,
-        (ve.total_days + COALESCE(ve.carried_over, 0) + COALESCE(ve.adjustment, 0)) as available_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'approved' AND v.end_date < CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as taken_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'approved' AND v.end_date >= CURRENT_DATE
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as approved_days,
-        COALESCE(
-          (SELECT SUM((v.days_by_year->>($2::int)::text)::numeric)
-           FROM vacations v
-           JOIN vacation_types vt ON vt.id = v.type_id
-           WHERE v.user_id = $1 
-             AND v.status = 'pending'
-             AND vt.affects_balance = true
-             AND v.start_date <= make_date($2::int, 12, 31) AND v.end_date >= make_date($2::int, 1, 1)),
-          0
-        ) as pending_days
-      FROM vacation_entitlements ve
-      WHERE ve.user_id = $1 AND ve.year = $2
+      SELECT total_days, carried_over, adjustment, available_days,
+             taken_days, approved_days, pending_days, used_days, remaining_days
+      FROM vacation_balances
+      WHERE user_id = $1 AND year = $2
     `, [userId, year]);
 
     const balance = balanceResult.rows[0] || {
       total_days: 0, carried_over: 0, adjustment: 0, available_days: 0,
-      taken_days: 0, approved_days: 0, pending_days: 0
+      taken_days: 0, approved_days: 0, pending_days: 0, used_days: 0, remaining_days: 0
     };
-    balance.used_days = parseFloat(balance.taken_days) + parseFloat(balance.approved_days) + parseFloat(balance.pending_days);
-    balance.remaining_days = balance.available_days - balance.used_days;
 
     // Fetch all vacations for user/year
     const vacationsResult = await pool.query(`
