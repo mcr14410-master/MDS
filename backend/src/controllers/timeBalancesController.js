@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -690,7 +691,7 @@ async function exportPDF(req, res) {
     const filename = `Stundennachweis_${userName.replace(/\s+/g, '_')}_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     // Header
     doc.fontSize(18).font('Helvetica-Bold')
@@ -787,6 +788,7 @@ async function exportPDF(req, res) {
 
   } catch (error) {
     console.error('Fehler beim PDF-Export:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }
@@ -1064,7 +1066,7 @@ async function exportPayrollPDF(req, res) {
     const filename = `Zeitnachweis_${userName.replace(/\s+/g, '_')}_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     // === KOPFBEREICH ===
     doc.fontSize(16).font('Helvetica-Bold')
@@ -1277,6 +1279,7 @@ async function exportPayrollPDF(req, res) {
 
   } catch (error) {
     console.error('Fehler beim Zeitnachweis-Export:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }
@@ -1321,7 +1324,7 @@ async function exportPayrollAllPDF(req, res) {
     const filename = `Zeitnachweise_${targetYear}-${String(targetMonth).padStart(2, '0')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     for (let i = 0; i < usersResult.rows.length; i++) {
       const user = usersResult.rows[i];
@@ -1490,6 +1493,7 @@ async function exportPayrollAllPDF(req, res) {
 
   } catch (error) {
     console.error('Fehler beim Sammel-Zeitnachweis-Export:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 }

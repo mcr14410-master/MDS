@@ -23,6 +23,7 @@
 
 const pool = require('../config/db');
 const PDFDocument = require('pdfkit');
+const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
 const QRCode = require('qrcode');
 
 // ============================================================================
@@ -1004,7 +1005,7 @@ exports.generateCalibrationReport = async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Kalibrier-Laufzettel_${new Date().toISOString().slice(0, 10)}.pdf`);
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     // Page geometry (A4: 595 x 842 pt, margin 40 → usable 515 x 762)
     const PAGE_LEFT = 40;
@@ -1160,6 +1161,7 @@ exports.generateCalibrationReport = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating calibration report:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen des Kalibrier-Laufzettels',
@@ -1285,7 +1287,7 @@ exports.generateDataSheets = async (req, res) => {
       'Content-Disposition',
       `attachment; filename=Messmittel-Datenblaetter_${layout}_${new Date().toISOString().slice(0, 10)}.pdf`
     );
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     const PAGE_LEFT = 40;
     const PAGE_RIGHT = 555;
@@ -1488,6 +1490,7 @@ exports.generateDataSheets = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating datasheets:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen der Datenblätter',
