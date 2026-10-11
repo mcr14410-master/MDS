@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import axios from '../utils/axios';
 
+// Zähler für fetchBalances – nur die zuletzt angeforderten Salden übernehmen
+let balancesRequestId = 0;
+
 export const useVacationsStore = create((set, get) => ({
   // ============================================
   // STATE
@@ -26,6 +29,7 @@ export const useVacationsStore = create((set, get) => ({
   // Entitlements & Balances
   entitlements: [],
   balances: [],
+  balancesYear: null, // Jahr, für das `balances` geladen ist
   
   // Settings
   settings: {},
@@ -184,9 +188,13 @@ export const useVacationsStore = create((set, get) => ({
   // ============================================
   
   fetchBalances: async (year) => {
+    const requestId = ++balancesRequestId;
     try {
       const response = await axios.get(`/api/vacation-entitlements/balances?year=${year}`);
-      set({ balances: response.data });
+      // Veraltete Antwort (inzwischen anderes Jahr angefordert) verwerfen
+      if (requestId === balancesRequestId) {
+        set({ balances: response.data, balancesYear: Number(year) });
+      }
       return response.data;
     } catch (error) {
       console.error('fetchBalances error:', error);
@@ -476,12 +484,18 @@ export const useVacationsStore = create((set, get) => ({
   // ============================================
   
   setFilters: (newFilters) => {
+    const yearChanged = newFilters.year !== undefined && newFilters.year !== get().filters.year;
     const filters = { ...get().filters, ...newFilters };
     set({ filters });
     
     // Refresh calendar when filters change
     const { year, month, view } = filters;
     get().fetchCalendar(year, view === 'month' ? month : null);
+
+    // Salden gehören zum Jahr – bei Jahreswechsel mitladen
+    if (yearChanged) {
+      get().fetchBalances(year).catch(() => {});
+    }
   },
 
   setView: (view) => {
