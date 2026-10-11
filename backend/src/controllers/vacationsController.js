@@ -405,6 +405,9 @@ const getVacations = async (req, res) => {
     if (status) {
       params.push(status);
       query += ` AND v.status = $${params.length}`;
+    } else {
+      // Zurückgezogene Anträge nur auf ausdrückliche Anfrage (status=cancelled)
+      query += ` AND v.status <> 'cancelled'`;
     }
     
     if (type_id) {
@@ -1141,6 +1144,148 @@ const resubmitVacation = async (req, res) => {
   }
 };
 
+/**
+ * Edit own request (pending or rejected) – rejected requests are resubmitted
+ * PUT /api/vacations/:id/own
+ */
+const updateOwnRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { type_id, start_date, end_date, start_time, end_time, note } = req.body;
+
+    const checkResult = await pool.query('SELECT * FROM vacations WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Antrag nicht gefunden' });
+    }
+    const vacation = checkResult.rows[0];
+
+    if (vacation.user_id !== userId) {
+      return res.status(403).json({ error: 'Nur eigene Anträge können bearbeitet werden' });
+    }
+    if (!['pending', 'rejected'].includes(vacation.status)) {
+      return res.status(400).json({
+        error: 'Nur ausstehende oder abgelehnte Anträge können bearbeitet werden',
+        currentStatus: vacation.status
+      });
+    }
+
+    if (!type_id || !start_date || !end_date) {
+      return res.status(400).json({ error: 'type_id, start_date und end_date sind erforderlich' });
+    }
+    if (end_date < start_date) {
+      return res.status(400).json({ error: 'Enddatum muss >= Startdatum sein' });
+    }
+
+    const typeResult = await pool.query(
+      'SELECT * FROM vacation_types WHERE id = $1 AND is_active = true AND direct_entry_only = false',
+      [type_id]
+    );
+    if (typeResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Ungültiger Abwesenheitstyp' });
+    }
+
+    const daysByYear = await calculateWorkingDaysByYear(userId, start_date, end_date);
+    const calculatedDays = sumDays(daysByYear);
+    const calculatedHours = calculateHours(start_time, end_time);
+
+    // Status im WHERE: falls inzwischen genehmigt wurde, nichts überschreiben
+    const result = await pool.query(
+      `UPDATE vacations
+       SET type_id = $1,
+           start_date = $2,
+           end_date = $3,
+           start_time = $4,
+           end_time = $5,
+           calculated_days = $6,
+           calculated_hours = $7,
+           days_by_year = $8,
+           note = $9,
+           status = 'pending',
+           rejection_reason = NULL,
+           approved_by = NULL,
+           approved_at = NULL,
+           updated_at = NOW()
+       WHERE id = $10 AND status IN ('pending', 'rejected')
+       RETURNING id`,
+      [
+        type_id, start_date, end_date,
+        start_time || null, end_time || null,
+        calculatedDays, calculatedHours, daysByYear,
+        note || null, id
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: 'Der Antrag wurde inzwischen bearbeitet' });
+    }
+
+    const fullResult = await pool.query(
+      `SELECT 
+        v.*,
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
+        vt.name as type_name, vt.color as type_color
+      FROM vacations v
+      JOIN users u ON u.id = v.user_id
+      JOIN vacation_types vt ON vt.id = v.type_id
+      WHERE v.id = $1`,
+      [id]
+    );
+
+    res.json({
+      ...fullResult.rows[0],
+      message: vacation.status === 'rejected'
+        ? 'Antrag wurde geändert und erneut eingereicht'
+        : 'Antrag wurde geändert'
+    });
+  } catch (error) {
+    console.error('Error updating own request:', error);
+    res.status(500).json({ error: 'Fehler beim Ändern des Antrags' });
+  }
+};
+
+/**
+ * Withdraw own request (pending or rejected) → status 'cancelled'
+ * POST /api/vacations/:id/withdraw
+ */
+const withdrawRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const checkResult = await pool.query('SELECT * FROM vacations WHERE id = $1', [id]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Antrag nicht gefunden' });
+    }
+    const vacation = checkResult.rows[0];
+
+    if (vacation.user_id !== userId) {
+      return res.status(403).json({ error: 'Nur eigene Anträge können zurückgezogen werden' });
+    }
+    if (!['pending', 'rejected'].includes(vacation.status)) {
+      return res.status(400).json({
+        error: 'Nur ausstehende oder abgelehnte Anträge können zurückgezogen werden',
+        currentStatus: vacation.status
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE vacations
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE id = $1 AND status IN ('pending', 'rejected')
+       RETURNING *`,
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: 'Der Antrag wurde inzwischen bearbeitet' });
+    }
+
+    res.json({ ...result.rows[0], message: 'Antrag wurde zurückgezogen' });
+  } catch (error) {
+    console.error('Error withdrawing request:', error);
+    res.status(500).json({ error: 'Fehler beim Zurückziehen des Antrags' });
+  }
+};
+
 module.exports = {
   getVacations,
   getVacationsCalendar,
@@ -1156,6 +1301,8 @@ module.exports = {
   getMyRequests,
   resubmitVacation,
   requestVacation,
+  updateOwnRequest,
+  withdrawRequest,
   // Export helpers for testing
   calculateWorkingDays,
   checkConcurrentAbsences

@@ -42,10 +42,12 @@ function formatOverlapDates(dates) {
 }
 
 export default function VacationFormModal({ vacation, vacationTypes, users, onClose }) {
-  const { createVacation, requestVacation, updateVacation, deleteVacation, checkOverlap } = useVacationsStore();
+  const { createVacation, requestVacation, updateVacation, updateOwnRequest, deleteVacation, checkOverlap } = useVacationsStore();
 
   const isEditing = vacation?.id;
   const isRequest = vacation?.isRequest; // Flag for self-request mode
+  const isOwnEdit = isEditing && isRequest; // Eigenen Antrag ändern (ausstehend/abgelehnt)
+  const isResubmit = isOwnEdit && vacation?.status === 'rejected';
 
   const [formData, setFormData] = useState({
     user_id: vacation?.user_id || '',
@@ -137,7 +139,9 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
         end_time: formData.end_time || null
       };
 
-      if (isEditing) {
+      if (isOwnEdit) {
+        await updateOwnRequest(vacation.id, data);
+      } else if (isEditing) {
         await updateVacation(vacation.id, data);
       } else if (isRequest) {
         await requestVacation(data);
@@ -184,7 +188,9 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Calendar className={`h-5 w-5 ${isRequest ? 'text-blue-600' : 'text-green-600'}`} />
-              {isEditing ? 'Abwesenheit bearbeiten' : isRequest ? 'Urlaub beantragen' : 'Neue Abwesenheit'}
+              {isResubmit ? 'Antrag bearbeiten & erneut einreichen'
+                : isOwnEdit ? 'Antrag bearbeiten'
+                : isEditing ? 'Abwesenheit bearbeiten' : isRequest ? 'Urlaub beantragen' : 'Neue Abwesenheit'}
             </h2>
             <button
               onClick={onClose}
@@ -408,7 +414,7 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
 
             {/* Actions */}
             <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              {isEditing ? (
+              {isEditing && !isOwnEdit ? (
                 <div>
                   {showDeleteConfirm ? (
                     <div className="flex items-center gap-2">
@@ -465,8 +471,8 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                   }`}
                 >
                   {loading 
-                    ? (isRequest ? 'Wird beantragt...' : 'Speichern...') 
-                    : (isRequest ? 'Beantragen' : 'Speichern')
+                    ? (isResubmit ? 'Wird eingereicht...' : isOwnEdit ? 'Speichern...' : isRequest ? 'Wird beantragt...' : 'Speichern...') 
+                    : (isResubmit ? 'Erneut einreichen' : isOwnEdit ? 'Speichern' : isRequest ? 'Beantragen' : 'Speichern')
                   }
                 </button>
               </div>

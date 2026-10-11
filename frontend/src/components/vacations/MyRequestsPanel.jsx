@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, XCircle, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, XCircle, RefreshCw, ChevronDown, ChevronUp, Pencil, Undo2 } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
 
 const STATUS_CONFIG = {
@@ -15,10 +15,27 @@ const STATUS_CONFIG = {
   }
 };
 
-export default function MyRequestsPanel({ requests, year, onRefresh }) {
-  const { resubmitVacation } = useVacationsStore();
+export default function MyRequestsPanel({ requests, year, onRefresh, onEdit }) {
+  const { resubmitVacation, withdrawRequest } = useVacationsStore();
   const [expandedId, setExpandedId] = useState(null);
   const [resubmitting, setResubmitting] = useState(null);
+  const [confirmWithdrawId, setConfirmWithdrawId] = useState(null);
+  const [withdrawing, setWithdrawing] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
+  const handleWithdraw = async (request) => {
+    setWithdrawing(request.id);
+    setActionError(null);
+    try {
+      await withdrawRequest(request.id);
+      setConfirmWithdrawId(null);
+      onRefresh();
+    } catch (error) {
+      setActionError(error.response?.data?.error || 'Fehler beim Zurückziehen des Antrags');
+    } finally {
+      setWithdrawing(null);
+    }
+  };
 
   const handleResubmit = async (request) => {
     setResubmitting(request.id);
@@ -127,6 +144,69 @@ export default function MyRequestsPanel({ requests, year, onRefresh }) {
                       </p>
                     )}
                   </div>
+
+                  {actionError && confirmWithdrawId === request.id && (
+                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{actionError}</p>
+                  )}
+
+                  {/* Bearbeiten / Zurückziehen (ausstehend + abgelehnt) */}
+                  {confirmWithdrawId === request.id ? (
+                    <div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/20">
+                      <span className="text-sm text-red-700 dark:text-red-400">Antrag wirklich zurückziehen?</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWithdraw(request);
+                          }}
+                          disabled={withdrawing === request.id}
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 
+                                     disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {withdrawing === request.id ? 'Wird zurückgezogen...' : 'Ja'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmWithdrawId(null);
+                            setActionError(null);
+                          }}
+                          className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 
+                                     dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                        >
+                          Nein
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(request);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-sm rounded-lg 
+                                   border border-gray-300 text-gray-700 hover:bg-gray-50 
+                                   dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Bearbeiten
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmWithdrawId(request.id);
+                          setActionError(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-sm rounded-lg 
+                                   border border-red-300 text-red-600 hover:bg-red-50 
+                                   dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Zurückziehen
+                      </button>
+                    </div>
+                  )}
 
                   {/* Resubmit Button for rejected */}
                   {request.status === 'rejected' && (

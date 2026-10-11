@@ -70,6 +70,8 @@ router.post('/vacations/check-overlap', requirePermission('vacations.read'), vac
 router.post('/vacations/:id/approve', requirePermission('vacations.approve'), vacationsController.approveVacation);
 router.post('/vacations/:id/reject', requirePermission('vacations.approve'), vacationsController.rejectVacation);
 router.post('/vacations/:id/resubmit', requirePermission('vacations.read'), vacationsController.resubmitVacation);
+router.put('/vacations/:id/own', requirePermission('vacations.read'), vacationsController.updateOwnRequest); // Eigenen Antrag ändern (pending/rejected)
+router.post('/vacations/:id/withdraw', requirePermission('vacations.read'), vacationsController.withdrawRequest); // Eigenen Antrag zurückziehen
 router.put('/vacations/:id', requirePermission('vacations.manage'), vacationsController.updateVacation);
 router.delete('/vacations/:id', requirePermission('vacations.manage'), vacationsController.deleteVacation);
 

@@ -577,6 +577,44 @@ export const useVacationsStore = create((set, get) => ({
     }
   },
 
+  updateOwnRequest: async (id, data) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.put(`/api/vacations/${id}/own`, data);
+      
+      // Refresh calendar
+      const { year, month, view } = get().filters;
+      await get().fetchCalendar(year, view === 'month' ? month : null);
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('updateOwnRequest error:', error);
+      const message = error.response?.data?.error || 'Fehler beim Ändern des Antrags';
+      set({ loading: false, error: message });
+      throw error;
+    }
+  },
+
+  withdrawRequest: async (id) => {
+    try {
+      set({ loading: true, error: null });
+      const response = await axios.post(`/api/vacations/${id}/withdraw`);
+      
+      // Refresh calendar
+      const { year, month, view } = get().filters;
+      await get().fetchCalendar(year, view === 'month' ? month : null);
+      
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      console.error('withdrawRequest error:', error);
+      const message = error.response?.data?.error || 'Fehler beim Zurückziehen des Antrags';
+      set({ loading: false, error: message });
+      throw error;
+    }
+  },
+
   resubmitVacation: async (id, data) => {
     try {
       set({ loading: true, error: null });
