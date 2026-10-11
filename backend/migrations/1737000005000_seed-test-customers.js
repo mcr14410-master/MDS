@@ -1,20 +1,15 @@
 /* eslint-disable camelcase */
 
+/**
+ * Früher: Test-Kunden CUST-001 bis CUST-003.
+ *
+ * Seit 2026-10 legen Migrationen keine Testdaten mehr an – eine frisch migrierte DB
+ * ist leer (nur Stammdaten). Testdaten kommen optional über `npm run seed`
+ * (bzw. die Abfrage in scripts/init.sh). Bereits migrierte DBs behalten ihre Daten.
+ */
+
 exports.shorthands = undefined;
 
-exports.up = (pgm) => {
-  // Test-Kunden für Entwicklung einfügen
-  pgm.sql(`
-    INSERT INTO customers (name, customer_number, contact_person, email, phone, address, notes) VALUES
-    ('Test GmbH', 'CUST-001', 'Max Mustermann', 'max.mustermann@test-gmbh.de', '+49 123 456789', 'Musterstraße 1, 12345 Musterstadt', 'Hauptkunde für Tests'),
-    ('Beispiel AG', 'CUST-002', 'Anna Schmidt', 'a.schmidt@beispiel.de', '+49 234 567890', 'Beispielweg 10, 54321 Beispielstadt', 'Zweiter Testkunde'),
-    ('Demo Industries', 'CUST-003', 'John Doe', 'john.doe@demo-industries.com', '+1 555 123456', '123 Demo Street, Demo City, USA', 'International customer for testing');
-  `);
-};
+exports.up = () => {};
 
-exports.down = (pgm) => {
-  // Test-Kunden wieder entfernen
-  pgm.sql(`
-    DELETE FROM customers WHERE customer_number IN ('CUST-001', 'CUST-002', 'CUST-003');
-  `);
-};
+exports.down = () => {};
