@@ -262,6 +262,19 @@ async function generateHolidaysForYearInternal(year, region = 'BY', includeHalfD
 }
 
 /**
+ * Generate holidays for a year if none exist yet (same rule as GET /holidays)
+ */
+async function ensureHolidaysForYear(year, region = 'BY') {
+  const checkResult = await pool.query(
+    'SELECT COUNT(*) as count FROM holidays WHERE year = $1 AND region = $2',
+    [year, region]
+  );
+  if (parseInt(checkResult.rows[0].count) === 0) {
+    await generateHolidaysForYearInternal(year, region);
+  }
+}
+
+/**
  * Manually generate holidays for a year
  * POST /api/holidays/generate
  * Body: { year: 2026, region: 'BY', includeHalfDays: true }
@@ -515,6 +528,7 @@ module.exports = {
   checkHoliday,
   getHolidaysInRange,
   // Export for internal use
+  ensureHolidaysForYear,
   generateHolidaysForState,
   calculateEaster,
   GERMAN_STATES
