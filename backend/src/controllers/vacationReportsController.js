@@ -10,6 +10,7 @@
 
 const pool = require('../config/db');
 const PDFDocument = require('pdfkit');
+const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
 
 // ============================================================================
 // HELPERS
@@ -202,7 +203,7 @@ exports.exportMyYear = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     let y = setupPDF(doc, `Urlaubsübersicht ${year}`, user.display_name);
     let pageNum = 1;
@@ -370,6 +371,7 @@ exports.exportMyYear = async (req, res) => {
 
   } catch (error) {
     console.error('Export my year error:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Fehler beim Erstellen des Exports' });
   }
 };
@@ -508,7 +510,7 @@ exports.exportAll = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     // Header
     doc.fontSize(18).font('Helvetica-Bold').text(`Urlaubsübersicht ${year} - Alle Mitarbeiter`, 40, 30);
@@ -758,6 +760,7 @@ exports.exportAll = async (req, res) => {
 
   } catch (error) {
     console.error('Export all error:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Fehler beim Erstellen des Exports' });
   }
 };
@@ -874,7 +877,7 @@ exports.exportUserYear = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     let y = setupPDF(doc, `Urlaubsübersicht ${year}`, user.display_name);
     let pageNum = 1;
@@ -1016,6 +1019,7 @@ exports.exportUserYear = async (req, res) => {
 
   } catch (error) {
     console.error('Export user year error:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({ error: 'Fehler beim Erstellen des Exports' });
   }
 };

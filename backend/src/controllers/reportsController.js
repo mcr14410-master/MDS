@@ -11,6 +11,7 @@
 
 const pool = require('../config/db');
 const PDFDocument = require('pdfkit');
+const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
 
 // ============================================================================
 // HELPERS
@@ -112,7 +113,7 @@ exports.getCalibrationOverview = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Kalibrierungsuebersicht_${formatDate(new Date()).replace(/\./g, '-')}.pdf`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     let y = setupPDF(doc, 'Kalibrierungs-Übersicht');
     let pageNum = 1;
@@ -183,6 +184,7 @@ exports.getCalibrationOverview = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating calibration overview:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen des Reports',
@@ -233,7 +235,7 @@ exports.getCalibrationDueReport = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Kalibrierung_Faellig_${formatDate(new Date()).replace(/\./g, '-')}.pdf`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     let y = setupPDF(doc, 'Fälligkeitsbericht - Kalibrierung');
     let pageNum = 1;
@@ -297,6 +299,7 @@ exports.getCalibrationDueReport = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating due report:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen des Reports',
@@ -373,7 +376,7 @@ exports.getEquipmentHistoryReport = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Messmittel_${eq.inventory_number}_${formatDate(new Date()).replace(/\./g, '-')}.pdf`);
     
-    doc.pipe(res);
+    pipePdf(doc, res);
 
     let y = setupPDF(doc, `Messmittel-Datenblatt: ${eq.inventory_number}`);
     let pageNum = 1;
@@ -498,6 +501,7 @@ exports.getEquipmentHistoryReport = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating equipment history report:', error);
+    if (abortPdfResponse(res)) return;
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen des Reports',
