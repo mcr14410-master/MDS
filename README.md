@@ -76,8 +76,8 @@ In VS Code startet der Task **„MDS-Start (Backend + Frontend)“** beides zusa
 **Erster Login:** Benutzer `admin` mit dem Passwort aus `npm run dev:init` (fragt verdeckt nach,
 alternativ per `DEV_ADMIN_PASSWORD`). Das Skript ist beliebig oft wiederholbar, z. B. nach neuen
 Migrationen, und läuft nicht mit `NODE_ENV=production`. Produktion wird über `scripts/init.sh`
-eingerichtet – das setzt das Admin-Passwort bei jedem Lauf auf `admin123` zurück, also nicht auf
-einem laufenden System erneut ausführen.
+eingerichtet – das setzt beim ersten Lauf `admin123`, ein bestehendes Admin-Passwort bleibt
+unverändert (zurücksetzen nur ausdrücklich mit `ADMIN_PASSWORD_RESET=1 ./scripts/init.sh`).
 
 **API-Tests:** `.http`-Dateien für die VS-Code-Erweiterung REST Client liegen in
 [`backend/tests/`](./backend/tests/).

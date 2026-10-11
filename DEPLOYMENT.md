@@ -90,8 +90,8 @@ Das Script macht automatisch:
 ```
 
 Das Script:
-- Führt alle Migrations aus
-- Erstellt Admin-User mit Passwort `admin123`
+- Führt alle Migrations aus (legen auch alle Berechtigungen an)
+- Setzt beim ersten Lauf das Admin-Passwort `admin123`; ein bestehendes Passwort bleibt unverändert
 - Fragt optional nach Test-Daten (Maschinen, Bauteile, etc.)
 
 ### 5. Fertig!
@@ -204,8 +204,8 @@ docker compose logs db
 ### Login funktioniert nicht
 
 ```bash
-# Admin-Passwort zurücksetzen
-./scripts/init.sh
+# Admin-Passwort auf admin123 zurücksetzen (danach sofort ändern)
+ADMIN_PASSWORD_RESET=1 ./scripts/init.sh
 ```
 
 ### Datenbank-Verbindung fehlgeschlagen
@@ -289,6 +289,6 @@ docker compose logs -f backend
 # Backup
 sudo ./scripts/backup.sh
 
-# Admin-Reset
-./scripts/init.sh
+# Admin-Reset (Passwort auf admin123)
+ADMIN_PASSWORD_RESET=1 ./scripts/init.sh
 ```
