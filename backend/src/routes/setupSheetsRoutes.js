@@ -38,7 +38,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Nur JPG, PNG und WebP Bilder erlaubt'), false);
+    cb(Object.assign(new Error('Nur JPG, PNG und WebP Bilder erlaubt'), { status: 400 }), false);
   }
 };
 

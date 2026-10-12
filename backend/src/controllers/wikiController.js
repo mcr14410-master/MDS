@@ -50,7 +50,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Nur Bilder erlaubt (JPG, PNG, GIF, WebP)'));
+    cb(Object.assign(new Error('Nur Bilder erlaubt (JPG, PNG, GIF, WebP)'), { status: 400 }));
   }
 };
 

@@ -40,7 +40,7 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Nur PDF, JPEG und PNG Dateien erlaubt'), false);
+      cb(Object.assign(new Error('Nur PDF, JPEG und PNG Dateien erlaubt'), { status: 400 }), false);
     }
   }
 });

@@ -94,7 +94,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error(`File type not allowed. Allowed types: PDF, DOC, XLS, Images, CAD files (DXF, DWG, STEP), Archives`));
+    cb(Object.assign(new Error(`File type not allowed. Allowed types: PDF, DOC, XLS, Images, CAD files (DXF, DWG, STEP), Archives`), { status: 400 }));
   }
 };
 
