@@ -18,10 +18,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Urlaub über den Jahreswechsel wird jetzt überall gleich angezeigt: die Tage des gewählten Jahres und daneben der Rest im anderen Jahr, z. B. „5 T (+2 in 2027)“ statt „5 von 7 T“ – im Urlaubskonto, in „Mein Bereich“ und in den Urlaubs-PDFs.
 - Beim Beantragen oder Eintragen zeigt die Vorschau, wie sich die Tage auf die Jahre verteilen, z. B. „7 Arbeitstage (5 in 2026, 2 in 2027)“. Dasselbe steht bei offenen und eigenen Anträgen.
+- In den Urlaubs-PDFs überdeckte der Rahmen des Urlaubskontos die untere Zeile (Genommen, Genehmigt, Beantragt, Rest) – jetzt ist sie wieder vollständig lesbar.
 
 ### Changed
 - Urlaub über den Jahreswechsel, einheitliche Anzeige aus `days_by_year`: neuer Helper `frontend/src/utils/vacationDays.js` (`formatDaysInYear`, `formatOtherYears`, `formatYearSplit`) für Detail-Modal (Urlaubskonto), Mein Bereich, Offene Anträge, Meine Anträge und Antragsformular; `POST /api/vacations/check-overlap` liefert zusätzlich `daysByYear`. PDFs (`vacationReportsController`): Spalte „Tage“ zeigt den Anteil im Berichtsjahr, darunter klein die übrigen Jahre – nur diese Zeilen werden höher
 - Detail-Modal (Urlaubskonto): „von …, Datum“ der Genehmigung wird bei Platzmangel gekürzt (voller Text als Tooltip) statt unter die Tagesangabe zu laufen
+
+### Fixed
+- Urlaubs-PDFs: In der Box „Urlaubskonto“ lag die zweite Wertezeile (Genommen/Genehmigt/Beantragt/Rest) auf bzw. unter dem Rahmen – Sammel-PDF (`exportAll`) um 4 pt, „Mein Jahr“ und „Mitarbeiter“ um 2 pt. Boxen erhöht (75 → 85, 85 → 93, mit Korrektur 95 → 100), folgender Inhalt rückt mit; im Sammel-PDF stehen die Werte jetzt wie in den anderen PDFs mit „Tage“
 
 ---
 
