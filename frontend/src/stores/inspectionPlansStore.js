@@ -4,32 +4,38 @@ import axios from '../utils/axios';
 import { API_ENDPOINTS } from '../config/api';
 
 export const useInspectionPlansStore = create((set, get) => ({
-  // State
-  inspectionPlan: null,  // { id, operation_id, notes, items: [] }
+  // State – Prüfplan je Arbeitsgang ({ [operationId]: { id, operation_id, notes, items: [] } }):
+  // mehrere Arbeitsgänge sind gleichzeitig eingebunden, ein gemeinsamer Plan würde überall
+  // den zuletzt geladenen zeigen
+  inspectionPlanByOperation: {},
+  loadingByOperation: {},
+  errorByOperation: {},
   loading: false,
   error: null,
 
   // Fetch inspection plan for an operation (auto-creates if not exists)
   fetchInspectionPlan: async (operationId) => {
+    set(state => ({
+      loadingByOperation: { ...state.loadingByOperation, [operationId]: true },
+      errorByOperation: { ...state.errorByOperation, [operationId]: null },
+    }));
     try {
-      set({ loading: true, error: null });
-      
       const response = await axios.get(`${API_ENDPOINTS.INSPECTION_PLANS}/${operationId}/inspection-plan`);
       
-      set({ 
-        inspectionPlan: response.data,
-        loading: false 
-      });
+      set(state => ({
+        inspectionPlanByOperation: { ...state.inspectionPlanByOperation, [operationId]: response.data },
+        loadingByOperation: { ...state.loadingByOperation, [operationId]: false },
+      }));
       
       return response.data;
     } catch (error) {
       console.error('fetchInspectionPlan error:', error);
       const errorMessage = error.response?.data?.message || 'Fehler beim Laden des Prüfplans';
-      set({ 
-        loading: false, 
-        error: errorMessage,
-        inspectionPlan: null
-      });
+      set(state => ({
+        inspectionPlanByOperation: { ...state.inspectionPlanByOperation, [operationId]: null },
+        loadingByOperation: { ...state.loadingByOperation, [operationId]: false },
+        errorByOperation: { ...state.errorByOperation, [operationId]: errorMessage },
+      }));
       throw error;
     }
   },
@@ -44,10 +50,10 @@ export const useInspectionPlansStore = create((set, get) => ({
         { notes }
       );
       
-      set({ 
-        inspectionPlan: response.data,
-        loading: false 
-      });
+      set(state => ({
+        inspectionPlanByOperation: { ...state.inspectionPlanByOperation, [operationId]: response.data },
+        loading: false
+      }));
       
       return response.data;
     } catch (error) {
@@ -164,7 +170,7 @@ export const useInspectionPlansStore = create((set, get) => ({
 
   // Move item up in list
   moveItemUp: async (operationId, itemId) => {
-    const currentPlan = get().inspectionPlan;
+    const currentPlan = get().inspectionPlanByOperation[operationId];
     if (!currentPlan || !currentPlan.items) return;
     
     const items = currentPlan.items;
@@ -184,7 +190,7 @@ export const useInspectionPlansStore = create((set, get) => ({
 
   // Move item down in list
   moveItemDown: async (operationId, itemId) => {
-    const currentPlan = get().inspectionPlan;
+    const currentPlan = get().inspectionPlanByOperation[operationId];
     if (!currentPlan || !currentPlan.items) return;
     
     const items = currentPlan.items;
@@ -202,8 +208,8 @@ export const useInspectionPlansStore = create((set, get) => ({
     await get().reorderInspectionItems(operationId, itemIds);
   },
 
-  // Clear current inspection plan
+  // Clear loaded inspection plans
   clearInspectionPlan: () => {
-    set({ inspectionPlan: null, error: null });
+    set({ inspectionPlanByOperation: {}, loadingByOperation: {}, errorByOperation: {}, error: null });
   },
 }));

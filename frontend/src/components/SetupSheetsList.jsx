@@ -1,7 +1,7 @@
 // frontend/src/components/SetupSheetsList.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSetupSheetsStore } from '../stores/setupSheetsStore';
+import { useSetupSheetsStore, EMPTY_SETUP_SHEETS } from '../stores/setupSheetsStore';
 import { useOperationsStore } from '../stores/operationsStore';
 import { useAuthStore } from '../stores/authStore';
 import SetupSheetCard from './SetupSheetCard';
@@ -12,10 +12,11 @@ import SetupSheetClampingFixtures from './SetupSheetClampingFixtures';
 
 export default function SetupSheetsList({ operationId }) {
   const {
-    setupSheets,
+    setupSheetsByOperation,
+    loadingByOperation,
+    errorByOperation,
     currentSetupSheet,
-    loading,
-    error,
+    error: actionError,
     fetchSetupSheets,
     fetchSetupSheet,
     createSetupSheet,
@@ -23,6 +24,9 @@ export default function SetupSheetsList({ operationId }) {
     deleteSetupSheet,
     clearError,
   } = useSetupSheetsStore();
+  const setupSheets = setupSheetsByOperation[operationId] || EMPTY_SETUP_SHEETS;
+  const loading = loadingByOperation[operationId];
+  const error = errorByOperation[operationId] || actionError;
 
   const { currentOperation } = useOperationsStore();
   const { hasPermission } = useAuthStore();
@@ -113,7 +117,8 @@ export default function SetupSheetsList({ operationId }) {
   };
 
   // Operation Info für Form
-  const operationInfo = currentOperation
+  // currentOperation ist global (zuletzt geladener Arbeitsgang) – nur verwenden, wenn es dieser ist
+  const operationInfo = currentOperation && currentOperation.id === parseInt(operationId)
     ? {
         op_number: currentOperation.op_number,
         op_name: currentOperation.op_name,
@@ -163,7 +168,8 @@ export default function SetupSheetsList({ operationId }) {
   }
 
   // Show Detail View with Photos
-  if (viewingSetupSheet && currentSetupSheet) {
+  // currentSetupSheet ist global – nur anzeigen, wenn es das hier geöffnete Einrichteblatt ist
+  if (viewingSetupSheet && currentSetupSheet?.id === viewingSetupSheet.id) {
     return (
       <div>
         <div className="flex items-center justify-between mb-4">

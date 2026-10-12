@@ -1,11 +1,11 @@
 // frontend/src/components/ProgramsHistoryList.jsx
 import { useEffect, useState } from 'react';
-import { useProgramsStore } from '../stores/programsStore';
+import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 import { useWorkflowStore } from '../stores/workflowStore';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 
 export default function ProgramsHistoryList({ operationId }) {
-  const { programs, fetchPrograms } = useProgramsStore();
+  const { programsByOperation, fetchPrograms } = useProgramsStore();
   const { fetchHistory, getHistory } = useWorkflowStore();
   const [loading, setLoading] = useState(true);
 
@@ -15,10 +15,9 @@ export default function ProgramsHistoryList({ operationId }) {
       setLoading(true);
       try {
         // Fetch all programs for this operation
-        await fetchPrograms(parseInt(operationId));
+        const programList = await fetchPrograms(parseInt(operationId));
         
         // Fetch history for each program
-        const programList = programs.filter(p => p.operation_id === parseInt(operationId));
         await Promise.all(
           programList.map(program => 
             fetchHistory('program', program.id).catch(console.error)
@@ -57,9 +56,7 @@ export default function ProgramsHistoryList({ operationId }) {
   };
 
   // Get programs for this operation
-  const operationPrograms = programs.filter(
-    p => p.operation_id === parseInt(operationId)
-  );
+  const operationPrograms = programsByOperation[parseInt(operationId)] || EMPTY_PROGRAMS;
 
   // Loading state
   if (loading) {

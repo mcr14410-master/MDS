@@ -3,41 +3,51 @@ import { create } from 'zustand';
 import axios from '../utils/axios';
 import { API_ENDPOINTS } from '../config/api';
 
+// Stabile leere Liste für Arbeitsgänge, deren Programme noch nicht geladen sind
+export const EMPTY_PROGRAMS = [];
+
+// fn auf die Programmliste jedes Arbeitsgangs anwenden
+const mapAllOperations = (byOperation, fn) =>
+  Object.fromEntries(Object.entries(byOperation).map(([key, list]) => [key, fn(list)]));
+
 export const useProgramsStore = create((set, get) => ({
-  // State
-  programs: [],
+  // State – Programme je Arbeitsgang ({ [operationId]: [...] }): mehrere Arbeitsgänge sind
+  // gleichzeitig eingebunden, eine gemeinsame Liste würde die jeweils letzte Antwort überall zeigen
+  programsByOperation: {},
+  loadingByOperation: {},
+  errorByOperation: {},
   currentProgram: null,
   loading: false,
   error: null,
   uploadProgress: 0,
 
-  // Fetch all programs (optional filter by operation_id)
-  fetchPrograms: async (operationId = null) => {
+  // Fetch programs of one operation
+  fetchPrograms: async (operationId) => {
+    set(state => ({
+      loadingByOperation: { ...state.loadingByOperation, [operationId]: true },
+      errorByOperation: { ...state.errorByOperation, [operationId]: null },
+    }));
     try {
-      set({ loading: true, error: null });
-      
-      const url = operationId 
-        ? `${API_ENDPOINTS.PROGRAMS}?operation_id=${operationId}`
-        : API_ENDPOINTS.PROGRAMS;
-      
-      const response = await axios.get(url);
+      const response = await axios.get(`${API_ENDPOINTS.PROGRAMS}?operation_id=${operationId}`);
       
       // Sicherstellen dass es ein Array ist
       const programsData = response.data?.data;
       const validPrograms = Array.isArray(programsData) ? programsData : [];
       
-      set({ 
-        programs: validPrograms,
-        loading: false 
-      });
+      set(state => ({
+        programsByOperation: { ...state.programsByOperation, [operationId]: validPrograms },
+        loadingByOperation: { ...state.loadingByOperation, [operationId]: false },
+      }));
+      return validPrograms;
     } catch (error) {
       console.error('fetchPrograms error:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Laden der Programme';
-      set({ 
-        loading: false, 
-        error: errorMessage,
-        programs: []
-      });
+      set(state => ({
+        programsByOperation: { ...state.programsByOperation, [operationId]: [] },
+        loadingByOperation: { ...state.loadingByOperation, [operationId]: false },
+        errorByOperation: { ...state.errorByOperation, [operationId]: errorMessage },
+      }));
+      return [];
     }
   },
 
@@ -80,14 +90,19 @@ export const useProgramsStore = create((set, get) => ({
         },
       });
       
-      // Add to list (mit Null-Check)
+      // Add to list of its operation (mit Null-Check)
       const newProgram = response.data?.data;
       if (newProgram && newProgram.id) {
-        set(state => ({ 
-          programs: [...state.programs, newProgram],
-          loading: false,
-          uploadProgress: 0
-        }));
+        set(state => {
+          const list = state.programsByOperation[newProgram.operation_id];
+          return {
+            programsByOperation: list
+              ? { ...state.programsByOperation, [newProgram.operation_id]: [...list, newProgram] }
+              : state.programsByOperation,
+            loading: false,
+            uploadProgress: 0
+          };
+        });
       } else {
         console.error('Invalid program response:', response.data);
         set({ loading: false, uploadProgress: 0 });
@@ -118,7 +133,8 @@ export const useProgramsStore = create((set, get) => ({
       
       // Update in list
       set(state => ({ 
-        programs: state.programs.map(prog => prog.id === parseInt(id) ? response.data.data : prog),
+        programsByOperation: mapAllOperations(state.programsByOperation,
+          list => list.map(prog => prog.id === parseInt(id) ? response.data.data : prog)),
         currentProgram: state.currentProgram?.id === parseInt(id) ? response.data.data : state.currentProgram,
         loading: false 
       }));
@@ -145,7 +161,8 @@ export const useProgramsStore = create((set, get) => ({
       
       // Remove from list
       set(state => ({ 
-        programs: state.programs.filter(prog => prog.id !== parseInt(id)),
+        programsByOperation: mapAllOperations(state.programsByOperation,
+          list => list.filter(prog => prog.id !== parseInt(id))),
         loading: false 
       }));
       
@@ -191,7 +208,7 @@ export const useProgramsStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   // Clear programs list
-  clearPrograms: () => set({ programs: [], currentProgram: null }),
+  clearPrograms: () => set({ programsByOperation: {}, loadingByOperation: {}, errorByOperation: {}, currentProgram: null }),
 
   // --- VERSIONIERUNG (Woche 7) ---
   

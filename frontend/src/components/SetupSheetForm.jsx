@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useMachinesStore } from '../stores/machinesStore';
 import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
-import { useProgramsStore } from '../stores/programsStore';
+import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 
 export default function SetupSheetForm({ 
   onSubmit, 
@@ -12,7 +12,8 @@ export default function SetupSheetForm({
   operationInfo = {} // { op_number, op_name, part_number, part_name }
 }) {
   const { machines, fetchMachines } = useMachinesStore();
-  const { programs, fetchPrograms } = useProgramsStore();
+  const { programsByOperation, fetchPrograms } = useProgramsStore();
+  const programs = programsByOperation[operationId] || EMPTY_PROGRAMS;
 
   const [formData, setFormData] = useState({
     operation_id: operationId || '',

@@ -1,10 +1,13 @@
 // frontend/src/components/ToolListsOverview.jsx
 import { useEffect, useState } from 'react';
-import { useProgramsStore } from '../stores/programsStore';
+import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 import ToolListTable from './ToolListTable';
 
 export default function ToolListsOverview({ operationId }) {
-  const { programs, loading, error, fetchPrograms } = useProgramsStore();
+  const { programsByOperation, loadingByOperation, errorByOperation, fetchPrograms } = useProgramsStore();
+  const programs = programsByOperation[operationId] || EMPTY_PROGRAMS;
+  const loading = loadingByOperation[operationId];
+  const error = errorByOperation[operationId];
   const [expandedPrograms, setExpandedPrograms] = useState(new Set());
 
   useEffect(() => {

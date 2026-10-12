@@ -3,7 +3,10 @@ import { useEffect } from 'react';
 import { useInspectionPlansStore } from '../stores/inspectionPlansStore';
 
 export default function InspectionPlanReadOnly({ operationId }) {
-  const { inspectionPlan, loading, error, fetchInspectionPlan } = useInspectionPlansStore();
+  const { inspectionPlanByOperation, loadingByOperation, errorByOperation, fetchInspectionPlan } = useInspectionPlansStore();
+  const inspectionPlan = inspectionPlanByOperation[operationId] ?? null;
+  const loading = loadingByOperation[operationId];
+  const error = errorByOperation[operationId];
 
   useEffect(() => {
     if (operationId) {
