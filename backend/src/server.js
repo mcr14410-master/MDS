@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 const { Pool } = require('pg');
 require('dotenv').config();
 const { version: APP_VERSION } = require('../package.json');
@@ -342,12 +343,29 @@ app.use((req, res) => {
 });
 
 // Error Handler
+// Status aus dem Fehler übernehmen (body-parser: kaputtes JSON 400, zu groß 413;
+// Upload-Dateifilter 400). Bei 500 keine internen Details an den Client, nur ins Log.
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
-  });
+  let status = err.status || err.statusCode || 500;
+  let message = err.message;
+
+  if (err instanceof multer.MulterError) {
+    status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Datei zu groß' : `Upload-Fehler: ${err.message}`;
+  } else if (err.type === 'entity.parse.failed') {
+    message = 'Ungültiges JSON im Request';
+  } else if (err.type === 'entity.too.large') {
+    message = 'Request zu groß';
+  }
+
+  if (status >= 500) {
+    console.error('Error:', err);
+    return res.status(status).json({ error: 'Interner Serverfehler' });
+  }
+
+  console.warn(`${req.method} ${req.originalUrl}: ${status} ${err.message}`);
+  // Frontend-Stores lesen teils error, teils message
+  res.status(status).json({ error: message, message });
 });
 
 // Start server
