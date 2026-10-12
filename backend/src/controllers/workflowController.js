@@ -44,24 +44,7 @@ const changeWorkflowState = async (req, res) => {
       });
     }
 
-    // Permission-Check: Nur programmer und admin dürfen Status ändern
-    // Rollen aus Datenbank laden
-    const rolesResult = await pool.query(`
-      SELECT r.name
-      FROM roles r
-      JOIN user_roles ur ON r.id = ur.role_id
-      WHERE ur.user_id = $1
-    `, [userId]);
-    
-    const userRoles = rolesResult.rows.map(row => row.name);
-    const canChangeWorkflow = userRoles.includes('programmer') || userRoles.includes('admin');
-    
-    if (!canChangeWorkflow) {
-      return res.status(403).json({
-        success: false,
-        error: 'Keine Berechtigung zum Ändern des Workflow-Status (benötigt: programmer oder admin)'
-      });
-    }
+    // Berechtigung program.release prüft die Route (requirePermission)
 
     await client.query('BEGIN');
 

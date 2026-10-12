@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const workflowController = require('../controllers/workflowController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requirePermission } = require('../middleware/authMiddleware');
 
 // Alle Workflow-Routes benötigen Authentifizierung
 router.use(authenticateToken);
@@ -19,11 +19,11 @@ router.get('/states', workflowController.getWorkflowStates);
 
 /**
  * @route   POST /api/workflow/change
- * @desc    Workflow-Status ändern (nur programmer/admin)
+ * @desc    Workflow-Status ändern
  * @body    { entityType, entityId, toStateId, changeReason }
- * @access  Authenticated (programmer/admin)
+ * @access  Berechtigung program.release
  */
-router.post('/change', workflowController.changeWorkflowState);
+router.post('/change', requirePermission('program.release'), workflowController.changeWorkflowState);
 
 /**
  * @route   GET /api/workflow/:entityType/:entityId/history
