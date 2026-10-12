@@ -10,6 +10,7 @@ import { useVacationsStore } from '../stores/vacationsStore';
 import { useUsersStore } from '../stores/usersStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTimeTrackingStore } from '../stores/timeTrackingStore';
+import { daysInYear, formatOtherYears } from '../utils/vacationDays';
 import VacationCalendar from '../components/vacations/VacationCalendar';
 import VacationFormModal from '../components/vacations/VacationFormModal';
 import VacationSettingsPanel from '../components/vacations/VacationSettingsPanel';
@@ -676,11 +677,9 @@ export default function VacationsPage({ view: propView }) {
                           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                             <p>
                               <span className="font-medium">Dauer:</span>{' '}
-                              {v.calculated_days} Arbeitstag{v.calculated_days !== 1 ? 'e' : ''}
+                              {daysInYear(v, myVacationYear)} Arbeitstag{daysInYear(v, myVacationYear) !== 1 ? 'e' : ''}
                               {v.calculated_hours && ` (${v.calculated_hours}h)`}
-                              {v.days_in_year !== undefined && v.days_in_year !== parseFloat(v.calculated_days) && (
-                                <>, davon {v.days_in_year} in {myVacationYear}</>
-                              )}
+                              {formatOtherYears(v, myVacationYear) && ` (${formatOtherYears(v, myVacationYear)})`}
                             </p>
                             {v.note && (
                               <p>
