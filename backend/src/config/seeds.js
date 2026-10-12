@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const { hashPassword } = require('../utils/password');
+const devRoleDefaults = require('./devRoleDefaults');
 
 dotenv.config();
 
@@ -477,7 +478,26 @@ async function seed() {
       }
     }
 
-    // 17. Testbenutzer je Rolle (optional, nur mit eigenem Passwort, nie in Produktion)
+    // 17. Standardrechte der Standardrollen (nie in Produktion – dort über die Benutzerverwaltung)
+    console.log('Granting default role permissions...');
+    if (process.env.NODE_ENV === 'production') {
+      console.log('   übersprungen (NODE_ENV=production)');
+    } else {
+      const roleNames = Object.keys(devRoleDefaults);
+      await client.query(`
+        INSERT INTO role_permissions (role_id, permission_id)
+        SELECT r.id, p.id
+        FROM unnest($1::text[], $2::text[]) AS d(role_name, permission_name)
+        JOIN roles r ON r.name = d.role_name
+        JOIN permissions p ON p.name = d.permission_name
+        ON CONFLICT DO NOTHING;
+      `, [
+        roleNames.flatMap((role) => devRoleDefaults[role].map(() => role)),
+        roleNames.flatMap((role) => devRoleDefaults[role]),
+      ]);
+    }
+
+    // 18. Testbenutzer je Rolle (optional, nur mit eigenem Passwort, nie in Produktion)
     console.log('Creating test users...');
     let testUsersCreated = false;
     if (process.env.NODE_ENV === 'production') {
@@ -520,6 +540,9 @@ async function seed() {
     console.log('   • 4 Vorrichtungen');
     console.log('   • 5 Einträge im Werkzeugstamm');
     console.log('   • 1 Rüstblatt, 1 Werkzeugliste, 1 Prüfplan');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('   • Standardrechte für helper, operator, programmer, reviewer, supervisor');
+    }
     if (testUsersCreated) {
       console.log('   • 4 Testbenutzer (programmer1, reviewer1, operator1, helper1)');
     }

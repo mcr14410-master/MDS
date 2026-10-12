@@ -20,6 +20,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Migration `1737000113000_add-tool-storage-stock-permissions`: legt `tools.*`, `storage.*` und `stock.*` (16 Berechtigungen, bisher nur in `scripts/init.sh`) an und weist sie der Rolle `admin` zu; in Produktion ohne Wirkung (`ON CONFLICT DO NOTHING`), `down` bewusst leer
 - Migration `1737000114000_grant-all-permissions-to-admin`: Rolle `admin` erhält alle vorhandenen Berechtigungen – gleicht Migrationen aus, die ihre Rechte nicht (`maintenance.*`, `time_tracking.manage/settings`) oder an nicht existierende Rollennamen (`measuring.*` an `Administrator`) vergeben haben; in Produktion ohne Wirkung, `down` bewusst leer
 - Migration `1737000115000_add-zerobot-manage-permission`: Berechtigung `zerobot.manage` (Zerobot-Parameter, Maschinen und Backen verwalten), der Rolle `admin` zugewiesen
+- Seed: Standardrechte für die Standardrollen `helper`, `operator`, `programmer`, `reviewer`, `supervisor` (`backend/src/config/devRoleDefaults.js`, Vorlage: Zuordnung der Produktion), damit Testbenutzer auf einer frischen DB wie im Betrieb arbeiten; nie bei `NODE_ENV=production`. CLAUDE.md: Migrationen vergeben Rechte nur an `admin`
 
 ### Fixed
 - `npm run seed` brach mit 42P10 ab: `ON CONFLICT (part_id, op_number)` auf `operations`, der Constraint wurde in Migration `1737000072000` entfernt. Arbeitsgänge, Programm und Wartungsplan jetzt per `WHERE NOT EXISTS` – ein zweiter Lauf erzeugt keine Duplikate mehr (vorher Arbeitsgänge, Programm/Revision, Wartungsplan/Checkliste doppelt)
