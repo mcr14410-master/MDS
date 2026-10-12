@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardCheck, Check, X, ChevronDown, ChevronUp, AlertTriangle, Users } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
+import { formatYearSplit } from '../../utils/vacationDays';
 
 export default function PendingRequestsPanel({ requests, onRefresh, compact = false }) {
   const { approveVacation, rejectVacation, checkOverlap } = useVacationsStore();
@@ -149,7 +150,7 @@ export default function PendingRequestsPanel({ requests, onRefresh, compact = fa
                       {request.start_date !== request.end_date && (
                         <> - {new Date(request.end_date).toLocaleDateString('de-DE')}</>
                       )}
-                      {' '}({request.calculated_days} Tage)
+                      {' '}({parseFloat(request.calculated_days)} Tage{formatYearSplit(request.days_by_year) && `: ${formatYearSplit(request.days_by_year)}`})
                     </p>
                     {request.note && (
                       <p>

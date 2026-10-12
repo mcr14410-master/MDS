@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Clock, XCircle, RefreshCw, ChevronDown, ChevronUp, Pencil, Undo2 } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
+import { formatYearSplit } from '../../utils/vacationDays';
 
 const STATUS_CONFIG = {
   pending: {
@@ -125,7 +126,7 @@ export default function MyRequestsPanel({ requests, year, onRefresh, onEdit }) {
                       {request.start_date !== request.end_date && (
                         <> - {new Date(request.end_date).toLocaleDateString('de-DE')}</>
                       )}
-                      {' '}({request.calculated_days} Tage)
+                      {' '}({parseFloat(request.calculated_days)} Tage{formatYearSplit(request.days_by_year) && `: ${formatYearSplit(request.days_by_year)}`})
                     </p>
                     {request.note && (
                       <p>

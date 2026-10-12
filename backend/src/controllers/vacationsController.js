@@ -788,11 +788,12 @@ const checkOverlap = async (req, res) => {
     }
     
     const result = await checkConcurrentAbsences(user_id, start_date, end_date, exclude_id);
-    const workingDays = await calculateWorkingDays(user_id, start_date, end_date);
+    const daysByYear = await calculateWorkingDaysByYear(user_id, start_date, end_date);
     
     res.json({
       ...result,
-      calculatedDays: workingDays
+      calculatedDays: sumDays(daysByYear),
+      daysByYear
     });
   } catch (error) {
     console.error('Error checking overlap:', error);

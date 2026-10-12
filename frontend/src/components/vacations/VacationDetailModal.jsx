@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Pencil, Calendar, Sun, FileDown } from 'lucide-react';
 import axios from '../../utils/axios';
+import { formatDaysInYear } from '../../utils/vacationDays';
 
 const getRoleBadgeColor = (roleName) => {
   const colors = {
@@ -121,15 +122,16 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
                   {st.text}
                 </span>
                 {v.status === 'approved' && v.approved_by_name && (
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                  <span
+                    className="text-[11px] text-gray-400 dark:text-gray-500 truncate"
+                    title={`von ${v.approved_by_name}${v.approved_at ? `, ${formatDate(v.approved_at)}` : ''}`}
+                  >
                     von {v.approved_by_name}{v.approved_at ? `, ${formatDate(v.approved_at)}` : ''}
                   </span>
                 )}
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-xs shrink-0 ml-2">
-                {v.days_in_year !== undefined && v.days_in_year !== parseFloat(v.calculated_days)
-                  ? `${v.days_in_year} von ${parseFloat(v.calculated_days)} T`
-                  : `${v.calculated_days} T`}
+                {formatDaysInYear(v, year)}
               </span>
             </div>
           );

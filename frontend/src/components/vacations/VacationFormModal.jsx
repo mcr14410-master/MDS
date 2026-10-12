@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, AlertTriangle, Check, Trash2, Info } from 'lucide-react';
 import { useVacationsStore } from '../../stores/vacationsStore';
+import { formatYearSplit } from '../../utils/vacationDays';
 
 /**
  * Calculate overlapping dates between two date ranges
@@ -365,7 +366,7 @@ export default function VacationFormModal({ vacation, vacationTypes, users, onCl
                   )}
                   <div className="flex-1">
                     <p>{overlapCheck.calculatedDays !== undefined 
-                      ? `${overlapCheck.calculatedDays} Arbeitstag(e)` 
+                      ? `${overlapCheck.calculatedDays} Arbeitstag(e)${formatYearSplit(overlapCheck.daysByYear) ? ` (${formatYearSplit(overlapCheck.daysByYear)})` : ''}` 
                       : overlapCheck.message}</p>
                     
                     {overlapCheck.concurrent?.length > 0 && (
