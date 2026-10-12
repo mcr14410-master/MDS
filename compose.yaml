@@ -51,7 +51,6 @@ services:
       JWT_EXPIRES_IN: 24h
       UPLOAD_PATH: /app/uploads
       MAX_FILE_SIZE: 52428800
-      CORS_ORIGIN: "*"
     volumes:
       - /srv/mds/uploads:/app/uploads
       - /srv/mds/backups:/app/backups:ro

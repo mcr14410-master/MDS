@@ -9,9 +9,19 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// CORS Configuration for Frontend
+// CORS: erlaubte Frontend-Adressen aus CORS_ORIGIN (kommagetrennt), Standard Vite-Dev-Server.
+// In Produktion laufen Frontend und API über Caddy unter derselben Adresse – dort ist CORS nicht nötig.
+const DEFAULT_CORS_ORIGIN = 'http://localhost:5173';
+let corsOrigins = (process.env.CORS_ORIGIN || DEFAULT_CORS_ORIGIN)
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+if (corsOrigins.length === 0 || corsOrigins.includes('*')) {
+  console.warn(`⚠️  CORS_ORIGIN "${process.env.CORS_ORIGIN}" nicht erlaubt (leer oder "*") – verwende ${DEFAULT_CORS_ORIGIN}`);
+  corsOrigins = [DEFAULT_CORS_ORIGIN];
+}
 app.use(cors({
-  origin: 'http://localhost:5173', // Frontend URL
+  origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
