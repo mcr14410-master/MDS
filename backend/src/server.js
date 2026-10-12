@@ -351,7 +351,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log('\n🚀 ========================================');
   console.log(`   MDS Backend Server`);
   console.log('   ========================================');
@@ -365,13 +365,36 @@ app.listen(PORT, () => {
   console.log('   ========================================\n');
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+// Graceful shutdown: keine neuen Verbindungen, laufende Anfragen fertig, dann DB-Pools
+// schließen und beenden. Notbremse unter den 10 s, nach denen Docker SIGKILL schickt.
+const SHUTDOWN_TIMEOUT_MS = 8000;
+let shuttingDown = false;
+
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} signal received: closing HTTP server`);
+
+  setTimeout(() => {
+    console.error(`Shutdown nach ${SHUTDOWN_TIMEOUT_MS / 1000} s nicht abgeschlossen – Prozess wird beendet`);
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS).unref();
+
   cronService.stopAll();
-  pool.end(() => {
-    console.log('Database pool closed');
+  server.close(async () => {
+    console.log('HTTP server closed');
+    try {
+      await Promise.all([pool.end(), require('./config/db').end()]);
+      console.log('Database pools closed');
+      process.exit(0);
+    } catch (err) {
+      console.error('Fehler beim Schließen der Datenbank-Pools:', err.message);
+      process.exit(1);
+    }
   });
-});
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 module.exports = app;
