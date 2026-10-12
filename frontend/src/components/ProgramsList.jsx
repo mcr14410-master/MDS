@@ -1,6 +1,6 @@
 // frontend/src/components/ProgramsList.jsx
 import { useEffect, useState } from 'react';
-import { useProgramsStore } from '../stores/programsStore';
+import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import ProgramCard from './ProgramCard';
@@ -8,7 +8,10 @@ import ProgramUploadForm from './ProgramUploadForm';
 import RevisionsList from './RevisionsList'; // NEU: Woche 7
 
 export default function ProgramsList({ operationId }) {
-  const { programs, loading, error, fetchPrograms, deleteProgram } = useProgramsStore();
+  const { programsByOperation, loadingByOperation, errorByOperation, fetchPrograms, deleteProgram } = useProgramsStore();
+  const programs = programsByOperation[operationId] || EMPTY_PROGRAMS;
+  const loading = loadingByOperation[operationId];
+  const error = errorByOperation[operationId];
   const { hasPermission } = useAuthStore();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
