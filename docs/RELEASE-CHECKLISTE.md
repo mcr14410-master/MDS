@@ -29,17 +29,17 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 ---
 
-## Release 2.9.0 – zusätzliche Schritte
+## Nächstes Release – zusätzliche Schritte
 
-Gesammelt seit 2.8.0 (Migrationen `1737000113000` bis `1737000115000`; geändert, aber in Produktion bereits gelaufen und daher ohne Wirkung: `1737000005000`, `1737000020000`, `1737000023000`, `1737000094000`). Nach dem Deploy abarbeiten, dann diesen Abschnitt nach „Erledigt“ verschieben.
+Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-- [ ] **Migrationen:** Im Deploy-Log laufen `1737000113000` (Berechtigungen Werkzeuge/Lager/Bestand), `1737000114000` (Rolle admin erhält alle Berechtigungen) und `1737000115000` (`zerobot.manage`) ohne Fehler durch. 113 und 114 ändern in Produktion nichts (über `init.sh` schon vorhanden)
-- [ ] **Login:** Admin-Login unverändert
-- [ ] **Zerobot:** `zerobot.manage` hat nach dem Deploy nur die Rolle `admin` → in der Benutzerverwaltung den Rollen geben, die Zerobot-Parameter, Maschinen und Backen bearbeiten sollen. Danach als admin einen Parameter ändern und zurücksetzen
-- [ ] **Programm-Freigabe:** Statuswechsel prüft jetzt `program.release` statt der Rolle `programmer` – damit dürfen auch `reviewer` und `supervisor` freigeben. Gewollt? Sonst Recht in der Benutzerverwaltung anpassen. Einmal einen Statuswechsel testen
-- [ ] **Arbeitsgänge (Klicktest):** Bauteil mit mehreren Arbeitsgängen öffnen, „Alle öffnen“; je Arbeitsgang Programme, Einrichteblatt und Prüfplan mit der Erwartung vergleichen. Falls in letzter Zeit Einrichteblätter, Prüfmerkmale oder Programmzuordnungen unerwartet verschwunden oder vertauscht waren: Audit-Log der betroffenen Arbeitsgänge ansehen (der Fehler konnte Aktionen am falschen Arbeitsgang auslösen)
-- [ ] **Backend-Neustart:** `docker compose restart backend` sollte in ~1 s fertig sein (vorher 10 s bis SIGKILL)
-- [ ] **Hinweis `init.sh`:** setzt das Admin-Passwort nicht mehr bei jedem Lauf zurück; Admin-Reset nur noch mit `ADMIN_PASSWORD_RESET=1 ./scripts/init.sh`
+- (noch keine)
+
+---
+
+## Erledigt: Release 2.9.0 (12.10.2026)
+
+Migrationen `1737000113000` bis `1737000115000` problemlos, die geänderten alten Migrationen wurden wie erwartet nicht erneut ausgeführt. Admin-Login unverändert, Zerobot-Recht den benötigten Rollen gegeben, Programm-Freigabe für `reviewer`/`supervisor` bestätigt, Klicktest Arbeitsgänge ohne Befund. `docker compose restart backend` jetzt 1,0 s (vorher 10 s bis SIGKILL).
 
 ---
 
