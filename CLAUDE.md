@@ -76,6 +76,7 @@ Bei Problemen, Fehlern oder Bugs:
 - PostgreSQL gibt Date-Spalten manchmal als Strings zurück → defensive `instanceof Date` Checks vor `.toISOString()`
 - Stock-Berechnungen: `reorder_point` verwenden (NICHT `min_quantity`), gewichtete Faktoren: new=1.0, used=0.5, reground=0.8
 - **Berechtigungen nur per Migration:** Neue Permissions in einer Migration anlegen (`ON CONFLICT (name) DO NOTHING`, mit `description` und `category`) und in derselben Migration der Rolle `admin` zuweisen (`WHERE r.name = 'admin'`). Rollennamen wie `Administrator` oder `Fertigungsleiter` gibt es auf einer frischen DB nicht. `scripts/init.sh` legt keine Permissions an, und `deploy.sh` führt nur Migrationen aus.
+- **Migrationen nur über `pgm`:** DB-Zugriffe in Migrationen ausschließlich über `pgm.sql` bzw. `pgm.db.query` – nie über `src/config/db` oder einen eigenen Pool. Der App-Pool verbindet sich über `DB_*` statt `DATABASE_URL` und läuft außerhalb der Migrations-Transaktion.
 
 ### Timezone-Disziplin – KRITISCH
 - Docker-Container laufen in UTC, Anwendungsschicht MUSS CET/CEST explizit handhaben
