@@ -126,6 +126,7 @@ Wiederholbar ohne Duplikate. Die Migrationen selbst legen keine Testdaten an –
 - ✅ Beispiel-Programm mit Revision, Werkzeugliste und Rüstblatt
 - ✅ Prüfplan, Wartungsplan
 - ✅ Lagerorte, Lieferanten, Messmittel, Spannmittel, Vorrichtungen
+- ✅ Standardrechte für die Standardrollen (`helper`, `operator`, `programmer`, `reviewer`, `supervisor`) aus `src/config/devRoleDefaults.js` – nie bei `NODE_ENV=production`
 - ✅ Optional je Rolle ein Testbenutzer (`programmer1`, `reviewer1`, `operator1`, `helper1`) – nur mit `SEED_TEST_USER_PASSWORD=… npm run seed`, nie bei `NODE_ENV=production`
 
 ---
