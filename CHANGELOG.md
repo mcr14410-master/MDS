@@ -24,6 +24,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Fixed
 - `npm run seed` brach mit 42P10 ab: `ON CONFLICT (part_id, op_number)` auf `operations`, der Constraint wurde in Migration `1737000072000` entfernt. Arbeitsgänge, Programm und Wartungsplan jetzt per `WHERE NOT EXISTS` – ein zweiter Lauf erzeugt keine Duplikate mehr (vorher Arbeitsgänge, Programm/Revision, Wartungsplan/Checkliste doppelt)
 - Zerobot-Rechner: Parameter ändern sowie Maschinen und Backen anlegen/löschen lieferte für alle Benutzer 403 – auch für den Admin. Die Routen verlangten `requirePermission('admin')`, eine Berechtigung `admin` gab es nie. Sie verlangen jetzt `zerobot.manage`; die Seite blendet die Bearbeiten-Funktionen über dieselbe Berechtigung ein statt über die Rolle `admin`
+- Migration `1737000094000_create-cron-job-logs` nutzte den App-Pool (`src/config/db`, Variablen `DB_*`) statt der Verbindung von node-pg-migrate – bei abweichender Konfiguration landete `cron_job_logs` in einer anderen DB, außerdem lief sie außerhalb der Migrations-Transaktion. Jetzt `pgm.sql` mit identischem Schema; bereits migrierte DBs sind nicht betroffen. CLAUDE.md: Regel „Migrationen nur über `pgm`“
 
 ### Changed
 - Seed: echte Firmennamen und Kontaktdaten bei Kunden und Lieferanten durch Platzhalter ersetzt (`KD00001`–`KD00003`, `*.example`)
