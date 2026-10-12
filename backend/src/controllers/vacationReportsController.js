@@ -29,10 +29,25 @@ const formatDateTime = (date) => {
 // Anteil eines Urlaubs am Berichtsjahr (Urlaub über den Jahreswechsel)
 const daysInYear = (v, year) => parseFloat(v.days_by_year?.[year] ?? 0);
 
-const formatDays = (v, year) => {
-  const total = parseFloat(v.calculated_days || 0);
-  const inYear = daysInYear(v, year);
-  return inYear === total ? `${v.calculated_days}` : `${inYear} von ${total}`;
+// Anteile der übrigen Jahre, z. B. "+2 in 2027"
+const formatOtherYears = (v, year) => Object.entries(v.days_by_year || {})
+  .filter(([y, days]) => y !== String(year) && parseFloat(days) > 0)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([y, days]) => `+${parseFloat(days)} in ${y}`)
+  .join(', ');
+
+// Spalte „Tage“: Anteil im Berichtsjahr, bei Urlaub über den Jahreswechsel
+// darunter klein die übrigen Jahre. Gibt die zusätzliche Zeilenhöhe zurück.
+const drawDays = (doc, v, year, x, y, width) => {
+  const others = formatOtherYears(v, year);
+  if (!others) {
+    doc.text(`${v.calculated_days}`, x, y, { width });
+    return 0;
+  }
+  doc.text(`${daysInYear(v, year)}`, x, y, { width });
+  doc.fontSize(7).fillColor('#6b7280').text(others, x, y + 10, { width, lineBreak: false });
+  doc.fontSize(9).fillColor('#000000');
+  return 8;
 };
 
 const getStatusText = (status) => {
@@ -250,7 +265,7 @@ exports.exportMyYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, yy, { width: 115 });
         doc.text(v.type_name, 175, yy, { width: 110 });
-        doc.text(formatDays(v, year), 290, yy, { width: 45 });
+        const extraHeight = drawDays(doc, v, year, 290, yy, 45);
 
         const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
         doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
@@ -259,7 +274,7 @@ exports.exportMyYear = async (req, res) => {
         doc.text(v.approved_by_name || '–', 430, yy, { width: 110 });
         
         total += daysInYear(v, year);
-        yy += 18;
+        yy += 18 + extraHeight;
       }
 
       // Total
@@ -329,9 +344,9 @@ exports.exportMyYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, y, { width: 115 });
         doc.text(r.type_name, 175, y, { width: 110 });
-        doc.text(formatDays(r, year), 290, y, { width: 45 });
+        const extraHeight = drawDays(doc, r, year, 290, y, 45);
         doc.text(r.rejection_reason || '–', 340, y, { width: 200 });
-        y += 18;
+        y += 18 + extraHeight;
       }
     }
 
@@ -639,7 +654,7 @@ exports.exportAll = async (req, res) => {
           doc.fillColor('#000000');
           doc.text(dateRange, 55, yy, { width: 120 });
           doc.text(v.type_name, 180, yy, { width: 115 });
-          doc.text(formatDays(v, year), 300, yy, { width: 50 });
+          const extraHeight = drawDays(doc, v, year, 300, yy, 50);
 
           const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
           doc.fillColor(statusColor).text(getStatusText(v.status), 355, yy, { width: 80 });
@@ -648,7 +663,7 @@ exports.exportAll = async (req, res) => {
           doc.text(v.approved_by_name || '–', 440, yy, { width: 100 });
           
           totalDays += daysInYear(v, year);
-          yy += 16;
+          yy += 16 + extraHeight;
         }
 
         // Total
@@ -867,7 +882,7 @@ exports.exportUserYear = async (req, res) => {
         doc.fillColor('#000000');
         doc.text(dateRange, 55, yy, { width: 115 });
         doc.text(v.type_name, 175, yy, { width: 110 });
-        doc.text(formatDays(v, year), 290, yy, { width: 45 });
+        const extraHeight = drawDays(doc, v, year, 290, yy, 45);
         
         const statusColor = v.status === 'approved' ? '#16a34a' : v.status === 'pending' ? '#d97706' : '#dc2626';
         doc.fillColor(statusColor).text(getStatusText(v.status), 340, yy, { width: 85 });
@@ -875,7 +890,7 @@ exports.exportUserYear = async (req, res) => {
         
         doc.text(v.approved_by_name || '–', 430, yy, { width: 110 });
         
-        yy += 18;
+        yy += 18 + extraHeight;
       }
       return yy;
     };
