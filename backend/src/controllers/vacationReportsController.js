@@ -193,7 +193,7 @@ exports.exportMyYear = async (req, res) => {
     }
 
     // ========== BALANCE BOX ==========
-    doc.rect(50, y, 495, 85).stroke();
+    doc.rect(50, y, 495, 93).stroke();
     doc.fontSize(12).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 10);
     
     doc.fontSize(10).font('Helvetica');
@@ -229,7 +229,7 @@ exports.exportMyYear = async (req, res) => {
     doc.fillColor(restColor).font('Helvetica-Bold').text(`${balance.remaining_days} Tage`, col4, y + 75);
     doc.fillColor('#000000');
     
-    y += 100;
+    y += 108;
 
     // ========== TABLE HELPERS ==========
     const drawHeader = (yPos, headerColor = '#f3f4f6') => {
@@ -577,7 +577,7 @@ exports.exportAll = async (req, res) => {
       y = 130;
 
       // Balance Box
-      doc.rect(50, y, 495, 75).stroke();
+      doc.rect(50, y, 495, 85).stroke();
       doc.fontSize(11).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 8);
       
       doc.fontSize(10).font('Helvetica');
@@ -598,14 +598,14 @@ exports.exportAll = async (req, res) => {
       doc.font('Helvetica-Bold').text(`${b.available_days} Tage`, col4, y + 42);
 
       doc.font('Helvetica').text('Genommen:', col1, y + 55);
-      doc.font('Helvetica-Bold').text(`${b.taken_days}`, col1, y + 67);
+      doc.font('Helvetica-Bold').text(`${b.taken_days} Tage`, col1, y + 67);
 
       doc.font('Helvetica').text('Genehmigt:', col2, y + 55);
-      doc.fillColor('#16a34a').font('Helvetica-Bold').text(`${b.approved_days}`, col2, y + 67);
+      doc.fillColor('#16a34a').font('Helvetica-Bold').text(`${b.approved_days} Tage`, col2, y + 67);
       doc.fillColor('#000000');
 
       doc.font('Helvetica').text('Beantragt:', col3, y + 55);
-      doc.fillColor('#d97706').font('Helvetica-Bold').text(`${b.pending_days}`, col3, y + 67);
+      doc.fillColor('#d97706').font('Helvetica-Bold').text(`${b.pending_days} Tage`, col3, y + 67);
       doc.fillColor('#000000');
       
       doc.font('Helvetica').text('Rest:', col4, y + 55);
@@ -613,7 +613,7 @@ exports.exportAll = async (req, res) => {
       doc.fillColor(restColor).font('Helvetica-Bold').text(`${b.remaining_days} Tage`, col4, y + 67);
       doc.fillColor('#000000');
       
-      y += 90;
+      y += 100;
 
       // Split vacations
       const userVacations = vacationsByUser[b.user_id] || [];
@@ -809,7 +809,7 @@ exports.exportUserYear = async (req, res) => {
 
     // ========== BALANCE BOX ==========
     const hasAdjustment = balance.adjustment && parseFloat(balance.adjustment) !== 0;
-    const boxHeight = hasAdjustment ? 95 : 85;
+    const boxHeight = hasAdjustment ? 100 : 93;
     doc.rect(50, y, 495, boxHeight).stroke();
     doc.fontSize(12).font('Helvetica-Bold').text('Urlaubskonto', 60, y + 10);
     
