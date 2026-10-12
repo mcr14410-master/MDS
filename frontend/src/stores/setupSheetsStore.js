@@ -3,19 +3,32 @@ import { create } from 'zustand';
 import axios from '../utils/axios';
 import { API_ENDPOINTS } from '../config/api';
 
+// Stabile leere Liste für Arbeitsgänge, deren Einrichteblätter noch nicht geladen sind
+export const EMPTY_SETUP_SHEETS = [];
+
+// fn auf die Liste jedes Arbeitsgangs anwenden
+const mapAllOperations = (byOperation, fn) =>
+  Object.fromEntries(Object.entries(byOperation).map(([key, list]) => [key, fn(list)]));
+
 export const useSetupSheetsStore = create((set, get) => ({
-  // State
-  setupSheets: [],
+  // State – Einrichteblätter je Arbeitsgang ({ [operationId]: [...] }): mehrere Arbeitsgänge sind
+  // gleichzeitig eingebunden, eine gemeinsame Liste würde die jeweils letzte Antwort überall zeigen
+  setupSheetsByOperation: {},
+  loadingByOperation: {},
+  errorByOperation: {},
   currentSetupSheet: null,
   loading: false,
   error: null,
   uploadProgress: 0,
 
-  // Fetch all setup sheets (optional filter by operation_id, machine_id, status)
+  // Fetch setup sheets of one operation (filters.operation_id, optional machine_id, status)
   fetchSetupSheets: async (filters = {}) => {
+    const key = filters.operation_id;
+    set(state => ({
+      loadingByOperation: { ...state.loadingByOperation, [key]: true },
+      errorByOperation: { ...state.errorByOperation, [key]: null },
+    }));
     try {
-      set({ loading: true, error: null });
-      
       const params = new URLSearchParams();
       if (filters.operation_id) params.append('operation_id', filters.operation_id);
       if (filters.machine_id) params.append('machine_id', filters.machine_id);
@@ -28,18 +41,18 @@ export const useSetupSheetsStore = create((set, get) => ({
       const setupSheetsData = response.data?.data;
       const validSetupSheets = Array.isArray(setupSheetsData) ? setupSheetsData : [];
       
-      set({ 
-        setupSheets: validSetupSheets,
-        loading: false 
-      });
+      set(state => ({
+        setupSheetsByOperation: { ...state.setupSheetsByOperation, [key]: validSetupSheets },
+        loadingByOperation: { ...state.loadingByOperation, [key]: false },
+      }));
     } catch (error) {
       console.error('fetchSetupSheets error:', error);
       const errorMessage = error.response?.data?.message || 'Fehler beim Laden der Einrichteblätter';
-      set({ 
-        loading: false, 
-        error: errorMessage,
-        setupSheets: []
-      });
+      set(state => ({
+        setupSheetsByOperation: { ...state.setupSheetsByOperation, [key]: [] },
+        loadingByOperation: { ...state.loadingByOperation, [key]: false },
+        errorByOperation: { ...state.errorByOperation, [key]: errorMessage },
+      }));
     }
   },
 
@@ -76,11 +89,16 @@ export const useSetupSheetsStore = create((set, get) => ({
       
       const newSetupSheet = response.data?.data;
       if (newSetupSheet && newSetupSheet.id) {
-        set(state => ({ 
-          setupSheets: [...state.setupSheets, newSetupSheet],
-          currentSetupSheet: newSetupSheet,
-          loading: false
-        }));
+        set(state => {
+          const list = state.setupSheetsByOperation[newSetupSheet.operation_id];
+          return {
+            setupSheetsByOperation: list
+              ? { ...state.setupSheetsByOperation, [newSetupSheet.operation_id]: [...list, newSetupSheet] }
+              : state.setupSheetsByOperation,
+            currentSetupSheet: newSetupSheet,
+            loading: false
+          };
+        });
       } else {
         set({ loading: false });
       }
@@ -107,9 +125,8 @@ export const useSetupSheetsStore = create((set, get) => ({
       const updatedSetupSheet = response.data?.data;
       if (updatedSetupSheet) {
         set(state => ({
-          setupSheets: state.setupSheets.map(sheet => 
-            sheet.id === id ? updatedSetupSheet : sheet
-          ),
+          setupSheetsByOperation: mapAllOperations(state.setupSheetsByOperation,
+            list => list.map(sheet => sheet.id === id ? updatedSetupSheet : sheet)),
           currentSetupSheet: state.currentSetupSheet?.id === id 
             ? updatedSetupSheet 
             : state.currentSetupSheet,
@@ -139,7 +156,8 @@ export const useSetupSheetsStore = create((set, get) => ({
       await axios.delete(`${API_ENDPOINTS.SETUP_SHEETS}/${id}`);
       
       set(state => ({
-        setupSheets: state.setupSheets.filter(sheet => sheet.id !== id),
+        setupSheetsByOperation: mapAllOperations(state.setupSheetsByOperation,
+          list => list.filter(sheet => sheet.id !== id)),
         currentSetupSheet: state.currentSetupSheet?.id === id ? null : state.currentSetupSheet,
         loading: false
       }));

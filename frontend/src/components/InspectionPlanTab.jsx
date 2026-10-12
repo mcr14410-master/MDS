@@ -10,9 +10,10 @@ import {
 
 export default function InspectionPlanTab({ operationId }) {
   const { 
-    inspectionPlan, 
-    loading, 
-    error, 
+    inspectionPlanByOperation,
+    loadingByOperation,
+    errorByOperation,
+    error: actionError,
     fetchInspectionPlan,
     updateInspectionPlanNotes,
     addInspectionItem,
@@ -21,6 +22,9 @@ export default function InspectionPlanTab({ operationId }) {
     moveItemUp,
     moveItemDown
   } = useInspectionPlansStore();
+  const inspectionPlan = inspectionPlanByOperation[operationId] ?? null;
+  const loading = loadingByOperation[operationId];
+  const error = errorByOperation[operationId] || actionError;
 
   const { equipment: measuringEquipmentList, fetchEquipment } = useMeasuringEquipmentStore();
 
