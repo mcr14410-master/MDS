@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.9.0] - 2026-10-12 - Arbeitsgänge, Rollen und Rechte
+
+### Für Anwender
+- Unter Bauteil → Arbeitsgänge zeigt jeder Arbeitsgang jetzt nur noch seine eigenen NC-Programme, Einrichteblätter und Prüfpläne. Bisher konnten bei mehreren Arbeitsgängen Einträge eines anderen Arbeitsgangs erscheinen oder ein Arbeitsgang fälschlich leer aussehen.
+- Den Status eines NC-Programms (z. B. Freigabe) dürfen jetzt alle ändern, deren Rolle das Recht „Programme freigeben“ hat – bisher ging das nur mit der Rolle „programmer“.
+- Im Zerobot-Rechner lassen sich Parameter, Maschinen und Backen wieder bearbeiten. Das Recht dazu („Zerobot-Parameter, Maschinen und Backen verwalten“) kann in der Benutzerverwaltung jeder Rolle gegeben werden.
+- Administratoren können die vorgegebenen Rollen jetzt umbenennen und löschen, sobald ihnen niemand mehr zugeordnet ist.
+
 ### Added
 - `npm run dev:init` (`backend/src/config/dev-init.js`): macht eine frisch migrierte Entwicklungs-DB benutzbar – setzt das Passwort von `admin` (verdeckte Eingabe oder `DEV_ADMIN_PASSWORD`, legt den User bei Bedarf an), weist die Rolle `admin` zu und gibt ihr alle vorhandenen Berechtigungen; wiederholbar, verweigert `NODE_ENV=production`
 - Migration `1737000113000_add-tool-storage-stock-permissions`: legt `tools.*`, `storage.*` und `stock.*` (16 Berechtigungen, bisher nur in `scripts/init.sh`) an und weist sie der Rolle `admin` zu; in Produktion ohne Wirkung (`ON CONFLICT DO NOTHING`), `down` bewusst leer
