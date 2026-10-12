@@ -538,17 +538,18 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 11./12.10.2026](docs/sessions/SESSION-2026-10-12-dev-db-rechte-release-2.9.0.md) – v2.9.0 läuft auf dem Pi
+Stand: [Session 12./13.10.2026](docs/sessions/SESSION-2026-10-13-kleine-fixes-urlaub-backend.md) – v2.9.0 läuft auf dem Pi, vier Fixes unter `[Unreleased]`
 
 0. **Backup-Kontrolle:** Nachtläufe nach 2.9.0 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
-1. **Kleine Urlaubs-Fixes:** ~~Jahreswechsel-Anzeige einheitlich~~ (erledigt), „ab“-Datum in der Urlaubsberechnung (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
-2. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich, Zeiterfassung Urlaub an Feiertagen, Rollen deaktivieren/Farben je Rolle
-4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
-6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
-7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
-8. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
+1. **Release 2.9.1** (Jahreswechsel-Anzeige, PDF-Box, Fehler-Handler, CORS) – nach dem Deploy die offenen Test-plan-Punkte von #132–#135 prüfen
+2. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
+3. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
+4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Upload-Meldungen auf Englisch, Rollen deaktivieren/Farben je Rolle
+5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
+7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+9. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
