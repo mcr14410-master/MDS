@@ -535,12 +535,12 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 11.10.2026](docs/sessions/SESSION-2026-10-11-urlaub-release-2.8.0.md) – v2.8.0 läuft auf dem Pi
+Stand: [Session 11./12.10.2026](docs/sessions/SESSION-2026-10-12-dev-db-rechte-release-2.9.0.md) – v2.9.0 läuft auf dem Pi
 
-0. **Backup-Kontrolle:** Nachtläufe nach 2.8.0 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
+0. **Backup-Kontrolle:** Nachtläufe nach 2.9.0 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
 1. **Kleine Urlaubs-Fixes:** Jahreswechsel-Anzeige einheitlich, „ab“-Datum in der Urlaubsberechnung (Fix-Liste)
 2. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich, Zeiterfassung Urlaub an Feiertagen, Berechtigungen per Migration (Dev-DB: Mitarbeiter haben keine Rechte), Fehler-Handler 400 statt 500
+3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich, Zeiterfassung Urlaub an Feiertagen, Fehler-Handler 400 statt 500, CORS aus `.env` lesen, Rollen deaktivieren/Farben je Rolle
 4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
@@ -549,4 +549,4 @@ Stand: [Session 11.10.2026](docs/sessions/SESSION-2026-10-11-urlaub-release-2.8.
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-11
+**Letzte Aktualisierung:** 2026-10-12
