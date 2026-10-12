@@ -47,7 +47,8 @@
 - [x] **Rollenrechte auf frischer DB:** betrifft nur Dev/Test – in Produktion werden Rollen über die Benutzerverwaltung gepflegt (eigene Rollen, Standardrollen mit Rechten), nach einem Ausfall kommen sie aus dem DB-Backup. `npm run seed` vergibt den Standardrollen jetzt Standardrechte (`config/devRoleDefaults.js`, Vorlage Produktion 10/2026, nie bei `NODE_ENV=production`); CLAUDE.md-Regel: Migrationen geben Rechte nur an `admin`. Die alten Zuweisungen an nicht existierende Rollen (`Fertigungsleiter`, `Meister` …) in älteren Migrationen bleiben als wirkungsloser Code stehen (Branch `feat/seed-rollen-standardrechte`)
 - [x] **Migration `1737000094000_create-cron-job-logs`** lief über den App-Pool (`DB_*`) statt `pgm` – jetzt `pgm.sql`, gleiche Tabelle/Indizes mit `IF NOT EXISTS`, gelaufene DBs unberührt; Regel „Migrationen nur über `pgm`“ in CLAUDE.md (Branch `fix/migration-094-pgm`)
 - [x] **Backend beendet sich nicht vollständig:** der SIGTERM-Handler schloss den HTTP-Server nie (nur Cron + einen der beiden DB-Pools), `docker stop` wartete bis SIGKILL. Jetzt `server.close()` → beide Pools → `exit 0`, auch bei SIGINT; Notbremse nach 8 s (Branch `fix/backend-graceful-shutdown`)
-- [ ] **Backend-Fehler-Handler** (`server.js`): antwortet bei jedem Fehler mit 500 – z. B. kaputtes JSON im Request sollte 400 sein (niedrig)
+- [x] **Backend-Fehler-Handler** (`server.js`): übernimmt jetzt den Status des Fehlers (kaputtes JSON 400, zu groß 413, Upload-Dateityp 400) und gibt bei 500 keine internen Details mehr heraus
+- [ ] **Upload-Meldungen auf Englisch:** Werkzeug-Dokumente (`toolDocumentsController`) und Verbrauchsmaterial (`consumablesRoutes`) melden einen falschen Dateityp auf Englisch – UI ist deutsch
 - [x] **Urlaub-PDFs ohne Korrektur:** alle drei Urlaubs-PDFs lesen den Saldo aus `vacation_balances`, Korrektur angezeigt (Branch `fix/urlaub-pdf-korrektur`)
 - [x] **PDF-Export bricht Backend ab:** behoben für alle 11 gestreamten PDF-Endpunkte (`utils/pdfResponse.js`, Branch `fix/urlaub-pdf-absturz`)
 - [x] **Urlaubs-Verwaltung zeigt Salden des falschen Jahres:** Salden folgen dem angezeigten Jahr (Kalender-Navigation, Rückkehr aus Einstellungen), Jahreswechsel-Pfeile im Urlaub-Tab (Branch `fix/urlaub-saldo-jahr`)
@@ -542,7 +543,7 @@ Stand: [Session 11./12.10.2026](docs/sessions/SESSION-2026-10-12-dev-db-rechte-r
 0. **Backup-Kontrolle:** Nachtläufe nach 2.9.0 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
 1. **Kleine Urlaubs-Fixes:** ~~Jahreswechsel-Anzeige einheitlich~~ (erledigt), „ab“-Datum in der Urlaubsberechnung (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
 2. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich, Zeiterfassung Urlaub an Feiertagen, Fehler-Handler 400 statt 500, CORS aus `.env` lesen, Rollen deaktivieren/Farben je Rolle
+3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich, Zeiterfassung Urlaub an Feiertagen, CORS aus `.env` lesen, Rollen deaktivieren/Farben je Rolle
 4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration

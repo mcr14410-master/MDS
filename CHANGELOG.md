@@ -19,6 +19,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Urlaub über den Jahreswechsel wird jetzt überall gleich angezeigt: die Tage des gewählten Jahres und daneben der Rest im anderen Jahr, z. B. „5 T (+2 in 2027)“ statt „5 von 7 T“ – im Urlaubskonto, in „Mein Bereich“ und in den Urlaubs-PDFs.
 - Beim Beantragen oder Eintragen zeigt die Vorschau, wie sich die Tage auf die Jahre verteilen, z. B. „7 Arbeitstage (5 in 2026, 2 in 2027)“. Dasselbe steht bei offenen und eigenen Anträgen.
 - In den Urlaubs-PDFs überdeckte der Rahmen des Urlaubskontos die untere Zeile (Genommen, Genehmigt, Beantragt, Rest) – jetzt ist sie wieder vollständig lesbar.
+- Wer eine Datei mit nicht erlaubtem Dateityp hochlädt, bekommt jetzt überall die passende Meldung (z. B. „Nur Bilder erlaubt“) statt eines allgemeinen Serverfehlers.
 
 ### Changed
 - Urlaub über den Jahreswechsel, einheitliche Anzeige aus `days_by_year`: neuer Helper `frontend/src/utils/vacationDays.js` (`formatDaysInYear`, `formatOtherYears`, `formatYearSplit`) für Detail-Modal (Urlaubskonto), Mein Bereich, Offene Anträge, Meine Anträge und Antragsformular; `POST /api/vacations/check-overlap` liefert zusätzlich `daysByYear`. PDFs (`vacationReportsController`): Spalte „Tage“ zeigt den Anteil im Berichtsjahr, darunter klein die übrigen Jahre – nur diese Zeilen werden höher
@@ -26,6 +27,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 - Urlaubs-PDFs: In der Box „Urlaubskonto“ lag die zweite Wertezeile (Genommen/Genehmigt/Beantragt/Rest) auf bzw. unter dem Rahmen – Sammel-PDF (`exportAll`) um 4 pt, „Mein Jahr“ und „Mitarbeiter“ um 2 pt. Boxen erhöht (75 → 85, 85 → 93, mit Korrektur 95 → 100), folgender Inhalt rückt mit; im Sammel-PDF stehen die Werte jetzt wie in den anderen PDFs mit „Tage“
+- Globaler Fehler-Handler (`server.js`) antwortete bei jedem Fehler mit 500 und gab `err.message` heraus. Jetzt: Status aus dem Fehler (body-parser: kaputtes JSON 400, Body zu groß 413, unbekannter Zeichensatz 415), `MulterError` 413 bzw. 400, deutsche Meldungen für JSON-Fehler; 4xx mit Meldung in `error` und `message` (Stores lesen teils das eine, teils das andere), 500 nur noch `Interner Serverfehler` – Details im Log. Die Dateifilter der Uploads ohne eigenen Fehler-Handler (Kalibrierungen, Vorrichtungs-, Kunden-, Spannmittel-, Maschinen-, Werkzeug-Dokumente, Einrichteblatt-Fotos, Verbrauchsmaterial, Wiki-Bilder) setzen `status = 400` – ihre Meldungen kamen bisher als 500 an
 
 ---
 

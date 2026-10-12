@@ -82,7 +82,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('Dateityp nicht erlaubt. Erlaubt: PDF, DOC, XLS, Bilder, CAD-Dateien'));
+    cb(Object.assign(new Error('Dateityp nicht erlaubt. Erlaubt: PDF, DOC, XLS, Bilder, CAD-Dateien'), { status: 400 }));
   }
 };
 

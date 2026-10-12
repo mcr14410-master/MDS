@@ -41,7 +41,7 @@ const upload = multer({
     if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error(`Dateityp nicht erlaubt: ${ext}`), false);
+      cb(Object.assign(new Error(`Dateityp nicht erlaubt: ${ext}`), { status: 400 }), false);
     }
   }
 });
