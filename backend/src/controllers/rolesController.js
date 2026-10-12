@@ -337,12 +337,12 @@ async function remove(req, res) {
       });
     }
 
-    // Prevent deleting system roles
-    const systemRoles = ['admin', 'programmer', 'reviewer', 'operator', 'helper', 'supervisor'];
-    if (systemRoles.includes(existingRole.rows[0].name)) {
+    // Admin-Rolle schützen (requireRole/hasRole prüfen den Namen 'admin');
+    // die übrigen Standardrollen sind wie eigene Rollen löschbar
+    if (existingRole.rows[0].name === 'admin') {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'System-Rollen können nicht gelöscht werden'
+        message: 'Die Admin-Rolle kann nicht gelöscht werden'
       });
     }
 
