@@ -103,7 +103,8 @@ function RolesPage() {
     return colors[roleName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
   };
 
-  const systemRoles = ['admin', 'programmer', 'reviewer', 'operator', 'helper', 'supervisor'];
+  // Nur admin ist geschützt (Code prüft den Rollennamen); Standardrollen sind umbenenn- und löschbar
+  const systemRoles = ['admin'];
 
   const breadcrumbItems = [
     { label: 'Administration', path: '/admin' },

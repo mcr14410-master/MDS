@@ -24,7 +24,7 @@ export default function WorkflowActions({
   } = useWorkflowStore();
 
   // Check if user can change workflow state
-  const canChangeWorkflow = hasPermission('part.update'); // TODO: Later use workflow.change permission
+  const canChangeWorkflow = hasPermission('program.release'); // gleiche Prüfung wie POST /workflow/change
 
   // Fetch available transitions on mount or when currentState changes
   useEffect(() => {
