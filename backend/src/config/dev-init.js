@@ -38,6 +38,9 @@ async function getPassword() {
   if (!process.stdin.isTTY) {
     throw new Error('Kein Terminal für die Eingabe – Passwort per DEV_ADMIN_PASSWORD übergeben.');
   }
+  // Deutlich absetzen – nach den npm-Kopfzeilen ging die Abfrage leicht unter
+  const line = '═'.repeat(44);
+  console.log(`\n${line}\n  🔑 Admin-Passwort festlegen\n     Eingabe wird nicht angezeigt\n${line}`);
   const password = await askHidden('Neues Passwort für admin: ');
   const repeat = await askHidden('Passwort wiederholen: ');
   if (!password) throw new Error('Leeres Passwort.');

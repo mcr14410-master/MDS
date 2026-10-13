@@ -23,6 +23,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Changed
 - `scripts/backup.sh`: Bei manuellem Aufruf im Terminal landet die Ausgabe zusätzlich in `backup.log` (Kennzeichnung „(manuell, Benutzer)“) – bisher schrieb nur der Cron-Lauf über die Umleitung in der Crontab ins Log, die Backups vor einem Deploy fehlten dort. Cron-Aufruf unverändert (keine TTY → keine doppelten Zeilen)
 - Backup-Monitor (Cron-Jobs-Seite): „neuestes: … MB von TT.MM., HH:MM“ (Europe/Berlin) statt „(vor Xh)“ – die Prüfung läuft 30 min nach dem Backup, das gerundete Alter war immer 0; ohne Datum im Ergebnis weiter das Alter (Rückfall)
+- `npm run dev:init`: Die verdeckte Passwortabfrage steht jetzt in einem deutlich abgesetzten Block („Admin-Passwort festlegen – Eingabe wird nicht angezeigt“) – nach den npm-Kopfzeilen ging sie leicht unter
 
 ### Fixed
 - Zeitnachweis-PDF (Einzel und Sammel): Stichtag des Urlaubskontos war immer das Monatsende – im laufenden Monat stand z. B. am 13.10. schon „Stand 31.10.“, und „Genommen bis 31.10.“ enthielt künftigen genehmigten Urlaub. Stichtag jetzt Monatsende, höchstens heute (Europe/Berlin, `toDateStr`); vergangene Monate unverändert (`getPayrollVacation`)
