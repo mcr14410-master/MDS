@@ -1,7 +1,7 @@
 #!/bin/bash
 # MDS Datenbank Backup Script
 # Cronjob (root): 30 2 * * * /home/rpi01/mds/scripts/backup.sh >> /srv/mds/backups/backup.log 2>&1
-# Manuell:        sudo ./scripts/backup.sh   (Backup-Ordner gehört root)
+# Manuell:        sudo ./scripts/backup.sh   (Backup-Ordner gehört root; Ausgabe landet zusätzlich in backup.log)
 
 set -euo pipefail
 
@@ -16,6 +16,14 @@ BACKUP_FILE="$BACKUP_DIR/mds_backup_$TIMESTAMP.sql.gz"
 KEEP_DAYS=7
 MIN_BYTES=10240                                  # alles darunter ist sicher kein vollständiger Dump
 END_MARKER="PostgreSQL database dump complete"   # letzte Kommentarzeile jedes vollständigen pg_dump
+LOG_FILE="$BACKUP_DIR/backup.log"
+
+# Manueller Aufruf im Terminal: Ausgabe zusätzlich ins Log (Cron leitet selbst dorthin um)
+RUN_INFO=""
+if [ -t 1 ] && [ -w "$BACKUP_DIR" ]; then
+  exec > >(tee -a "$LOG_FILE") 2>&1
+  RUN_INFO=" (manuell, ${SUDO_USER:-$(whoami)})"
+fi
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 fail() {
@@ -30,7 +38,7 @@ if [ ! -w "$BACKUP_DIR" ]; then
 fi
 
 # Backup erstellen
-log "📦 Erstelle Backup: $BACKUP_FILE"
+log "📦 Erstelle Backup${RUN_INFO}: $BACKUP_FILE"
 if ! docker compose -f "$REPO_ROOT/compose.yaml" exec -T db pg_dump -U mds mds | gzip > "$BACKUP_FILE"; then
   fail "pg_dump fehlgeschlagen"
 fi
