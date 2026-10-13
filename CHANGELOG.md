@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.9.2] - 2026-10-13 - Backup-Anzeige, Zeitnachweis und Upload-Meldungen
+
 ### Für Anwender
 - Der Backup-Status unter Administration → Cron-Jobs zeigt jetzt, wann das neueste Backup erstellt wurde (z. B. „von 13.10., 02:30“), statt der wenig aussagekräftigen Angabe „vor 0h“.
 - Zeitnachweis für den laufenden Monat: Das Urlaubskonto zeigt den Stand von heute statt schon vom Monatsende. Urlaub, der erst noch kommt, steht unter „Genehmigt, nach Stichtag“ und zählt nicht mehr als genommen.
