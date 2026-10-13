@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
+const { toDateStr } = require('../utils/workingDays');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -541,7 +542,7 @@ function formatMinsExport(mins) {
 }
 
 // ============================================
-// Zeitnachweis (Payroll): Stichtag = Ende des gewählten Monats
+// Zeitnachweis (Payroll): Stichtag = Ende des gewählten Monats, im laufenden Monat heute
 // ============================================
 
 function monthEndStr(year, month) {
@@ -555,14 +556,17 @@ function formatStichtag(dateStr) {
 }
 
 /**
- * Urlaubskonto zum Stichtag (Monatsende) – unabhängig vom Druckdatum.
- * Genommen = genehmigter Urlaub bis zum Stichtag (Urlaub über das Monatsende anteilig),
+ * Urlaubskonto zum Stichtag: Monatsende, höchstens heute (Europe/Berlin) – sonst zählt im
+ * laufenden Monat künftiger genehmigter Urlaub schon als genommen.
+ * Genommen = genehmigter Urlaub bis zum Stichtag (Urlaub über den Stichtag anteilig),
  * Rest = Verfügbar − genommen. Danach genehmigter / beantragter Urlaub nur als Info.
  */
 async function getPayrollVacation(userId, year, month) {
   // Lazy require: vacationsController lädt seinerseits diesen Controller
   const { calculateWorkingDaysByYear } = require('./vacationsController');
-  const stichtag = monthEndStr(year, month);
+  const monthEnd = monthEndStr(year, month);
+  const today = toDateStr(new Date());
+  const stichtag = today < monthEnd ? today : monthEnd;
 
   const entitlementResult = await pool.query(`
     SELECT total_days, carried_over, adjustment, available_days
@@ -1153,7 +1157,7 @@ async function exportPayrollPDF(req, res) {
     const user = userResult.rows[0];
     const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
 
-    // 2.–4. Urlaubskonto zum Monatsende, Zeitkonto inkl. Korrektur/Auszahlung
+    // 2.–4. Urlaubskonto zum Monatsende (laufender Monat: heute), Zeitkonto inkl. Korrektur/Auszahlung
     const vacation = await getPayrollVacation(userId, targetYear, targetMonth);
     const account = await getPayrollTimeAccount({ ...user, id: userId }, targetYear, targetMonth);
     const { saldoVormonat, monthOvertime } = account;
