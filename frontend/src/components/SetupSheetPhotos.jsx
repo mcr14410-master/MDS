@@ -53,7 +53,9 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
     });
     setUploading(false);
 
-    if (result.success && onPhotoChange) {
+    if (!result.success) {
+      alert(result.error);
+    } else if (onPhotoChange) {
       onPhotoChange();
     }
 

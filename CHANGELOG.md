@@ -18,6 +18,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Der Backup-Status unter Administration → Cron-Jobs zeigt jetzt, wann das neueste Backup erstellt wurde (z. B. „von 13.10., 02:30“), statt der wenig aussagekräftigen Angabe „vor 0h“.
 - Zeitnachweis für den laufenden Monat: Das Urlaubskonto zeigt den Stand von heute statt schon vom Monatsende. Urlaub, der erst noch kommt, steht unter „Genehmigt, nach Stichtag“ und zählt nicht mehr als genommen.
+- Beim Hochladen von Wiki-Bildern und Fotos zu Einrichteblättern erscheint bei einem Fehler jetzt die konkrete Meldung (z. B. „Nur Bilder erlaubt“). Werkzeug-Dokumente und Verbrauchsmaterial melden sich durchgehend auf Deutsch.
 
 ### Changed
 - `scripts/backup.sh`: Bei manuellem Aufruf im Terminal landet die Ausgabe zusätzlich in `backup.log` (Kennzeichnung „(manuell, Benutzer)“) – bisher schrieb nur der Cron-Lauf über die Umleitung in der Crontab ins Log, die Backups vor einem Deploy fehlten dort. Cron-Aufruf unverändert (keine TTY → keine doppelten Zeilen)
@@ -25,6 +26,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 - Zeitnachweis-PDF (Einzel und Sammel): Stichtag des Urlaubskontos war immer das Monatsende – im laufenden Monat stand z. B. am 13.10. schon „Stand 31.10.“, und „Genommen bis 31.10.“ enthielt künftigen genehmigten Urlaub. Stichtag jetzt Monatsende, höchstens heute (Europe/Berlin, `toDateStr`); vergangene Monate unverändert (`getPayrollVacation`)
+- Upload-Fehlermeldungen: Wiki-Bilder (`WikiArticleForm`) zeigten immer nur „Fehler beim Hochladen“, Einrichteblatt-Fotos (`SetupSheetPhotos`) gar nichts – jetzt die Meldung aus der Antwort. Werkzeug-Dokumente und Verbrauchsmaterial meldeten einen falschen Dateityp auf Englisch; `consumableDocumentsController` komplett übersetzt (alle Antworten), Werkzeug-Meldung nennt jetzt auch die erlaubten Textdateien (TXT, CSV)
 
 ---
 

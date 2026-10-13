@@ -116,7 +116,7 @@ export default function WikiArticleForm({ article, categories, onClose, onSucces
       toast.success('Bild hochgeladen');
       setSelectedFile(null);
     } catch (error) {
-      toast.error('Fehler beim Hochladen');
+      toast.error(error.response?.data?.error || 'Fehler beim Hochladen');
     } finally {
       setUploading(false);
     }
