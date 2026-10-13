@@ -48,7 +48,10 @@
 - [x] **Migration `1737000094000_create-cron-job-logs`** lief über den App-Pool (`DB_*`) statt `pgm` – jetzt `pgm.sql`, gleiche Tabelle/Indizes mit `IF NOT EXISTS`, gelaufene DBs unberührt; Regel „Migrationen nur über `pgm`“ in CLAUDE.md (Branch `fix/migration-094-pgm`)
 - [x] **Backend beendet sich nicht vollständig:** der SIGTERM-Handler schloss den HTTP-Server nie (nur Cron + einen der beiden DB-Pools), `docker stop` wartete bis SIGKILL. Jetzt `server.close()` → beide Pools → `exit 0`, auch bei SIGINT; Notbremse nach 8 s (Branch `fix/backend-graceful-shutdown`)
 - [x] **Backend-Fehler-Handler** (`server.js`): übernimmt jetzt den Status des Fehlers (kaputtes JSON 400, zu groß 413, Upload-Dateityp 400) und gibt bei 500 keine internen Details mehr heraus
-- [ ] **Upload-Meldungen auf Englisch:** Werkzeug-Dokumente (`toolDocumentsController`) und Verbrauchsmaterial (`consumablesRoutes`) melden einen falschen Dateityp auf Englisch – UI ist deutsch
+- [ ] **Upload-Fehlermeldungen im Frontend** (ein gemeinsamer PR) – das Backend liefert seit 2.9.1 bei allen Uploads Status 400 mit Meldung in `error` und `message`:
+  - Werkzeug-Dokumente (`toolDocumentsController`) und Verbrauchsmaterial (`consumablesRoutes`) melden einen falschen Dateityp auf Englisch – UI ist deutsch
+  - Einrichteblatt-Fotos (`SetupSheetPhotos.jsx`): bei Fehler keinerlei Meldung, der Upload passiert einfach nicht (`result.error` aus `setupSheetsStore.uploadPhoto` wird nicht angezeigt)
+  - Wiki-Bilder (`WikiArticleForm.jsx`): immer nur „Fehler beim Hochladen“, die Meldung aus der Antwort wird nicht ausgewertet
 - [x] **Urlaub-PDFs ohne Korrektur:** alle drei Urlaubs-PDFs lesen den Saldo aus `vacation_balances`, Korrektur angezeigt (Branch `fix/urlaub-pdf-korrektur`)
 - [x] **PDF-Export bricht Backend ab:** behoben für alle 11 gestreamten PDF-Endpunkte (`utils/pdfResponse.js`, Branch `fix/urlaub-pdf-absturz`)
 - [x] **Urlaubs-Verwaltung zeigt Salden des falschen Jahres:** Salden folgen dem angezeigten Jahr (Kalender-Navigation, Rückkehr aus Einstellungen), Jahreswechsel-Pfeile im Urlaub-Tab (Branch `fix/urlaub-saldo-jahr`)
@@ -544,7 +547,7 @@ Stand: [Session 12./13.10.2026](docs/sessions/SESSION-2026-10-13-kleine-fixes-ur
 1. **Release 2.9.1** (Jahreswechsel-Anzeige, PDF-Box, Fehler-Handler, CORS) – nach dem Deploy die offenen Test-plan-Punkte von #132–#135 prüfen
 2. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
 3. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
-4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Upload-Meldungen auf Englisch, Rollen deaktivieren/Farben je Rolle
+4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Upload-Fehlermeldungen im Frontend (Englisch, Einrichteblatt-Fotos, Wiki), Rollen deaktivieren/Farben je Rolle
 5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
