@@ -60,7 +60,7 @@
 - [x] **Urlaubs-PDFs: Urlaubskonto-Box zu niedrig** – zweite Wertezeile lag in allen drei PDFs auf bzw. unter dem Rahmen (Sammel-PDF 4 pt, Einzel-PDFs 2 pt); Boxen erhöht, Sammel-PDF zeigt jetzt auch „Tage“
 - [ ] **Zeitmodell-Historie (gültig ab):** Ein Mitarbeiter hat nur das *aktuelle* Zeitmodell (`users.time_model_id`); „ab“ (`time_tracking_start_date`) ist der Beginn der Zeiterfassung, kein Gültig-ab-Datum. Beim Zuweisen eines neuen Modells bleiben gespeicherte Tage (`time_daily_summary.target_minutes`) und Salden unverändert – aber jede spätere Neuberechnung eines vergangenen Tages (Buchung nachtragen/korrigieren/löschen, Tagesinfo, Auto-Schließen offener Tage) nimmt das Soll aus dem neuen Modell (außer bei manuellem Soll-Override), der Nacht-Job `generate_absence_entries` legt fehlende Tage der letzten 7 Tage mit dem neuen Modell an, und neu gespeicherte Urlaube rechnen ebenfalls mit dem neuen Modell. Ziel: Zuordnung Mitarbeiter → Zeitmodell mit „gültig ab“ (eigene Tabelle, Migration der heutigen Zuordnung), Tagesberechnung, Nacht-Job und Urlaubsberechnung nehmen das am jeweiligen Tag gültige Modell. Löst den Punkt „Urlaubsberechnung beachtet ‚ab‘-Datum“ mit. Bis dahin: Modell zum Monatswechsel zuweisen, Tage davor möglichst nicht mehr bearbeiten bzw. Soll danach prüfen/überschreiben
 - [ ] **Urlaubsberechnung beachtet „ab“-Datum:** vor `time_tracking_start_date` (Feld „ab“ neben dem Zeitmodell) ohne Zeitmodell rechnen (Mo–Fr) – sonst verfälscht jede Neuberechnung Urlaube aus der Zeit vor dem Zeitmodell (Fall MA 13, Release 2.8.0). Kleiner Zwischenschritt bis zur Workforce-Konsolidierung (Zeitmodell-Verlauf)
-- [ ] **Testmaschinen endgültig löschen (Pi):** Abhängigkeiten prüfen (Arbeitsgänge, Rüstblätter, Wartungspläne, Dokumente, Werkzeugnummernlisten, Spannmittel/Vorrichtungen …), Backup, dann löschen (`DELETE /api/machines/:id?hard_delete=true` geht nur ohne Arbeitsgänge)
+- [x] **Testmaschinen endgültig löschen (Pi):** 13.10.2026 Maschinen 1–9 (alle ohne Abhängigkeiten) nach Backup über die API gelöscht (`hard_delete`, Audit-Log auf admin); übrig 31–38. Beim Löschen werden Wartungspläne/-aufgaben (inkl. Historie), Werkzeugnummernlisten, Betriebsstunden und Dokumente per CASCADE mitgelöscht – künftig vorher prüfen
 - [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
 - [ ] **Backup-Konzept außerhalb des Pi** (DB, Backups und Uploads liegen auf derselben SSD) – Ziel-Netzlaufwerk klären (SMB-Fileserver/NAS, vom Pi erreichbar? selbst gesichert?). Stand Pi 08.10.2026: OS auf SD-Karte (58 GB, 20 GB belegt), Daten auf SSD `/srv` (112 GB, 1 % belegt), Uploads 67 MB, DB-Backup ~0,7 MB/Tag
   - [ ] **Ebene 1 – Datenbank:** täglichen `pg_dump` zusätzlich aufs Netzlaufwerk, dort längere Aufbewahrung (z. B. 30 Tage + monatlich)
@@ -538,18 +538,17 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 12./13.10.2026](docs/sessions/SESSION-2026-10-13-kleine-fixes-urlaub-backend.md) – v2.9.1 läuft auf dem Pi (13.10.2026), drei Fixes unter `[Unreleased]` für 2.9.2
+Stand: [Session 13.10.2026 abends](docs/sessions/SESSION-2026-10-13-abend-releases-2.9.1-2.9.2.md) – v2.9.2 läuft auf dem Pi (13.10.2026), `[Unreleased]` leer
 
-0. ~~Backup-Kontrolle nach 2.9.0~~ (13.10.: 10/10 gültig, Nachtläufe zuverlässig) · ~~Release 2.9.1~~ (13.10., Prüfpunkte bestätigt)
-1. **Release 2.9.2** bei Gelegenheit (Backup-Log manuell, Monitor-Zeitpunkt, Stichtag Zeitnachweis) – Prüfpunkte in der Release-Checkliste
-2. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
-3. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
-4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Rollen deaktivieren/Farben je Rolle
-5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
-7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
-8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
-9. Kleinkram: PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
+0. **Backup-Log nach der Nacht 13./14.10. prüfen:** Cron-Lauf ohne doppelte Zeilen (`tail -6 /srv/mds/backups/backup.log`)
+1. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
+2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
+3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Rollen deaktivieren/Farben je Rolle
+4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
+6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+8. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
