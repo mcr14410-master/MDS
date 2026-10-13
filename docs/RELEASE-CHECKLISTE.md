@@ -33,7 +33,11 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-- (noch keine)
+**Release 2.9.1** – keine Migrationen. `compose.yaml` ändert sich (`CORS_ORIGIN: "*"` entfernt), `deploy.sh` erstellt den Backend-Container dabei neu.
+
+- [ ] Login und eine Seite mit Daten öffnen – in der Browser-Konsole (F12) keine CORS-Fehler (#135)
+- [ ] Urlaub → Verwaltung: Urlaubskonto eines Mitarbeiters mit Urlaub über den Jahreswechsel (falls vorhanden) – „X T (+Y in JJJJ)“; Urlaubs-PDF „alle Mitarbeiter“: Box „Urlaubskonto“ vollständig lesbar (#132, #133)
+- [ ] Upload mit falschem Dateityp (z. B. `.txt` als Wiki-Bild oder Maschinen-Dokument) – verständliche Meldung statt „Internal Server Error“ (#134)
 
 ---
 
