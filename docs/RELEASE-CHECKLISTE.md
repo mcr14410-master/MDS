@@ -33,12 +33,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.9.2** – keine Migrationen, keine Änderung an `compose.yaml`.
+- (noch keine)
 
-- [ ] **Nach** dem Deploy (das Backup davor läuft noch mit dem alten Skript): `sudo ./scripts/backup.sh` → in `/srv/mds/backups/backup.log` erscheint der Lauf mit „(manuell, …)“; nach der nächsten Nacht: Cron-Lauf ohne doppelte Zeilen (#138)
-- [ ] Administration → Cron-Jobs: Backup-Status zeigt „neuestes: … MB von TT.MM., 02:30“ statt „(vor 0h)“ – nach dem nächsten Monitor-Lauf oder per „Ausführen“ (#138)
-- [ ] Zeitnachweis des laufenden Monats exportieren: Urlaubskonto „Stand“ = heutiges Datum, künftiger Urlaub unter „Genehmigt, nach Stichtag“ (#139)
-- [ ] Wiki: Artikel bearbeiten → unter „Bilder“ eine Nicht-Bild-Datei hochladen → Meldung „Nur Bilder erlaubt …“ statt „Fehler beim Hochladen“ (#143)
+---
+
+## Erledigt: Release 2.9.2 (13.10.2026)
+
+Deploy ohne Befund, keine Migrationen. Prüfpunkte bestätigt: manuelles Backup nach dem Deploy mit „(manuell, …)“ im `backup.log`, Backup-Monitor zeigt den Zeitpunkt, Zeitnachweis des laufenden Monats mit Stand heute, Wiki-Upload mit falschem Typ zeigt konkrete Meldung. Offen: nächster Nachtlauf ohne doppelte Zeilen im Log (ROADMAP „Nächste Session“).
 
 ---
 
