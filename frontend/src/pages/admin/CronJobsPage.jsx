@@ -46,7 +46,13 @@ function formatResult(jobName, result) {
     if (result.status === 'no_backups') return '⚠ Keine Backups gefunden';
     const latest = result.latest;
     const valid = result.valid_count !== undefined ? `${result.valid_count}/${result.backup_count} gültig` : `${result.backup_count} Backups`;
-    return `${result.status === 'ok' ? '✓' : '⚠'} ${valid}, neuestes: ${latest?.size_mb} MB (vor ${latest?.age_hours}h), gesamt: ${result.total_size_mb} MB`;
+    // Zeitpunkt statt Alter – die Prüfung läuft 30 min nach dem Backup, „vor 0h“ sagte nichts aus
+    const latestAt = latest?.date
+      ? `von ${new Date(latest.date).toLocaleString('de-DE', {
+          timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+        })}`
+      : `(vor ${latest?.age_hours}h)`;
+    return `${result.status === 'ok' ? '✓' : '⚠'} ${valid}, neuestes: ${latest?.size_mb} MB ${latestAt}, gesamt: ${result.total_size_mb} MB`;
   }
   if (jobName === 'generate_absence_entries') {
     let text = `${result.processed || 0} User geprüft, ${result.created || 0} Einträge erstellt`;
