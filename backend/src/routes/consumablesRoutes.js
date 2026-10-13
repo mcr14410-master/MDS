@@ -24,7 +24,7 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(Object.assign(new Error('Invalid file type. Only images and PDFs are allowed.'), { status: 400 }));
+      cb(Object.assign(new Error('Dateityp nicht erlaubt. Erlaubt sind Bilder und PDF.'), { status: 400 }));
     }
   }
 });

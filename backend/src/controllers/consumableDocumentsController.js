@@ -61,7 +61,7 @@ exports.getDocuments = async (req, res) => {
     console.error('Error fetching consumable documents:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching documents',
+      message: 'Fehler beim Laden der Dokumente',
       error: error.message
     });
   }
@@ -85,14 +85,14 @@ exports.uploadDocument = async (req, res) => {
     if (checkConsumable.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Consumable not found'
+        message: 'Verbrauchsmaterial nicht gefunden'
       });
     }
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded'
+        message: 'Keine Datei hochgeladen'
       });
     }
 
@@ -103,7 +103,7 @@ exports.uploadDocument = async (req, res) => {
     if (!validTypes.includes(docType)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid document type. Must be: sds, tds, image, other'
+        message: 'Ungültiger Dokumenttyp. Erlaubt: sds, tds, image, other'
       });
     }
 
@@ -157,7 +157,7 @@ exports.uploadDocument = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        message: 'Document uploaded successfully',
+        message: 'Dokument hochgeladen',
         data: result.rows[0]
       });
 
@@ -174,7 +174,7 @@ exports.uploadDocument = async (req, res) => {
     console.error('Error uploading document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error uploading document',
+      message: 'Fehler beim Hochladen des Dokuments',
       error: error.message
     });
   }
@@ -199,7 +199,7 @@ exports.getDocumentById = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Document not found'
+        message: 'Dokument nicht gefunden'
       });
     }
 
@@ -212,7 +212,7 @@ exports.getDocumentById = async (req, res) => {
     console.error('Error fetching document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching document',
+      message: 'Fehler beim Laden des Dokuments',
       error: error.message
     });
   }
@@ -236,7 +236,7 @@ exports.updateDocument = async (req, res) => {
     if (checkExisting.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Document not found'
+        message: 'Dokument nicht gefunden'
       });
     }
 
@@ -246,7 +246,7 @@ exports.updateDocument = async (req, res) => {
       if (!validTypes.includes(document_type)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid document type'
+          message: 'Ungültiger Dokumenttyp'
         });
       }
     }
@@ -262,7 +262,7 @@ exports.updateDocument = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Document updated successfully',
+      message: 'Dokument aktualisiert',
       data: result.rows[0]
     });
 
@@ -270,7 +270,7 @@ exports.updateDocument = async (req, res) => {
     console.error('Error updating document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating document',
+      message: 'Fehler beim Aktualisieren des Dokuments',
       error: error.message
     });
   }
@@ -293,7 +293,7 @@ exports.deleteDocument = async (req, res) => {
     if (docResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Document not found'
+        message: 'Dokument nicht gefunden'
       });
     }
 
@@ -310,14 +310,14 @@ exports.deleteDocument = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Document deleted successfully'
+      message: 'Dokument gelöscht'
     });
 
   } catch (error) {
     console.error('Error deleting document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting document',
+      message: 'Fehler beim Löschen des Dokuments',
       error: error.message
     });
   }
@@ -340,7 +340,7 @@ exports.setPrimaryImage = async (req, res) => {
     if (docResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Document not found'
+        message: 'Dokument nicht gefunden'
       });
     }
 
@@ -349,7 +349,7 @@ exports.setPrimaryImage = async (req, res) => {
     if (doc.document_type !== 'image') {
       return res.status(400).json({
         success: false,
-        message: 'Only images can be set as primary'
+        message: 'Nur Bilder können als Hauptbild gesetzt werden'
       });
     }
 
@@ -373,7 +373,7 @@ exports.setPrimaryImage = async (req, res) => {
 
       res.json({
         success: true,
-        message: 'Primary image set successfully'
+        message: 'Hauptbild gesetzt'
       });
 
     } catch (err) {
@@ -387,7 +387,7 @@ exports.setPrimaryImage = async (req, res) => {
     console.error('Error setting primary image:', error);
     res.status(500).json({
       success: false,
-      message: 'Error setting primary image',
+      message: 'Fehler beim Setzen des Hauptbilds',
       error: error.message
     });
   }
@@ -412,7 +412,7 @@ async function serveDocument(req, res, disposition) {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Document not found'
+        message: 'Dokument nicht gefunden'
       });
     }
 
@@ -431,7 +431,7 @@ async function serveDocument(req, res, disposition) {
     } catch {
       return res.status(404).json({
         success: false,
-        message: 'File not found on server'
+        message: 'Datei auf dem Server nicht gefunden'
       });
     }
 
@@ -445,7 +445,7 @@ async function serveDocument(req, res, disposition) {
     console.error('Error serving document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error serving document',
+      message: 'Fehler beim Ausliefern des Dokuments',
       error: error.message
     });
   }
