@@ -33,6 +33,9 @@ Bei Problemen, Fehlern oder Bugs:
 - Einzelne Schritte committen (kleine, nachvollziehbare Commits)
 - Push erst wenn alles läuft und getestet ist
 - Merge via Pull Request auf GitHub nach master
+  - **Reine Doku-PRs** (Session-Doku, ROADMAP, Release-Checkliste, CHANGELOG ohne Release) darf Claude nach dem Erstellen selbst mergen (`gh pr merge --merge`) und aufräumen
+  - **Code, Migrationen, Releases und CLAUDE.md** mergt der Nutzer selbst – oder Claude auf ausdrückliches „merge #…“
+  - Vor dem Aufräumen immer den PR-Status prüfen (MERGED), sonst abbrechen
 - Keine Commits, Pushes oder Branch-Operationen ohne explizite Aufforderung
 - `git diff` und `git status` sind jederzeit erlaubt
 
