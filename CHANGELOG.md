@@ -15,6 +15,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Der Backup-Status unter Administration → Cron-Jobs zeigt jetzt, wann das neueste Backup erstellt wurde (z. B. „von 13.10., 02:30“), statt der wenig aussagekräftigen Angabe „vor 0h“.
+
+### Changed
+- `scripts/backup.sh`: Bei manuellem Aufruf im Terminal landet die Ausgabe zusätzlich in `backup.log` (Kennzeichnung „(manuell, Benutzer)“) – bisher schrieb nur der Cron-Lauf über die Umleitung in der Crontab ins Log, die Backups vor einem Deploy fehlten dort. Cron-Aufruf unverändert (keine TTY → keine doppelten Zeilen)
+- Backup-Monitor (Cron-Jobs-Seite): „neuestes: … MB von TT.MM., HH:MM“ (Europe/Berlin) statt „(vor Xh)“ – die Prüfung läuft 30 min nach dem Backup, das gerundete Alter war immer 0; ohne Datum im Ergebnis weiter das Alter (Rückfall)
+
 ---
 
 ## [2.9.1] - 2026-10-13 - Urlaubsanzeige und Fehlerbehandlung
