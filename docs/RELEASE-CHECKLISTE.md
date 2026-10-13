@@ -33,11 +33,17 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.9.1** – keine Migrationen. `compose.yaml` ändert sich (`CORS_ORIGIN: "*"` entfernt), `deploy.sh` erstellt den Backend-Container dabei neu.
+**Nächstes Release (2.9.2)** – keine Migrationen.
 
-- [ ] Login und eine Seite mit Daten öffnen – in der Browser-Konsole (F12) keine CORS-Fehler (#135)
-- [ ] Urlaub → Verwaltung: Urlaubskonto eines Mitarbeiters mit Urlaub über den Jahreswechsel (falls vorhanden) – „X T (+Y in JJJJ)“; Urlaubs-PDF „alle Mitarbeiter“: Box „Urlaubskonto“ vollständig lesbar (#132, #133)
-- [ ] Upload mit falschem Dateityp (z. B. `.txt` als Wiki-Bild oder Maschinen-Dokument) – verständliche Meldung statt „Internal Server Error“ (#134)
+- [ ] `sudo ./scripts/backup.sh` → in `/srv/mds/backups/backup.log` erscheint der Lauf mit „(manuell, …)“; nach der nächsten Nacht: Cron-Lauf ohne doppelte Zeilen (#138)
+- [ ] Administration → Cron-Jobs: Backup-Status zeigt „neuestes: … MB von TT.MM., 02:30“ statt „(vor 0h)“ – nach dem nächsten Monitor-Lauf oder per „Ausführen“ (#138)
+- [ ] Zeitnachweis des laufenden Monats exportieren: Urlaubskonto „Stand“ = heutiges Datum, künftiger Urlaub unter „Genehmigt, nach Stichtag“ (#139)
+
+---
+
+## Erledigt: Release 2.9.1 (13.10.2026)
+
+Deploy ohne Befund, keine Migrationen; `compose.yaml` ohne `CORS_ORIGIN: "*"` übernommen. Prüfpunkte bestätigt: keine CORS-Fehler in der Browser-Konsole, Urlaubskonto/Sammel-PDF mit Jahreswechsel-Anzeige und vollständiger Konto-Box, Upload mit falschem Dateityp zeigt verständliche Meldung.
 
 ---
 

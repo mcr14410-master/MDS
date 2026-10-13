@@ -541,10 +541,10 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 12./13.10.2026](docs/sessions/SESSION-2026-10-13-kleine-fixes-urlaub-backend.md) – v2.9.0 läuft auf dem Pi, vier Fixes unter `[Unreleased]`
+Stand: [Session 12./13.10.2026](docs/sessions/SESSION-2026-10-13-kleine-fixes-urlaub-backend.md) – v2.9.1 läuft auf dem Pi (13.10.2026), drei Fixes unter `[Unreleased]` für 2.9.2
 
-0. **Backup-Kontrolle:** Nachtläufe nach 2.9.0 (`tail -4 /srv/mds/backups/backup.log`, Backup-Status im MDS grün)
-1. **Release 2.9.1** (Jahreswechsel-Anzeige, PDF-Box, Fehler-Handler, CORS) – nach dem Deploy die offenen Test-plan-Punkte von #132–#135 prüfen
+0. ~~Backup-Kontrolle nach 2.9.0~~ (13.10.: 10/10 gültig, Nachtläufe zuverlässig) · ~~Release 2.9.1~~ (13.10., Prüfpunkte bestätigt)
+1. **Release 2.9.2** bei Gelegenheit (Backup-Log manuell, Monitor-Zeitpunkt, Stichtag Zeitnachweis) – Prüfpunkte in der Release-Checkliste
 2. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
 3. **Testmaschinen** auf dem Pi endgültig löschen (Abhängigkeiten prüfen, Backup)
 4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Upload-Fehlermeldungen im Frontend (Englisch, Einrichteblatt-Fotos, Wiki), Rollen deaktivieren/Farben je Rolle
