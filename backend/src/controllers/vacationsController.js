@@ -13,6 +13,7 @@ const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesC
 const { countWorkingDaysByYear, toDateStr } = require('../utils/workingDays');
 const { ensureHolidaysForYear } = require('./holidaysController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
+const { calculateDayAbsence } = require('../utils/dayAbsence');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -44,6 +45,12 @@ async function syncDailySummaryForVacation(vacationId) {
 
   const model = modelResult.rows.length > 0 ? modelResult.rows[0] : null;
 
+  const holidayRegion = await getHolidayRegion();
+  const creditSetting = await pool.query(
+    "SELECT value FROM time_settings WHERE key = 'absence_credits_target'"
+  );
+  const holidayCredit = creditSetting.rows[0]?.value === 'true';
+
   // Jeden Tag im Urlaubszeitraum durchgehen (nur bis heute, Zukunft übernimmt Cron)
   const start = new Date(vac.start_date);
   const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }));
@@ -69,8 +76,20 @@ async function syncDailySummaryForVacation(vacationId) {
     // Wochenende mit Soll=0 → überspringen
     if (targetMinutes === 0) continue;
 
-    // Gutschreibung wenn Typ das vorsieht
-    const workedMinutes = vac.credits_target_hours ? targetMinutes : 0;
+    // Soll, Gutschrift und Status – gleiche Regel wie Tagesberechnung und Nacht-Job
+    // (Feiertag im Urlaub: keine Doppel-Gutschrift, Status Feiertag)
+    const holiday = await pool.query(
+      'SELECT id, is_half_day FROM holidays WHERE date = $1 AND region = $2',
+      [dateStr, holidayRegion]
+    );
+    const absence = calculateDayAbsence({
+      baseTarget: targetMinutes,
+      holiday: holiday.rows[0] || null,
+      vacation: { id: vacationId, type: vac.type_name, credits_target_hours: vac.credits_target_hours },
+      holidayCredit,
+    });
+    targetMinutes = absence.target;
+    const workedMinutes = absence.credit;
     const overtimeMinutes = workedMinutes - targetMinutes;
 
     // Prüfen ob bereits ein Eintrag existiert
@@ -87,9 +106,9 @@ async function syncDailySummaryForVacation(vacationId) {
           UPDATE time_daily_summary
           SET status = $1, vacation_id = $2, has_missing_entries = FALSE, missing_entry_types = NULL,
               worked_minutes = $3, target_minutes = $4, overtime_minutes = $5,
-              needs_review = FALSE, review_note = NULL
+              needs_review = FALSE, review_note = NULL, holiday_id = $7
           WHERE id = $6
-        `, [vac.type_name, vacationId, workedMinutes, targetMinutes, overtimeMinutes, entry.id]);
+        `, [absence.status, vacationId, workedMinutes, targetMinutes, overtimeMinutes, entry.id, absence.holidayId]);
       }
       // Fall 2: Echte Stempelungen vorhanden + credits_target_hours → Differenz gutschreiben
       // Beispiel: MA arbeitet 2h, geht krank → 480 Soll - 120 Ist = 360 Min Gutschrift
@@ -113,9 +132,9 @@ async function syncDailySummaryForVacation(vacationId) {
       await pool.query(`
         INSERT INTO time_daily_summary (
           user_id, date, target_minutes, worked_minutes, break_minutes, overtime_minutes,
-          status, has_missing_entries, missing_entry_types, vacation_id
-        ) VALUES ($1, $2, $3, $4, 0, $5, $6, FALSE, NULL, $7)
-      `, [vac.user_id, dateStr, targetMinutes, workedMinutes, overtimeMinutes, vac.type_name, vacationId]);
+          status, has_missing_entries, missing_entry_types, vacation_id, holiday_id
+        ) VALUES ($1, $2, $3, $4, 0, $5, $6, FALSE, NULL, $7, $8)
+      `, [vac.user_id, dateStr, targetMinutes, workedMinutes, overtimeMinutes, absence.status, vacationId, absence.holidayId]);
     }
 
     // Betroffene Monate merken
