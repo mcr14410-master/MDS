@@ -33,10 +33,16 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.9.4** – keine Migrationen, keine Änderung an `compose.yaml`, nur Frontend.
+**Nächstes Release** – Inhalt bisher: teilweise Abwesenheit (#153), keine Migrationen.
 
-- [ ] Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter: Übersicht ohne Eingabefelder; „Details bearbeiten“ öffnet den Bereich direkt unter dem gewählten Mitarbeiter
-- [ ] Im aufgeklappten Bereich etwas ändern und **Abbrechen** – Übersicht unverändert
+- [ ] Bei der nächsten Krankmeldung nach Arbeitsbeginn: Saldo des Tages ±0 (gearbeitete Zeit + Rest bis zum Soll)
+- [ ] Deploy-Log: npm-Warnung „tar zlib: incorrect data check“ wieder aufgetreten? (14.10. einmalig beim Frontend-Build, npm hat den Cache selbst repariert) – bei Wiederholung Speicher (SD-Karte/SSD) prüfen
+
+---
+
+## Erledigt: Release 2.9.4 (14.10.2026)
+
+Deploy ohne Befund, nur Frontend. Mitarbeiter-Einstellungen mit Speichern/Abbrechen bestätigt. Beim Frontend-Build einmalig `npm warn tar zlib: incorrect data check` für einen Paket-Cache-Eintrag – npm hat ihn verworfen und neu geladen, Build lief durch.
 
 ---
 

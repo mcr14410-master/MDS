@@ -540,12 +540,12 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 13.10.2026 abends](docs/sessions/SESSION-2026-10-13-abend-releases-2.9.1-2.9.2.md) – v2.9.3 läuft auf dem Pi (14.10.2026), `[Unreleased]` leer
+Stand: [Session 14.10.2026](docs/sessions/SESSION-2026-10-14-feiertage-zeiterfassung-releases.md) – v2.9.4 läuft auf dem Pi (14.10.2026), unter `[Unreleased]`: teilweise Abwesenheit (#153)
 
-0. ~~Backup-Log nach der Nacht 13./14.10.~~ (14.10.: manueller Lauf mit „(manuell, rpi01)“, Cron-Lauf ohne doppelte Zeilen)
+0. **Buchhaltung:** Abstimmungsvorlage (Drive „Claude-Ausgaben“, lokal `_lokal/buchhaltung/`) – halber Feiertag 24.12./31.12. (A/B/C) und Krank nach Arbeitsbeginn (Auffüllen bestätigen). Danach ggf. `HALF_HOLIDAY_IS_WORKDAY` bzw. Feiertagsliste anpassen und mit #153 als nächstes Release ausliefern
 1. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Halber Feiertag nach Klärung mit der Buchhaltung, Rollen deaktivieren/Farben je Rolle
+3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Rollen deaktivieren/Farben je Rolle
 4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
