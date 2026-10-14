@@ -33,7 +33,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-- (noch keine)
+**Release 2.9.3** – eine Migration (`1737000116000`, entfernt die ungenutzte Einstellung `holiday_region`), keine Änderung an `compose.yaml`. Bestehende Tageswerte und Salden ändern sich nicht (Produktion am 14.10. geprüft: nur Bayern, alle Feiertage ±0).
+
+- [ ] Deploy-Log: Migration `1737000116000_remove-holiday-region-setting` gelaufen
+- [ ] Urlaub → Einstellungen → Allgemein: Bundesland „Bayern“, Text „Gilt für Urlaubsberechnung, Zeiterfassung und Kalender“; beim Ändern der Auswahl erscheint der Hinweis – **nicht speichern**
+- [ ] Urlaubskalender Dezember: nur bayerische Feiertage
+- [ ] Kontrolle (nur lesend): `docker compose exec -T db psql -U mds mds -c "SELECT key, value FROM vacation_settings WHERE key IN ('default_region','holiday_region');"` → nur `default_region | BY`
 
 ---
 
