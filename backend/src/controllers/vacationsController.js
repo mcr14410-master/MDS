@@ -14,6 +14,7 @@ const { countWorkingDaysByYear, toDateStr } = require('../utils/workingDays');
 const { ensureHolidaysForYear } = require('./holidaysController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
 const { calculateDayAbsence } = require('../utils/dayAbsence');
+const { updateDailySummary } = require('./timeEntriesController');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -110,22 +111,14 @@ async function syncDailySummaryForVacation(vacationId) {
           WHERE id = $6
         `, [absence.status, vacationId, workedMinutes, targetMinutes, overtimeMinutes, entry.id, absence.holidayId]);
       }
-      // Fall 2: Echte Stempelungen vorhanden + credits_target_hours → Differenz gutschreiben
-      // Beispiel: MA arbeitet 2h, geht krank → 480 Soll - 120 Ist = 360 Min Gutschrift
-      else if (vac.credits_target_hours && entry.status !== 'absent' && !entry.vacation_id) {
-        // Aktuelle worked_minutes aus dem Eintrag lesen
-        const currentWorked = parseInt(entry.worked_minutes) || 0;
-        const creditedMinutes = Math.max(0, targetMinutes - currentWorked);
-        const newWorkedTotal = currentWorked + creditedMinutes;
-        const newOvertime = newWorkedTotal - targetMinutes;
-
-        await pool.query(`
-          UPDATE time_daily_summary
-          SET vacation_id = $1, credited_minutes = $2, 
-              worked_minutes = $3, overtime_minutes = $4,
-              needs_review = FALSE, review_note = NULL
-          WHERE id = $5
-        `, [vacationId, creditedMinutes, newWorkedTotal, newOvertime, entry.id]);
+      // Fall 2: Tag mit Stempelungen (z. B. 2 h gearbeitet, dann krank) → Tagesberechnung rechnet ihn neu,
+      // Gutschrift füllt bis zum Soll auf (gleiche Regel wie bei jeder späteren Neuberechnung)
+      else if (!entry.vacation_id || entry.vacation_id === vacationId) {
+        await updateDailySummary(vac.user_id, new Date(dateStr + 'T12:00:00'));
+        await pool.query(
+          'UPDATE time_daily_summary SET needs_review = FALSE, review_note = NULL WHERE id = $1',
+          [entry.id]
+        );
       }
     } else {
       // Kein Eintrag vorhanden → neu erstellen (z.B. Abwesenheit vor Cron-Lauf eingetragen)
