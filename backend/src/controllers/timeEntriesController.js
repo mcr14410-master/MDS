@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
+const { calculateDayAbsence } = require('../utils/dayAbsence');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -1064,19 +1065,23 @@ async function updateDailySummary(userId, date) {
   `, [userId, dateStr]);
   
   const holiday = await pool.query(`
-    SELECT id FROM holidays WHERE date = $1 AND region = $2
+    SELECT id, is_half_day FROM holidays WHERE date = $1 AND region = $2
   `, [dateStr, await getHolidayRegion()]);
 
-  // Urlaubsgutschrift berechnen
-  let vacationCredit = 0;
-  if (vacation.rows.length > 0 && vacation.rows[0].credits_target_hours) {
-    vacationCredit = targetMinutes;
-  }
+  const creditSetting = await pool.query(
+    "SELECT value FROM time_settings WHERE key = 'absence_credits_target'"
+  );
 
-  if (vacation.rows.length > 0) {
-    status = vacation.rows[0].type;
-  } else if (holiday.rows.length > 0) {
-    status = 'holiday';
+  // Soll, Gutschrift und Status bei Feiertag/Abwesenheit – gleiche Regel wie Nacht-Job und Urlaubs-Sync
+  const absence = calculateDayAbsence({
+    baseTarget: targetMinutes,
+    holiday: holiday.rows[0] || null,
+    vacation: vacation.rows[0] || null,
+    holidayCredit: creditSetting.rows[0]?.value === 'true',
+  });
+  targetMinutes = absence.target;
+  if (absence.status) {
+    status = absence.status;
   }
 
   // Vergangener Tag ohne Stempelungen und ohne Abwesenheit → absent
@@ -1085,8 +1090,8 @@ async function updateDailySummary(userId, date) {
     missingTypes.push('no_entries');
   }
 
-  // Finale Arbeitszeit: Urlaubsgutschrift + tatsächlich gearbeitet
-  const finalWorkedMinutes = vacationCredit + dayStats.worked_minutes;
+  // Finale Arbeitszeit: Gutschrift (Feiertag/Abwesenheit) + tatsächlich gearbeitet
+  const finalWorkedMinutes = absence.credit + dayStats.worked_minutes;
 
   // Upsert
   await pool.query(`
@@ -1113,7 +1118,7 @@ async function updateDailySummary(userId, date) {
     finalWorkedMinutes - targetMinutes, status,
     dayStats.first_clock_in, dayStats.last_clock_out,
     missingTypes.length > 0, missingTypes.length > 0 ? missingTypes : null,
-    vacation.rows[0]?.id || null, holiday.rows[0]?.id || null
+    absence.vacationId, absence.holidayId
   ]);
 
   // Monatssaldo automatisch aktualisieren
@@ -1260,37 +1265,21 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
       WHERE v.user_id = $1 AND $2 BETWEEN v.start_date AND v.end_date AND v.status = 'approved'
     `, [userId, dateStr]);
 
-    let status = 'absent';
-    let workedMinutes = 0;
-    let effectiveTarget = targetMinutes;
-    let vacationId = null;
-    let holidayId = null;
-    let hasMissing = false;
-    let missingTypes = null;
-
-    if (holiday.rows.length > 0) {
-      status = 'holiday';
-      holidayId = holiday.rows[0].id;
-      // Halber Feiertag → halbes Soll
-      if (holiday.rows[0].is_half_day) {
-        effectiveTarget = Math.round(targetMinutes / 2);
-      }
-      // Feiertage gutschreiben (globale Setting)
-      if (holidayCreditEnabled) {
-        workedMinutes = effectiveTarget;
-      }
-    } else if (vacation.rows.length > 0) {
-      status = vacation.rows[0].type;
-      vacationId = vacation.rows[0].id;
-      // Gutschreibung pro Typ (credits_target_hours)
-      if (vacation.rows[0].credits_target_hours) {
-        workedMinutes = targetMinutes;
-      }
-    } else {
-      // Arbeitstag ohne Stempelung und ohne Abwesenheit
-      hasMissing = true;
-      missingTypes = ['no_entries'];
-    }
+    // Soll, Gutschrift und Status – gleiche Regel wie Tagesberechnung und Urlaubs-Sync
+    const absence = calculateDayAbsence({
+      baseTarget: targetMinutes,
+      holiday: holiday.rows[0] || null,
+      vacation: vacation.rows[0] || null,
+      holidayCredit: holidayCreditEnabled,
+    });
+    const effectiveTarget = absence.target;
+    const workedMinutes = absence.credit;
+    const vacationId = absence.vacationId;
+    const holidayId = absence.holidayId;
+    // Arbeitstag ohne Stempelung und ohne Abwesenheit
+    const status = absence.status || 'absent';
+    const hasMissing = !absence.status;
+    const missingTypes = absence.status ? null : ['no_entries'];
 
     // Eintrag erstellen
     await pool.query(`
