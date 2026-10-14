@@ -17,9 +17,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Das Bundesland unter Urlaub → Einstellungen → Allgemein gilt jetzt überall gleich: für Urlaubstage, Zeiterfassung und Kalender. Beim Umstellen erscheint ein Hinweis, dass bereits berechnete Werte nicht automatisch neu berechnet werden.
+- Feiertage in der Zeiterfassung werden jetzt immer gleich gerechnet. Bisher konnte ein Feiertag nachträglich mit vollem Minus im Zeitkonto landen, z. B. wenn an dem Tag eine Notiz eingetragen oder gestempelt wurde. Urlaub über einen Feiertag zählt den Feiertag als Feiertag.
 
 ### Fixed
 - Feiertage: Das Bundesland kam nur im Frontend aus der Einstellung „Standard-Region“ (`default_region`). Urlaubsberechnung, automatisches Erzeugen und die Feiertags-API ohne Regionsangabe rechneten fest mit „BY“; die Tagesberechnung der Zeiterfassung (`updateDailySummary`, Nacht-Job `generateAbsenceEntries`) und der Urlaubskalender filterten gar nicht nach Region – nach einmaligem Umstellen auf ein anderes Bundesland zählten dessen Feiertage dauerhaft für alle (z. B. Buß- und Bettag in Sachsen). Jetzt überall `getHolidayRegion()` (`utils/holidayRegion.js`, liest `default_region`, Rückfall „BY“). Hinweis im Einstellungsformular beim Umstellen
+- Zeiterfassung, Feiertage und Abwesenheiten: drei Stellen rechneten Soll, Gutschrift und Status unterschiedlich. `updateDailySummary` (bei jeder Buchung, Korrektur, Tagesinfo, Auto-Abschluss) setzte an Feiertagen volles Soll ohne Gutschrift (−Soll im Saldo, Arbeit am Feiertag gegen volles Soll), der Urlaubs-Sync (`syncDailySummaryForVacation`) kannte keine Feiertage, der Nacht-Job (`generateAbsenceEntries`) priorisierte Feiertag vor Urlaub und kannte als einziger halbe Feiertage. Jetzt gemeinsame Regel `calculateDayAbsence` (`utils/dayAbsence.js`, Tests `tests/test-day-absence.js`): Feiertagsanteil bei „Feiertage gutschreiben“ als Ist gutgeschrieben, sonst vom Soll abgezogen (vorher −Soll); Abwesenheit mit Gutschrift füllt das restliche Soll; ganzer Feiertag hat Status „Feiertag“ auch im Urlaub. Halbe Feiertage unverändert wie bisher im Nacht-Job (`HALF_HOLIDAY_IS_WORKDAY = false`, Klärung offen)
 
 ### Removed
 - Einstellung `holiday_region` (Migration `1737000116000`) – wurde nirgends gelesen
