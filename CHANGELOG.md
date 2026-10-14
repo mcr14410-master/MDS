@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter: Einstellungen werden nicht mehr bei jedem Klick sofort gespeichert. „Details bearbeiten“ öffnet die Einstellungen direkt unter dem Mitarbeiter, gespeichert wird erst mit „Speichern“. Vor dem Ändern des Zeitmodells und dem Abschalten der Zeiterfassung kommt eine Rückfrage.
+
+### Fixed
+- Mitarbeiter-Einstellungen (`EmployeeSettingsPanel`): Schalter Urlaub/Zeiterfassung, Zeitmodell und „ab“-Datum speicherten sofort – ein versehentlicher Klick (z. B. Touchpad) schaltete die Zeiterfassung ab und entfernte das Zeitmodell, beim Eintippen des Datums wurden Zwischenstände gespeichert. Jetzt Übersicht ohne Eingabefelder, Bearbeiten im aufgeklappten Bereich mit Speichern/Abbrechen (nur geänderte Felder), Rückfrage bei Zeitmodell-Wechsel und Deaktivieren. Der aufgeklappte Bereich stand unter dem letzten Mitarbeiter statt unter dem gewählten. „Heute“ beim Aktivieren jetzt in Europe/Berlin (vorher UTC)
+
 ---
 
 ## [2.9.3] - 2026-10-14 - Feiertage in Urlaub und Zeiterfassung
