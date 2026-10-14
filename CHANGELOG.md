@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Das Bundesland unter Urlaub → Einstellungen → Allgemein gilt jetzt überall gleich: für Urlaubstage, Zeiterfassung und Kalender. Beim Umstellen erscheint ein Hinweis, dass bereits berechnete Werte nicht automatisch neu berechnet werden.
+
+### Fixed
+- Feiertage: Das Bundesland kam nur im Frontend aus der Einstellung „Standard-Region“ (`default_region`). Urlaubsberechnung, automatisches Erzeugen und die Feiertags-API ohne Regionsangabe rechneten fest mit „BY“; die Tagesberechnung der Zeiterfassung (`updateDailySummary`, Nacht-Job `generateAbsenceEntries`) und der Urlaubskalender filterten gar nicht nach Region – nach einmaligem Umstellen auf ein anderes Bundesland zählten dessen Feiertage dauerhaft für alle (z. B. Buß- und Bettag in Sachsen). Jetzt überall `getHolidayRegion()` (`utils/holidayRegion.js`, liest `default_region`, Rückfall „BY“). Hinweis im Einstellungsformular beim Umstellen
+
+### Removed
+- Einstellung `holiday_region` (Migration `1737000116000`) – wurde nirgends gelesen
+
 ---
 
 ## [2.9.2] - 2026-10-13 - Backup-Anzeige, Zeitnachweis und Upload-Meldungen

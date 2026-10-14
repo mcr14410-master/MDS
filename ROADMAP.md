@@ -53,7 +53,7 @@
 - [x] **PDF-Export bricht Backend ab:** behoben für alle 11 gestreamten PDF-Endpunkte (`utils/pdfResponse.js`, Branch `fix/urlaub-pdf-absturz`)
 - [x] **Urlaubs-Verwaltung zeigt Salden des falschen Jahres:** Salden folgen dem angezeigten Jahr (Kalender-Navigation, Rückkehr aus Einstellungen), Jahreswechsel-Pfeile im Urlaub-Tab (Branch `fix/urlaub-saldo-jahr`)
 - [x] **Zeitnachweis-PDFs zum Monatsende** (Wunsch Buchhaltung): Urlaubskonto mit Stichtag Monatsende statt Druckdatum, Korrektur/Auszahlung im Zeitkonto (Branch `fix/payroll-stichtag`)
-- [ ] **Bundesland für Feiertage einheitlich:** Einstellung „Standard-Region“ (`default_region`) steuert nur Kalender/Feiertagsliste im Frontend. Urlaubstage-Berechnung und Feiertage-Nachholen rechnen fest mit „BY“, Zeiterfassung (`timeEntriesController`, 2 Stellen) und Kalender-Endpunkt filtern gar nicht nach Region (zählen Feiertage jedes angelegten Bundeslandes), `holiday_region` ist ungenutzt. Heute ohne Auswirkung (alles BY) – nach Umstellen des Bundeslandes in den Einstellungen aber falsche Urlaubstage/Zeitsalden. Fix: überall `default_region` verwenden, `holiday_region` entfernen
+- [x] **Bundesland für Feiertage einheitlich:** Region kommt überall aus `default_region` (`utils/holidayRegion.js`): Urlaubsberechnung, automatisches Erzeugen, Feiertags-API ohne Regionsangabe, Zeiterfassung (Tagesberechnung, Nacht-Job) und Kalender; `holiday_region` entfernt; Warnhinweis beim Umstellen. Produktion hatte nur BY – keine Datenkorrektur nötig
 - [x] **Halbe Feiertage im Urlaub:** Heiligabend/Silvester zählen 0,5 Urlaubstage statt 0 (Branch `fix/urlaub-halbe-feiertage`, Migration für Urlaube ab 2026)
 - [ ] **Zeiterfassung: Urlaub an Feiertagen uneinheitlich:** `timeEntriesController` berechnet Tage auf zwei Wegen – einer priorisiert Feiertag vor Urlaub und halbiert das Soll an halben Feiertagen, der andere priorisiert Urlaub und kennt keine halben Feiertage. Saldo heute in beiden Fällen gleich, Status/Anzeige können abweichen; vereinheitlichen
 - [x] **Urlaub über den Jahreswechsel – Anzeige einheitlich:** überall „5 T (+2 in 2027)“ statt „5 von 7 T“ (Detail-Modal, Mein Bereich, PDFs zweizeilig); Antragsformular und Antragslisten zeigen die Aufteilung („7 Arbeitstage (5 in 2026, 2 in 2027)“), `check-overlap` liefert `daysByYear`
@@ -540,10 +540,10 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 13.10.2026 abends](docs/sessions/SESSION-2026-10-13-abend-releases-2.9.1-2.9.2.md) – v2.9.2 läuft auf dem Pi (13.10.2026), `[Unreleased]` leer
 
-0. **Backup-Log nach der Nacht 13./14.10. prüfen:** Cron-Lauf ohne doppelte Zeilen (`tail -6 /srv/mds/backups/backup.log`)
+0. ~~Backup-Log nach der Nacht 13./14.10.~~ (14.10.: manueller Lauf mit „(manuell, rpi01)“, Cron-Lauf ohne doppelte Zeilen)
 1. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Bundesland für Feiertage einheitlich (größer: Urlaub, Nachholen, Zeiterfassung, Kalender – gründliche Diagnose zuerst), Zeiterfassung Urlaub an Feiertagen, Rollen deaktivieren/Farben je Rolle
+3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Zeiterfassung Urlaub an Feiertagen, Rollen deaktivieren/Farben je Rolle
 4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration

@@ -776,8 +776,16 @@ export default function VacationSettingsPanel({ activeSection, onSectionChange }
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Bestimmt welche regionalen Feiertage generiert werden
+                  Gilt für Urlaubsberechnung, Zeiterfassung und Kalender
                 </p>
+                {settingsForm.default_region !== currentRegion && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 mt-2">
+                    Bereits gespeicherte Urlaubstage, Tageswerte und Salden werden nicht neu berechnet.
+                    Vergangene Tage nehmen das neue Bundesland, sobald sie neu berechnet werden
+                    (Buchung nachtragen oder korrigieren, Urlaub neu speichern, Nacht-Job der letzten 7 Tage).
+                    Am besten zum Jahreswechsel umstellen.
+                  </p>
+                )}
               </div>
 
               <button
