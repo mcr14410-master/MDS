@@ -33,7 +33,10 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-- (noch keine)
+**Release 2.9.4** – keine Migrationen, keine Änderung an `compose.yaml`, nur Frontend.
+
+- [ ] Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter: Übersicht ohne Eingabefelder; „Details bearbeiten“ öffnet den Bereich direkt unter dem gewählten Mitarbeiter
+- [ ] Im aufgeklappten Bereich etwas ändern und **Abbrechen** – Übersicht unverändert
 
 ---
 
