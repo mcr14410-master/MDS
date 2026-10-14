@@ -540,7 +540,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 13.10.2026 abends](docs/sessions/SESSION-2026-10-13-abend-releases-2.9.1-2.9.2.md) – v2.9.2 läuft auf dem Pi (13.10.2026), `[Unreleased]` leer
+Stand: [Session 13.10.2026 abends](docs/sessions/SESSION-2026-10-13-abend-releases-2.9.1-2.9.2.md) – v2.9.3 läuft auf dem Pi (14.10.2026), `[Unreleased]` leer
 
 0. ~~Backup-Log nach der Nacht 13./14.10.~~ (14.10.: manueller Lauf mit „(manuell, rpi01)“, Cron-Lauf ohne doppelte Zeilen)
 1. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
