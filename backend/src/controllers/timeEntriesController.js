@@ -1078,6 +1078,7 @@ async function updateDailySummary(userId, date) {
     holiday: holiday.rows[0] || null,
     vacation: vacation.rows[0] || null,
     holidayCredit: creditSetting.rows[0]?.value === 'true',
+    workedMinutes: dayStats.worked_minutes,
   });
   targetMinutes = absence.target;
   if (absence.status) {

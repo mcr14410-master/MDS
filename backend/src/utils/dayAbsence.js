@@ -10,8 +10,10 @@
  * - Feiertagsanteil: ganzer Feiertag = ganzes Soll, halber Feiertag siehe HALF_HOLIDAY_IS_WORKDAY
  * - Einstellung „Feiertage gutschreiben“ an: Soll bleibt, Feiertagsanteil wird als Ist gutgeschrieben;
  *   aus: Soll wird um den Feiertagsanteil reduziert (Saldo gleich, nur ohne Feiertagsstunden im Ist)
- * - Abwesenheit mit Gutschrift (credits_target_hours): restliches Soll wird gutgeschrieben
- * - Gestempelte Zeit addiert der Aufrufer
+ * - Abwesenheit mit Gutschrift (credits_target_hours): füllt bis zum Soll auf – Soll minus Feiertagsanteil
+ *   minus gestempelte Zeit, nie unter 0 (Lohnausfallprinzip: so gestellt, als hätte er gearbeitet;
+ *   z. B. 2 h gearbeitet, dann krank → 6:30 Gutschrift, nicht 8:30)
+ * - Gestempelte Zeit addiert der Aufrufer; Zeit über dem Soll bleibt als Überzeit erhalten
  */
 
 // Halber Feiertag (Heiligabend, Silvester):
@@ -26,10 +28,11 @@ const HALF_HOLIDAY_IS_WORKDAY = false;
  * @param {object|null} p.holiday        { id, is_half_day } oder null
  * @param {object|null} p.vacation       { id, type, credits_target_hours } (genehmigt) oder null
  * @param {boolean} p.holidayCredit      Einstellung absence_credits_target
+ * @param {number} [p.workedMinutes=0]   an diesem Tag gestempelte Arbeitszeit
  * @returns {{ target: number, credit: number, status: string|null, holidayId: number|null, vacationId: number|null }}
  *          status null = keine Abwesenheit, Aufrufer bestimmt den Status aus den Buchungen
  */
-function calculateDayAbsence({ baseTarget, holiday, vacation, holidayCredit }) {
+function calculateDayAbsence({ baseTarget, holiday, vacation, holidayCredit, workedMinutes = 0 }) {
   let target = baseTarget;
   let holidayPart = 0;
 
@@ -52,7 +55,7 @@ function calculateDayAbsence({ baseTarget, holiday, vacation, holidayCredit }) {
   }
 
   if (vacation?.credits_target_hours) {
-    credit += target - credit;
+    credit += Math.max(0, target - credit - workedMinutes);
   }
 
   let status = null;

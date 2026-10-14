@@ -39,6 +39,25 @@ test('Abwesenheit ohne Gutschrift (unbezahlt) → −Soll', () => {
   assert.equal(saldo(calc({ vacation: UNBEZAHLT })), -510);
 });
 
+console.log('Teilweise Abwesenheit (bis zum Soll auffüllen)');
+test('2 h gearbeitet, dann krank → Gutschrift 6:30, Saldo ±0', () => {
+  const r = calc({ vacation: { id: 9, type: 'Krank', credits_target_hours: true }, workedMinutes: 120 });
+  assert.equal(r.credit, 390);
+  assert.equal(saldo(r, 120), 0);
+  assert.equal(r.status, 'Krank');
+});
+test('mehr als das Soll gestempelt (Schulung bis abends) → keine Gutschrift, Überzeit bleibt', () => {
+  const r = calc({ vacation: { id: 9, type: 'Schulung', credits_target_hours: true }, workedMinutes: 600 });
+  assert.equal(r.credit, 0);
+  assert.equal(saldo(r, 600), 90);
+});
+test('Abwesenheit ohne Gutschrift + 2 h gestempelt → nur die 2 h zählen', () => {
+  assert.equal(saldo(calc({ vacation: UNBEZAHLT, workedMinutes: 120 }), 120), -390);
+});
+test('Urlaub am halben Feiertag + 1 h gestempelt → ±0', () => {
+  assert.equal(saldo(calc({ holiday: HALF, vacation: URLAUB, workedMinutes: 60 }), 60), HALF_HOLIDAY_IS_WORKDAY ? 0 : 60);
+});
+
 console.log('Ganzer Feiertag');
 test('ohne Stempel → ±0, Status Feiertag', () => {
   const r = calc({ holiday: FULL });
