@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.9.4] - 2026-10-14 - Mitarbeiter-Einstellungen mit Speichern
+
 ### Für Anwender
 - Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter: Einstellungen werden nicht mehr bei jedem Klick sofort gespeichert. „Details bearbeiten“ öffnet die Einstellungen direkt unter dem Mitarbeiter, gespeichert wird erst mit „Speichern“. Vor dem Ändern des Zeitmodells und dem Abschalten der Zeiterfassung kommt eine Rückfrage.
 
