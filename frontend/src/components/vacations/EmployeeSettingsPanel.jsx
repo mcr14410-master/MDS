@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Users, Clock, CreditCard, Key, Check, AlertTriangle, Search, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import axios from '../../utils/axios';
 
@@ -11,7 +11,8 @@ export default function EmployeeSettingsPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  const [saving, setSaving] = useState({});
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Load employees and time models
   useEffect(() => {
@@ -42,85 +43,80 @@ export default function EmployeeSettingsPanel() {
     loadData();
   }, []);
 
-  // Update employee field
-  const handleUpdate = async (userId, field, value) => {
-    setSaving(prev => ({ ...prev, [userId]: true }));
+  // Heute in Ortszeit (toISOString wäre UTC – zwischen 0 und 2 Uhr der Vortag)
+  const todayBerlin = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' });
+
+  // Details auf-/zuklappen – Änderungen erst als Entwurf, gespeichert wird nur per Button
+  const toggleDetails = (emp) => {
+    if (expandedId === emp.id) {
+      setExpandedId(null);
+      setDraft(null);
+      return;
+    }
+    setExpandedId(emp.id);
+    setDraft({
+      vacation_tracking_enabled: !!emp.vacation_tracking_enabled,
+      time_tracking_enabled: !!emp.time_tracking_enabled,
+      time_model_id: emp.time_model_id || null,
+      time_tracking_start_date: emp.time_tracking_start_date || '',
+    });
+  };
+
+  const closeDetails = () => {
+    setExpandedId(null);
+    setDraft(null);
+  };
+
+  const handleSave = async (emp) => {
+    const changes = {};
+    if (draft.vacation_tracking_enabled !== !!emp.vacation_tracking_enabled) {
+      changes.vacation_tracking_enabled = draft.vacation_tracking_enabled;
+    }
+    if (draft.time_tracking_enabled !== !!emp.time_tracking_enabled) {
+      changes.time_tracking_enabled = draft.time_tracking_enabled;
+    }
+    if (draft.time_tracking_enabled) {
+      if ((draft.time_model_id || null) !== (emp.time_model_id || null)) {
+        changes.time_model_id = draft.time_model_id || null;
+      }
+      // Beim Aktivieren ohne Startdatum: ab heute
+      const startDate = draft.time_tracking_start_date || (changes.time_tracking_enabled ? todayBerlin() : null);
+      if ((startDate || null) !== (emp.time_tracking_start_date || null)) {
+        changes.time_tracking_start_date = startDate;
+      }
+    } else if (changes.time_tracking_enabled === false) {
+      // Zeiterfassung deaktiviert → Zeitmodell wird entfernt (wie bisher)
+      changes.time_model_id = null;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      closeDetails();
+      return;
+    }
+
+    // Folgenreiche Änderungen bestätigen lassen
+    if (changes.time_tracking_enabled === false && emp.time_model_id) {
+      if (!window.confirm(`Zeiterfassung für ${emp.first_name} ${emp.last_name} deaktivieren?\n\nDas Zeitmodell wird entfernt, das Terminal erkennt den Mitarbeiter nicht mehr.`)) return;
+    } else if (changes.time_model_id !== undefined && emp.time_model_id) {
+      if (!window.confirm(`Zeitmodell für ${emp.first_name} ${emp.last_name} ändern?\n\nDas neue Modell gilt auch, wenn vergangene Tage neu berechnet werden (Buchung nachtragen oder korrigieren, Urlaub neu speichern). Am besten zum Monatswechsel umstellen.`)) return;
+    }
+
+    setSaving(true);
     setError(null);
-    
     try {
-      await axios.put(`/api/users/${userId}`, { [field]: value });
-      
-      setEmployees(prev => prev.map(emp => 
-        emp.id === userId ? { ...emp, [field]: value } : emp
-      ));
-      
+      await axios.put(`/api/users/${emp.id}`, changes);
+      setEmployees(prev => prev.map(e => (e.id === emp.id ? { ...e, ...changes } : e)));
       setSuccess('Gespeichert');
       setTimeout(() => setSuccess(null), 2000);
+      closeDetails();
     } catch (err) {
       setError(err.response?.data?.error || 'Fehler beim Speichern');
     } finally {
-      setSaving(prev => ({ ...prev, [userId]: false }));
+      setSaving(false);
     }
   };
 
-  // Toggle checkbox
-  const handleToggle = async (userId, field, currentValue) => {
-    // Bei Deaktivierung der Zeiterfassung: time_model_id zurücksetzen
-    if (field === 'time_tracking_enabled' && currentValue === true) {
-      // Zeiterfassung wird deaktiviert → time_model_id auf NULL setzen
-      setSaving(prev => ({ ...prev, [userId]: true }));
-      setError(null);
-      
-      try {
-        await axios.put(`/api/users/${userId}`, { 
-          time_tracking_enabled: false,
-          time_model_id: null 
-        });
-        
-        setEmployees(prev => prev.map(emp => 
-          emp.id === userId 
-            ? { ...emp, time_tracking_enabled: false, time_model_id: null } 
-            : emp
-        ));
-        
-        setSuccess('Gespeichert');
-        setTimeout(() => setSuccess(null), 2000);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Fehler beim Speichern');
-      } finally {
-        setSaving(prev => ({ ...prev, [userId]: false }));
-      }
-    } else {
-      // Beim Aktivieren der Zeiterfassung: Startdatum auf heute setzen wenn noch nicht vorhanden
-      if (field === 'time_tracking_enabled' && !currentValue) {
-        const employee = employees.find(e => e.id === userId);
-        if (!employee?.time_tracking_start_date) {
-          const today = new Date().toISOString().split('T')[0];
-          setSaving(prev => ({ ...prev, [userId]: true }));
-          setError(null);
-          try {
-            await axios.put(`/api/users/${userId}`, { 
-              time_tracking_enabled: true,
-              time_tracking_start_date: today 
-            });
-            setEmployees(prev => prev.map(emp => 
-              emp.id === userId 
-                ? { ...emp, time_tracking_enabled: true, time_tracking_start_date: today } 
-                : emp
-            ));
-            setSuccess('Gespeichert');
-            setTimeout(() => setSuccess(null), 2000);
-          } catch (err) {
-            setError(err.response?.data?.error || 'Fehler beim Speichern');
-          } finally {
-            setSaving(prev => ({ ...prev, [userId]: false }));
-          }
-          return;
-        }
-      }
-      await handleUpdate(userId, field, !currentValue);
-    }
-  };
+  const formatDate = (dateStr) => (dateStr ? String(dateStr).slice(0, 10).split('-').reverse().join('.') : '');
 
   // Filter employees
   const filteredEmployees = employees.filter(emp => {
@@ -146,6 +142,138 @@ export default function EmployeeSettingsPanel() {
   const getTimeModelName = (modelId) => {
     const model = timeModels.find(m => m.id === modelId);
     return model ? `${model.name} (${(model.weekly_minutes / 60).toFixed(1)}h/Wo)` : '–';
+  };
+
+  // Aufgeklappter Bereich unter dem Mitarbeiter: Einstellungen bearbeiten + Terminal-Zugangsdaten
+  const renderDetails = (emp) => {
+    const modelChanged = draft.time_tracking_enabled && emp.time_model_id
+      && (draft.time_model_id || null) !== emp.time_model_id;
+    const disabling = emp.time_tracking_enabled && !draft.time_tracking_enabled;
+    const checkbox = (field, label) => (
+      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={draft[field]}
+          onChange={(e) => setDraft(d => ({ ...d, [field]: e.target.checked }))}
+          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600"
+        />
+        {label}
+      </label>
+    );
+
+    return (
+      <div className="max-w-2xl space-y-4">
+        <h4 className="font-medium text-gray-900 dark:text-white">
+          Einstellungen für {emp.first_name} {emp.last_name}
+        </h4>
+
+        <div className="flex flex-wrap gap-6">
+          {checkbox('vacation_tracking_enabled', 'Urlaubsverwaltung')}
+          {checkbox('time_tracking_enabled', 'Zeiterfassung')}
+        </div>
+
+        {draft.time_tracking_enabled && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Zeitmodell</label>
+              <select
+                value={draft.time_model_id || ''}
+                onChange={(e) => setDraft(d => ({ ...d, time_model_id: e.target.value ? parseInt(e.target.value) : null }))}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">-- Kein Modell --</option>
+                {timeModels.map(model => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} ({(model.weekly_minutes / 60).toFixed(1)}h)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Zeiterfassung ab</label>
+              <input
+                type="date"
+                value={draft.time_tracking_start_date || ''}
+                onChange={(e) => setDraft(d => ({ ...d, time_tracking_start_date: e.target.value }))}
+                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+              {!draft.time_tracking_start_date && !emp.time_tracking_enabled && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">leer = ab heute</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {modelChanged && (
+          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
+            Das neue Zeitmodell gilt auch, wenn vergangene Tage neu berechnet werden (Buchung nachtragen oder korrigieren,
+            Urlaub neu speichern). Am besten zum Monatswechsel umstellen.
+          </p>
+        )}
+        {disabling && (
+          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
+            Beim Deaktivieren wird das Zeitmodell entfernt, das Terminal erkennt den Mitarbeiter nicht mehr.
+          </p>
+        )}
+
+        {emp.time_tracking_enabled && (
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Terminal-Zugangsdaten</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">NFC-Chips</span>
+                {emp.rfid_chips?.length > 0 ? (
+                  <div className="space-y-1">
+                    {emp.rfid_chips.map((chip, idx) => (
+                      <div key={idx} className={`text-xs px-2 py-1 rounded ${
+                        chip.is_active
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-400 line-through'
+                      }`}>
+                        {chip.label || chip.chip_uid}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-400">Keine Chips zugewiesen</span>
+                )}
+              </div>
+              <div>
+                <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">PIN-Code</span>
+                <span className={`text-sm ${emp.pin_code ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                  {emp.pin_code ? 'Gesetzt (••••)' : 'Nicht gesetzt'}
+                </span>
+              </div>
+            </div>
+            <a
+              href={`/admin/users/${emp.id}?tab=terminal`}
+              className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Chips & PIN verwalten →
+            </a>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={closeDetails}
+            disabled={saving}
+            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={() => handleSave(emp)}
+            disabled={saving}
+            className="px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? 'Speichert…' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -251,11 +379,20 @@ export default function EmployeeSettingsPanel() {
           <tbody>
             {filteredEmployees.map(emp => {
               const isExpanded = expandedId === emp.id;
-              const isSaving = saving[emp.id];
-              
+              const badge = (active, onClass, title) => (
+                <span
+                  className={`w-8 h-8 rounded-lg inline-flex items-center justify-center ${
+                    active ? onClass : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                  }`}
+                  title={title}
+                >
+                  {active ? '✓' : '–'}
+                </span>
+              );
+
               return (
-                <tr 
-                  key={emp.id} 
+                <Fragment key={emp.id}>
+                <tr
                   className={`border-t border-gray-100 dark:border-gray-700 transition-colors ${
                     isExpanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
                   }`}
@@ -266,77 +403,36 @@ export default function EmployeeSettingsPanel() {
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">@{emp.username}</div>
                   </td>
-                  
+
                   <td className="text-center py-3 px-2">
-                    <button
-                      onClick={() => handleToggle(emp.id, 'vacation_tracking_enabled', emp.vacation_tracking_enabled)}
-                      disabled={isSaving}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                        emp.vacation_tracking_enabled
-                          ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                      } ${isSaving ? 'opacity-50' : ''}`}
-                      title={emp.vacation_tracking_enabled ? 'Urlaubsverwaltung aktiv' : 'Urlaubsverwaltung deaktiviert'}
-                    >
-                      {emp.vacation_tracking_enabled ? '✓' : '–'}
-                    </button>
+                    {badge(emp.vacation_tracking_enabled, 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+                      emp.vacation_tracking_enabled ? 'Urlaubsverwaltung aktiv' : 'Urlaubsverwaltung deaktiviert')}
                   </td>
-                  
+
                   <td className="text-center py-3 px-2">
-                    <button
-                      onClick={() => handleToggle(emp.id, 'time_tracking_enabled', emp.time_tracking_enabled)}
-                      disabled={isSaving}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                        emp.time_tracking_enabled
-                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                      } ${isSaving ? 'opacity-50' : ''}`}
-                      title={emp.time_tracking_enabled ? 'Zeiterfassung aktiv' : 'Zeiterfassung deaktiviert'}
-                    >
-                      {emp.time_tracking_enabled ? '✓' : '–'}
-                    </button>
+                    {badge(emp.time_tracking_enabled, 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+                      emp.time_tracking_enabled ? 'Zeiterfassung aktiv' : 'Zeiterfassung deaktiviert')}
                   </td>
-                  
+
                   <td className="py-3 px-4">
                     {emp.time_tracking_enabled ? (
-                      <div className="flex flex-col gap-1">
-                        <select
-                          value={emp.time_model_id || ''}
-                          onChange={(e) => handleUpdate(emp.id, 'time_model_id', e.target.value ? parseInt(e.target.value) : null)}
-                          disabled={isSaving}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded 
-                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="">-- Kein Modell --</option>
-                          {timeModels.map(model => (
-                            <option key={model.id} value={model.id}>
-                              {model.name} ({(model.weekly_minutes / 60).toFixed(1)}h)
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">ab:</span>
-                          <input
-                            type="date"
-                            value={emp.time_tracking_start_date || ''}
-                            onChange={(e) => handleUpdate(emp.id, 'time_tracking_start_date', e.target.value || null)}
-                            disabled={isSaving}
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded 
-                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
+                      <div>
+                        <div className="text-gray-900 dark:text-white">{getTimeModelName(emp.time_model_id)}</div>
+                        {emp.time_tracking_start_date && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">ab {formatDate(emp.time_tracking_start_date)}</div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-gray-400 dark:text-gray-500">–</span>
                     )}
                   </td>
-                  
+
                   <td className="py-3 px-4">
                     {emp.time_tracking_enabled ? (
                       <div className="flex items-center gap-2 text-xs">
                         <span className={emp.rfid_chips?.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
-                          {emp.rfid_chips?.length > 0 
-                            ? `${emp.rfid_chips.filter(c => c.is_active).length} Chip(s)` 
+                          {emp.rfid_chips?.length > 0
+                            ? `${emp.rfid_chips.filter(c => c.is_active).length} Chip(s)`
                             : '–'}
                         </span>
                         <span className="text-gray-300 dark:text-gray-600">/</span>
@@ -348,22 +444,28 @@ export default function EmployeeSettingsPanel() {
                       <span className="text-gray-400 dark:text-gray-500">–</span>
                     )}
                   </td>
-                  
+
                   <td className="py-3 px-2">
-                    {emp.time_tracking_enabled && (
-                      <button
-                        onClick={() => setExpandedId(isExpanded ? null : emp.id)}
-                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        title="Details bearbeiten"
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => toggleDetails(emp)}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      title="Details bearbeiten"
+                    >
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
                   </td>
                 </tr>
+                {isExpanded && draft && (
+                  <tr className="bg-gray-50 dark:bg-gray-800/50">
+                    <td colSpan={6} className="p-4 border-t border-gray-200 dark:border-gray-700">
+                      {renderDetails(emp)}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
-            
+
             {filteredEmployees.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -379,61 +481,6 @@ export default function EmployeeSettingsPanel() {
           </tbody>
         </table>
 
-        {/* Expanded Detail Row */}
-        {expandedId && (
-          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-            {(() => {
-              const emp = employees.find(e => e.id === expandedId);
-              if (!emp) return null;
-              
-              return (
-                <div className="max-w-xl space-y-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                    Terminal-Zugangsdaten für {emp.first_name} {emp.last_name}
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        NFC-Chips
-                      </span>
-                      {emp.rfid_chips?.length > 0 ? (
-                        <div className="space-y-1">
-                          {emp.rfid_chips.map((chip, idx) => (
-                            <div key={idx} className={`text-xs px-2 py-1 rounded ${
-                              chip.is_active 
-                                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 line-through'
-                            }`}>
-                              {chip.label || chip.chip_uid}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">Keine Chips zugewiesen</span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        PIN-Code
-                      </span>
-                      <span className={`text-sm ${emp.pin_code ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                        {emp.pin_code ? 'Gesetzt (••••)' : 'Nicht gesetzt'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <a 
-                    href={`/admin/users/${emp.id}?tab=terminal`}
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    Chips & PIN verwalten →
-                  </a>
-                </div>
-              );
-            })()}
-          </div>
-        )}
       </div>
 
       {/* Info */}
