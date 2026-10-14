@@ -12,6 +12,7 @@ const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 const { countWorkingDaysByYear, toDateStr } = require('../utils/workingDays');
 const { ensureHolidaysForYear } = require('./holidaysController');
+const { getHolidayRegion } = require('../utils/holidayRegion');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -164,10 +165,11 @@ async function userHasPermission(userId, permission) {
  * @param {number} userId
  * @param {string} startDate
  * @param {string} endDate
- * @param {string} region
+ * @param {string} [region] - Standard: Einstellung „Standard-Region“
  * @returns {Promise<Object<string, number>>} z. B. { "2026": 8, "2027": 4 }
  */
-async function calculateWorkingDaysByYear(userId, startDate, endDate, region = 'BY') {
+async function calculateWorkingDaysByYear(userId, startDate, endDate, region) {
+  region = region || await getHolidayRegion();
   // Feiertage werden sonst erst beim Aufruf des Kalenders erzeugt – fehlen sie
   // für ein Jahr, würden z. B. Neujahr oder Heilige Drei Könige als Urlaubstage zählen
   const startYear = Number(toDateStr(startDate).slice(0, 4));
@@ -217,7 +219,7 @@ function withDaysInYear(vacation, year) {
  * Calculate working days between two dates for a user (total)
  * @returns {Promise<number>}
  */
-async function calculateWorkingDays(userId, startDate, endDate, region = 'BY') {
+async function calculateWorkingDays(userId, startDate, endDate, region) {
   return sumDays(await calculateWorkingDaysByYear(userId, startDate, endDate, region));
 }
 
@@ -490,8 +492,8 @@ const getVacationsCalendar = async (req, res) => {
     
     // Also get holidays for the period
     const holidaysResult = await pool.query(
-      `SELECT * FROM holidays WHERE date >= $1 AND date <= $2 ORDER BY date`,
-      [startDate, endDate]
+      `SELECT * FROM holidays WHERE date >= $1 AND date <= $2 AND region = $3 ORDER BY date`,
+      [startDate, endDate, await getHolidayRegion()]
     );
     
     res.json({

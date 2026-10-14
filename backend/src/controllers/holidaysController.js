@@ -7,6 +7,7 @@
  */
 
 const pool = require('../config/db');
+const { getHolidayRegion } = require('../utils/holidayRegion');
 
 // ============================================
 // GERMAN STATES CONFIGURATION
@@ -214,7 +215,7 @@ const getStates = async (req, res) => {
 const getHolidays = async (req, res) => {
   try {
     const year = parseInt(req.query.year) || new Date().getFullYear();
-    const region = req.query.region || 'BY';
+    const region = req.query.region || await getHolidayRegion();
     
     // Check if holidays exist for this year
     const checkResult = await pool.query(
@@ -264,7 +265,8 @@ async function generateHolidaysForYearInternal(year, region = 'BY', includeHalfD
 /**
  * Generate holidays for a year if none exist yet (same rule as GET /holidays)
  */
-async function ensureHolidaysForYear(year, region = 'BY') {
+async function ensureHolidaysForYear(year, region) {
+  region = region || await getHolidayRegion();
   const checkResult = await pool.query(
     'SELECT COUNT(*) as count FROM holidays WHERE year = $1 AND region = $2',
     [year, region]
@@ -281,7 +283,8 @@ async function ensureHolidaysForYear(year, region = 'BY') {
  */
 const generateHolidays = async (req, res) => {
   try {
-    const { year, region = 'BY', includeHalfDays = true } = req.body;
+    const { year, includeHalfDays = true } = req.body;
+    const region = req.body.region || await getHolidayRegion();
     
     if (!year) {
       return res.status(400).json({ error: 'Jahr ist erforderlich' });
@@ -319,7 +322,8 @@ const generateHolidays = async (req, res) => {
  */
 const createHoliday = async (req, res) => {
   try {
-    const { date, name, region = 'BY', is_half_day = false } = req.body;
+    const { date, name, is_half_day = false } = req.body;
+    const region = req.body.region || await getHolidayRegion();
     
     if (!date || !name) {
       return res.status(400).json({ error: 'Datum und Name sind erforderlich' });
@@ -441,7 +445,8 @@ const deleteHolidaysByYear = async (req, res) => {
  */
 const checkHoliday = async (req, res) => {
   try {
-    const { date, region = 'BY' } = req.query;
+    const { date } = req.query;
+    const region = req.query.region || await getHolidayRegion();
     
     if (!date) {
       return res.status(400).json({ error: 'Datum ist erforderlich' });
@@ -482,7 +487,8 @@ const checkHoliday = async (req, res) => {
  */
 const getHolidaysInRange = async (req, res) => {
   try {
-    const { startDate, endDate, region = 'BY' } = req.query;
+    const { startDate, endDate } = req.query;
+    const region = req.query.region || await getHolidayRegion();
     
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start- und Enddatum sind erforderlich' });

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
+const { getHolidayRegion } = require('../utils/holidayRegion');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -1063,8 +1064,8 @@ async function updateDailySummary(userId, date) {
   `, [userId, dateStr]);
   
   const holiday = await pool.query(`
-    SELECT id FROM holidays WHERE date = $1
-  `, [dateStr]);
+    SELECT id FROM holidays WHERE date = $1 AND region = $2
+  `, [dateStr, await getHolidayRegion()]);
 
   // Urlaubsgutschrift berechnen
   let vacationCredit = 0;
@@ -1210,6 +1211,7 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
     "SELECT value FROM time_settings WHERE key = 'absence_credits_target'"
   );
   const holidayCreditEnabled = creditSetting.rows[0]?.value === 'true';
+  const holidayRegion = await getHolidayRegion();
 
   const today = new Date();
 
@@ -1246,8 +1248,8 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
 
     // Feiertag prüfen
     const holiday = await pool.query(
-      'SELECT id, name, is_half_day FROM holidays WHERE date = $1',
-      [dateStr]
+      'SELECT id, name, is_half_day FROM holidays WHERE date = $1 AND region = $2',
+      [dateStr, holidayRegion]
     );
 
     // Genehmigter Urlaub/Krank prüfen
