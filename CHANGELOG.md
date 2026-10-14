@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.9.3] - 2026-10-14 - Feiertage in Urlaub und Zeiterfassung
+
 ### Für Anwender
 - Das Bundesland unter Urlaub → Einstellungen → Allgemein gilt jetzt überall gleich: für Urlaubstage, Zeiterfassung und Kalender. Beim Umstellen erscheint ein Hinweis, dass bereits berechnete Werte nicht automatisch neu berechnet werden.
 - Feiertage in der Zeiterfassung werden jetzt immer gleich gerechnet. Bisher konnte ein Feiertag nachträglich mit vollem Minus im Zeitkonto landen, z. B. wenn an dem Tag eine Notiz eingetragen oder gestempelt wurde. Urlaub über einen Feiertag zählt den Feiertag als Feiertag.
