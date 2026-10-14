@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Wer nach Arbeitsbeginn krank nach Hause geht (oder an dem Tag Urlaub, Schulung o. Ä. hat), bekommt im Zeitkonto die gearbeitete Zeit plus den Rest bis zum Soll gutgeschrieben – nicht mehr das volle Soll zusätzlich. Der Tag zeigt die Abwesenheit als Status.
+
+### Fixed
+- Teilweise Abwesenheit: Der Urlaubs-Sync füllte bis zum Soll auf (2 h gearbeitet + 6:30 Krank = ±0), die Tagesberechnung schrieb bei jeder späteren Neuberechnung (Korrektur, Tagesinfo, Auto-Abschluss, Stempeln nach der Krankmeldung) das volle Soll zusätzlich gut (+2 h). Jetzt überall Auffüllen nach dem Lohnausfallprinzip: `calculateDayAbsence` erhält die gestempelte Zeit (`workedMinutes`), Gutschrift = Soll − Feiertagsanteil − gestempelte Zeit, nie unter 0. Der Urlaubs-Sync rechnet Tage mit Stempelungen über `updateDailySummary` (vorher eigene Formel, Status blieb „complete“; `credited_minutes` wird nicht mehr geschrieben – wurde nirgends gelesen)
+
 ---
 
 ## [2.9.4] - 2026-10-14 - Mitarbeiter-Einstellungen mit Speichern
