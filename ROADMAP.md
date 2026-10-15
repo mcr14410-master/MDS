@@ -545,10 +545,10 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 14.10.2026](docs/sessions/SESSION-2026-10-14-feiertage-zeiterfassung-releases.md) – v2.9.4 läuft auf dem Pi (14.10.2026), unter `[Unreleased]`: teilweise Abwesenheit (#153)
+Stand: [Session 15.10.2026](docs/sessions/SESSION-2026-10-15-buchhaltung-tests-zeitmodell-verlauf.md) – v2.9.5 läuft auf dem Pi (15.10.2026), unter `[Unreleased]`: Testsammlung, Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`)
 
-0. ~~Buchhaltung~~ (15.10.: halber Feiertag = halber Arbeitstag, Krank = Auffüllen) – **Release 2.9.5** mit teilweiser Abwesenheit (#153) und halbem Arbeitstag, vor Weihnachten
-1. **„ab“-Datum in der Urlaubsberechnung** (Fix-Liste) – vorher klären, ob die Zeitmodell-Historie bald kommt (löst den Punkt mit)
+0. **Zeitmodell-Historie, Schritt 2 – Rechnen:** Übergabe mit allen Stellen in der [Session-Doku 15.10.](docs/sessions/SESSION-2026-10-15-buchhaltung-tests-zeitmodell-verlauf.md#übergabe-zeitmodell-historie-schritt-2); erledigt das „ab“-Datum. Danach Schritt 3 (Oberfläche)
+1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Rollen deaktivieren/Farben je Rolle
 4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
