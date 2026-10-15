@@ -16,7 +16,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Für Anwender
+- Heiligabend und Silvester sind halbe Arbeitstage: Bis Mittag gilt die halbe Sollzeit (z. B. 4:15 Std. bei 8:30 Std. Soll). Wer nicht kommt, trägt einen halben Urlaubstag ein – ohne Stempelung und ohne Urlaub erscheint der Tag als fehlende Buchung.
 - Wer nach Arbeitsbeginn krank nach Hause geht (oder an dem Tag Urlaub, Schulung o. Ä. hat), bekommt im Zeitkonto die gearbeitete Zeit plus den Rest bis zum Soll gutgeschrieben – nicht mehr das volle Soll zusätzlich. Der Tag zeigt die Abwesenheit als Status.
+
+### Changed
+- Halbe Feiertage (24.12./31.12.) als halber Arbeitstag (`HALF_HOLIDAY_IS_WORKDAY = true` in `utils/dayAbsence.js`, mit der Buchhaltung abgestimmt): volles Soll, halbes Soll als Feiertag gutgeschrieben – ohne Stempel −halbes Soll, mit Urlaub ±0 (passt zur Urlaubsberechnung, die dort 0,5 Tage zählt). Ohne Abwesenheit kein Status „Feiertag“, sondern wie ein normaler Arbeitstag (ohne Stempel „fehlende Buchung“). Bisher: halbes Soll + halbe Gutschrift, Tag ohne Stempel ±0
 
 ### Fixed
 - Teilweise Abwesenheit: Der Urlaubs-Sync füllte bis zum Soll auf (2 h gearbeitet + 6:30 Krank = ±0), die Tagesberechnung schrieb bei jeder späteren Neuberechnung (Korrektur, Tagesinfo, Auto-Abschluss, Stempeln nach der Krankmeldung) das volle Soll zusätzlich gut (+2 h). Jetzt überall Auffüllen nach dem Lohnausfallprinzip: `calculateDayAbsence` erhält die gestempelte Zeit (`workedMinutes`), Gutschrift = Soll − Feiertagsanteil − gestempelte Zeit, nie unter 0. Der Urlaubs-Sync rechnet Tage mit Stempelungen über `updateDailySummary` (vorher eigene Formel, Status blieb „complete“; `credited_minutes` wird nicht mehr geschrieben – wurde nirgends gelesen)
