@@ -17,10 +17,11 @@
  */
 
 // Halber Feiertag (Heiligabend, Silvester):
-// false = wie bisher im Nacht-Job: halbes Soll, halbes Soll gutgeschrieben → Tag ohne Stempel ±0
-// true  = halber Arbeitstag: volles Soll, halbes Soll gutgeschrieben → ohne Stempel −halbes Soll
-//         (passt zur Urlaubsberechnung, die dort 0,5 Urlaubstage zählt) – Klärung mit der Buchhaltung offen
-const HALF_HOLIDAY_IS_WORKDAY = false;
+// true  = halber Arbeitstag: volles Soll, halbes Soll gutgeschrieben → ohne Stempel −halbes Soll,
+//         Status wie ein normaler Arbeitstag (ohne Stempel „fehlende Buchung“); passt zur
+//         Urlaubsberechnung, die dort 0,5 Urlaubstage zählt – mit der Buchhaltung abgestimmt (15.10.2026)
+// false = halber Tag frei: halbes Soll, halbes Soll gutgeschrieben → ohne Stempel ±0 (bis 2.9.4)
+const HALF_HOLIDAY_IS_WORKDAY = true;
 
 /**
  * @param {object} p
@@ -63,9 +64,11 @@ function calculateDayAbsence({ baseTarget, holiday, vacation, holidayCredit, wor
     status = 'holiday';                       // Urlaub zählt den Tag ohnehin nicht
   } else if (vacation) {
     status = vacation.type;
-  } else if (holiday) {
+  } else if (holiday && !HALF_HOLIDAY_IS_WORKDAY) {
     status = 'holiday';
   }
+  // Halber Feiertag als halber Arbeitstag ohne Abwesenheit: kein Status – der Aufrufer behandelt ihn
+  // wie einen normalen Arbeitstag (vollständig / unvollständig / ohne Stempel „fehlende Buchung“)
 
   return {
     target,
