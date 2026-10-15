@@ -33,7 +33,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`), Schritt 2 (gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell) und Schritt 3 Backend (Verlauf-API mit Vorschau/Neuberechnung, Anzeigen „heute gültig“, Zeitnachweis mit beiden Modellen). Schritt 3 Oberfläche sollte mit ins selbe Release.
+**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`), Schritt 2 (gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell) und Schritt 3 (Verlauf-API mit Vorschau/Neuberechnung, Anzeigen „heute gültig“, Zeitnachweis mit beiden Modellen, Verlauf in den Mitarbeiter-Einstellungen).
 
 - [ ] **Vor dem Release** Prüfabfrage (nur lesend) – Tageswerte und Urlaube vor dem ersten Verlaufseintrag. Gespeicherte Werte ändern sich nicht, aber eine spätere Neuberechnung ergäbe dort Soll 0 bzw. Urlaub Mo–Fr. Tageswerte ohne Verlauf (`ab` leer) = Mitarbeiter ohne Zeitmodell. Bei Treffern vor dem Release besprechen:
   ```bash
@@ -56,6 +56,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 - [ ] Klicktest: Terminal-Info eines Mitarbeiters zeigt das Tagessoll wie bisher
 - [ ] Klicktest: Terminal-Liste, Zeitkonten und Zeitmodell-Liste zeigen dieselben Modellnamen wie vorher (jetzt aus dem Verlauf)
 - [ ] Klicktest: Zeitnachweis eines Mitarbeiters ohne Wechsel – Kopfzeile „Zeitmodell: …“ wie bisher
+- [ ] Klicktest: Verwaltung → Mitarbeiter → Mitarbeiter aufklappen – Zeitmodell-Verlauf mit einem Eintrag ab „ab“-Datum, „aktuell“. „Neues Zeitmodell ab …“ → Vorschau öffnen und **abbrechen** (nichts übernehmen, außer ein Wechsel steht tatsächlich an)
 
 ---
 
