@@ -1,0 +1,279 @@
+### ============================================
+### Zeitmodell-Verlauf je Mitarbeiter (user_time_models)
+### ============================================
+### Requires VS Code REST Client Extension
+### Vorher: @userId auf einen Test-Mitarbeiter mit Zeiterfassung setzen, @modelA/@modelB auf zwei Zeitmodelle.
+### Achtung: Speichern rechnet Tageswerte, Urlaube und Salden des Mitarbeiters neu – nur mit Testdaten.
+
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+@userId = 2
+@modelA = 1
+@modelB = 2
+
+### Login als Admin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### ============================================
+### VERLAUF LESEN
+### ============================================
+
+### 1. Verlauf (valid_to, is_current, is_future, Name, Wochenminuten, angelegt von)
+GET {{baseUrl}}/users/{{userId}}/time-models
+Authorization: Bearer {{token}}
+
+### 2. Unbekannter Mitarbeiter → leere Liste
+GET {{baseUrl}}/users/999999/time-models
+Authorization: Bearer {{token}}
+
+### 3. Ohne Token → 401
+GET {{baseUrl}}/users/{{userId}}/time-models
+
+### ============================================
+### VORSCHAU (speichert nichts)
+### ============================================
+
+### 4. Neues Modell ab Monatsanfang (rückwirkend) – Tage, Urlaube, Monate, past_months
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": {{modelB}},
+  "valid_from": "2026-09-01"
+}
+
+### 5. Neues Modell künftig – keine Tage, nur Urlaube in der Zukunft
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": {{modelB}},
+  "valid_from": "2027-01-01"
+}
+
+### 6. Modell gilt am Datum bereits → 400
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": {{modelA}},
+  "valid_from": "2026-09-01"
+}
+
+### 7. Ungültiges Datum → 400
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": {{modelB}},
+  "valid_from": "2026-13-01"
+}
+
+### 8. Unbekanntes Zeitmodell → 404
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": 999999,
+  "valid_from": "2026-09-01"
+}
+
+### 9. Ohne Zeitmodell → 400
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "valid_from": "2026-09-01"
+}
+
+### 10. Unbekannte Aktion → 400
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "move"
+}
+
+### 11. Unbekannter Mitarbeiter → 404
+POST {{baseUrl}}/users/999999/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "create",
+  "time_model_id": {{modelB}},
+  "valid_from": "2026-09-01"
+}
+
+### ============================================
+### ANLEGEN
+### ============================================
+
+### 12. Neues Zeitmodell ab 01.09.2026 (mit Grund fürs Audit-Log) → 201, summary
+# @name created
+POST {{baseUrl}}/users/{{userId}}/time-models
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "time_model_id": {{modelB}},
+  "valid_from": "2026-09-01",
+  "reason": "Wechsel auf Teilzeit laut Vertrag"
+}
+
+###
+@entryId = {{created.response.body.entry.id}}
+
+### 13. Gleiches Datum noch einmal → 409
+POST {{baseUrl}}/users/{{userId}}/time-models
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "time_model_id": {{modelA}},
+  "valid_from": "2026-09-01"
+}
+
+### 14. Verlauf danach: zwei Einträge, erster mit valid_to 2026-08-31
+GET {{baseUrl}}/users/{{userId}}/time-models
+Authorization: Bearer {{token}}
+
+### 15. Benutzer: time_model_id/time_model_name = heute gültig
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### KORRIGIEREN
+### ============================================
+
+### 16. Vorschau: Gültig ab auf 15.09. verschieben
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "update",
+  "entry_id": {{entryId}},
+  "valid_from": "2026-09-15"
+}
+
+### 17. Korrigieren: Gültig ab 15.09.
+PUT {{baseUrl}}/users/{{userId}}/time-models/{{entryId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "valid_from": "2026-09-15",
+  "reason": "Datum falsch erfasst"
+}
+
+### 18. Korrigieren ohne Änderung → 400
+PUT {{baseUrl}}/users/{{userId}}/time-models/{{entryId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "valid_from": "2026-09-15"
+}
+
+### 19. Unbekannter Eintrag → 404
+PUT {{baseUrl}}/users/{{userId}}/time-models/999999
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "valid_from": "2026-09-15"
+}
+
+### 20. Zeitnachweis September (Kopf: beide Modelle mit bis/ab)
+GET {{baseUrl}}/time-tracking/export/payroll/{{userId}}?year=2026&month=9
+Authorization: Bearer {{token}}
+
+### ============================================
+### LÖSCHEN
+### ============================================
+
+### 21. Vorschau Löschen
+POST {{baseUrl}}/users/{{userId}}/time-models/preview
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "action": "delete",
+  "entry_id": {{entryId}}
+}
+
+### 22. Löschen → Tage wieder mit dem vorherigen Modell
+DELETE {{baseUrl}}/users/{{userId}}/time-models/{{entryId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Wechsel doch nicht"
+}
+
+### 23. Einzigen Eintrag löschen → 400 (ID aus Verlauf einsetzen)
+DELETE {{baseUrl}}/users/{{userId}}/time-models/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### ZEITMODELLE
+### ============================================
+
+### 24. Zeitmodell, das (nur noch) im Verlauf steht, löschen → 400 mit Hinweis (früher 500)
+DELETE {{baseUrl}}/time-tracking/models/{{modelB}}
+Authorization: Bearer {{token}}
+
+### 25. Zeitmodell-Liste: user_count = Mitarbeiter, für die das Modell heute gilt
+GET {{baseUrl}}/time-tracking/models
+Authorization: Bearer {{token}}
+
+### 26. Zeitmodell-Details: users = Mitarbeiter, für die es heute gilt
+GET {{baseUrl}}/time-tracking/models/{{modelB}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### ZEITERFASSUNG DEAKTIVIEREN
+### ============================================
+
+### 27. Deaktivieren mit time_model_id null → Modell und Verlauf bleiben
+PUT {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "time_tracking_enabled": false,
+  "time_model_id": null
+}
+
+### 28. Wieder aktivieren
+PUT {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "time_tracking_enabled": true
+}

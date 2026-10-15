@@ -174,9 +174,10 @@ async function userHasPermission(userId, permission) {
  * @param {string} startDate
  * @param {string} endDate
  * @param {string} [region] - Standard: Einstellung „Standard-Region“
+ * @param {Function} [modelAt] - (dateStr) => Zeitmodell | null statt des gespeicherten Verlaufs (Vorschau Modellwechsel)
  * @returns {Promise<Object<string, number>>} z. B. { "2026": 8, "2027": 4 }
  */
-async function calculateWorkingDaysByYear(userId, startDate, endDate, region) {
+async function calculateWorkingDaysByYear(userId, startDate, endDate, region, modelAt) {
   region = region || await getHolidayRegion();
   // Feiertage werden sonst erst beim Aufruf des Kalenders erzeugt – fehlen sie
   // für ein Jahr, würden z. B. Neujahr oder Heilige Drei Könige als Urlaubstage zählen
@@ -201,7 +202,7 @@ async function calculateWorkingDaysByYear(userId, startDate, endDate, region) {
   const halfDayHolidays = new Set(holidaysResult.rows.filter(h => h.is_half_day).map(h => toKey(h.date)));
 
   // Zeitmodell je Tag aus dem Verlauf (Arbeitstag = Soll-Zeit > 0, ohne Modell Mo–Fr)
-  const modelAt = await loadTimeModelResolver(userId);
+  modelAt = modelAt || await loadTimeModelResolver(userId);
 
   return countWorkingDaysByYear(startDate, endDate, modelAt, holidays, halfDayHolidays);
 }

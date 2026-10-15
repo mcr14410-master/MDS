@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
 const { calculateDayAbsence } = require('../utils/dayAbsence');
-const { getTimeModelAt, loadTimeModelResolver } = require('../utils/timeModelHistory');
+const { getTimeModelAt, loadTimeModelResolver, currentTimeModelJoin } = require('../utils/timeModelHistory');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -346,7 +346,7 @@ const getUserInfoByIdentifier = async (req, res) => {
                u.time_balance_carryover
         FROM users u
         INNER JOIN user_rfid_chips rc ON rc.user_id = u.id
-        LEFT JOIN time_models tm ON u.time_model_id = tm.id
+        ${currentTimeModelJoin()}
         WHERE rc.chip_uid = $1 AND rc.is_active = TRUE AND u.is_active = TRUE
       `, [rfid_chip_id]);
       user = result.rows[0];
@@ -355,7 +355,7 @@ const getUserInfoByIdentifier = async (req, res) => {
         SELECT u.id, u.first_name, u.last_name, u.time_tracking_enabled, tm.name as time_model_name,
                u.time_balance_carryover
         FROM users u
-        LEFT JOIN time_models tm ON u.time_model_id = tm.id
+        ${currentTimeModelJoin()}
         WHERE u.pin_code = $1 AND u.is_active = TRUE
       `, [pin_code]);
       user = result.rows[0];
@@ -966,8 +966,9 @@ async function getVacationBalance(userId) {
   }
 }
 
-// Tagesübersicht aktualisieren
-async function updateDailySummary(userId, date) {
+// Tageswerte berechnen, ohne zu speichern – für die Tagesberechnung und die Vorschau beim
+// Zeitmodell-Wechsel. options.modelAt: (dateStr) => Zeitmodell | null statt des gespeicherten Verlaufs
+async function computeDailySummary(userId, date, options = {}) {
   const dateStr = toLocalDateStr(date);
   const dayStats = await getDayStats(userId, date);
   
@@ -981,7 +982,7 @@ async function updateDailySummary(userId, date) {
 
   // Zeitmodell, das an diesem Tag gilt (für Soll-Stunden und Pausen-Einstellungen);
   // vor dem ersten Verlaufseintrag kein Modell → Soll 0, keine Pausenprüfung
-  const model = await getTimeModelAt(userId, dateStr);
+  const model = options.modelAt ? options.modelAt(dateStr) : await getTimeModelAt(userId, dateStr);
 
   let targetMinutes = 0;
   if (targetOverride !== null && targetOverride !== undefined) {
@@ -1090,6 +1091,29 @@ async function updateDailySummary(userId, date) {
   // Finale Arbeitszeit: Gutschrift (Feiertag/Abwesenheit) + tatsächlich gearbeitet
   const finalWorkedMinutes = absence.credit + dayStats.worked_minutes;
 
+  return {
+    dateStr,
+    entryCount: entries.rows.length,
+    hasTargetOverride: targetOverride !== null && targetOverride !== undefined,
+    target_minutes: targetMinutes,
+    worked_minutes: finalWorkedMinutes,
+    break_minutes: dayStats.break_minutes,
+    overtime_minutes: finalWorkedMinutes - targetMinutes,
+    status,
+    first_clock_in: dayStats.first_clock_in,
+    last_clock_out: dayStats.last_clock_out,
+    has_missing_entries: missingTypes.length > 0,
+    missing_entry_types: missingTypes.length > 0 ? missingTypes : null,
+    vacation_id: absence.vacationId,
+    holiday_id: absence.holidayId,
+  };
+}
+
+// Tagesübersicht aktualisieren
+// options.skipBalance: Monatssalden nicht neu rechnen (Aufrufer rechnet sie einmal für viele Tage)
+async function updateDailySummary(userId, date, options = {}) {
+  const day = await computeDailySummary(userId, date);
+
   // Upsert
   await pool.query(`
     INSERT INTO time_daily_summary (
@@ -1111,12 +1135,14 @@ async function updateDailySummary(userId, date) {
       holiday_id = EXCLUDED.holiday_id,
       updated_at = NOW()
   `, [
-    userId, dateStr, targetMinutes, finalWorkedMinutes, dayStats.break_minutes,
-    finalWorkedMinutes - targetMinutes, status,
-    dayStats.first_clock_in, dayStats.last_clock_out,
-    missingTypes.length > 0, missingTypes.length > 0 ? missingTypes : null,
-    absence.vacationId, absence.holidayId
+    userId, day.dateStr, day.target_minutes, day.worked_minutes, day.break_minutes,
+    day.overtime_minutes, day.status,
+    day.first_clock_in, day.last_clock_out,
+    day.has_missing_entries, day.missing_entry_types,
+    day.vacation_id, day.holiday_id
   ]);
+
+  if (options.skipBalance) return;
 
   // Monatssaldo automatisch aktualisieren
   const d = new Date(date);
@@ -1322,6 +1348,7 @@ module.exports = {
   getCurrentPresence,
   getMissingEntries,
   updateDailySummary,
+  computeDailySummary,
   autoCloseOpenDays,
   deleteDay,
   generateAbsenceEntries,

@@ -1,5 +1,15 @@
 const pool = require('../config/db');
 
+// Mitarbeiter, für die das Modell heute laut Zeitmodell-Verlauf gilt
+const CURRENT_USERS_SQL = `
+  SELECT u.id, u.first_name, u.last_name
+  FROM users u
+  WHERE (
+    SELECT utm.time_model_id FROM user_time_models utm
+    WHERE utm.user_id = u.id AND utm.valid_from <= (NOW() AT TIME ZONE 'Europe/Berlin')::date
+    ORDER BY utm.valid_from DESC LIMIT 1
+  ) = $1`;
+
 // Alle Zeitmodelle abrufen
 const getAll = async (req, res) => {
   try {
@@ -13,7 +23,10 @@ const getAll = async (req, res) => {
         COALESCE(tm.friday_minutes, 0) + 
         COALESCE(tm.saturday_minutes, 0) + 
         COALESCE(tm.sunday_minutes, 0) AS weekly_minutes,
-        (SELECT COUNT(*) FROM users WHERE time_model_id = tm.id) AS user_count
+        (SELECT COUNT(*) FROM users u
+         WHERE (SELECT utm.time_model_id FROM user_time_models utm
+                WHERE utm.user_id = u.id AND utm.valid_from <= (NOW() AT TIME ZONE 'Europe/Berlin')::date
+                ORDER BY utm.valid_from DESC LIMIT 1) = tm.id) AS user_count
       FROM time_models tm
       ORDER BY tm.is_default DESC, tm.name
     `);
@@ -48,9 +61,9 @@ const getById = async (req, res) => {
     
     // Zugewiesene Benutzer abrufen
     const users = await pool.query(`
-      SELECT id, first_name || ' ' || last_name as name 
-      FROM users WHERE time_model_id = $1 
-      ORDER BY last_name, first_name
+      SELECT cu.id, cu.first_name || ' ' || cu.last_name as name
+      FROM (${CURRENT_USERS_SQL}) cu
+      ORDER BY cu.last_name, cu.first_name
     `, [id]);
     
     res.json({ ...result.rows[0], users: users.rows });
@@ -198,15 +211,19 @@ const remove = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Prüfen ob Benutzer zugewiesen sind
-    const usersCheck = await pool.query(
-      'SELECT COUNT(*) FROM users WHERE time_model_id = $1',
-      [id]
-    );
-    
-    if (parseInt(usersCheck.rows[0].count) > 0) {
-      return res.status(400).json({ 
-        error: 'Zeitmodell kann nicht gelöscht werden, da noch Benutzer zugewiesen sind' 
+    // Prüfen ob Benutzer zugewiesen sind – auch im Zeitmodell-Verlauf (vergangene Tage rechnen damit)
+    const usersCheck = await pool.query(`
+      SELECT u.first_name || ' ' || u.last_name AS name
+      FROM users u
+      WHERE u.time_model_id = $1
+         OR EXISTS (SELECT 1 FROM user_time_models utm WHERE utm.user_id = u.id AND utm.time_model_id = $1)
+      ORDER BY u.last_name, u.first_name
+    `, [id]);
+
+    if (usersCheck.rows.length > 0) {
+      return res.status(400).json({
+        error: 'Zeitmodell kann nicht gelöscht werden, da es Mitarbeitern zugewiesen ist oder im '
+          + `Zeitmodell-Verlauf steht (${usersCheck.rows.map(r => r.name).join(', ')})`
       });
     }
 

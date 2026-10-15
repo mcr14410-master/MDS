@@ -13,6 +13,23 @@ const { toDateStr } = require('./workingDays');
 const todayBerlin = () => toDateStr(new Date());
 
 /**
+ * SQL-Baustein: Zeitmodell, das heute (Europe/Berlin) laut Verlauf gilt – als LEFT JOIN LATERAL mit den
+ * Spalten von time_models unter `alias` (kein Eintrag → alle Spalten NULL). Ersetzt den Join über
+ * users.time_model_id, der künftig datierte Einträge nicht kennt.
+ * @param {string} userCol  Spalte mit der Benutzer-ID, z. B. 'u.id'
+ * @param {string} alias    z. B. 'tm'
+ */
+const currentTimeModelJoin = (userCol = 'u.id', alias = 'tm') => `
+  LEFT JOIN LATERAL (
+    SELECT cur_tm.*
+    FROM user_time_models cur_utm
+    JOIN time_models cur_tm ON cur_tm.id = cur_utm.time_model_id
+    WHERE cur_utm.user_id = ${userCol} AND cur_utm.valid_from <= (NOW() AT TIME ZONE 'Europe/Berlin')::date
+    ORDER BY cur_utm.valid_from DESC
+    LIMIT 1
+  ) ${alias} ON TRUE`;
+
+/**
  * Reine Auswahl: Eintrag, der am Datum gilt (Einträge in beliebiger Reihenfolge)
  * @param {Array<{valid_from: string}>} entries
  * @param {string} dateStr  YYYY-MM-DD
@@ -43,22 +60,33 @@ async function getTimeModelAt(userId, dateStr, db = pool) {
 }
 
 /**
- * Für Schleifen über viele Tage: lädt den Verlauf einmal, liefert (dateStr) => Zeitmodell | null
+ * Verlauf eines Mitarbeiters, nach valid_from sortiert:
+ * [{ id, time_model_id, valid_from: 'YYYY-MM-DD', created_at, created_by, model: Zeile aus time_models }]
  */
-async function loadTimeModelResolver(userId, db = pool) {
+async function loadTimeModelHistory(userId, db = pool) {
   const result = await db.query(`
-    SELECT utm.valid_from, tm.*
+    SELECT utm.id, utm.time_model_id, utm.valid_from, utm.created_at, utm.created_by, row_to_json(tm) AS model
     FROM user_time_models utm
     JOIN time_models tm ON tm.id = utm.time_model_id
     WHERE utm.user_id = $1
+    ORDER BY utm.valid_from
   `, [userId]);
-  const entries = result.rows;
-  return (dateStr) => {
-    const entry = pickEntryForDate(entries, toDateStr(dateStr));
-    if (!entry) return null;
-    const { valid_from, ...model } = entry; // eslint-disable-line no-unused-vars
-    return model;
-  };
+  return result.rows.map(r => ({ ...r, valid_from: toDateStr(r.valid_from) }));
+}
+
+/**
+ * Reine Auswahl für Schleifen: (dateStr) => Zeitmodell | null aus einem geladenen
+ * (oder im Speicher geänderten) Verlauf
+ */
+function makeResolver(entries) {
+  return (dateStr) => pickEntryForDate(entries, toDateStr(dateStr))?.model || null;
+}
+
+/**
+ * Für Schleifen über viele Tage: lädt den Verlauf einmal, liefert (dateStr) => Zeitmodell | null
+ */
+async function loadTimeModelResolver(userId, db = pool) {
+  return makeResolver(await loadTimeModelHistory(userId, db));
 }
 
 /**
@@ -94,4 +122,6 @@ async function recordTimeModelAssignment({ userId, timeModelId, validFrom, creat
   return result.rows[0];
 }
 
-module.exports = { pickEntryForDate, getTimeModelAt, loadTimeModelResolver, recordTimeModelAssignment };
+module.exports = {
+  pickEntryForDate, makeResolver, currentTimeModelJoin, getTimeModelAt, loadTimeModelHistory, loadTimeModelResolver, recordTimeModelAssignment,
+};
