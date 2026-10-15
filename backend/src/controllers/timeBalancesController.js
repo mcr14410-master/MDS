@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { currentTimeModelJoin } = require('../utils/timeModelHistory');
 const { pipePdf, abortPdfResponse } = require('../utils/pdfResponse');
 const { toDateStr } = require('../utils/workingDays');
 
@@ -78,7 +79,7 @@ const getAll = async (req, res) => {
         tm.name as time_model_name
       FROM users u
       LEFT JOIN time_balances tb ON u.id = tb.user_id AND tb.year = $1 AND tb.month = $2
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      ${currentTimeModelJoin()}
       WHERE u.time_tracking_enabled = TRUE AND u.is_active = TRUE
       ORDER BY u.last_name, u.first_name
     `, [targetYear, targetMonth]);
@@ -561,6 +562,36 @@ function formatStichtag(dateStr) {
  * Genommen = genehmigter Urlaub bis zum Stichtag (Urlaub über den Stichtag anteilig),
  * Rest = Verfügbar − genommen. Danach genehmigter / beantragter Urlaub nur als Info.
  */
+/**
+ * Zeitmodell(e) im Monat für den Zeitnachweis-Kopf laut Verlauf: ein Modell → Name, Wechsel im Monat →
+ * „A (bis 14.09.), B (ab 15.09.)“, kein Modell → null
+ */
+async function getPayrollTimeModelLabel(userId, year, month) {
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+  const result = await pool.query(`
+    SELECT tm.name, utm.valid_from::text AS valid_from
+    FROM user_time_models utm
+    JOIN time_models tm ON tm.id = utm.time_model_id
+    WHERE utm.user_id = $1 AND utm.valid_from <= $3
+      AND utm.valid_from >= COALESCE(
+        (SELECT MAX(valid_from) FROM user_time_models WHERE user_id = $1 AND valid_from <= $2), $2)
+    ORDER BY utm.valid_from
+  `, [userId, monthStart, monthEndStr(year, month)]);
+  const rows = result.rows;
+  if (rows.length === 0) return null;
+  if (rows.length === 1) return rows[0].name;
+  const short = (dateStr) => `${dateStr.slice(8, 10)}.${dateStr.slice(5, 7)}.`;
+  const dayBefore = (dateStr) => {
+    const d = new Date(`${dateStr}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  };
+  return rows.map((r, i) => {
+    if (i === 0 && r.valid_from <= monthStart) return `${r.name} (bis ${short(dayBefore(rows[1].valid_from))})`;
+    return `${r.name} (ab ${short(r.valid_from)})`;
+  }).join(', ');
+}
+
 async function getPayrollVacation(userId, year, month) {
   // Lazy require: vacationsController lädt seinerseits diesen Controller
   const { calculateWorkingDaysByYear } = require('./vacationsController');
@@ -1143,10 +1174,8 @@ async function exportPayrollPDF(req, res) {
 
     // 1. Mitarbeiter-Info
     const userResult = await pool.query(`
-      SELECT u.id, u.first_name, u.last_name, u.username, u.time_balance_carryover,
-             tm.name as time_model_name
+      SELECT u.id, u.first_name, u.last_name, u.username, u.time_balance_carryover
       FROM users u
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
       WHERE u.id = $1
     `, [userId]);
     
@@ -1209,8 +1238,9 @@ async function exportPayrollPDF(req, res) {
     
     doc.fontSize(10);
     doc.text(`Mitarbeiter: ${userName}`, 40, 85);
-    if (user.time_model_name) {
-      doc.text(`Zeitmodell: ${user.time_model_name}`, 40, 100);
+    const timeModelLabel = await getPayrollTimeModelLabel(userId, targetYear, targetMonth);
+    if (timeModelLabel) {
+      doc.text(`Zeitmodell: ${timeModelLabel}`, 40, 100);
     }
     
     // Erstellt am (rechts)
@@ -1367,10 +1397,8 @@ async function exportPayrollAllPDF(req, res) {
 
     // Alle Mitarbeiter mit aktivem Zeitkonto
     const usersResult = await pool.query(`
-      SELECT u.id, u.first_name, u.last_name, u.username, u.time_balance_carryover,
-             tm.name as time_model_name
+      SELECT u.id, u.first_name, u.last_name, u.username, u.time_balance_carryover
       FROM users u
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
       WHERE u.time_tracking_enabled = true AND u.is_active = true
       ORDER BY u.last_name, u.first_name
     `);
@@ -1424,7 +1452,8 @@ async function exportPayrollAllPDF(req, res) {
       doc.fontSize(16).font('Helvetica-Bold').text('Zeitnachweis', 40, 40);
       doc.fontSize(12).font('Helvetica').text(`${MONTH_NAMES[targetMonth - 1]} ${targetYear}`, 40, 60);
       doc.fontSize(10).text(`Mitarbeiter: ${userName}`, 40, 85);
-      if (user.time_model_name) doc.text(`Zeitmodell: ${user.time_model_name}`, 40, 100);
+      const timeModelLabel = await getPayrollTimeModelLabel(userId, targetYear, targetMonth);
+      if (timeModelLabel) doc.text(`Zeitmodell: ${timeModelLabel}`, 40, 100);
       doc.fontSize(8).fillColor('#6b7280').text(`Seite ${i + 1} von ${usersResult.rows.length}`, 450, 40);
       doc.fillColor('black');
 
@@ -1503,6 +1532,7 @@ async function exportPayrollAllPDF(req, res) {
 }
 
 module.exports = {
+  getPayrollTimeModelLabel,
   getByUser,
   getAll,
   calculateMonth,

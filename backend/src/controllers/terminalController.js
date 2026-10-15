@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const { updateDailySummary, autoCloseOpenDays, _helpers } = require('./timeEntriesController');
 const { getDayStats, getWeekStats, getMonthStats, getCurrentStatus } = _helpers;
 const { calculateCurrentBalance } = require('./timeBalancesController');
-const { getTimeModelAt } = require('../utils/timeModelHistory');
+const { getTimeModelAt, currentTimeModelJoin } = require('../utils/timeModelHistory');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin
 function toLocalDateStr(date) {
@@ -46,7 +46,7 @@ const getUsers = async (req, res) => {
           '[]'
         ) AS rfid_chips
       FROM users u
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      ${currentTimeModelJoin()}
       LEFT JOIN user_rfid_chips rc ON rc.user_id = u.id
       WHERE u.is_active = TRUE AND u.time_tracking_enabled = TRUE
       GROUP BY u.id, u.first_name, u.last_name, u.pin_code,
@@ -316,7 +316,7 @@ const getUserInfo = async (req, res) => {
       SELECT u.id, u.first_name, u.last_name, u.time_tracking_enabled,
              tm.name as time_model_name
       FROM users u
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      ${currentTimeModelJoin()}
       WHERE u.id = $1 AND u.is_active = TRUE
     `, [userId]);
 

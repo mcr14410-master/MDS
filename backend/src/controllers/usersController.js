@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 const { hashPassword } = require('../utils/password');
-const { recordTimeModelAssignment } = require('../utils/timeModelHistory');
+const { recordTimeModelAssignment, currentTimeModelJoin } = require('../utils/timeModelHistory');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -36,7 +36,9 @@ async function getAll(req, res) {
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
         u.time_tracking_start_date,
-        u.time_model_id,
+        (SELECT utm.time_model_id FROM user_time_models utm
+         WHERE utm.user_id = u.id AND utm.valid_from <= (NOW() AT TIME ZONE 'Europe/Berlin')::date
+         ORDER BY utm.valid_from DESC LIMIT 1) AS time_model_id,
         u.pin_code,
         u.last_login,
         u.created_at,
@@ -138,7 +140,7 @@ async function getById(req, res) {
         u.vacation_tracking_enabled,
         u.time_tracking_enabled,
         u.time_tracking_start_date,
-        u.time_model_id,
+        tm.id AS time_model_id,
         u.pin_code,
         u.last_login,
         u.created_at,
@@ -160,9 +162,9 @@ async function getById(req, res) {
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id
-      LEFT JOIN time_models tm ON u.time_model_id = tm.id
+      ${currentTimeModelJoin()}
       WHERE u.id = $1
-      GROUP BY u.id, tm.name
+      GROUP BY u.id, tm.id, tm.name
     `, [id]);
 
     if (result.rows.length === 0) {
@@ -440,7 +442,9 @@ async function update(req, res) {
         updates.push(`time_tracking_start_date = $${paramIndex++}`);
         values.push(time_tracking_start_date);
       }
-      if (time_model_id !== undefined) {
+      // Zeitmodell entfernen (z. B. beim Deaktivieren der Zeiterfassung) gibt es nicht mehr – der
+      // Zeitmodell-Verlauf bleibt stehen, vergangene Tage rechnen weiter mit ihm
+      if (time_model_id) {
         updates.push(`time_model_id = $${paramIndex++}`);
         values.push(time_model_id);
       }
@@ -480,7 +484,7 @@ async function update(req, res) {
       }
 
       // Zeitmodell-Verlauf mitführen: erste Zuordnung ab Zeiterfassungs-Start, spätere ab heute
-      // (Entfernen des Modells ändert den Verlauf nicht – er bleibt erhalten)
+      // (ohne Vorschau und Neuberechnung – dafür /api/users/:id/time-models)
       if (time_model_id) {
         await recordTimeModelAssignment(
           { userId: parseInt(id), timeModelId: time_model_id, createdBy: req.user?.id },
