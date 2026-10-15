@@ -5,7 +5,8 @@
  * Krank nach Arbeitsbeginn = bis zum Soll auffüllen.
  *
  * Läuft nur über tests/integration/run.js (Wegwerf-Datenbank), nie gegen Dev- oder Produktions-DB.
- * Zeitmodell aus der Migration: „Vollzeit 40h“ (id 1) – Mo–Do 8:30, Fr 6:00.
+ * Zeitmodell aus der Migration: „Vollzeit 40h“ (id 1) – Mo–Do 8:30, Fr 6:00. Gerechnet wird mit dem
+ * Zeitmodell-Verlauf (user_time_models) – createUser legt den ersten Eintrag ab Zeiterfassungs-Start an.
  */
 if (!(process.env.DB_NAME || '').includes('test')) {
   console.error('Abbruch: nur gegen eine Test-Datenbank (DB_NAME mit „test“) – Aufruf über tests/integration/run.js');
@@ -18,6 +19,7 @@ const { ensureHolidaysForYear } = require('../../src/controllers/holidaysControl
 const vacationsController = require('../../src/controllers/vacationsController');
 const { updateDailySummary, generateAbsenceEntries } = require('../../src/controllers/timeEntriesController');
 const { getPayrollVacation } = require('../../src/controllers/timeBalancesController');
+const terminalController = require('../../src/controllers/terminalController');
 const { toDateStr } = require('../../src/utils/workingDays');
 
 let passed = 0;
@@ -38,15 +40,37 @@ async function test(name, fn) {
 let adminId;
 let userCount = 0;
 
-async function createUser(startDate) {
+// Mitarbeiter mit Zeiterfassung ab startDate und Zeitmodell-Verlauf ab demselben Tag
+async function createUser(startDate, timeModelId = 1) {
   userCount++;
   const r = await pool.query(`
     INSERT INTO users (username, email, password_hash, first_name, last_name, is_active,
                        vacation_tracking_enabled, time_tracking_enabled, time_model_id, time_tracking_start_date)
-    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, 1, $4) RETURNING id`,
-    [`test_${userCount}`, `test_${userCount}@example.invalid`, `Nr. ${userCount}`, startDate]);
-  return r.rows[0].id;
+    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4, $5) RETURNING id`,
+    [`test_${userCount}`, `test_${userCount}@example.invalid`, `Nr. ${userCount}`, timeModelId, startDate]);
+  const id = r.rows[0].id;
+  await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
+    [id, timeModelId, startDate]);
+  return id;
 }
+
+// Modellwechsel ab Datum – users.time_model_id zeigt danach (wie in der Oberfläche) auf das neue Modell
+async function switchModel(userId, timeModelId, validFrom) {
+  await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
+    [userId, timeModelId, validFrom]);
+  await pool.query('UPDATE users SET time_model_id = $2 WHERE id = $1', [userId, timeModelId]);
+}
+
+async function createModel(name, minutes) {
+  const [mo, di, mi, don, fr, sa, so] = minutes;
+  return (await pool.query(`
+    INSERT INTO time_models (name, monday_minutes, tuesday_minutes, wednesday_minutes, thursday_minutes,
+                             friday_minutes, saturday_minutes, sunday_minutes)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, [name, mo, di, mi, don, fr, sa, so])).rows[0].id;
+}
+
+const hasDay = async (userId, date) =>
+  (await pool.query('SELECT 1 FROM time_daily_summary WHERE user_id = $1 AND date = $2', [userId, date])).rows.length > 0;
 
 async function typeId(name) {
   return (await pool.query('SELECT id FROM vacation_types WHERE name = $1', [name])).rows[0].id;
@@ -243,6 +267,73 @@ const setRegion = (region) =>
   await test('vergangener Monat (September 2026): Stand Monatsende', async () => {
     const v = await getPayrollVacation(u8, 2026, 9);
     assert.equal(v.stichtag, '30.09.');
+  });
+
+  console.log('Zeitmodell-Wechsel (Verlauf)');
+  // Vollzeit (id 1): Mo–Do 8:30, Fr 6:00 → ab Mo 14.09.2026 4-Tage-Woche Mo–Do 8:00, Fr frei
+  const vierTage = await createModel('Test 4-Tage-Woche', [480, 480, 480, 480, 0, 0, 0]);
+  const u9 = await createUser('2026-09-01');
+  await switchModel(u9, vierTage, '2026-09-14');
+  await nightly(u9, '2026-09-01');
+  await test('Nacht-Job: Fr 11.09. (vor dem Wechsel) ohne Stempel → −6:00 nach altem Modell', async () => {
+    const d = await day(u9, '2026-09-11');
+    assert.equal(d.soll, 360);
+    assert.equal(d.saldo, -360);
+  });
+  await test('Nacht-Job: Mo 14.09. (nach dem Wechsel) → −8:00, Fr 18.09. frei → kein Eintrag', async () => {
+    assert.equal((await day(u9, '2026-09-14')).saldo, -480);
+    assert.equal(await hasDay(u9, '2026-09-18'), false);
+  });
+  await test('Neuberechnung Fr 11.09. nach dem Wechsel → bleibt beim alten Soll 6:00', async () => {
+    await recalc(u9, '2026-09-11');
+    const d = await day(u9, '2026-09-11');
+    assert.equal(d.soll, 360);
+    assert.equal(d.saldo, -360);
+  });
+  await test('Fr 18.09. 08:00–12:00 gestempelt → Soll 0, +4:00', async () => {
+    await stamp(u9, '2026-09-18', '08:00', '12:00');
+    await recalc(u9, '2026-09-18');
+    const d = await day(u9, '2026-09-18');
+    assert.equal(d.soll, 0);
+    assert.equal(d.saldo, 240);
+  });
+
+  const u10 = await createUser('2026-09-01');
+  await switchModel(u10, vierTage, '2026-09-14');
+  await test('Urlaub 07.–18.09.2026 über den Wechsel = 5 + 4 Tage', async () => {
+    const v = await addAbsence(u10, 'Urlaub', '2026-09-07', '2026-09-18');
+    assert.equal(parseFloat(v.calculated_days), 9);
+  });
+  await test('Urlaub über den Wechsel: Fr 11.09. Soll 6:00 ±0, Fr 18.09. kein Eintrag', async () => {
+    const d = await day(u10, '2026-09-11');
+    assert.equal(d.status, 'Urlaub');
+    assert.equal(d.soll, 360);
+    assert.equal(d.saldo, 0);
+    assert.equal(await hasDay(u10, '2026-09-18'), false);
+  });
+
+  // Verlauf erst ab Do 01.10.2026 (4-Tage-Woche), Zeiterfassung schon ab 21.09.
+  const u11 = await createUser('2026-10-01', vierTage);
+  await pool.query("UPDATE users SET time_tracking_start_date = '2026-09-21' WHERE id = $1", [u11]);
+  await test('Urlaub 21.09.–09.10.2026: vor dem ersten Eintrag Mo–Fr, danach 4-Tage-Woche = 8 + 5 Tage', async () => {
+    assert.deepEqual(await vacationsController.calculateWorkingDaysByYear(u11, '2026-09-21', '2026-10-09'), { 2026: 13 });
+  });
+  await test('Nacht-Job: Tage vor dem ersten Eintrag bekommen keinen Tageswert', async () => {
+    await nightly(u11, '2026-09-21');
+    assert.equal(await hasDay(u11, '2026-09-28'), false);
+    assert.equal((await day(u11, '2026-10-05')).saldo, -480);
+  });
+
+  await test('Terminal: Tagessoll heute aus dem Verlauf, nicht aus users.time_model_id', async () => {
+    const today = toDateStr(new Date());
+    const fuenfStunden = await createModel('Test 5 h täglich', [300, 300, 300, 300, 300, 300, 300]);
+    const u12 = await createUser('2026-09-01');
+    await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
+      [u12, fuenfStunden, today]); // users.time_model_id bleibt Vollzeit
+    const res = { statusCode: 200, status(c) { this.statusCode = c; return this; }, json(d) { this.body = d; return this; } };
+    await terminalController.getUserInfo({ params: { id: String(u12) } }, res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(res.body.today.target_minutes, 300);
   });
 
   console.log(`\n${passed} Tests bestanden`);
