@@ -11,7 +11,9 @@
     "migrate:down": "node-pg-migrate down",
     "migrate:create": "node-pg-migrate create",
     "seed": "node src/config/seeds.js",
-    "dev:init": "node src/config/dev-init.js"
+    "dev:init": "node src/config/dev-init.js",
+    "test": "node tests/run-unit-tests.js",
+    "test:integration": "node tests/integration/run.js"
   },
   "keywords": [
     "fertigung",
