@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { hashPassword } = require('../utils/password');
+const { recordTimeModelAssignment } = require('../utils/timeModelHistory');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -475,6 +476,15 @@ async function update(req, res) {
         await client.query(
           `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
           values
+        );
+      }
+
+      // Zeitmodell-Verlauf mitführen: erste Zuordnung ab Zeiterfassungs-Start, spätere ab heute
+      // (Entfernen des Modells ändert den Verlauf nicht – er bleibt erhalten)
+      if (time_model_id) {
+        await recordTimeModelAssignment(
+          { userId: parseInt(id), timeModelId: time_model_id, createdBy: req.user?.id },
+          client
         );
       }
 
