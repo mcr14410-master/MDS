@@ -1,4 +1,22 @@
-# 🧪 API Testing - Woche 2 Abschluss
+# 🧪 Tests
+
+## Automatische Tests (aktuell)
+
+Im Ordner `backend/`:
+
+| Befehl | Was | Dauer |
+|---|---|---|
+| `npm test` | Schnelle Tests ohne Datenbank: Rechenregeln (Feiertag/Abwesenheit, Arbeitstage), Backup-Monitor, Changelog, PDF-Antwort – alle `tests/test-*.js` außer `test-api.js` | Sekunden |
+| `npm run test:integration` | Zeiterfassung und Urlaub gegen eine **Wegwerf-Datenbank**: eigener Docker-Container `mds-test-db` (postgres:16, nur `127.0.0.1:5434`, Daten im RAM), alle Migrationen, dann `tests/integration/test-*.js`, Container wird danach entfernt | ~5 s |
+
+- Braucht Docker; Port über `TEST_DB_PORT` änderbar, `KEEP_TEST_DB=1` lässt den Container zum Nachsehen stehen
+- Sicherung: Die Integrations-Tests laufen nur gegen eine Datenbank mit „test“ im Namen – Dev-DB und Produktion werden nie angefasst
+- Abgedeckt (`test-zeiterfassung.js`): Urlaubstage (Ostern, Jahreswechsel, Heiligabend), Feiertag im Nacht-Job und nach Neuberechnung, Urlaub über Feiertage, halber Feiertag als halber Arbeitstag, Krank nach Arbeitsbeginn (beide Reihenfolgen), Bundesland, Zeitnachweis-Stichtag
+- Nach Änderungen an Zeiterfassung oder Urlaub beide Befehle laufen lassen
+
+---
+
+## Ältere manuelle API-Tests (Woche 2)
 
 ## ✅ Was haben wir?
 

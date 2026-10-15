@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Feste Testsammlung Zeiterfassung/Urlaub: `npm run test:integration` startet eine Wegwerf-Datenbank (Docker-Container `mds-test-db`, `127.0.0.1:5434`, Daten im RAM), spielt alle Migrationen ein und prüft die echten Rechenwege (Tagesberechnung, Nacht-Job, Urlaub anlegen inkl. Sync, Urlaubstage, Zeitnachweis-Stichtag) – 22 Fälle aus den Fixes 12.–15.10. (`tests/integration/test-zeiterfassung.js`). `npm test` startet die schnellen Tests ohne Datenbank (`tests/run-unit-tests.js`). Anleitung in `backend/tests/RUN-TESTS.md`
+- `getPayrollVacation` exportiert (für die Tests)
+
 ---
 
 ## [2.9.5] - 2026-10-15 - Halber Arbeitstag an Heiligabend/Silvester, Krank nach Arbeitsbeginn
