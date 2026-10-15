@@ -96,8 +96,11 @@ if (!HALF_HOLIDAY_IS_WORKDAY) {
     assert.equal(saldo(calc({ holiday: HALF }), 255), 255);
   });
 } else {
-  test('halber Arbeitstag: ohne Stempel −halbes Soll', () => {
-    assert.equal(saldo(calc({ holiday: HALF })), -255);
+  test('halber Arbeitstag: ohne Stempel −halbes Soll, kein Status (wie normaler Arbeitstag)', () => {
+    const r = calc({ holiday: HALF });
+    assert.equal(saldo(r), -255);
+    assert.equal(r.status, null);
+    assert.equal(r.holidayId, 2);
   });
   test('halber Arbeitstag: 4:15 gestempelt → ±0', () => {
     assert.equal(saldo(calc({ holiday: HALF }), 255), 0);
