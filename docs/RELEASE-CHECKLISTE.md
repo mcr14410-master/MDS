@@ -33,10 +33,27 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`, am Rechnen ändert sich nichts).
+**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`) und Schritt 2 (gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell).
 
+- [ ] **Vor dem Release** Prüfabfrage (nur lesend) – Tageswerte und Urlaube vor dem ersten Verlaufseintrag. Gespeicherte Werte ändern sich nicht, aber eine spätere Neuberechnung ergäbe dort Soll 0 bzw. Urlaub Mo–Fr. Tageswerte ohne Verlauf (`ab` leer) = Mitarbeiter ohne Zeitmodell. Bei Treffern vor dem Release besprechen:
+  ```bash
+  docker compose exec -T db psql -U mds mds <<'EOF'
+  WITH f AS (SELECT user_id, min(valid_from) AS ab FROM user_time_models GROUP BY user_id)
+  SELECT 'Tageswerte' AS art, s.user_id, f.ab, min(s.date) AS von, max(s.date) AS bis, count(*) AS anzahl
+  FROM time_daily_summary s LEFT JOIN f USING (user_id)
+  WHERE f.ab IS NULL OR s.date < f.ab GROUP BY s.user_id, f.ab
+  UNION ALL
+  SELECT 'Urlaube', v.user_id, f.ab, min(v.start_date), max(v.end_date), count(*)
+  FROM vacations v JOIN f USING (user_id)
+  WHERE v.status IN ('approved', 'pending') AND v.start_date < f.ab
+  GROUP BY v.user_id, f.ab
+  ORDER BY 1, 2;
+  EOF
+  ```
 - [ ] Deploy-Log: Migration `1737000117000_create-user-time-models` gelaufen
 - [ ] Kontrolle (nur lesend): `docker compose exec -T db psql -U mds mds -c "SELECT user_id, time_model_id, valid_from FROM user_time_models ORDER BY user_id;"` – je Mitarbeiter mit Zeitmodell ein Eintrag ab seinem „ab“-Datum
+- [ ] Nach dem ersten Nacht-Lauf (02:00/02:15): Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
+- [ ] Klicktest: Terminal-Info eines Mitarbeiters zeigt das Tagessoll wie bisher
 
 ---
 
