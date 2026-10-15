@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { calculateMonthBalance, recalculateFromMonth } = require('./timeBalancesController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
 const { calculateDayAbsence } = require('../utils/dayAbsence');
+const { getTimeModelAt, loadTimeModelResolver } = require('../utils/timeModelHistory');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin Zeitzone
 function toLocalDateStr(date) {
@@ -978,14 +979,9 @@ async function updateDailySummary(userId, date) {
   );
   const targetOverride = existingOverride.rows[0]?.target_override_minutes;
 
-  // Zeitmodell immer laden (für Soll-Stunden und Pausen-Einstellungen)
-  const userModel = await pool.query(`
-    SELECT tm.* FROM users u
-    JOIN time_models tm ON u.time_model_id = tm.id
-    WHERE u.id = $1
-  `, [userId]);
-
-  const model = userModel.rows[0] || null;
+  // Zeitmodell, das an diesem Tag gilt (für Soll-Stunden und Pausen-Einstellungen);
+  // vor dem ersten Verlaufseintrag kein Modell → Soll 0, keine Pausenprüfung
+  const model = await getTimeModelAt(userId, dateStr);
 
   let targetMinutes = 0;
   if (targetOverride !== null && targetOverride !== undefined) {
@@ -1197,20 +1193,22 @@ const deleteDay = async (req, res) => {
 async function generateAbsenceEntries(userId, lookbackDays = 7) {
   const results = { created: 0, entries: [] };
 
-  // Zeitmodell des Users + Prüfung ob Zeiterfassung aktiv
-  const userModel = await pool.query(`
-    SELECT tm.*, u.time_tracking_enabled, u.time_tracking_start_date FROM users u
-    JOIN time_models tm ON u.time_model_id = tm.id
-    WHERE u.id = $1
-  `, [userId]);
+  // Prüfung ob Zeiterfassung aktiv
+  const userResult = await pool.query(
+    'SELECT time_tracking_enabled, time_tracking_start_date FROM users WHERE id = $1',
+    [userId]
+  );
 
-  if (userModel.rows.length === 0) return results;
-  
+  if (userResult.rows.length === 0) return results;
+
   // Zeiterfassung deaktiviert → keine Einträge generieren
-  if (!userModel.rows[0].time_tracking_enabled) return results;
-  
-  const model = userModel.rows[0];
-  const startDate = model.time_tracking_start_date ? new Date(model.time_tracking_start_date + 'T00:00:00') : null;
+  if (!userResult.rows[0].time_tracking_enabled) return results;
+
+  const { time_tracking_start_date } = userResult.rows[0];
+  const startDate = time_tracking_start_date ? new Date(time_tracking_start_date + 'T00:00:00') : null;
+
+  // Zeitmodell je Tag aus dem Verlauf
+  const modelAt = await loadTimeModelResolver(userId);
 
   // Setting: Feiertage Soll-Stunden gutschreiben?
   const creditSetting = await pool.query(
@@ -1235,6 +1233,10 @@ async function generateAbsenceEntries(userId, lookbackDays = 7) {
       [userId, dateStr]
     );
     if (existing.rows.length > 0) continue;
+
+    // Vor dem ersten Verlaufseintrag kein Modell → kein Eintrag
+    const model = modelAt(dateStr);
+    if (!model) continue;
 
     // Soll-Minuten für diesen Wochentag
     const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();

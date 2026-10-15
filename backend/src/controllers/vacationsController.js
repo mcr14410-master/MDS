@@ -14,6 +14,7 @@ const { countWorkingDaysByYear, toDateStr } = require('../utils/workingDays');
 const { ensureHolidaysForYear } = require('./holidaysController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
 const { calculateDayAbsence } = require('../utils/dayAbsence');
+const { loadTimeModelResolver } = require('../utils/timeModelHistory');
 const { updateDailySummary } = require('./timeEntriesController');
 
 // ============================================
@@ -37,14 +38,8 @@ async function syncDailySummaryForVacation(vacationId) {
   if (vacResult.rows.length === 0) return;
   const vac = vacResult.rows[0];
 
-  // Zeitmodell des Users laden
-  const modelResult = await pool.query(`
-    SELECT tm.* FROM users u
-    JOIN time_models tm ON u.time_model_id = tm.id
-    WHERE u.id = $1
-  `, [vac.user_id]);
-
-  const model = modelResult.rows.length > 0 ? modelResult.rows[0] : null;
+  // Zeitmodell je Tag aus dem Verlauf
+  const modelAt = await loadTimeModelResolver(vac.user_id);
 
   const holidayRegion = await getHolidayRegion();
   const creditSetting = await pool.query(
@@ -63,6 +58,7 @@ async function syncDailySummaryForVacation(vacationId) {
     const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();
 
     // Soll-Minuten für diesen Tag
+    const model = modelAt(dateStr);
     let targetMinutes = 0;
     if (model) {
       const dayMap = {
@@ -172,7 +168,7 @@ async function userHasPermission(userId, permission) {
 
 /**
  * Calculate working days between two dates for a user, split by calendar year
- * (days with target time > 0 in the user's time model, excluding holidays;
+ * (days with target time > 0 in the time model valid on that day, excluding holidays;
  * without time model: Monday–Friday)
  * @param {number} userId
  * @param {string} startDate
@@ -204,15 +200,10 @@ async function calculateWorkingDaysByYear(userId, startDate, endDate, region) {
   const holidays = new Set(holidaysResult.rows.filter(h => !h.is_half_day).map(h => toKey(h.date)));
   const halfDayHolidays = new Set(holidaysResult.rows.filter(h => h.is_half_day).map(h => toKey(h.date)));
 
-  // Zeitmodell des Users (Arbeitstag = Soll-Zeit > 0)
-  const modelResult = await pool.query(`
-    SELECT tm.* FROM users u
-    JOIN time_models tm ON u.time_model_id = tm.id
-    WHERE u.id = $1
-  `, [userId]);
-  const model = modelResult.rows[0] || null;
+  // Zeitmodell je Tag aus dem Verlauf (Arbeitstag = Soll-Zeit > 0, ohne Modell Mo–Fr)
+  const modelAt = await loadTimeModelResolver(userId);
 
-  return countWorkingDaysByYear(startDate, endDate, model, holidays, halfDayHolidays);
+  return countWorkingDaysByYear(startDate, endDate, modelAt, holidays, halfDayHolidays);
 }
 
 function sumDays(daysByYear) {

@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { updateDailySummary, autoCloseOpenDays, _helpers } = require('./timeEntriesController');
 const { getDayStats, getWeekStats, getMonthStats, getCurrentStatus } = _helpers;
 const { calculateCurrentBalance } = require('./timeBalancesController');
+const { getTimeModelAt } = require('../utils/timeModelHistory');
 
 // Hilfsfunktion: Datum als YYYY-MM-DD in Europe/Berlin
 function toLocalDateStr(date) {
@@ -344,19 +345,14 @@ const getUserInfo = async (req, res) => {
         ORDER BY timestamp DESC
         LIMIT 10
       `, [userId]),
-      pool.query(`
-        SELECT tm.monday_minutes, tm.tuesday_minutes, tm.wednesday_minutes,
-               tm.thursday_minutes, tm.friday_minutes, tm.saturday_minutes, tm.sunday_minutes
-        FROM users u
-        JOIN time_models tm ON u.time_model_id = tm.id
-        WHERE u.id = $1
-      `, [userId]),
+      // Zeitmodell, das heute gilt (Verlauf)
+      getTimeModelAt(userId, toLocalDateStr(now)),
     ]);
 
     // Tages-Soll aus Zeitmodell berechnen
     let todayTarget = 0;
-    if (timeModel.rows.length > 0) {
-      const tm = timeModel.rows[0];
+    if (timeModel) {
+      const tm = timeModel;
       const dayMap = {
         0: tm.sunday_minutes, 1: tm.monday_minutes,
         2: tm.tuesday_minutes, 3: tm.wednesday_minutes,
