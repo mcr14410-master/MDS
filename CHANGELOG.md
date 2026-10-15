@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.9.5] - 2026-10-15 - Halber Arbeitstag an Heiligabend/Silvester, Krank nach Arbeitsbeginn
+
 ### Für Anwender
 - Heiligabend und Silvester sind halbe Arbeitstage: Bis Mittag gilt die halbe Sollzeit (z. B. 4:15 Std. bei 8:30 Std. Soll). Wer nicht kommt, trägt einen halben Urlaubstag ein – ohne Stempelung und ohne Urlaub erscheint der Tag als fehlende Buchung.
 - Wer nach Arbeitsbeginn krank nach Hause geht (oder an dem Tag Urlaub, Schulung o. Ä. hat), bekommt im Zeitkonto die gearbeitete Zeit plus den Rest bis zum Soll gutgeschrieben – nicht mehr das volle Soll zusätzlich. Der Tag zeigt die Abwesenheit als Status.
