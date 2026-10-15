@@ -33,8 +33,10 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: teilweise Abwesenheit (#153), keine Migrationen.
+**Release 2.9.5** – keine Migrationen, keine Änderung an `compose.yaml`, nur Backend-Logik (teilweise Abwesenheit #153, halber Arbeitstag #156). Bestehende Tage ändern sich nicht.
 
+- [ ] Mitarbeiter informieren: für Heiligabend und Silvester (2026 jeweils Donnerstag) einen halben Urlaubstag eintragen, wer nicht kommt
+- [ ] Am 24.12. bzw. 31.12. (oder am Folgetag) Tageswerte prüfen: ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0
 - [ ] Bei der nächsten Krankmeldung nach Arbeitsbeginn: Saldo des Tages ±0 (gearbeitete Zeit + Rest bis zum Soll)
 - [ ] Deploy-Log: npm-Warnung „tar zlib: incorrect data check“ wieder aufgetreten? (14.10. einmalig beim Frontend-Build, npm hat den Cache selbst repariert) – bei Wiederholung Speicher (SD-Karte/SSD) prüfen
 
