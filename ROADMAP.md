@@ -80,6 +80,8 @@
   - [ ] Backup-Monitor im MDS erweitern: Netzlaufwerk-Kopie vorhanden und aktuell?
   - [ ] Wiederherstellungs-Anleitung in DEPLOYMENT.md (frischer Pi → OS, Docker, Repo, `.env`, DB, Uploads) und einmal testen
   - [ ] Zwischenlösung bis dahin erwägen: Backups zusätzlich auf die SD-Karte kopieren (anderes physisches Medium als die SSD)
+- [ ] **Mitarbeiter-Einstellungen mobil:** Tabelle mit festen Spalten, die Details (inkl. Zeitmodell-Verlauf) sitzen in einer Tabellenzeile – unter ~700 px nur mit seitlichem Scrollen bedienbar (Karten-Layout wie in anderen Listen?)
+- [ ] **Audit-Log-Zeitstempel uneinheitlich:** Einträge der Middleware (`auditLogMiddleware`) stehen in UTC, direkt geschriebene (Default `current_timestamp`, Pool in Europe/Berlin – z. B. Teile, Zeitmodell-Verlauf) in Berliner Zeit; Spalte ist `timestamp` ohne Zeitzone. Vereinheitlichen (z. B. `timestamptz`) – vorher prüfen, wo das Audit-Log angezeigt wird
 - [ ] **`scripts/restore.sh`:** nutzt `docker compose` ohne `cd` ins Repo – nur aus `~/mds` heraus aufrufen bzw. wie `backup.sh` absichern
 - [ ] **Hinweis „Neue Version verfügbar“** im Frontend (Version aus `/api/health` mit eigener vergleichen) – offene Tabs/Web-App zeigen sonst bis zum Reload die alte Version
 
@@ -547,9 +549,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 15.10.2026](docs/sessions/SESSION-2026-10-15-buchhaltung-tests-zeitmodell-verlauf.md) – v2.9.5 läuft auf dem Pi (15.10.2026), unter `[Unreleased]`: Testsammlung, Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`) und Schritt 2 (Rechnen)
+Stand: [Session 15.10.2026 Abend](docs/sessions/SESSION-2026-10-15-abend-zeitmodell-verlauf-oberflaeche.md) – v2.9.5 läuft auf dem Pi (15.10.2026), unter `[Unreleased]`: Testsammlung, Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`), Schritt 2 (Rechnen) und Schritt 3 (Verlauf-API und Oberfläche)
 
-0. **Zeitmodell-Historie released machen:** Schritte 1–3 fertig (PRs #162 Backend, 3b Oberfläche), noch nicht released – Release mit Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`; danach Schritt 4 (`users.time_model_id` entfernen). Nebenbefunde: Mitarbeiter-Einstellungen mobil nur mit seitlichem Scrollen (Tabelle), Audit-Log-Zeitstempel der Middleware in UTC, die direkt geschriebenen in Berliner Zeit
+0. **Zeitmodell-Historie released machen:** Schritte 1–3 fertig (PRs #159, #161, #162, #164), noch nicht released – Release (Minor, neue Funktion) mit Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`; danach Schritt 4 (`users.time_model_id` entfernen). Nebenbefunde stehen unter „Offene Fixes“ (Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel)
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Rollen deaktivieren/Farben je Rolle
@@ -561,4 +563,4 @@ Stand: [Session 15.10.2026](docs/sessions/SESSION-2026-10-15-buchhaltung-tests-z
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-12
+**Letzte Aktualisierung:** 2026-10-15
