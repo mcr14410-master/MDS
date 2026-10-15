@@ -158,4 +158,25 @@ test('je Jahr: 28.12.2026–05.01.2027 mit Silvester halb', () => {
   );
 });
 
+console.log('\nZeitmodell-Verlauf (Modell je Tag)');
+// Funktion (dateStr) => Modell | null statt eines Modells
+const wechselAm19 = (dateStr) => (dateStr < '2026-10-19' ? VOLLZEIT : VIER_TAGE_FR_FREI);
+
+test('Modell je Tag: 12.–23.10.2026, Wechsel am 19.10. auf 4-Tage-Woche = 5 + 4 Tage', () => {
+  assert.equal(countWorkingDays('2026-10-12', '2026-10-23', wechselAm19, new Set()), 9);
+});
+
+test('Modell je Tag: vor dem ersten Eintrag (null) Mo–Fr', () => {
+  const abDem19 = (dateStr) => (dateStr < '2026-10-19' ? null : VIER_TAGE_FR_FREI);
+  assert.equal(countWorkingDays('2026-10-12', '2026-10-23', abDem19, new Set()), 9);
+  assert.equal(countWorkingDays('2026-10-16', '2026-10-16', abDem19, new Set()), 1); // Fr vor dem Eintrag
+  assert.equal(countWorkingDays('2026-10-23', '2026-10-23', abDem19, new Set()), 0); // Fr danach frei
+});
+
+test('Modell je Tag, je Jahr: Wechsel zum 01.01.2027 auf 4-Tage-Woche', () => {
+  const ab2027 = (dateStr) => (dateStr < '2027-01-01' ? VOLLZEIT : VIER_TAGE_FR_FREI);
+  // 2026: Mo 28.–Do 31.12. (4); 2027: Fr 01.01. frei laut Modell, Mo–Do 04.–07.01. (4), Fr 08.01. frei
+  assert.deepEqual(countWorkingDaysByYear('2026-12-28', '2027-01-08', ab2027, new Set()), { 2026: 4, 2027: 4 });
+});
+
 console.log(`\n${passed} Tests bestanden`);

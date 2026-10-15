@@ -20,6 +20,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Feste Testsammlung Zeiterfassung/Urlaub: `npm run test:integration` startet eine Wegwerf-Datenbank (Docker-Container `mds-test-db`, `127.0.0.1:5434`, Daten im RAM), spielt alle Migrationen ein und prüft die echten Rechenwege (Tagesberechnung, Nacht-Job, Urlaub anlegen inkl. Sync, Urlaubstage, Zeitnachweis-Stichtag) – 22 Fälle aus den Fixes 12.–15.10. (`tests/integration/test-zeiterfassung.js`). `npm test` startet die schnellen Tests ohne Datenbank (`tests/run-unit-tests.js`). Anleitung in `backend/tests/RUN-TESTS.md`
 - `getPayrollVacation` exportiert (für die Tests)
 
+### Changed
+- Zeitmodell-Verlauf, Schritt 2 (Rechnen): Tagesberechnung (`updateDailySummary`), Nacht-Job (`generateAbsenceEntries`), Urlaubs-Sync, Urlaubstage (`calculateWorkingDaysByYear`, damit auch Zeitnachweis-Stichtag) und Terminal-Tagessoll nehmen das am jeweiligen Tag gültige Zeitmodell aus `user_time_models` statt `users.time_model_id`. Vor dem ersten Verlaufseintrag gilt kein Modell: Zeiterfassung ohne Soll (Nacht-Job legt keine Tage an), Urlaub Mo–Fr – erledigt das „ab“-Datum. `countWorkingDays`/`countWorkingDaysByYear` nehmen statt eines Modells auch eine Funktion „Modell je Tag“. Nacht-Jobs wählen Mitarbeiter mit Verlaufseintrag statt mit `time_model_id`. Anzeigen (Modellname) lesen weiter `users.time_model_id`
+- Testsammlung: Mitarbeiter bekommen einen Verlaufseintrag ab Zeiterfassungs-Start; neue Fälle Modellwechsel im Monat (Nacht-Job, Neuberechnung, Stempeln am neuen freien Tag), Urlaub über den Wechsel, Urlaub/Nacht-Job vor dem ersten Eintrag, Terminal-Tagessoll (31 Fälle) sowie Unit-Tests „Modell je Tag“
+
 ---
 
 ## [2.9.5] - 2026-10-15 - Halber Arbeitstag an Heiligabend/Silvester, Krank nach Arbeitsbeginn

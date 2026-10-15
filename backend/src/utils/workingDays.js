@@ -25,7 +25,8 @@ function isWorkday(dayOfWeek, model) {
 /**
  * @param {string|Date} startDate  YYYY-MM-DD
  * @param {string|Date} endDate    YYYY-MM-DD (inklusive)
- * @param {object|null} model      Zeile aus time_models (oder null)
+ * @param {object|null|Function} model  Zeile aus time_models (oder null) – oder Funktion
+ *                                 (dateStr) => Zeitmodell | null für ein Modell je Tag (Zeitmodell-Verlauf)
  * @param {Set<string>} holidays   ganze Feiertage als YYYY-MM-DD
  * @param {Set<string>} [halfDayHolidays]  halbe Feiertage als YYYY-MM-DD (zählen 0,5)
  * @returns {number}
@@ -33,11 +34,12 @@ function isWorkday(dayOfWeek, model) {
 function countWorkingDays(startDate, endDate, model, holidays, halfDayHolidays = new Set()) {
   const current = new Date(`${toDateStr(startDate)}T00:00:00Z`);
   const end = new Date(`${toDateStr(endDate)}T00:00:00Z`);
+  const modelAt = typeof model === 'function' ? model : () => model;
 
   let workingDays = 0;
   while (current <= end) {
     const dateStr = current.toISOString().slice(0, 10);
-    if (isWorkday(current.getUTCDay(), model) && !holidays.has(dateStr)) {
+    if (isWorkday(current.getUTCDay(), modelAt(dateStr)) && !holidays.has(dateStr)) {
       workingDays += halfDayHolidays.has(dateStr) ? 0.5 : 1;
     }
     current.setUTCDate(current.getUTCDate() + 1);

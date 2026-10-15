@@ -114,11 +114,12 @@ async function runJob(name) {
  * Läuft täglich um 02:00 nachts
  */
 async function autoCloseAllOpenDays() {
-  // Alle aktiven User mit Zeitmodell holen
+  // Alle aktiven User mit Zeitmodell-Verlauf holen
   const users = await pool.query(`
     SELECT id, first_name, last_name 
-    FROM users 
-    WHERE is_active = TRUE AND time_model_id IS NOT NULL
+    FROM users u
+    WHERE is_active = TRUE
+      AND EXISTS (SELECT 1 FROM user_time_models utm WHERE utm.user_id = u.id)
   `);
 
   const now = new Date();
@@ -166,10 +167,12 @@ registerJob(
  * Erstellt time_daily_summary für Feiertage, Urlaub, Krank und unentschuldigte Abwesenheit
  */
 async function generateAllAbsenceEntries() {
+  // Aktive User mit Zeitmodell-Verlauf (Zeiterfassung aktiv prüft generateAbsenceEntries)
   const users = await pool.query(`
     SELECT id, first_name, last_name
-    FROM users
-    WHERE is_active = TRUE AND time_model_id IS NOT NULL
+    FROM users u
+    WHERE is_active = TRUE
+      AND EXISTS (SELECT 1 FROM user_time_models utm WHERE utm.user_id = u.id)
   `);
 
   const results = { processed: 0, created: 0, details: [], errors: [] };
