@@ -1,6 +1,7 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Users, Clock, CreditCard, Key, Check, AlertTriangle, Search, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import axios from '../../utils/axios';
+import TimeModelHistory from './TimeModelHistory';
 
 export default function EmployeeSettingsPanel() {
   const [employees, setEmployees] = useState([]);
@@ -76,17 +77,15 @@ export default function EmployeeSettingsPanel() {
       changes.time_tracking_enabled = draft.time_tracking_enabled;
     }
     if (draft.time_tracking_enabled) {
-      if ((draft.time_model_id || null) !== (emp.time_model_id || null)) {
-        changes.time_model_id = draft.time_model_id || null;
+      // Zeitmodell hier nur bei der ersten Zuordnung (ab Zeiterfassungs-Start) – Wechsel über den Verlauf
+      if (!emp.time_model_id && draft.time_model_id) {
+        changes.time_model_id = draft.time_model_id;
       }
       // Beim Aktivieren ohne Startdatum: ab heute
       const startDate = draft.time_tracking_start_date || (changes.time_tracking_enabled ? todayBerlin() : null);
       if ((startDate || null) !== (emp.time_tracking_start_date || null)) {
         changes.time_tracking_start_date = startDate;
       }
-    } else if (changes.time_tracking_enabled === false) {
-      // Zeiterfassung deaktiviert → Zeitmodell wird entfernt (wie bisher)
-      changes.time_model_id = null;
     }
 
     if (Object.keys(changes).length === 0) {
@@ -95,10 +94,8 @@ export default function EmployeeSettingsPanel() {
     }
 
     // Folgenreiche Änderungen bestätigen lassen
-    if (changes.time_tracking_enabled === false && emp.time_model_id) {
-      if (!window.confirm(`Zeiterfassung für ${emp.first_name} ${emp.last_name} deaktivieren?\n\nDas Zeitmodell wird entfernt, das Terminal erkennt den Mitarbeiter nicht mehr.`)) return;
-    } else if (changes.time_model_id !== undefined && emp.time_model_id) {
-      if (!window.confirm(`Zeitmodell für ${emp.first_name} ${emp.last_name} ändern?\n\nDas neue Modell gilt auch, wenn vergangene Tage neu berechnet werden (Buchung nachtragen oder korrigieren, Urlaub neu speichern). Am besten zum Monatswechsel umstellen.`)) return;
+    if (changes.time_tracking_enabled === false) {
+      if (!window.confirm(`Zeiterfassung für ${emp.first_name} ${emp.last_name} deaktivieren?\n\nDas Terminal erkennt den Mitarbeiter nicht mehr. Zeitmodell-Verlauf und gespeicherte Tage bleiben erhalten.`)) return;
     }
 
     setSaving(true);
@@ -145,9 +142,18 @@ export default function EmployeeSettingsPanel() {
   };
 
   // Aufgeklappter Bereich unter dem Mitarbeiter: Einstellungen bearbeiten + Terminal-Zugangsdaten
+  // Nach einer Änderung im Verlauf: heute gültiges Modell für die Liste neu laden
+  const refreshEmployee = async (empId) => {
+    try {
+      const res = await axios.get(`/api/users/${empId}`);
+      const user = res.data.user || res.data;
+      setEmployees(prev => prev.map(e => (e.id === empId ? { ...e, time_model_id: user.time_model_id } : e)));
+    } catch {
+      // Liste zeigt bis zum Neuladen den alten Namen
+    }
+  };
+
   const renderDetails = (emp) => {
-    const modelChanged = draft.time_tracking_enabled && emp.time_model_id
-      && (draft.time_model_id || null) !== emp.time_model_id;
     const disabling = emp.time_tracking_enabled && !draft.time_tracking_enabled;
     const checkbox = (field, label) => (
       <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
@@ -174,6 +180,7 @@ export default function EmployeeSettingsPanel() {
 
         {draft.time_tracking_enabled && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {!emp.time_model_id && !emp.time_tracking_enabled && (
             <div>
               <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Zeitmodell</label>
               <select
@@ -189,7 +196,9 @@ export default function EmployeeSettingsPanel() {
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">gilt ab dem Zeiterfassungs-Start</p>
             </div>
+            )}
             <div>
               <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Zeiterfassung ab</label>
               <input
@@ -206,16 +215,16 @@ export default function EmployeeSettingsPanel() {
           </div>
         )}
 
-        {modelChanged && (
-          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
-            Das neue Zeitmodell gilt auch, wenn vergangene Tage neu berechnet werden (Buchung nachtragen oder korrigieren,
-            Urlaub neu speichern). Am besten zum Monatswechsel umstellen.
-          </p>
-        )}
         {disabling && (
           <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
-            Beim Deaktivieren wird das Zeitmodell entfernt, das Terminal erkennt den Mitarbeiter nicht mehr.
+            Nach dem Deaktivieren erkennt das Terminal den Mitarbeiter nicht mehr. Zeitmodell-Verlauf und gespeicherte Tage bleiben erhalten.
           </p>
+        )}
+
+        {emp.time_tracking_enabled && (
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <TimeModelHistory employee={emp} timeModels={timeModels} onChanged={() => refreshEmployee(emp.id)} />
+          </div>
         )}
 
         {emp.time_tracking_enabled && (
