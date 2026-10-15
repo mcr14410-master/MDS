@@ -1520,5 +1520,6 @@ module.exports = {
   exportExcel,
   exportPayrollPDF,
   exportPayrollAllPDF,
-  calculateCurrentBalance
+  calculateCurrentBalance,
+  getPayrollVacation, // für tests/integration
 };
