@@ -33,12 +33,16 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.9.5** – keine Migrationen, keine Änderung an `compose.yaml`, nur Backend-Logik (teilweise Abwesenheit #153, halber Arbeitstag #156). Bestehende Tage ändern sich nicht.
+**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`, am Rechnen ändert sich nichts).
 
-- [ ] Mitarbeiter informieren: für Heiligabend und Silvester (2026 jeweils Donnerstag) einen halben Urlaubstag eintragen, wer nicht kommt
-- [ ] Am 24.12. bzw. 31.12. (oder am Folgetag) Tageswerte prüfen: ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0
-- [ ] Bei der nächsten Krankmeldung nach Arbeitsbeginn: Saldo des Tages ±0 (gearbeitete Zeit + Rest bis zum Soll)
-- [ ] Deploy-Log: npm-Warnung „tar zlib: incorrect data check“ wieder aufgetreten? (14.10. einmalig beim Frontend-Build, npm hat den Cache selbst repariert) – bei Wiederholung Speicher (SD-Karte/SSD) prüfen
+- [ ] Deploy-Log: Migration `1737000117000_create-user-time-models` gelaufen
+- [ ] Kontrolle (nur lesend): `docker compose exec -T db psql -U mds mds -c "SELECT user_id, time_model_id, valid_from FROM user_time_models ORDER BY user_id;"` – je Mitarbeiter mit Zeitmodell ein Eintrag ab seinem „ab“-Datum
+
+---
+
+## Erledigt: Release 2.9.5 (15.10.2026)
+
+Deploy ohne Befund, keine npm-Warnung mehr. Nur Rechenlogik (Krank nach Arbeitsbeginn, halber Arbeitstag an Heiligabend/Silvester) – die fachlichen Prüfpunkte kommen später und stehen in der ROADMAP („Nächste Session“): Mitarbeiter vor Weihnachten informieren, 24.12./31.12. prüfen, nächste Krankmeldung nach Arbeitsbeginn ±0.
 
 ---
 
