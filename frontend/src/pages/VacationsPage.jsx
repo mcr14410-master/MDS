@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import axios from '../utils/axios';
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Settings, 
@@ -79,9 +79,31 @@ export default function VacationsPage({ view: propView }) {
   
   // Tab states for different views
   const [myTab, setMyTab] = useState('vacation'); // vacation | timetracking
-  const [adminTab, setAdminTab] = useState('overview'); // overview | vacation | timetracking | settings
-  const [settingsSection, setSettingsSection] = useState('holidays'); // holidays | role-limits | request-types | entitlements
-  const [settingsCategory, setSettingsCategory] = useState('vacation'); // vacation | timetracking
+  // Verwaltung: Tab, Bereich und Unterpunkt stehen in der Adresse (?tab=…&bereich=…&unterpunkt=…), damit
+  // „Zurück“ (z. B. aus dem Zeitkonto) und Links wieder an derselben Stelle landen. Tabwechsel ersetzen den
+  // Verlaufseintrag. Alt-Link ?tab=employees → Einstellungen → Mitarbeiter
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const rawBereich = rawTab === 'employees' ? 'employees' : searchParams.get('bereich');
+  const adminTab = rawTab === 'employees'
+    ? 'settings'
+    : (['overview', 'vacation', 'timetracking', 'settings'].includes(rawTab) ? rawTab : 'overview');
+  const settingsCategory = adminTab === 'settings' && ['vacation', 'timetracking', 'employees'].includes(rawBereich)
+    ? rawBereich : 'vacation';
+  const timeTrackingView = adminTab === 'timetracking' && ['presence', 'missing', 'balances'].includes(rawBereich)
+    ? rawBereich : 'presence';
+  const settingsSection = searchParams.get('unterpunkt') || 'holidays'; // holidays | role-limits | request-types | entitlements
+  const updateAdminParams = (changes) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      Object.entries(changes).forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)));
+      return next;
+    }, { replace: true });
+  };
+  const setAdminTab = (tab) => updateAdminParams({ tab, bereich: null, unterpunkt: null });
+  const setSettingsCategory = (category) => updateAdminParams({ bereich: category, unterpunkt: null });
+  const setSettingsSection = (section) => updateAdminParams({ unterpunkt: section });
+  const setTimeTrackingView = (view) => updateAdminParams({ bereich: view });
   // Year selector for "Mein Urlaub"
   const currentYear = new Date().getFullYear();
   const [myVacationYear, setMyVacationYear] = useState(currentYear);
@@ -771,19 +793,6 @@ export default function VacationsPage({ view: propView }) {
                 </span>
               </button>
               <button
-                onClick={() => setAdminTab('employees')}
-                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  adminTab === 'employees'
-                    ? 'border-green-500 text-green-600 dark:text-green-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Mitarbeiter
-                </span>
-              </button>
-              <button
                 onClick={() => setAdminTab('vacation')}
                 className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   adminTab === 'vacation'
@@ -1018,13 +1027,6 @@ export default function VacationsPage({ view: propView }) {
             </div>
           )}
 
-          {/* Tab: Mitarbeiter */}
-          {adminTab === 'employees' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <EmployeeSettingsPanel />
-            </div>
-          )}
-
           {/* Tab: Urlaub */}
           {adminTab === 'vacation' && (
             <div className="space-y-6">
@@ -1165,7 +1167,7 @@ export default function VacationsPage({ view: propView }) {
 
           {/* Tab: Arbeitszeit */}
           {adminTab === 'timetracking' && (
-            <TimeTrackingAdminPanel />
+            <TimeTrackingAdminPanel view={timeTrackingView} onViewChange={setTimeTrackingView} />
           )}
 
           {/* Tab: Einstellungen */}
@@ -1195,6 +1197,17 @@ export default function VacationsPage({ view: propView }) {
                   <Clock className="h-4 w-4 inline-block mr-2" />
                   Zeiterfassung
                 </button>
+                <button
+                  onClick={() => setSettingsCategory('employees')}
+                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    settingsCategory === 'employees'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Users className="h-4 w-4 inline-block mr-2" />
+                  Mitarbeiter
+                </button>
               </div>
 
               {/* Urlaub-Einstellungen */}
@@ -1211,6 +1224,13 @@ export default function VacationsPage({ view: propView }) {
               {settingsCategory === 'timetracking' && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <TimeTrackingSettingsPanel />
+                </div>
+              )}
+
+              {/* Mitarbeiter-Einstellungen (Urlaub/Zeiterfassung je Mitarbeiter, Zeitmodell-Verlauf) */}
+              {settingsCategory === 'employees' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <EmployeeSettingsPanel />
                 </div>
               )}
             </div>
