@@ -15,19 +15,18 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
-### Changed
-- Verwaltung (Urlaub & Arbeitszeit): „Mitarbeiter“ ist kein eigener Tab mehr, sondern dritter Bereich unter „Einstellungen“ (neben Urlaub und Zeiterfassung); der Link aus den Benutzer-Details führt direkt dorthin. Tab, Bereich (auch die Ansicht im Tab „Arbeitszeit“: Anwesenheit/Fehlbuchungen/Zeitkonten) und Unterpunkt stehen in der Adresse (`?tab=…&bereich=…&unterpunkt=…`, Tabwechsel ersetzen den Verlaufseintrag) – „Zurück“ aus dem Zeitkonto eines Mitarbeiters landet wieder bei den Zeitkonten statt auf „Übersicht“, Neuladen und Links behalten die Stelle; Alt-Link `?tab=employees` funktioniert weiter
-- Kalender-Monatsansicht: Tageszellen zeigen so viele Einträge, wie hineinpassen (3, an Feiertagen 2; bei mehr einen weniger), „+N mehr“ ist klickbar und öffnet die Liste aller Abwesenheiten des Tages (Klick auf einen Eintrag öffnet ihn wie im Kalender)
-
-### Fixed
-- Kalender-Monatsansicht: „+N mehr“ ragte aus der Tageszelle und wurde von der nächsten Kalenderzeile verdeckt; an Feiertagen schon der dritte Eintrag
-- Kalender ohne Verwaltungsrecht: Klick auf einen Tag oder Eintrag warf Fehler in der Browser-Konsole (`onDayClick`/`onVacationClick is not a function`) – jetzt ohne Aktion, Zellen ohne Klick-Zeiger
-
 ### Added
 - Farbe je Rolle: Spalte `roles.color` mit fester Palette (rot, orange, gelb, grün, blau, lila, pink, grau; CHECK-Constraint, Migration `1737000118000` übernimmt die bisherige Farbe nach Rollenname, sonst grau). Auswahl als Farbfelder mit Vorschau im Dialog „Rolle bearbeiten/erstellen“; `POST`/`PUT /api/roles` nehmen `color` an (ungültig → 400). Testsammlung `tests/integration/test-rollen-farben.js` (12 Fälle), `.http`-Szenarien in `tests/test-users.http`
 
 ### Changed
+- Verwaltung (Urlaub & Arbeitszeit): „Mitarbeiter“ ist kein eigener Tab mehr, sondern dritter Bereich unter „Einstellungen“ (neben Urlaub und Zeiterfassung); der Link aus den Benutzer-Details führt direkt dorthin. Tab, Bereich (auch die Ansicht im Tab „Arbeitszeit“: Anwesenheit/Fehlbuchungen/Zeitkonten) und Unterpunkt stehen in der Adresse (`?tab=…&bereich=…&unterpunkt=…`, Tabwechsel ersetzen den Verlaufseintrag) – „Zurück“ aus dem Zeitkonto eines Mitarbeiters landet wieder bei den Zeitkonten statt auf „Übersicht“, Neuladen und Links behalten die Stelle; Alt-Link `?tab=employees` funktioniert weiter
+- Kalender-Monatsansicht: Tageszellen zeigen so viele Einträge, wie hineinpassen (3, an Feiertagen 2; bei mehr einen weniger), „+N mehr“ ist klickbar und öffnet die Liste aller Abwesenheiten des Tages (Klick auf einen Eintrag öffnet ihn wie im Kalender)
 - Rollen-Abzeichen (Rollen, Benutzerliste, Benutzer-Details, Profil, Urlaubsdetails) nehmen die Farbe der Rolle statt einer festen Zuordnung nach Rollenname – selbst angelegte und umbenannte Rollen sind nicht mehr immer grau. Eine gemeinsame Hilfsfunktion `utils/roleColors.js` ersetzt fünf Kopien. Rollen in Benutzer-API (`color`), Urlaubs-API (`role_color`), Login und `/api/auth/me` (`role_colors`, `roles` bleibt eine Namensliste)
+
+### Fixed
+- Kalender-Monatsansicht: „+N mehr“ ragte aus der Tageszelle und wurde von der nächsten Kalenderzeile verdeckt; an Feiertagen schon der dritte Eintrag
+- Kalender ohne Verwaltungsrecht: Klick auf einen Tag oder Eintrag warf Fehler in der Browser-Konsole (`onDayClick`/`onVacationClick is not a function`) – jetzt ohne Aktion, Zellen ohne Klick-Zeiger
+- Genehmigte Abwesenheit löschen oder ändern zog die Tageswerte nicht nach: Status und Gutschrift blieben stehen (z. B. stornierter Urlaubstag weiter ±0 statt fehlender Buchung), bis der Tag aus anderem Grund neu gerechnet wurde. Jetzt rechnet Löschen die vorhandenen Tageswerte im Zeitraum (bis heute) neu; Ändern von Zeitraum, Art, Status oder Mitarbeiter rechnet den alten Zeitraum neu und den neuen über den Urlaubs-Sync. Tage ohne Stempel und ohne manuelles Soll, die laut Zeitmodell frei sind, werden entfernt; Monatssalden ab dem ersten betroffenen Monat. Ablehnen/Zurückziehen betreffen nur beantragte Einträge (ohne Tageswerte). `computeDailySummary` liefert zusätzlich `base_target_minutes`. Testsammlung `test-abwesenheit-aendern.js` (8 Fälle)
 
 ---
 
