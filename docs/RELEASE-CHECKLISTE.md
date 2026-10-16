@@ -33,12 +33,23 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.10.0** – Zeitmodell-Verlauf Schritt 1–3 (eine Migration `1737000117000`, gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell; Verlauf mit Vorschau/Neuberechnung in den Mitarbeiter-Einstellungen; Zeitnachweis mit beiden Modellen) und Testsammlung (nur Entwicklung, neue npm-Skripte `test`/`test:integration`, keine neuen Abhängigkeiten). Keine Änderung an `compose.yaml`, `Caddyfile` oder den Skripten. Gespeicherte Tageswerte und Urlaube ändern sich durch den Deploy nicht.
+**Nächstes Release (2.10.1)** – Fix Vorschau Zeitmodell-Verlauf (Abwesenheiten nur bei Änderung durch den Verlauf). Keine Migration.
 
-- [ ] **Vor dem Release** Prüfabfrage (nur lesend) – Tageswerte und Urlaube vor dem ersten Verlaufseintrag. Gespeicherte Werte ändern sich nicht, aber eine spätere Neuberechnung ergäbe dort Soll 0 bzw. Urlaub Mo–Fr. Tageswerte ohne Verlauf (`ab` leer) = Mitarbeiter ohne Zeitmodell. Bei Treffern vor dem Release besprechen:
+- [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
+- [ ] **Nach dem Deploy: Mitarbeiter 13** – Verwaltung → Mitarbeiter → aufklappen → „Neues Zeitmodell ab …“: „4-Tage 32h (Fr. frei)“ ab **01.01.2026**, Grund z. B. „Modell vor dem Zeiterfassungs-Start nachgetragen“. Vorschau muss **0 Tage** und **keine Abwesenheiten** zeigen (vor dem Fix: drei Überstundenabbau-Einträge im April 1 → 0), dann übernehmen. Danach Verlauf: Fr. frei 01.01.–31.03., Mo. frei ab 01.04.
+- [ ] Später klären: Überstundenabbau von Mitarbeiter 13 am 13./20./27.04.2026 (Montage, im Modell „Mo. frei“) ist mit 1 Tag gespeichert, heutige Berechnung ergäbe 0 – gewollt (Workaround „freier Tag mal Mo, mal Fr“) oder Altfehler? Zählt nicht gegen das Urlaubskonto (Überstundenabbau `affects_balance = false`)
+
+---
+
+## Erledigt: Release 2.10.0 (16.10.2026)
+
+Deploy ohne Befund, Migration `1737000117000` gelaufen, je Mitarbeiter mit Zeitmodell ein Verlaufseintrag ab „ab“-Datum (8 Mitarbeiter).
+
+- Die Prüfabfrage „vor dem Release“ aus dieser Liste nutzte `user_time_models` – die Tabelle legt erst die Migration an. Richtige Fassung vor dem Deploy (das „ab“-Datum wie die Migration aus `users`):
   ```bash
   docker compose exec -T db psql -U mds mds <<'EOF'
-  WITH f AS (SELECT user_id, min(valid_from) AS ab FROM user_time_models GROUP BY user_id)
+  WITH f AS (SELECT id AS user_id, COALESCE(time_tracking_start_date, created_at::date) AS ab
+             FROM users WHERE time_model_id IS NOT NULL)
   SELECT 'Tageswerte' AS art, s.user_id, f.ab, min(s.date) AS von, max(s.date) AS bis, count(*) AS anzahl
   FROM time_daily_summary s LEFT JOIN f USING (user_id)
   WHERE f.ab IS NULL OR s.date < f.ab GROUP BY s.user_id, f.ab
@@ -50,13 +61,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
   ORDER BY 1, 2;
   EOF
   ```
-- [ ] Deploy-Log: Migration `1737000117000_create-user-time-models` gelaufen
-- [ ] Kontrolle (nur lesend): `docker compose exec -T db psql -U mds mds -c "SELECT user_id, time_model_id, valid_from FROM user_time_models ORDER BY user_id;"` – je Mitarbeiter mit Zeitmodell ein Eintrag ab seinem „ab“-Datum
-- [ ] Nach dem ersten Nacht-Lauf (02:00/02:15): Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
-- [ ] Klicktest: Terminal-Info eines Mitarbeiters zeigt das Tagessoll wie bisher
-- [ ] Klicktest: Terminal-Liste, Zeitkonten und Zeitmodell-Liste zeigen dieselben Modellnamen wie vorher (jetzt aus dem Verlauf)
-- [ ] Klicktest: Zeitnachweis eines Mitarbeiters ohne Wechsel – Kopfzeile „Zeitmodell: …“ wie bisher
-- [ ] Klicktest: Verwaltung → Mitarbeiter → Mitarbeiter aufklappen – Zeitmodell-Verlauf mit einem Eintrag ab „ab“-Datum, „aktuell“. „Neues Zeitmodell ab …“ → Vorschau öffnen und **abbrechen** (nichts übernehmen, außer ein Wechsel steht tatsächlich an)
+- Befund: Urlaub um den 02./05.01. vor dem „ab“-Datum bei 6 Mitarbeitern (nur Urlaubstage, Saldo 0 – unkritisch). **Mitarbeiter 13** („ab“ 01.04., Modell Mo. frei): 17 gestempelte Tage (+20:57 h) und 1 Überstundenabbau (−8:00) vor dem 01.04., gespeichert mit Soll nach „4-Tage 32h (Fr. frei)“ – ohne Verlaufseintrag würde eine Neuberechnung dort ohne Soll rechnen. Nachtrag des Modells ab 01.01.2026 → in der Vorschau zeigte sich ein Fehler (veraltete Abwesenheiten mitgeändert), Nachtrag abgebrochen, Fix in 2.10.1
 
 ---
 
