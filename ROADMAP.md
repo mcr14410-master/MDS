@@ -67,7 +67,7 @@
   - [x] **Schritt 3 – Oberfläche:** Verlauf in den Mitarbeiter-Details, „Neues Zeitmodell ab …“ mit Vorschau und Neuberechnung (auch rückwirkend), Eintrag korrigieren/löschen mit Rückfrage, Deaktivieren lässt das Modell stehen, Zeitnachweis bei Wechsel im Monat mit beiden Modellen
     - [x] **3a – Backend:** Verlauf-API mit Vorschau und Neuberechnung (Tage, Urlaube, Salden; neue Arbeitstage wie Nacht-Job, frei gewordene Tage ohne Stempel entfernt; einziger Eintrag nicht löschbar), Audit-Log, Anzeigen „heute gültig“ per `LATERAL`, Zeitnachweis mit beiden Modellen, Deaktivieren lässt das Modell stehen, Zeitmodell löschen prüft den Verlauf. Testsammlung +25 Fälle, Gegenprobe rot
     - [x] **3b – Oberfläche:** Mitarbeiter-Einstellungen (Urlaub/Zeiterfassung): Verlaufsliste statt Auswahlfeld (Auswahl nur noch beim ersten Aktivieren), „Neues Zeitmodell ab …“, Korrigieren/Löschen – jeweils Vorschau, dann „Übernehmen“; Deaktivieren ohne Modell-Entfernen. Browser-Test hell/dunkel, mobil
-  - [ ] **Schritt 4 – Aufräumen:** `users.time_model_id` entfernen (Anzeigen über den Verlauf)
+  - [ ] **Schritt 4 – Aufräumen:** `users.time_model_id` entfernen (Anzeigen über den Verlauf) – frühestens ein paar Tage nach 2.10.0/2.10.1 (Schritte 1–3 seit 16.10.2026 auf dem Pi)
 - [x] **Urlaubsberechnung beachtet „ab“-Datum** (mit Zeitmodell-Verlauf Schritt 2): vor `time_tracking_start_date` (Feld „ab“ neben dem Zeitmodell) ohne Zeitmodell rechnen (Mo–Fr) – sonst verfälscht jede Neuberechnung Urlaube aus der Zeit vor dem Zeitmodell (Fall MA 13, Release 2.8.0). Kleiner Zwischenschritt bis zur Workforce-Konsolidierung (Zeitmodell-Verlauf)
 - [x] **Testmaschinen endgültig löschen (Pi):** 13.10.2026 Maschinen 1–9 (alle ohne Abhängigkeiten) nach Backup über die API gelöscht (`hard_delete`, Audit-Log auf admin); übrig 31–38. Beim Löschen werden Wartungspläne/-aufgaben (inkl. Historie), Werkzeugnummernlisten, Betriebsstunden und Dokumente per CASCADE mitgelöscht – künftig vorher prüfen
 - [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
@@ -549,9 +549,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 15.10.2026 Abend](docs/sessions/SESSION-2026-10-15-abend-zeitmodell-verlauf-oberflaeche.md) – v2.9.5 läuft auf dem Pi (15.10.2026), unter `[Unreleased]`: Testsammlung, Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`), Schritt 2 (Rechnen) und Schritt 3 (Verlauf-API und Oberfläche)
+Stand: [Session 15.10.2026 Abend](docs/sessions/SESSION-2026-10-15-abend-zeitmodell-verlauf-oberflaeche.md) – v2.10.1 läuft auf dem Pi (16.10.2026: Zeitmodell-Verlauf, Fix Vorschau), `[Unreleased]` leer
 
-0. **Zeitmodell-Historie released machen:** Schritte 1–3 fertig (PRs #159, #161, #162, #164), noch nicht released – Release (Minor, neue Funktion) mit Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`; danach Schritt 4 (`users.time_model_id` entfernen). Nebenbefunde stehen unter „Offene Fixes“ (Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel)
+0. **Zeitmodell-Historie:** Schritte 1–3 als 2.10.0/2.10.1 auf dem Pi (16.10.2026), Mitarbeiter 13 mit Modell vor dem 01.04. nachgetragen. Offen: Nacht-Lauf-Kontrolle (Release-Checkliste), Überstundenabbau von Mitarbeiter 13 im April klären, nach ein paar Tagen ohne Befund Schritt 4 (`users.time_model_id` entfernen). Nebenbefunde unter „Offene Fixes“ (Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel)
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Rollen deaktivieren/Farben je Rolle
@@ -563,4 +563,4 @@ Stand: [Session 15.10.2026 Abend](docs/sessions/SESSION-2026-10-15-abend-zeitmod
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-15
+**Letzte Aktualisierung:** 2026-10-16

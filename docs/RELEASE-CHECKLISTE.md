@@ -33,11 +33,16 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.10.1** – Fix Vorschau Zeitmodell-Verlauf (Abwesenheiten nur bei Änderung durch den Verlauf, #167). Keine Migration, keine Änderung an `compose.yaml`, nur Backend-Logik.
+**Nächstes Release** – Inhalt bisher: nichts.
 
 - [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
-- [ ] **Nach dem Deploy: Mitarbeiter 13** – Verwaltung → Mitarbeiter → aufklappen → „Neues Zeitmodell ab …“: „4-Tage 32h (Fr. frei)“ ab **01.01.2026**, Grund z. B. „Modell vor dem Zeiterfassungs-Start nachgetragen“. Vorschau muss **0 Tage** und **keine Abwesenheiten** zeigen (vor dem Fix: drei Überstundenabbau-Einträge im April 1 → 0), dann übernehmen. Danach Verlauf: Fr. frei 01.01.–31.03., Mo. frei ab 01.04.
 - [ ] Später klären: Überstundenabbau von Mitarbeiter 13 am 13./20./27.04.2026 (Montage, im Modell „Mo. frei“) ist mit 1 Tag gespeichert, heutige Berechnung ergäbe 0 – gewollt (Workaround „freier Tag mal Mo, mal Fr“) oder Altfehler? Zählt nicht gegen das Urlaubskonto (Überstundenabbau `affects_balance = false`)
+
+---
+
+## Erledigt: Release 2.10.1 (16.10.2026)
+
+Deploy ohne Befund. Nachtrag Mitarbeiter 13: „4-Tage 32h (Fr. frei)“ ab 01.01.2026 – Vorschau „keine gespeicherten Tage oder Urlaube betroffen“, übernommen. Kontrolle: Verlauf Modell 2 ab 01.01., Modell 3 ab 01.04.; Tage vor April unverändert (21 Tage, Soll 9120 min, Saldo +777 min).
 
 ---
 
