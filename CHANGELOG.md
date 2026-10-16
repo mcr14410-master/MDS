@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.10.0] - 2026-10-16 - Zeitmodell-Verlauf
+
+### Für Anwender
+- Zeitmodelle haben jetzt einen Verlauf mit „gültig ab“: Wechselt jemand z. B. von Vollzeit auf eine 4-Tage-Woche, rechnen die Tage davor weiter mit dem alten Modell – auch wenn dort später eine Buchung nachgetragen oder ein Urlaub geändert wird.
+- In der Verwaltung unter „Mitarbeiter“ lässt sich ein neues Zeitmodell ab einem bestimmten Tag eintragen, auch rückwirkend oder schon für einen späteren Monat. Vorher zeigt eine Vorschau, welche Tage, Urlaube und Zeitkonten sich dadurch ändern; Einträge lassen sich auch korrigieren oder löschen.
+- Wechselt das Zeitmodell mitten im Monat, stehen im Zeitnachweis beide Modelle mit Datum.
+- Urlaub aus der Zeit vor dem ersten Zeitmodell zählt Montag bis Freitag.
+
 ### Added
 - Zeitmodell-Verlauf, Schritt 1 (Grundlage): Tabelle `user_time_models` (Mitarbeiter, Zeitmodell, gültig ab, angelegt von/wann; Migration `1737000117000` übernimmt jedes vorhandene Zeitmodell ab dem Zeiterfassungs-Start). Beim Ändern eines Mitarbeiters entsteht ein Verlaufseintrag – erste Zuordnung ab Zeiterfassungs-Start, spätere ab heute; Entfernen des Modells lässt den Verlauf stehen. Hilfsfunktionen in `utils/timeModelHistory.js` („Modell an Datum X“). Gerechnet wird noch mit `users.time_model_id` – die Umstellung folgt in Schritt 2
 - Feste Testsammlung Zeiterfassung/Urlaub: `npm run test:integration` startet eine Wegwerf-Datenbank (Docker-Container `mds-test-db`, `127.0.0.1:5434`, Daten im RAM), spielt alle Migrationen ein und prüft die echten Rechenwege (Tagesberechnung, Nacht-Job, Urlaub anlegen inkl. Sync, Urlaubstage, Zeitnachweis-Stichtag) – 22 Fälle aus den Fixes 12.–15.10. (`tests/integration/test-zeiterfassung.js`). `npm test` startet die schnellen Tests ohne Datenbank (`tests/run-unit-tests.js`). Anleitung in `backend/tests/RUN-TESTS.md`

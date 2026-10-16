@@ -33,7 +33,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: Testsammlung (nur Entwicklung), Zeitmodell-Verlauf Schritt 1 (Migration `1737000117000`), Schritt 2 (gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell) und Schritt 3 (Verlauf-API mit Vorschau/Neuberechnung, Anzeigen „heute gültig“, Zeitnachweis mit beiden Modellen, Verlauf in den Mitarbeiter-Einstellungen).
+**Release 2.10.0** – Zeitmodell-Verlauf Schritt 1–3 (eine Migration `1737000117000`, gerechnet wird mit dem am Tag gültigen Modell, vor dem „ab“-Datum ohne Modell; Verlauf mit Vorschau/Neuberechnung in den Mitarbeiter-Einstellungen; Zeitnachweis mit beiden Modellen) und Testsammlung (nur Entwicklung, neue npm-Skripte `test`/`test:integration`, keine neuen Abhängigkeiten). Keine Änderung an `compose.yaml`, `Caddyfile` oder den Skripten. Gespeicherte Tageswerte und Urlaube ändern sich durch den Deploy nicht.
 
 - [ ] **Vor dem Release** Prüfabfrage (nur lesend) – Tageswerte und Urlaube vor dem ersten Verlaufseintrag. Gespeicherte Werte ändern sich nicht, aber eine spätere Neuberechnung ergäbe dort Soll 0 bzw. Urlaub Mo–Fr. Tageswerte ohne Verlauf (`ab` leer) = Mitarbeiter ohne Zeitmodell. Bei Treffern vor dem Release besprechen:
   ```bash
