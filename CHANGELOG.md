@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Farbe je Rolle: Spalte `roles.color` mit fester Palette (rot, orange, gelb, grün, blau, lila, pink, grau; CHECK-Constraint, Migration `1737000118000` übernimmt die bisherige Farbe nach Rollenname, sonst grau). Auswahl als Farbfelder mit Vorschau im Dialog „Rolle bearbeiten/erstellen“; `POST`/`PUT /api/roles` nehmen `color` an (ungültig → 400). Testsammlung `tests/integration/test-rollen-farben.js` (12 Fälle), `.http`-Szenarien in `tests/test-users.http`
+
+### Changed
+- Rollen-Abzeichen (Rollen, Benutzerliste, Benutzer-Details, Profil, Urlaubsdetails) nehmen die Farbe der Rolle statt einer festen Zuordnung nach Rollenname – selbst angelegte und umbenannte Rollen sind nicht mehr immer grau. Eine gemeinsame Hilfsfunktion `utils/roleColors.js` ersetzt fünf Kopien. Rollen in Benutzer-API (`color`), Urlaubs-API (`role_color`), Login und `/api/auth/me` (`role_colors`, `roles` bleibt eine Namensliste)
+
 ---
 
 ## [2.10.1] - 2026-10-16 - Vorschau Zeitmodell-Verlauf
