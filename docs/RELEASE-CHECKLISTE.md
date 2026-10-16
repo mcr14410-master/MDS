@@ -33,7 +33,11 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: nichts.
+**Nächstes Release** – Inhalt bisher: Farbe je Rolle (Migration `1737000118000`).
+
+- [ ] Deploy-Log: Migration `1737000118000_add-role-color` gelaufen
+- [ ] Administration → Rollen: Standardrollen in den bisherigen Farben; **umbenannte und selbst angelegte Rollen sind grau** → je Rolle über „Bearbeiten“ eine Farbe wählen
+- [ ] Benutzerliste und Mein Profil: Abzeichen in den gewählten Farben (Profil ggf. nach neu Anmelden bzw. Seite neu laden)
 
 - [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
 

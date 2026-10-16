@@ -153,7 +153,7 @@ async function login(req, res) {
 
     // Get user roles and permissions
     const rolesResult = await pool.query(`
-      SELECT r.name as role_name, p.name as permission_name
+      SELECT r.name as role_name, r.color as role_color, p.name as permission_name
       FROM user_roles ur
       JOIN roles r ON ur.role_id = r.id
       LEFT JOIN role_permissions rp ON r.id = rp.role_id
@@ -163,7 +163,9 @@ async function login(req, res) {
 
     // Group permissions by role
     const roles = {};
+    const roleColors = {};
     rolesResult.rows.forEach(row => {
+      roleColors[row.role_name] = row.role_color;
       if (!roles[row.role_name]) {
         roles[row.role_name] = [];
       }
@@ -188,6 +190,7 @@ async function login(req, res) {
         full_name: full_name,
         last_seen_version: user.last_seen_version || null,
         roles: Object.keys(roles),
+        role_colors: roleColors,
         permissions: [...new Set(rolesResult.rows.map(r => r.permission_name).filter(Boolean))]
       },
       token
@@ -221,7 +224,9 @@ async function getProfile(req, res) {
         u.last_login,
         u.last_seen_version,
         COALESCE(json_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), '[]') as roles,
-        COALESCE(json_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), '[]') as permissions
+        COALESCE(json_agg(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL), '[]') as permissions,
+        COALESCE((SELECT json_object_agg(r2.name, r2.color) FROM user_roles ur2
+                  JOIN roles r2 ON r2.id = ur2.role_id WHERE ur2.user_id = u.id), '{}') as role_colors
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id

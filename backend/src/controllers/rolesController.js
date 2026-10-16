@@ -1,5 +1,10 @@
 const { Pool } = require('pg');
 
+// Feste Palette – das Frontend hat zu jeder Farbe feste Tailwind-Klassen (utils/roleColors.js)
+const ROLE_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray'];
+
+const invalidColor = (color) => color !== undefined && !ROLE_COLORS.includes(color);
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -19,6 +24,7 @@ async function getAll(req, res) {
         r.id,
         r.name,
         r.description,
+        r.color,
         r.created_at,
         COALESCE(
           json_agg(
@@ -60,6 +66,7 @@ async function getById(req, res) {
         r.id,
         r.name,
         r.description,
+        r.color,
         r.created_at,
         COALESCE(
           json_agg(
@@ -114,13 +121,19 @@ async function getById(req, res) {
  */
 async function create(req, res) {
   try {
-    const { name, description, permission_ids = [] } = req.body;
+    const { name, description, color, permission_ids = [] } = req.body;
 
     // Validate required fields
     if (!name) {
       return res.status(400).json({
         error: 'Bad Request',
         message: 'Rollenname ist erforderlich'
+      });
+    }
+    if (invalidColor(color)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: `Ungültige Farbe. Erlaubt: ${ROLE_COLORS.join(', ')}`
       });
     }
 
@@ -140,8 +153,8 @@ async function create(req, res) {
 
       // Insert role
       const roleResult = await client.query(
-        `INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING id, name, description, created_at`,
-        [name, description || null]
+        `INSERT INTO roles (name, description, color) VALUES ($1, $2, $3) RETURNING id, name, description, color, created_at`,
+        [name, description || null, color || 'gray']
       );
 
       const newRole = roleResult.rows[0];
@@ -164,6 +177,7 @@ async function create(req, res) {
           r.id,
           r.name,
           r.description,
+          r.color,
           r.created_at,
           COALESCE(
             json_agg(
@@ -204,7 +218,14 @@ async function create(req, res) {
 async function update(req, res) {
   try {
     const { id } = req.params;
-    const { name, description, permission_ids } = req.body;
+    const { name, description, color, permission_ids } = req.body;
+
+    if (invalidColor(color)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: `Ungültige Farbe. Erlaubt: ${ROLE_COLORS.join(', ')}`
+      });
+    }
 
     // Check if role exists
     const existingRole = await pool.query('SELECT name FROM roles WHERE id = $1', [id]);
@@ -255,6 +276,10 @@ async function update(req, res) {
         updates.push(`description = $${paramIndex++}`);
         values.push(description);
       }
+      if (color !== undefined) {
+        updates.push(`color = $${paramIndex++}`);
+        values.push(color);
+      }
 
       if (updates.length > 0) {
         values.push(id);
@@ -286,6 +311,7 @@ async function update(req, res) {
           r.id,
           r.name,
           r.description,
+          r.color,
           r.created_at,
           COALESCE(
             json_agg(

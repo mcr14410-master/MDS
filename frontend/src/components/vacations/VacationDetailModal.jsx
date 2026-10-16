@@ -2,18 +2,8 @@ import { useState, useEffect } from 'react';
 import { X, Pencil, Calendar, Sun, FileDown } from 'lucide-react';
 import axios from '../../utils/axios';
 import { formatDaysInYear } from '../../utils/vacationDays';
+import { getRoleBadgeColor } from '../../utils/roleColors';
 
-const getRoleBadgeColor = (roleName) => {
-  const colors = {
-    admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    programmer: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    reviewer: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-    operator: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    helper: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    supervisor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  };
-  return colors[roleName?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-};
 
 const statusLabels = {
   approved: { text: 'Genehmigt', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
@@ -68,7 +58,7 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
         setVacations(data);
         // Extract roles from first vacation entry (roles is JSON array)
         if (data.length > 0 && Array.isArray(data[0].roles)) {
-          setRoles(data[0].roles.map(r => r.role_name || r.name || r));
+          setRoles(data[0].roles.map(r => ({ name: r.role_name || r.name || r, color: r.role_color || r.color })));
         }
       })
       .catch(err => console.error('Error fetching vacations:', err))
@@ -154,9 +144,9 @@ export default function VacationDetailModal({ balance, year, onClose, onEdit }) 
                 {balance.display_name}
               </h2>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                {(roles.length > 0 ? roles : (balance.role_name ? [balance.role_name] : [])).map((name, idx) => (
-                  <span key={idx} className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(name)}`}>
-                    {name}
+                {(roles.length > 0 ? roles : (balance.role_name ? [{ name: balance.role_name }] : [])).map((role, idx) => (
+                  <span key={idx} className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${getRoleBadgeColor(role.color)}`}>
+                    {role.name}
                   </span>
                 ))}
                 <span className="text-sm text-gray-500 dark:text-gray-400">{year}</span>

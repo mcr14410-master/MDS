@@ -161,6 +161,7 @@ Content-Type: application/json
 {
   "name": "quality_inspector",
   "description": "Qualitätsprüfer - prüft und dokumentiert Teile",
+  "color": "pink",
   "permission_ids": [1, 5, 23]
 }
 
@@ -175,6 +176,34 @@ Content-Type: application/json
   "description": "Qualitätsprüfer - erweiterte Berechtigungen",
   "permission_ids": [1, 5, 6, 23, 24]
 }
+
+### =====================================================
+### 19a. Rollenfarbe ändern (Palette: red, orange, yellow, green, blue, purple, pink, gray)
+### =====================================================
+PUT {{baseUrl}}/roles/{{createRole.response.body.role.id}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "color": "green"
+}
+
+### =====================================================
+### 19b. Ungültige Rollenfarbe → 400
+### =====================================================
+PUT {{baseUrl}}/roles/{{createRole.response.body.role.id}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "color": "#ff0000"
+}
+
+### =====================================================
+### 19c. Profil: roles (Namen) + role_colors
+### =====================================================
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{adminToken}}
 
 ### =====================================================
 ### 20. DELETE Role (only non-system roles)
