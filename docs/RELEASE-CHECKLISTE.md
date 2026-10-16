@@ -36,13 +36,12 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Nächstes Release** – Inhalt bisher: nichts.
 
 - [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
-- [ ] Später klären: Überstundenabbau von Mitarbeiter 13 am 13./20./27.04.2026 (Montage, im Modell „Mo. frei“) ist mit 1 Tag gespeichert, heutige Berechnung ergäbe 0 – gewollt (Workaround „freier Tag mal Mo, mal Fr“) oder Altfehler? Zählt nicht gegen das Urlaubskonto (Überstundenabbau `affects_balance = false`)
 
 ---
 
 ## Erledigt: Release 2.10.1 (16.10.2026)
 
-Deploy ohne Befund. Nachtrag Mitarbeiter 13: „4-Tage 32h (Fr. frei)“ ab 01.01.2026 – Vorschau „keine gespeicherten Tage oder Urlaube betroffen“, übernommen. Kontrolle: Verlauf Modell 2 ab 01.01., Modell 3 ab 01.04.; Tage vor April unverändert (21 Tage, Soll 9120 min, Saldo +777 min).
+Deploy ohne Befund. Geklärt (16.10.): Mitarbeiter 13 hatte im April die Montage frei, gerechnet wurde noch nach „Fr. frei“, ausgeglichen mit Überstundenabbau an den Montagen (Workaround) – alle Apriltage nach „Fr. frei“ gespeichert, ab Mai nach „Mo. frei“. Verlauf daher korrigiert: „Mo. frei“ ab 01.05. statt 01.04. (Vorschau 0 Tage, Saldo ±0; 27.04. nur Status Zeitausgleich → Überstundenabbau, die Art des Eintrags war später geändert worden). Überstundenabbau-Einträge bleiben stehen. Nachtrag Mitarbeiter 13: „4-Tage 32h (Fr. frei)“ ab 01.01.2026 – Vorschau „keine gespeicherten Tage oder Urlaube betroffen“, übernommen. Kontrolle: Verlauf Modell 2 ab 01.01., Modell 3 ab 01.04.; Tage vor April unverändert (21 Tage, Soll 9120 min, Saldo +777 min).
 
 ---
 
