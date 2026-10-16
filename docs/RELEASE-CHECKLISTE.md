@@ -33,11 +33,14 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Inhalt bisher: Farbe je Rolle (Migration `1737000118000`).
+**Release 2.11.0** – Farbe je Rolle (#173, Migration `1737000118000`), Abwesenheit löschen/ändern rechnet Tageswerte nach (#174), Verwaltung und Kalender (#175). Keine Änderung an `compose.yaml`, `Caddyfile` oder den Skripten. #174 korrigiert keine bestehenden Daten, nur künftige Lösch-/Änderungsvorgänge.
 
 - [ ] Deploy-Log: Migration `1737000118000_add-role-color` gelaufen
 - [ ] Administration → Rollen: Standardrollen in den bisherigen Farben; **umbenannte und selbst angelegte Rollen sind grau** → je Rolle über „Bearbeiten“ eine Farbe wählen
 - [ ] Benutzerliste und Mein Profil: Abzeichen in den gewählten Farben (Profil ggf. nach neu Anmelden bzw. Seite neu laden)
+- [ ] Klicktest Verwaltung: kein Tab „Mitarbeiter“ mehr, dafür Einstellungen → Mitarbeiter; Arbeitszeit → Zeitkonten → Mitarbeiter öffnen → Zurück landet bei den Zeitkonten
+- [ ] Klicktest Kalender (Monatsansicht): an einem Tag mit mehr als 3 Abwesenheiten „+N mehr“ sichtbar, Klick zeigt alle
+- [ ] Bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit: Tageswert passt danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
 - [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
 

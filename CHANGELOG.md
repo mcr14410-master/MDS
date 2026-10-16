@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.11.0] - 2026-10-16 - Rollenfarben, Kalender, Verwaltung
+
+### Für Anwender
+- Rollen können jetzt eine eigene Farbe bekommen (Administration → Rollen → Bearbeiten). Die Rollen-Abzeichen erscheinen überall in dieser Farbe, auch bei selbst angelegten Rollen.
+- Im Kalender (Monatsansicht) ist der Hinweis „+N mehr“ an vollen Tagen wieder sichtbar. Ein Klick darauf zeigt alle Abwesenheiten des Tages.
+- Wird ein genehmigter Urlaub oder eine andere Abwesenheit gelöscht oder geändert, passt sich das Zeitkonto der betroffenen Tage sofort an.
+- In der Verwaltung liegen die Mitarbeiter-Einstellungen jetzt unter „Einstellungen“. „Zurück“ aus einem Zeitkonto führt wieder zur Übersicht der Zeitkonten.
+
 ### Added
 - Farbe je Rolle: Spalte `roles.color` mit fester Palette (rot, orange, gelb, grün, blau, lila, pink, grau; CHECK-Constraint, Migration `1737000118000` übernimmt die bisherige Farbe nach Rollenname, sonst grau). Auswahl als Farbfelder mit Vorschau im Dialog „Rolle bearbeiten/erstellen“; `POST`/`PUT /api/roles` nehmen `color` an (ungültig → 400). Testsammlung `tests/integration/test-rollen-farben.js` (12 Fälle), `.http`-Szenarien in `tests/test-users.http`
 
