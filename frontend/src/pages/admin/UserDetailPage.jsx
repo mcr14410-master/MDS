@@ -5,6 +5,7 @@ import { useRolesStore } from '../../stores/rolesStore';
 import { useAuthStore } from '../../stores/authStore';
 import axios from '../../utils/axios';
 import Breadcrumbs from '../../components/Breadcrumbs';
+import { getRoleBadgeColor } from '../../utils/roleColors';
 
 function UserDetailPage() {
   const { id } = useParams();
@@ -170,17 +171,6 @@ function UserDetailPage() {
     }
   };
 
-  const getRoleBadgeColor = (roleName) => {
-    const colors = {
-      admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-      programmer: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-      reviewer: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-      operator: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      helper: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-      supervisor: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-    };
-    return colors[roleName] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-  };
 
   const getSkillLevelInfo = (level) => {
     const levels = {
@@ -287,7 +277,7 @@ function UserDetailPage() {
               {userData.roles?.map(role => (
                 <span 
                   key={role.id}
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(role.name)}`}
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(role.color)}`}
                 >
                   {role.name}
                 </span>
