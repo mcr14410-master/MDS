@@ -204,8 +204,11 @@ async function computeImpact(userId, plan) {
     .filter(m => m.days > 0)
     .map(m => ({ ...m, is_past: m.month < currentMonth }));
 
-  // Urlaube/Abwesenheiten (genehmigt oder beantragt), deren Tage sich ändern
+  // Urlaube/Abwesenheiten (genehmigt oder beantragt), deren Tage sich durch die Änderung ändern:
+  // Berechnung mit altem gegen neuen Verlauf – nicht gegen den gespeicherten Wert, der aus anderen
+  // Gründen veraltet sein kann (solche Abwesenheiten bleiben unangetastet)
   const vacations = [];
+  const sameDays = (a, b) => Object.keys({ ...a, ...b }).every(y => parseFloat(a[y] || 0) === parseFloat(b[y] || 0));
   const vacResult = await pool.query(`
     SELECT v.id, v.start_date, v.end_date, v.status, v.calculated_days, v.days_by_year, vt.name AS type_name
     FROM vacations v
@@ -216,12 +219,15 @@ async function computeImpact(userId, plan) {
   for (const v of vacResult.rows) {
     const start = toDateStr(v.start_date);
     const end = toDateStr(v.end_date);
+    let modelChanges = false;
+    for (let d = start; d <= end && !modelChanges; d = nextDay(d)) {
+      modelChanges = (oldAt(d)?.id ?? null) !== (newAt(d)?.id ?? null);
+    }
+    if (!modelChanges) continue;
+    const oldByYear = await calculateWorkingDaysByYear(userId, start, end, undefined, oldAt);
     const newByYear = await calculateWorkingDaysByYear(userId, start, end, undefined, newAt);
+    if (sameDays(oldByYear, newByYear)) continue;
     const newDays = Object.values(newByYear).reduce((sum, n) => sum + n, 0);
-    const oldByYear = v.days_by_year || {};
-    const sameByYear = Object.keys({ ...oldByYear, ...newByYear })
-      .every(y => parseFloat(oldByYear[y] || 0) === parseFloat(newByYear[y] || 0));
-    if (sameByYear && parseFloat(v.calculated_days) === newDays) continue;
     vacations.push({
       id: v.id,
       type: v.type_name,
