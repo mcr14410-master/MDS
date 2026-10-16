@@ -15,6 +15,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.10.1] - 2026-10-16 - Vorschau Zeitmodell-Verlauf
+
+### Für Anwender
+- Beim Eintragen eines neuen Zeitmodells zeigt die Vorschau nur noch Abwesenheiten, deren Tage sich durch den Wechsel tatsächlich ändern. Andere Einträge bleiben beim Übernehmen unverändert.
+
 ### Fixed
 - Zeitmodell-Verlauf: Vorschau und „Übernehmen“ führten auch Abwesenheiten auf, deren gespeicherte Tageszahl schon vorher nicht zur heutigen Berechnung passte (z. B. Überstundenabbau an einem inzwischen freien Tag), und setzten sie neu – auch wenn die Verlaufsänderung sie gar nicht betraf. Jetzt zählt nur, was sich durch die Änderung ändert: Tageszahl mit altem gegen neuen Verlauf berechnet; andere Abwesenheiten bleiben unangetastet. Testfall nach dem Produktionsfall (Nachtrag eines Modells vor dem ersten Eintrag)
 
