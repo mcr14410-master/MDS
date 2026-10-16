@@ -555,18 +555,19 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 15.10.2026 Abend](docs/sessions/SESSION-2026-10-15-abend-zeitmodell-verlauf-oberflaeche.md) – v2.10.1 läuft auf dem Pi (16.10.2026: Zeitmodell-Verlauf, Fix Vorschau), `[Unreleased]` leer
+Stand: [Session 16.10.2026](docs/sessions/SESSION-2026-10-16-releases-2.10-2.11.md) – v2.10.1 läuft auf dem Pi, **v2.11.0 getaggt, Deploy offen** (Rollenfarben, Abwesenheit löschen/ändern, Verwaltung/Kalender), `[Unreleased]` leer
 
-0. **Zeitmodell-Historie:** Schritte 1–3 als 2.10.0/2.10.1 auf dem Pi (16.10.2026), Mitarbeiter 13 mit Modell vor dem 01.04. nachgetragen. Offen: Nacht-Lauf-Kontrolle (Release-Checkliste), nach ein paar Tagen ohne Befund Schritt 4 (`users.time_model_id` entfernen). Nebenbefunde unter „Offene Fixes“ (Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel)
-1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
-2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-3. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel, Vorschau Zeitmodell-Verlauf „1 → 1“
-4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-5. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
-6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
-7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
-8. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
+0. **Deploy 2.11.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (Migration `1737000118000`, umbenannte Rollen einfärben, Klicktests Verwaltung/Kalender); dazu die **Nacht-Lauf-Kontrolle** seit 2.10.0
+1. **Zeitmodell-Historie Schritt 4:** `users.time_model_id` entfernen, sobald 2.10.x ein paar Tage ohne Befund läuft (Anzeigen laufen schon über den Verlauf; übrig: Erstzuordnung beim Aktivieren über `PUT /api/users/:id`, die Spalte selbst)
+2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
+3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
+4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel, Vorschau Zeitmodell-Verlauf „1 → 1“
+5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
+7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+9. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-16
+**Letzte Aktualisierung:** 2026-10-17
