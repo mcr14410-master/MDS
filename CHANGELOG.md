@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- Genehmigte Abwesenheit löschen oder ändern zog die Tageswerte nicht nach: Status und Gutschrift blieben stehen (z. B. stornierter Urlaubstag weiter ±0 statt fehlender Buchung), bis der Tag aus anderem Grund neu gerechnet wurde. Jetzt rechnet Löschen die vorhandenen Tageswerte im Zeitraum (bis heute) neu; Ändern von Zeitraum, Art, Status oder Mitarbeiter rechnet den alten Zeitraum neu und den neuen über den Urlaubs-Sync. Tage ohne Stempel und ohne manuelles Soll, die laut Zeitmodell frei sind, werden entfernt; Monatssalden ab dem ersten betroffenen Monat. Ablehnen/Zurückziehen betreffen nur beantragte Einträge (ohne Tageswerte). `computeDailySummary` liefert zusätzlich `base_target_minutes`. Testsammlung `test-abwesenheit-aendern.js` (8 Fälle)
+
 ### Added
 - Farbe je Rolle: Spalte `roles.color` mit fester Palette (rot, orange, gelb, grün, blau, lila, pink, grau; CHECK-Constraint, Migration `1737000118000` übernimmt die bisherige Farbe nach Rollenname, sonst grau). Auswahl als Farbfelder mit Vorschau im Dialog „Rolle bearbeiten/erstellen“; `POST`/`PUT /api/roles` nehmen `color` an (ungültig → 400). Testsammlung `tests/integration/test-rollen-farben.js` (12 Fälle), `.http`-Szenarien in `tests/test-users.http`
 

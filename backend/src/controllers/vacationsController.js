@@ -15,7 +15,7 @@ const { ensureHolidaysForYear } = require('./holidaysController');
 const { getHolidayRegion } = require('../utils/holidayRegion');
 const { calculateDayAbsence } = require('../utils/dayAbsence');
 const { loadTimeModelResolver } = require('../utils/timeModelHistory');
-const { updateDailySummary } = require('./timeEntriesController');
+const { updateDailySummary, computeDailySummary } = require('./timeEntriesController');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -146,6 +146,38 @@ async function syncDailySummaryForVacation(vacationId) {
     const nextMonth = lastMonth === 12 ? 1 : lastMonth + 1;
     const nextYear = lastMonth === 12 ? lastYear + 1 : lastYear;
     await recalculateFromMonth(vac.user_id, nextYear, nextMonth);
+  }
+}
+
+/**
+ * Tageswerte eines Zeitraums neu rechnen, nachdem eine genehmigte Abwesenheit gelöscht oder geändert
+ * wurde (Status, Gutschrift und Saldo der Tage hängen an ihr). Nur vorhandene Tageswerte bis heute;
+ * Tage ohne Stempel und ohne manuelles Soll, die laut Zeitmodell frei sind, werden entfernt (der
+ * Nacht-Job hätte sie nicht angelegt). Danach Monatssalden ab dem ersten Monat.
+ */
+async function resyncVacationDays(userId, startDate, endDate) {
+  const today = toDateStr(new Date());
+  const from = toDateStr(startDate);
+  const to = toDateStr(endDate) < today ? toDateStr(endDate) : today;
+  if (from > to) return;
+
+  const days = await pool.query(
+    'SELECT date FROM time_daily_summary WHERE user_id = $1 AND date BETWEEN $2 AND $3 ORDER BY date',
+    [userId, from, to]
+  );
+  for (const row of days.rows) {
+    const date = new Date(`${toDateStr(row.date)}T12:00:00`);
+    const day = await computeDailySummary(userId, date);
+    if (!day.hasTargetOverride && day.entryCount === 0 && day.base_target_minutes === 0) {
+      await pool.query('DELETE FROM time_daily_summary WHERE user_id = $1 AND date = $2', [userId, day.dateStr]);
+    } else {
+      await updateDailySummary(userId, date, { skipBalance: true });
+    }
+  }
+
+  if (days.rows.length > 0) {
+    const [year, month] = from.split('-').map(Number);
+    await recalculateFromMonth(userId, year, month);
   }
 }
 
@@ -745,8 +777,23 @@ const updateVacation = async (req, res) => {
       ]
     );
     
+    // Tageswerte nachziehen, wenn sich etwas Rechenrelevantes geändert hat: alter Zeitraum ohne bzw. mit
+    // geänderter Abwesenheit neu rechnen, neuer Zeitraum über den Urlaubs-Sync (legt fehlende Tage an)
+    const updated = result.rows[0];
+    const relevantChange = ['user_id', 'type_id', 'start_date', 'end_date', 'status']
+      .some(f => String(currentVacation[f] instanceof Date ? toDateStr(currentVacation[f]) : currentVacation[f])
+        !== String(updated[f] instanceof Date ? toDateStr(updated[f]) : updated[f]));
+    if (relevantChange) {
+      if (currentVacation.status === 'approved') {
+        await resyncVacationDays(currentVacation.user_id, currentVacation.start_date, currentVacation.end_date);
+      }
+      if (updated.status === 'approved') {
+        await syncDailySummaryForVacation(updated.id);
+      }
+    }
+
     const response = {
-      ...result.rows[0],
+      ...updated,
       ...(concurrentWarning && { warning: concurrentWarning })
     };
     
@@ -772,6 +819,12 @@ const deleteVacation = async (req, res) => {
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Abwesenheit nicht gefunden' });
+    }
+
+    // Genehmigte Abwesenheit: Tageswerte hingen an ihr (Status, Gutschrift) → neu rechnen
+    const deleted = result.rows[0];
+    if (deleted.status === 'approved') {
+      await resyncVacationDays(deleted.user_id, deleted.start_date, deleted.end_date);
     }
     
     res.json({ message: 'Abwesenheit gelöscht', vacation: result.rows[0] });
@@ -1325,5 +1378,6 @@ module.exports = {
   // Export helpers for testing
   calculateWorkingDays,
   calculateWorkingDaysByYear,
-  checkConcurrentAbsences
+  checkConcurrentAbsences,
+  resyncVacationDays
 };
