@@ -45,7 +45,7 @@ async function getAll(req, res) {
         u.updated_at,
         COALESCE(
           json_agg(
-            json_build_object('id', r.id, 'name', r.name)
+            json_build_object('id', r.id, 'name', r.name, 'color', r.color)
           ) FILTER (WHERE r.id IS NOT NULL), 
           '[]'
         ) as roles,
@@ -148,7 +148,7 @@ async function getById(req, res) {
         tm.name as time_model_name,
         COALESCE(
           json_agg(
-            json_build_object('id', r.id, 'name', r.name, 'description', r.description)
+            json_build_object('id', r.id, 'name', r.name, 'description', r.description, 'color', r.color)
           ) FILTER (WHERE r.id IS NOT NULL), 
           '[]'
         ) as roles,
@@ -289,7 +289,7 @@ async function create(req, res) {
           u.created_at,
           COALESCE(
             json_agg(
-              json_build_object('id', r.id, 'name', r.name)
+              json_build_object('id', r.id, 'name', r.name, 'color', r.color)
             ) FILTER (WHERE r.id IS NOT NULL), 
             '[]'
           ) as roles
@@ -522,7 +522,7 @@ async function update(req, res) {
           u.updated_at,
           COALESCE(
             json_agg(
-              json_build_object('id', r.id, 'name', r.name)
+              json_build_object('id', r.id, 'name', r.name, 'color', r.color)
             ) FILTER (WHERE r.id IS NOT NULL), 
             '[]'
           ) as roles

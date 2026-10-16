@@ -390,7 +390,7 @@ const getVacations = async (req, res) => {
         u.username, 
         COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
         COALESCE(
-          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name, 'role_color', r.color))
            FROM user_roles ur
            JOIN roles r ON r.id = ur.role_id
            WHERE ur.user_id = v.user_id),
@@ -477,7 +477,7 @@ const getVacationsCalendar = async (req, res) => {
         u.username, 
         COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
         COALESCE(
-          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name, 'role_color', r.color))
            FROM user_roles ur
            JOIN roles r ON r.id = ur.role_id
            WHERE ur.user_id = v.user_id),
@@ -1030,7 +1030,7 @@ const getPendingRequests = async (req, res) => {
         u.username,
         COALESCE(u.first_name || ' ' || u.last_name, u.username) as display_name,
         COALESCE(
-          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name))
+          (SELECT json_agg(json_build_object('role_id', r.id, 'role_name', r.name, 'role_color', r.color))
            FROM user_roles ur
            JOIN roles r ON r.id = ur.role_id
            WHERE ur.user_id = v.user_id),
