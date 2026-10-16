@@ -495,7 +495,7 @@ function UserDetailPage() {
                           Einstellungen für Urlaubsverwaltung, Zeiterfassung, Zeitmodell und PIN werden zentral verwaltet. NFC-Chips können unten direkt verwaltet werden.
                         </p>
                         <Link 
-                          to="/vacations/admin"
+                          to="/vacations/admin?tab=settings&bereich=employees"
                           className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-300 
                                    hover:text-blue-800 dark:hover:text-blue-200"
                         >

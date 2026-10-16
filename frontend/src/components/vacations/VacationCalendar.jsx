@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
@@ -149,8 +150,76 @@ function groupVacationsByUser(vacations) {
 // MONTH VIEW
 // ============================================
 
+// Stil eines Eintrags (genehmigt: farbig, beantragt: gestrichelt/schraffiert)
+function vacationEntryStyle(v) {
+  const isPending = v.status === 'pending';
+  return {
+    backgroundColor: isPending ? 'transparent' : v.type_color + '30',
+    color: v.type_color,
+    borderLeft: `3px ${isPending ? 'dashed' : 'solid'} ${v.type_color}`,
+    ...(isPending ? {
+      backgroundImage: `repeating-linear-gradient(
+        -45deg,
+        ${v.type_color}15,
+        ${v.type_color}15 3px,
+        ${v.type_color}35 3px,
+        ${v.type_color}35 6px
+      )`
+    } : {})
+  };
+}
+
+// Alle Abwesenheiten eines Tages (aus „+N mehr“) – Klick auf einen Eintrag öffnet ihn wie im Kalender
+function DayListModal({ dateStr, vacations, onVacationClick, onClose }) {
+  const title = new Date(`${dateStr}T12:00:00`).toLocaleDateString('de-DE', {
+    weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label={`Abwesenheiten am ${title}`}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Abwesenheiten</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{title} · {vacations.length}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            aria-label="Schließen"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <ul className="p-3 space-y-1 overflow-y-auto">
+          {vacations.map(v => (
+            <li key={v.id}>
+              <button
+                type="button"
+                disabled={!onVacationClick}
+                onClick={() => { onClose(); onVacationClick?.(v); }}
+                className={`w-full text-left text-sm px-2 py-1.5 rounded ${onVacationClick ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                style={vacationEntryStyle(v)}
+              >
+                <span className="font-medium">{v.display_name}</span>
+                <span className="opacity-80"> · {v.type_name}{v.status === 'pending' ? ' (beantragt)' : ''}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationClick, onDayClick }) {
   const days = useMemo(() => getDaysInMonth(year, month), [year, month]);
+  const [listDate, setListDate] = useState(null);
   
   const { vacations = [], holidays = [] } = data;
   
@@ -211,8 +280,9 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
           return (
             <div
               key={dateStr}
-              onClick={() => onDayClick(dateStr)}
-              className={`h-24 border rounded-lg p-1 cursor-pointer transition-colors relative
+              onClick={() => onDayClick?.(dateStr)}
+              className={`h-24 border rounded-lg p-1 transition-colors relative overflow-hidden
+                ${onDayClick ? 'cursor-pointer' : ''}
                 ${weekend ? 'bg-gray-50 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'}
                 ${holiday ? 'bg-red-50 dark:bg-red-900/20' : ''}
                 ${today ? 'ring-2 ring-green-500' : ''}
@@ -249,49 +319,58 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
                 </div>
               )}
 
-              {/* Vacations */}
-              <div className="space-y-0.5 overflow-hidden">
-                {dayVacations.slice(0, 3).map(v => {
-                  const isPending = v.status === 'pending';
-                  return (
-                  <div
-                    key={v.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onVacationClick(v);
-                    }}
-                    className="text-xs px-1 py-0.5 rounded truncate cursor-pointer 
-                               hover:opacity-80 transition-opacity"
-                    style={{ 
-                      backgroundColor: isPending ? 'transparent' : v.type_color + '30',
-                      color: v.type_color,
-                      borderLeft: `3px ${isPending ? 'dashed' : 'solid'} ${v.type_color}`,
-                      ...(isPending ? {
-                        backgroundImage: `repeating-linear-gradient(
-                          -45deg,
-                          ${v.type_color}15,
-                          ${v.type_color}15 3px,
-                          ${v.type_color}35 3px,
-                          ${v.type_color}35 6px
-                        )`
-                      } : {})
-                    }}
-                    title={`${v.display_name}${isPending ? ' (beantragt)' : ''}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
-                  >
-                    {formatShortName(v.display_name)}{isPending ? ' ?' : ''}
+              {/* Vacations – Zelle hat feste Höhe: 3 Einträge, an Feiertagen 2; bei mehr einer weniger + „+N mehr“ */}
+              {(() => {
+                const capacity = holiday ? 2 : 3;
+                const visible = dayVacations.length > capacity ? capacity - 1 : capacity;
+                return (
+                  <div className="space-y-0.5">
+                    {dayVacations.slice(0, visible).map(v => {
+                      const isPending = v.status === 'pending';
+                      return (
+                      <div
+                        key={v.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onVacationClick?.(v);
+                        }}
+                        className={`text-xs px-1 py-0.5 rounded truncate transition-opacity
+                                   ${onVacationClick ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        style={vacationEntryStyle(v)}
+                        title={`${v.display_name}${isPending ? ' (beantragt)' : ''}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
+                      >
+                        {formatShortName(v.display_name)}{isPending ? ' ?' : ''}
+                      </div>
+                      );
+                    })}
+                    {dayVacations.length > visible && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setListDate(dateStr);
+                        }}
+                        className="block text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        +{dayVacations.length - visible} mehr
+                      </button>
+                    )}
                   </div>
-                  );
-                })}
-                {dayVacations.length > 3 && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    +{dayVacations.length - 3} mehr
-                  </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
           );
         })}
       </div>
+
+      {listDate && (
+        <DayListModal
+          dateStr={listDate}
+          vacations={vacations.filter(v => listDate >= formatDate(v.start_date) && listDate <= formatDate(v.end_date))}
+          onVacationClick={onVacationClick}
+          onClose={() => setListDate(null)}
+        />
+      )}
 
       {/* Legend */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-4">
@@ -422,7 +501,7 @@ function YearView({ data, year, vacationTypes, onVacationClick, onDayClick }) {
                   return (
                     <div
                       key={v.id}
-                      onClick={() => onVacationClick(v)}
+                      onClick={() => onVacationClick?.(v)}
                       className="absolute top-1 h-4 rounded cursor-pointer hover:opacity-80 
                                  transition-opacity shadow-sm"
                       style={{

@@ -13,7 +13,7 @@ const MONTHS = [
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
 ];
 
-export default function TimeTrackingAdminPanel() {
+export default function TimeTrackingAdminPanel({ view: viewProp, onViewChange } = {}) {
   const {
     presence,
     missingEntries,
@@ -26,7 +26,10 @@ export default function TimeTrackingAdminPanel() {
   } = useTimeTrackingStore();
 
   const navigate = useNavigate();
-  const [view, setView] = useState('presence'); // presence | missing | balances
+  // Ansicht von außen steuerbar (Verwaltung hält sie in der Adresse), sonst eigener Zustand
+  const [ownView, setOwnView] = useState('presence'); // presence | missing | balances
+  const view = viewProp || ownView;
+  const setView = onViewChange || setOwnView;
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
