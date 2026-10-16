@@ -269,6 +269,24 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     await assertBalanceConsistent(u2, 2026, 9);
   });
 
+  console.log('Abwesenheit mit veralteter Tageszahl außerhalb der Änderung (Fall MA 13)');
+  const moFrei = (await pool.query(`
+    INSERT INTO time_models (name, monday_minutes, tuesday_minutes, wednesday_minutes, thursday_minutes, friday_minutes)
+    VALUES ('Test Mo frei', 0, 480, 480, 480, 480) RETURNING id`)).rows[0].id;
+  const u6 = await createUser('2026-09-01', moFrei);
+  const alt = await addAbsence(u6, 'Überstundenabbau', '2026-09-14');   // Mo – frei → 0 Tage
+  await pool.query(`UPDATE vacations SET calculated_days = 1, days_by_year = '{"2026": 1}' WHERE id = $1`, [alt.id]);
+  const vorher = await addAbsence(u6, 'Urlaub', '2026-08-24');          // Mo vor dem ersten Eintrag → Mo–Fr → 1 Tag
+  await test('Vorschau nennt nur die Abwesenheit, die sich durch die Änderung ändert', async () => {
+    const p = await previewChange(u6, { action: 'create', timeModelId: moFrei, validFrom: '2026-08-01' });
+    assert.deepEqual(p.vacations.map(v => [v.id, v.old_days, v.new_days]), [[vorher.id, 1, 0]]);
+  });
+  await test('Übernehmen lässt die veraltete Abwesenheit unangetastet', async () => {
+    await applyChange(u6, { action: 'create', timeModelId: moFrei, validFrom: '2026-08-01' }, { actorId: adminId });
+    const rows = (await pool.query('SELECT id, calculated_days FROM vacations WHERE user_id = $1 ORDER BY id', [u6])).rows;
+    assert.deepEqual(rows.map(r => [r.id, parseFloat(r.calculated_days)]), [[alt.id, 1], [vorher.id, 0]]);
+  });
+
   console.log('Künftig datiert');
   const future = (() => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 40); return d.toISOString().slice(0, 10); })();
   const futureEnd = (() => { const d = new Date(`${future}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 13); return d.toISOString().slice(0, 10); })();
