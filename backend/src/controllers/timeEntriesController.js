@@ -1001,6 +1001,7 @@ async function computeDailySummary(userId, date, options = {}) {
     };
     targetMinutes = dayMap[dayOfWeek] || 0;
   }
+  const baseTargetMinutes = targetMinutes;
 
   // Fehlende Buchungen prüfen
   const entries = await pool.query(`
@@ -1095,6 +1096,7 @@ async function computeDailySummary(userId, date, options = {}) {
     dateStr,
     entryCount: entries.rows.length,
     hasTargetOverride: targetOverride !== null && targetOverride !== undefined,
+    base_target_minutes: baseTargetMinutes,   // Soll laut Modell bzw. Override, vor Feiertag/Abwesenheit
     target_minutes: targetMinutes,
     worked_minutes: finalWorkedMinutes,
     break_minutes: dayStats.break_minutes,
