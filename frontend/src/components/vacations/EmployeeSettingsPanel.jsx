@@ -369,19 +369,19 @@ export default function EmployeeSettingsPanel() {
       </div>
 
       {/* Employee List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Mitarbeiter</th>
+              <th className="text-left py-3 px-3 sm:px-4 font-medium text-gray-700 dark:text-gray-300">Mitarbeiter</th>
               <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Urlaubsverwaltung">
                 <Calendar className="h-4 w-4 inline" />
               </th>
               <th className="text-center py-3 px-2 font-medium text-gray-700 dark:text-gray-300" title="Zeiterfassung">
                 <Clock className="h-4 w-4 inline" />
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Zeitmodell</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">RFID / PIN</th>
+              <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Zeitmodell</th>
+              <th className="hidden sm:table-cell text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">RFID / PIN</th>
               <th className="w-10"></th>
             </tr>
           </thead>
@@ -406,11 +406,15 @@ export default function EmployeeSettingsPanel() {
                     isExpanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
                   }`}
                 >
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-3 sm:px-4">
                     <div className="font-medium text-gray-900 dark:text-white">
                       {emp.first_name} {emp.last_name}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">@{emp.username}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all">@{emp.username}</div>
+                    {/* Schmal: Spalte Zeitmodell ist ausgeblendet */}
+                    {emp.time_tracking_enabled && (
+                      <div className="sm:hidden text-xs text-gray-600 dark:text-gray-300 mt-0.5">{getTimeModelName(emp.time_model_id)}</div>
+                    )}
                   </td>
 
                   <td className="text-center py-3 px-2">
@@ -423,7 +427,7 @@ export default function EmployeeSettingsPanel() {
                       emp.time_tracking_enabled ? 'Zeiterfassung aktiv' : 'Zeiterfassung deaktiviert')}
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="hidden sm:table-cell py-3 px-4">
                     {emp.time_tracking_enabled ? (
                       <div>
                         <div className="text-gray-900 dark:text-white">{getTimeModelName(emp.time_model_id)}</div>
@@ -436,7 +440,7 @@ export default function EmployeeSettingsPanel() {
                     )}
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="hidden sm:table-cell py-3 px-4">
                     {emp.time_tracking_enabled ? (
                       <div className="flex items-center gap-2 text-xs">
                         <span className={emp.rfid_chips?.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
@@ -466,8 +470,9 @@ export default function EmployeeSettingsPanel() {
                 </tr>
                 {isExpanded && draft && (
                   <tr className="bg-gray-50 dark:bg-gray-800/50">
-                    <td colSpan={6} className="p-4 border-t border-gray-200 dark:border-gray-700">
-                      {renderDetails(emp)}
+                    <td colSpan={6} className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700">
+                      {/* w-0 min-w-full: Details nehmen die Breite der Zeile, ohne die Tabelle aufzuweiten */}
+                      <div className="w-0 min-w-full">{renderDetails(emp)}</div>
                     </td>
                   </tr>
                 )}

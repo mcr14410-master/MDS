@@ -291,12 +291,12 @@ export default function TimeModelHistory({ employee, timeModels, onChanged }) {
           Noch kein Zeitmodell – ohne Zeitmodell gibt es kein Soll (Urlaub zählt Mo–Fr).
         </p>
       ) : (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 dark:bg-gray-700/50 text-xs text-gray-600 dark:text-gray-400">
               <tr>
-                <th className="text-left py-1.5 px-3 font-medium">Zeitmodell</th>
-                <th className="text-left py-1.5 px-3 font-medium">gültig</th>
+                <th className="text-left py-1.5 px-2 sm:px-3 font-medium">Zeitmodell</th>
+                <th className="text-left py-1.5 px-2 sm:px-3 font-medium">gültig</th>
                 <th className="text-left py-1.5 px-3 font-medium hidden sm:table-cell">angelegt</th>
                 <th className="w-16"></th>
               </tr>
@@ -309,7 +309,7 @@ export default function TimeModelHistory({ employee, timeModels, onChanged }) {
                     edit?.entry?.id === entry.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                   }`}
                 >
-                  <td className="py-1.5 px-3 text-gray-900 dark:text-white">
+                  <td className="py-1.5 px-2 sm:px-3 text-gray-900 dark:text-white">
                     {modelLabel({ name: entry.time_model_name, weekly_minutes: entry.weekly_minutes })}
                     {entry.is_current && (
                       <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">aktuell</span>
@@ -318,7 +318,7 @@ export default function TimeModelHistory({ employee, timeModels, onChanged }) {
                       <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">geplant</span>
                     )}
                   </td>
-                  <td className="py-1.5 px-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <td className="py-1.5 px-2 sm:px-3 text-gray-700 dark:text-gray-300 sm:whitespace-nowrap">
                     {entry.valid_to
                       ? `${formatDate(entry.valid_from)} – ${formatDate(entry.valid_to)}`
                       : `ab ${formatDate(entry.valid_from)}`}
@@ -326,7 +326,7 @@ export default function TimeModelHistory({ employee, timeModels, onChanged }) {
                   <td className="py-1.5 px-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                     {formatDate(entry.created_at)}{entry.created_by_name && ` · ${entry.created_by_name}`}
                   </td>
-                  <td className="py-1.5 px-2 text-right whitespace-nowrap">
+                  <td className="py-1.5 px-1 sm:px-2 text-right whitespace-nowrap">
                     {!edit && (
                       <>
                         <button

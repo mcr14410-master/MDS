@@ -228,6 +228,8 @@ async function computeImpact(userId, plan) {
     const newByYear = await calculateWorkingDaysByYear(userId, start, end, undefined, newAt);
     if (sameDays(oldByYear, newByYear)) continue;
     const newDays = Object.values(newByYear).reduce((sum, n) => sum + n, 0);
+    // Gespeicherter Wert entspricht schon dem neuen (z. B. Workaround vor dem Verlauf) – nicht neu schreiben
+    if (parseFloat(v.calculated_days) === newDays && (!v.days_by_year || sameDays(v.days_by_year, newByYear))) continue;
     vacations.push({
       id: v.id,
       type: v.type_name,

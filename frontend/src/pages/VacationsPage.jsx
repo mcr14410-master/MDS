@@ -357,9 +357,9 @@ export default function VacationsPage({ view: propView }) {
   const currentViewConfig = viewConfig[activeView] || viewConfig.calendar;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Calendar className="h-7 w-7 text-green-600" />
@@ -370,7 +370,7 @@ export default function VacationsPage({ view: propView }) {
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* Request vacation - for all users (including managers for their own vacation) */}
           <button
             onClick={handleRequestVacation}
@@ -778,7 +778,7 @@ export default function VacationsPage({ view: propView }) {
         <div className="space-y-4">
           {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex gap-4">
+            <nav className="flex gap-4 overflow-x-auto whitespace-nowrap">
               <button
                 onClick={() => setAdminTab('overview')}
                 className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -1177,7 +1177,7 @@ export default function VacationsPage({ view: propView }) {
               <div className="flex gap-2 bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
                 <button
                   onClick={() => setSettingsCategory('vacation')}
-                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     settingsCategory === 'vacation'
                       ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1188,7 +1188,7 @@ export default function VacationsPage({ view: propView }) {
                 </button>
                 <button
                   onClick={() => setSettingsCategory('timetracking')}
-                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     settingsCategory === 'timetracking'
                       ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1199,7 +1199,7 @@ export default function VacationsPage({ view: propView }) {
                 </button>
                 <button
                   onClick={() => setSettingsCategory('employees')}
-                  className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex-1 px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     settingsCategory === 'employees'
                       ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1229,7 +1229,7 @@ export default function VacationsPage({ view: propView }) {
 
               {/* Mitarbeiter-Einstellungen (Urlaub/Zeiterfassung je Mitarbeiter, Zeitmodell-Verlauf) */}
               {settingsCategory === 'employees' && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
                   <EmployeeSettingsPanel />
                 </div>
               )}
