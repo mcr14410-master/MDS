@@ -169,6 +169,20 @@ function vacationEntryStyle(v) {
   };
 }
 
+// Tooltip eines Eintrags: Name, Art und Zeitraum
+function vacationTooltip(v) {
+  const isPending = v.status === 'pending';
+  return `${v.display_name}${isPending ? ' (beantragt)' : ''}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`;
+}
+
+// Zeitraum kurz, z. B. „14.10.–18.10.“ bzw. „14.10.“ bei einem Tag
+function formatShortRange(v) {
+  const fmt = (d) => new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  return formatDate(v.start_date) === formatDate(v.end_date)
+    ? fmt(v.start_date)
+    : `${fmt(v.start_date)}–${fmt(v.end_date)}`;
+}
+
 // Alle Abwesenheiten eines Tages (aus „+N mehr“) – Klick auf einen Eintrag öffnet ihn wie im Kalender
 function DayListModal({ dateStr, vacations, onVacationClick, onClose }) {
   const title = new Date(`${dateStr}T12:00:00`).toLocaleDateString('de-DE', {
@@ -197,20 +211,23 @@ function DayListModal({ dateStr, vacations, onVacationClick, onClose }) {
           </button>
         </div>
         <ul className="p-3 space-y-1 overflow-y-auto">
-          {vacations.map(v => (
-            <li key={v.id}>
-              <button
-                type="button"
-                disabled={!onVacationClick}
-                onClick={() => { onClose(); onVacationClick?.(v); }}
-                className={`w-full text-left text-sm px-2 py-1.5 rounded ${onVacationClick ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
-                style={vacationEntryStyle(v)}
-              >
-                <span className="font-medium">{v.display_name}</span>
-                <span className="opacity-80"> · {v.type_name}{v.status === 'pending' ? ' (beantragt)' : ''}</span>
-              </button>
-            </li>
-          ))}
+          {vacations.map(v => {
+            // Ohne Verwaltungsrecht kein Button – deaktivierte Buttons zeigen keinen Tooltip
+            const Entry = onVacationClick ? 'button' : 'div';
+            return (
+              <li key={v.id}>
+                <Entry
+                  {...(onVacationClick ? { type: 'button', onClick: () => { onClose(); onVacationClick(v); } } : {})}
+                  className={`w-full text-left text-sm px-2 py-1.5 rounded ${onVacationClick ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                  style={vacationEntryStyle(v)}
+                  title={vacationTooltip(v)}
+                >
+                  <span className="font-medium">{v.display_name}</span>
+                  <span className="opacity-80"> · {v.type_name}{v.status === 'pending' ? ' (beantragt)' : ''} · <span className="whitespace-nowrap">{formatShortRange(v)}</span></span>
+                </Entry>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
@@ -337,7 +354,7 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
                         className={`text-xs px-1 py-0.5 rounded truncate transition-opacity
                                    ${onVacationClick ? 'cursor-pointer hover:opacity-80' : ''}`}
                         style={vacationEntryStyle(v)}
-                        title={`${v.display_name}${isPending ? ' (beantragt)' : ''}\n${v.type_name}: ${new Date(v.start_date).toLocaleDateString('de-DE')} - ${new Date(v.end_date).toLocaleDateString('de-DE')}`}
+                        title={vacationTooltip(v)}
                       >
                         {formatShortName(v.display_name)}{isPending ? ' ?' : ''}
                       </div>
@@ -351,6 +368,7 @@ function MonthView({ data, year, month, vacationTypes, roleLimits, onVacationCli
                           setListDate(dateStr);
                         }}
                         className="block text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        title={dayVacations.slice(visible).map(vacationTooltip).join('\n\n')}
                       >
                         +{dayVacations.length - visible} mehr
                       </button>
