@@ -33,14 +33,16 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.12.0** – Kalender-Tooltip (#178), Vorschau Zeitmodell-Verlauf ohne „1 → 1“ (#179), Mitarbeiter-Einstellungen am Handy (#180), Audit-Log-Zeitstempel (#181, Migration `1737000119000`). Keine Änderung an `compose.yaml`, `Caddyfile` oder den Skripten.
+**Nächstes Release** – noch keine Änderungen.
 
-- [ ] Klicktest Kalender (Monatsansicht): Maus auf „+N mehr“ zeigt die ausgeblendeten Abwesenheiten (Name, Art, Zeitraum); in der Tagesliste steht der Zeitraum in jeder Zeile, Maus auf einen Eintrag zeigt den Tooltip – auch ohne Verwaltungsrecht
-- [x] Vor dem Deploy (17.10.): Herkunft der Audit-Einträge in Produktion geprüft – nur `user_time_model` (4 Einträge vom 16.10.) in Berliner Zeit, alles andere UTC (auch `part`: `partsController` hat einen eigenen Pool). Migration `1737000119000` rechnet danach um
-- [ ] Deploy-Log: Migration `1737000119000_audit-logs-timestamptz` gelaufen
-- [ ] Benutzer → Aktivitäten eines Mitarbeiters mit Zeitmodell-Verlauf (16.10.): Einträge `user_time_model` und `time-models` desselben Vorgangs zeigen dieselbe Uhrzeit; Bauteil-Detail → Historie unverändert richtig
-- [ ] Am Handy: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar
+- [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
+
+---
+
+## Erledigt: Release 2.12.0 (17.10.2026)
+
+Kalender-Tooltip (#178), Vorschau Zeitmodell-Verlauf ohne „1 → 1“ (#179), Mitarbeiter-Einstellungen am Handy (#180), Audit-Log-Zeitstempel (#181). Deploy ohne Befund, Migration `1737000119000_audit-logs-timestamptz` gelaufen, Prüfpunkte grün (Aktivitäten-Uhrzeiten, Kalender-Tooltip). Vorab in Produktion geprüft: nur `user_time_model` (4 Einträge vom 16.10.) stand in Berliner Zeit, alles andere in UTC (auch `part` – `partsController` hat einen eigenen Pool); die erste Fassung der Migration hätte Teile-Einträge verschoben. Offen: Test am Handy (oben).
 
 ---
 
