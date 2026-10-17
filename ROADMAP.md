@@ -80,7 +80,7 @@
   - [ ] Backup-Monitor im MDS erweitern: Netzlaufwerk-Kopie vorhanden und aktuell?
   - [ ] Wiederherstellungs-Anleitung in DEPLOYMENT.md (frischer Pi → OS, Docker, Repo, `.env`, DB, Uploads) und einmal testen
   - [ ] Zwischenlösung bis dahin erwägen: Backups zusätzlich auf die SD-Karte kopieren (anderes physisches Medium als die SSD)
-- [ ] **Mitarbeiter-Einstellungen mobil:** Tabelle mit festen Spalten, die Details (inkl. Zeitmodell-Verlauf) sitzen in einer Tabellenzeile – unter ~700 px nur mit seitlichem Scrollen bedienbar (Karten-Layout wie in anderen Listen?)
+- [x] **Mitarbeiter-Einstellungen mobil** (Branch `fix/mitarbeiter-einstellungen-mobil`, Variante B: Spalten ausblenden statt Karten; dazu Seitenkopf und Reiter der Urlaubsseite): Tabelle mit festen Spalten, die Details (inkl. Zeitmodell-Verlauf) sitzen in einer Tabellenzeile – unter ~700 px nur mit seitlichem Scrollen bedienbar (Karten-Layout wie in anderen Listen?)
 - [ ] **Audit-Log-Zeitstempel uneinheitlich:** Einträge der Middleware (`auditLogMiddleware`) stehen in UTC, direkt geschriebene (Default `current_timestamp`, Pool in Europe/Berlin – z. B. Teile, Zeitmodell-Verlauf) in Berliner Zeit; Spalte ist `timestamp` ohne Zeitzone. Vereinheitlichen (z. B. `timestamptz`) – vorher prüfen, wo das Audit-Log angezeigt wird
 - [x] **Kalender-Monatsansicht: „+N mehr“ verdeckt** (Branch `feat/verwaltung-kalender-tabs`) (16.10.2026 nachgestellt): Tageszellen fest 96 px (`h-24` in `VacationCalendar.jsx`), Tageszahl + 3 Einträge füllen sie, „+N mehr“ ragt heraus und wird von der nächsten Kalenderzeile übermalt; an Feiertagen (Name als eigene Zeile) wird schon der dritte Eintrag verdeckt. Gewählt: **Variante 3** – feste Höhe, so viele Einträge wie passen (bei >3 zwei + „+N mehr“, an Feiertagen einer weniger), „+N mehr“ klickbar mit Liste aller Abwesenheiten des Tages (jede öffnet wie bisher)
 - [x] **Kalender: Klick auf einen Tag ohne Verwaltungsrecht** (bestätigt, auch Klick auf einen Eintrag) – `VacationsPage` übergibt `onDayClick` nur mit Verwaltungsrecht, die Monatszelle ruft es ohne Prüfung auf → `TypeError` in der Browser-Konsole; mit dem Punkt oben erledigt
@@ -555,13 +555,13 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: 17.10.2026 – **v2.11.0 läuft auf dem Pi** (Prüfpunkte grün, Nacht-Lauf seit 2.10.0 ohne Befund), `[Unreleased]`: Kalender-Tooltip an „+N mehr“ und in der Tagesliste
+Stand: 17.10.2026 – **v2.11.0 läuft auf dem Pi** (Prüfpunkte grün, Nacht-Lauf seit 2.10.0 ohne Befund), `[Unreleased]`: Kalender-Tooltip an „+N mehr“ und in der Tagesliste, Mitarbeiter-Einstellungen mobil
 
 0. **Nächstes Release** mit dem Kalender-Tooltip (Prüfpunkt in `docs/RELEASE-CHECKLISTE.md`), gern zusammen mit weiteren Fixes aus Punkt 4
 1. **Zeitmodell-Historie Schritt 4:** `users.time_model_id` entfernen, sobald 2.10.x ein paar Tage ohne Befund läuft (Anzeigen laufen schon über den Verlauf; übrig: Erstzuordnung beim Aktivieren über `PUT /api/users/:id`, die Spalte selbst)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel, Vorschau Zeitmodell-Verlauf „1 → 1“
+4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidat: Audit-Log-Zeitstempel, Vorschau Zeitmodell-Verlauf „1 → 1“
 5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
