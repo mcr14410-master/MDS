@@ -1,8 +1,8 @@
 # Session 17. Oktober 2026 – Release 2.12.0
 
-**PRs:** #178 – #182 (alle gemergt) · **Release 2.12.0** auf dem Pi · Arbeit auf dem Dev-Server `homepi`, teils über Remote Control
+**PRs:** #178 – #184 (alle gemergt) · **Release 2.12.0** auf dem Pi · Arbeit auf dem Dev-Server `homepi`, teils über Remote Control
 
-Deploy 2.11.0 und Nacht-Lauf abgehakt, ein Wunsch aus dem Betrieb (Tooltip im Kalender) und die drei offenen Punkte der Fix-Liste erledigt, alles als 2.12.0 ausgeliefert.
+Deploy 2.11.0 und Nacht-Lauf abgehakt, ein Wunsch aus dem Betrieb (Tooltip im Kalender) und die drei offenen Punkte der Fix-Liste erledigt, alles als 2.12.0 ausgeliefert. Danach Diagnose der eigenen DB-Pools und Zeitzonen – entschieden: schrittweise je Modul, Regeln für neuen Code in CLAUDE.md.
 
 ---
 
@@ -15,6 +15,8 @@ Deploy 2.11.0 und Nacht-Lauf abgehakt, ein Wunsch aus dem Betrieb (Tooltip im Ka
 | #180 | **Mitarbeiter-Einstellungen am Handy:** Spalten Zeitmodell/RFID unter `sm` ausgeblendet, Details weiten die Tabelle nicht auf (`w-0 min-w-full`), Verlaufstabelle schmaler; Urlaubsseite: Kopf bricht um, Rand 16 px, Reiter scrollbar |
 | #181 | **Audit-Log-Zeitstempel als `timestamptz`** (Migration `1737000119000`), Altdaten nach Herkunft umgerechnet, Middleware auf zentralen Pool |
 | #182 | **Release 2.12.0** |
+| #183 | Doku: Session, Release-Checkliste 2.12.0 erledigt, ROADMAP |
+| #184 | **Diagnose DB-Pools/Zeitzonen** in der Fix-Liste, zwei Regeln in CLAUDE.md (neue Zeitspalten `timestamptz`, neuer Code nur `config/db`) |
 
 ## Produktion
 
@@ -28,11 +30,13 @@ Deploy 2.11.0 und Nacht-Lauf abgehakt, ein Wunsch aus dem Betrieb (Tooltip im Ka
 - **Handy-Ansicht:** Variante B (Spalten ausblenden) statt eigenem Karten-Layout – eine Darstellung der Zeile, kleiner Diff
 - **Audit-Log:** `timestamptz` statt „alles UTC in `timestamp`“ – eindeutig unabhängig von der Zeitzone der Session und des Node-Prozesses
 - **Version 2.12.0** (Minor), weil der Kalender-Tooltip neue Funktion ist
+- **DB-Pools/Zeitzonen: Variante C** – kein Großumbau. Folgen nur im Fenster 22–02 Uhr (Wartung/Bestellungen rechnen bis 1/2 Uhr mit dem Vortag; 22 Tabellen des zentralen Pools zeigen Uhrzeiten 1–2 h zu spät). Module werden beim nächsten größeren Umbau umgestellt (Spalten auf `timestamptz` mit Prüfabfrage, dann Pool), Kandidaten Wartung und Lager/Bestellungen. Verworfen: A (alle 135 Spalten auf einmal, Mischdaten nicht sauber zuordenbar), B (rund 40 `CURRENT_DATE`-Stellen flicken)
 
 ## Hinweise / Lehren
 
 - **Annahmen über Altdaten in Produktion prüfen, bevor die Migration sie umrechnet:** Die Fix-Liste nahm an, Teile schrieben Berliner Zeit – tatsächlich hat auch `partsController` einen eigenen Pool. Die Prüfabfrage vor dem Merge hat 19 falsch umgerechnete Einträge verhindert. Paare desselben Vorgangs aus zwei Quellen sind ein guter Beleg
-- **Eigene DB-Pools:** rund 30 Controller legen eigene Pools ohne `SET timezone` an → neuer Punkt in der Fix-Liste (erst Diagnose, ob SQL-Datumslogik betroffen ist)
+- **Pool und Spaltentyp hängen zusammen:** 35 eigene Pools (Session UTC) gegen `config/db` (Europe/Berlin); in `timestamp`-Spalten ohne Zeitzone landet die Uhrzeit der Session, node-pg liest sie als UTC. Pools allein zu vereinheitlichen würde die bisher sauberen UTC-Tabellen verschieben – nur je Modul zusammen mit den Spalten umstellen
+- **Bestandsaufnahme per Skript:** Schreiber je Tabelle (`INSERT INTO`/`UPDATE`) nach Pool-Art zuordnen, Spaltentypen aus `information_schema.columns` – zeigte 22 Tabellen mit Berliner Uhrzeit, davon rund 8 aus beiden Pools beschrieben
 - **Handy-Layout messen statt schätzen:** Playwright mit `scrollWidth` von Seite und Tabelle gegen den Kasten, je Element per `min-content` – so fielen Reiter und Verlaufstabelle als weitere Verursacher auf. 360 px als kleinste Breite mitprüfen
 - **Tabellenzelle mit breitem Inhalt:** `w-0 min-w-full` um den Inhalt verhindert, dass er die Tabelle aufweitet
 - **Dunkelmodus in Playwright:** MDS schaltet über den eigenen Schalter, nicht über `prefers-color-scheme` – `colorScheme: 'dark'` ändert nichts
@@ -42,6 +46,6 @@ Deploy 2.11.0 und Nacht-Lauf abgehakt, ein Wunsch aus dem Betrieb (Tooltip im Ka
 ## Offen
 
 - **Test am Handy** (Mitarbeiter-Einstellungen) in der Firma
-- Fix-Liste: **eigene DB-Pools ohne Zeitzone** (Diagnose)
+- DB-Pools/Zeitzonen: diagnostiziert, je Modul beim nächsten Umbau (Fix-Liste)
 - Zeitmodell-Historie **Schritt 4** (`users.time_model_id` entfernen)
 - Siehe ROADMAP „Nächste Session“
