@@ -17,9 +17,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Im Kalender zeigt „+N mehr“ beim Drüberfahren mit der Maus, wer sich dahinter verbirgt. In der Liste aller Abwesenheiten eines Tages steht jetzt auch der Zeitraum, und jeder Eintrag zeigt dieselben Details wie im Kalender.
+- Beim Ändern des Zeitmodell-Verlaufs nennt die Vorschau nur noch Abwesenheiten, deren Tageszahl sich wirklich ändert. Einträge wie „1 → 1“ erscheinen nicht mehr.
 
 ### Changed
 - Kalender (Monatsansicht): `title`-Tooltip an „+N mehr“ mit den ausgeblendeten Einträgen (Name, Art, Zeitraum); Tagesliste mit Kurz-Zeitraum je Zeile und Tooltip. Ohne `vacations.manage` sind die Einträge der Tagesliste keine deaktivierten Buttons mehr (zeigten in Chrome keinen Tooltip), sondern einfache Zeilen. Tooltip-Text als gemeinsamer Helper `vacationTooltip`
+
+### Fixed
+- Zeitmodell-Verlauf ändern: Abwesenheiten, deren Tageszahl mit altem und neuem Verlauf verschieden berechnet wird, deren gespeicherter Wert (`calculated_days`, `days_by_year`) aber schon dem neuen entspricht, stehen nicht mehr in der Vorschau („1 → 1“) und werden beim Übernehmen nicht neu geschrieben – `updated_at` bleibt aussagekräftig. Zwei neue Fälle in `tests/integration/test-zeitmodell-aenderung.js`
 
 ---
 
