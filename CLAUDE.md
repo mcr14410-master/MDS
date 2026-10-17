@@ -87,6 +87,8 @@ Bei Problemen, Fehlern oder Bugs:
 - DST-Übergänge via Noon-Probe-Pattern abfangen
 - UTC-Fehlinterpretation hat mehrfach Bugs verursacht – bei jedem zeitbezogenen Code prüfen
 - Python: `ZoneInfo("Europe/Berlin")` mit `tzdata`-Package (auf Windows nötig, Linux nicht)
+- **Neue Zeitspalten immer `timestamptz`**, nie `timestamp` ohne Zeitzone – node-pg liest `timestamp` als Ortszeit des Node-Prozesses (Container: UTC), gespeichert wird die Uhrzeit der jeweiligen Session
+- **Neuer Backend-Code nutzt nur den zentralen Pool** (`require('../config/db')`, setzt Europe/Berlin) – keine eigenen `new Pool(...)`. Bestehende Module mit eigenem Pool nicht nebenbei umstellen: ihre `timestamp`-Spalten enthalten UTC, ein Pool-Wechsel allein verschiebt neue Werte um 1–2 h. Umstellung nur je Modul zusammen mit den Spalten (siehe ROADMAP, Offene Fixes)
 
 ### Balance/Zeiterfassung
 - Salden IMMER aus `time_balances` lesen (enthält Korrekturen), NICHT aus `overtime_minutes` in `time_daily_summary`
