@@ -36,14 +36,9 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Nächstes Release** – Kalender: Tooltip an „+N mehr“ und in der Tagesliste. Keine Migration, nur Frontend.
 
 - [ ] Klicktest Kalender (Monatsansicht): Maus auf „+N mehr“ zeigt die ausgeblendeten Abwesenheiten (Name, Art, Zeitraum); in der Tagesliste steht der Zeitraum in jeder Zeile, Maus auf einen Eintrag zeigt den Tooltip – auch ohne Verwaltungsrecht
-- [ ] **Vor dem Deploy** (Audit-Log, Migration `1737000119000`): Herkunft der Einträge prüfen – `part` und `user_time_model` nur mit `middleware = f`, alle anderen nur mit `t`; sonst Migration nicht einspielen und klären
-  ```bash
-  docker compose exec -T db psql -U mds mds -c "
-  SELECT entity_type, changes ? 'method' AS middleware, count(*), min(created_at), max(created_at)
-  FROM audit_logs GROUP BY 1, 2 ORDER BY 1, 2;"
-  ```
+- [x] Vor dem Deploy (17.10.): Herkunft der Audit-Einträge in Produktion geprüft – nur `user_time_model` (4 Einträge vom 16.10.) in Berliner Zeit, alles andere UTC (auch `part`: `partsController` hat einen eigenen Pool). Migration `1737000119000` rechnet danach um
 - [ ] Deploy-Log: Migration `1737000119000_audit-logs-timestamptz` gelaufen
-- [ ] Bauteil-Detail → Historie und Benutzer → Aktivitäten: Uhrzeiten stimmen (vorher bei Teilen und Zeitmodell-Verlauf 1–2 h zu spät), z. B. ein Bauteil ändern und die Uhrzeit vergleichen
+- [ ] Benutzer → Aktivitäten eines Mitarbeiters mit Zeitmodell-Verlauf (16.10.): Einträge `user_time_model` und `time-models` desselben Vorgangs zeigen dieselbe Uhrzeit; Bauteil-Detail → Historie unverändert richtig
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
 ---

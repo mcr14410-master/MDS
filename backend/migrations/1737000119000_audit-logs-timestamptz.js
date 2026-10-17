@@ -4,12 +4,13 @@
  * Migration: Audit-Log-Zeitstempel mit Zeitzone
  *
  * created_at war `timestamp` ohne Zeitzone mit Default CURRENT_TIMESTAMP – gespeichert wurde die Uhrzeit
- * der jeweiligen Session: Einträge der Middleware (eigener Pool ohne SET timezone) in UTC, direkt
- * geschriebene (Teile, Zeitmodell-Verlauf; zentraler Pool) in Europe/Berlin. Umstellung auf timestamptz;
- * Altdaten nach Herkunft umgerechnet – die Middleware schreibt immer changes.method, die direkten nie.
+ * der jeweiligen Session. Middleware und partsController haben eigene Pools ohne SET timezone (Container:
+ * UTC); nur der Zeitmodell-Verlauf (user_time_model, zentraler Pool) schrieb Europe/Berlin – in Produktion
+ * am 17.10.2026 geprüft (z. B. time-models 17:55 / user_time_model 19:55 für denselben Vorgang).
+ * Umstellung auf timestamptz, Altdaten nach Herkunft umgerechnet.
  */
 
-const ORIGIN_TZ = `CASE WHEN changes ? 'method' THEN 'UTC' ELSE 'Europe/Berlin' END`;
+const ORIGIN_TZ = `CASE WHEN entity_type = 'user_time_model' THEN 'Europe/Berlin' ELSE 'UTC' END`;
 
 exports.up = (pgm) => {
   pgm.sql(`
