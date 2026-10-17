@@ -555,9 +555,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 16.10.2026](docs/sessions/SESSION-2026-10-16-releases-2.10-2.11.md) – v2.10.1 läuft auf dem Pi, **v2.11.0 getaggt, Deploy offen** (Rollenfarben, Abwesenheit löschen/ändern, Verwaltung/Kalender), `[Unreleased]` leer
+Stand: 17.10.2026 – **v2.11.0 läuft auf dem Pi** (Prüfpunkte grün, Nacht-Lauf seit 2.10.0 ohne Befund), `[Unreleased]`: Kalender-Tooltip an „+N mehr“ und in der Tagesliste
 
-0. **Deploy 2.11.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (Migration `1737000118000`, umbenannte Rollen einfärben, Klicktests Verwaltung/Kalender); dazu die **Nacht-Lauf-Kontrolle** seit 2.10.0
+0. **Nächstes Release** mit dem Kalender-Tooltip (Prüfpunkt in `docs/RELEASE-CHECKLISTE.md`), gern zusammen mit weiteren Fixes aus Punkt 4
 1. **Zeitmodell-Historie Schritt 4:** `users.time_model_id` entfernen, sobald 2.10.x ein paar Tage ohne Befund läuft (Anzeigen laufen schon über den Verlauf; übrig: Erstzuordnung beim Aktivieren über `PUT /api/users/:id`, die Spalte selbst)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)

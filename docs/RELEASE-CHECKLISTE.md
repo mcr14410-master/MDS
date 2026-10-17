@@ -33,16 +33,18 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.11.0** – Farbe je Rolle (#173, Migration `1737000118000`), Abwesenheit löschen/ändern rechnet Tageswerte nach (#174), Verwaltung und Kalender (#175). Keine Änderung an `compose.yaml`, `Caddyfile` oder den Skripten. #174 korrigiert keine bestehenden Daten, nur künftige Lösch-/Änderungsvorgänge.
+**Nächstes Release** – Kalender: Tooltip an „+N mehr“ und in der Tagesliste. Keine Migration, nur Frontend.
 
-- [ ] Deploy-Log: Migration `1737000118000_add-role-color` gelaufen
-- [ ] Administration → Rollen: Standardrollen in den bisherigen Farben; **umbenannte und selbst angelegte Rollen sind grau** → je Rolle über „Bearbeiten“ eine Farbe wählen
-- [ ] Benutzerliste und Mein Profil: Abzeichen in den gewählten Farben (Profil ggf. nach neu Anmelden bzw. Seite neu laden)
-- [ ] Klicktest Verwaltung: kein Tab „Mitarbeiter“ mehr, dafür Einstellungen → Mitarbeiter; Arbeitszeit → Zeitkonten → Mitarbeiter öffnen → Zurück landet bei den Zeitkonten
-- [ ] Klicktest Kalender (Monatsansicht): an einem Tag mit mehr als 3 Abwesenheiten „+N mehr“ sichtbar, Klick zeigt alle
-- [ ] Bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit: Tageswert passt danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
+- [ ] Klicktest Kalender (Monatsansicht): Maus auf „+N mehr“ zeigt die ausgeblendeten Abwesenheiten (Name, Art, Zeitraum); in der Tagesliste steht der Zeitraum in jeder Zeile, Maus auf einen Eintrag zeigt den Tooltip – auch ohne Verwaltungsrecht
+- [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
-- [ ] Noch von 2.10.0: nach dem ersten Nacht-Lauf (02:00/02:15) Cron-Protokoll – gleiche Anzahl Mitarbeiter verarbeitet wie vorher, keine Fehler
+---
+
+## Erledigt: Release 2.11.0 (16.10.2026)
+
+Deploy ohne Befund, Migration `1737000118000_add-role-color` gelaufen. Umbenannte und selbst angelegte Rollen eingefärbt, Abzeichen in Benutzerliste und Profil passen, Klicktests Verwaltung (Einstellungen → Mitarbeiter, Zurück aus dem Zeitkonto) und Kalender („+N mehr“) bestanden.
+
+Nacht-Lauf seit 2.10.0 kontrolliert (17.10.): `auto_close_open_days` vom 12.10. bis 17.10. jede Nacht genau einmal um 02:00, `success`, je 8 Mitarbeiter verarbeitet, keine Fehler oder Warnungen – vor und nach 2.10.0 gleich.
 
 ---
 
