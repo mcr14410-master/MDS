@@ -287,6 +287,25 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     assert.deepEqual(rows.map(r => [r.id, parseFloat(r.calculated_days)]), [[alt.id, 1], [vorher.id, 0]]);
   });
 
+  console.log('Abwesenheit, deren gespeicherter Wert schon dem neuen Verlauf entspricht (Vorschau „1 → 1“)');
+  const u7 = await createUser('2026-09-01');
+  const passt = await addAbsence(u7, 'Überstundenabbau', '2026-09-14');  // Mo – Vollzeit → 1 Tag
+  const aendert = await addAbsence(u7, 'Urlaub', '2026-09-21');          // Mo – Vollzeit → 1 Tag
+  // Workaround vor dem Verlauf: schon nach „Mo frei“ gespeichert
+  await pool.query(`UPDATE vacations SET calculated_days = 0, days_by_year = '{"2026": 0}', updated_at = '2026-09-15 12:00' WHERE id = $1`, [passt.id]);
+  await test('Vorschau nennt nur die Abwesenheit, deren gespeicherter Wert vom neuen abweicht', async () => {
+    const p = await previewChange(u7, { action: 'create', timeModelId: moFrei, validFrom: '2026-09-08' });
+    assert.deepEqual(p.vacations.map(v => [v.id, v.old_days, v.new_days]), [[aendert.id, 1, 0]]);
+    assert.equal(p.summary.vacations, 1);
+  });
+  await test('Übernehmen schreibt die passende Abwesenheit nicht neu (updated_at bleibt)', async () => {
+    await applyChange(u7, { action: 'create', timeModelId: moFrei, validFrom: '2026-09-08' }, { actorId: adminId });
+    const rows = (await pool.query(`SELECT id, calculated_days, to_char(updated_at, 'YYYY-MM-DD HH24:MI') AS upd
+                                    FROM vacations WHERE user_id = $1 ORDER BY id`, [u7])).rows;
+    assert.deepEqual(rows.map(r => [r.id, parseFloat(r.calculated_days)]), [[passt.id, 0], [aendert.id, 0]]);
+    assert.equal(rows[0].upd, '2026-09-15 12:00');
+  });
+
   console.log('Künftig datiert');
   const future = (() => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 40); return d.toISOString().slice(0, 10); })();
   const futureEnd = (() => { const d = new Date(`${future}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 13); return d.toISOString().slice(0, 10); })();

@@ -87,7 +87,7 @@
 - [x] **Abwesenheit löschen zieht Tageswerte nicht nach** (Branch `fix/abwesenheit-tageswerte`; auch Ändern betroffen, Ablehnen/Zurückziehen nicht): `deleteVacation` löscht nur den Eintrag – Tageswerte behalten Status und Gutschrift (z. B. stornierter Urlaubstag bleibt im Zeitkonto ±0 statt fehlender Buchung), bis der Tag aus anderem Grund neu gerechnet wird. Lösung: betroffene Tage (bis heute) neu rechnen und Monatssalden nachziehen, wie beim Anlegen (`syncDailySummaryForVacation`); vorher prüfen, ob Ändern/Ablehnen/Zurückziehen dieselbe Lücke haben
 - [x] **Verwaltung (Urlaub & Arbeitszeit): Tab „Mitarbeiter“ in die „Einstellungen“ verschieben** – als dritter Bereich neben „Urlaub“ und „Zeiterfassung“ (`settingsCategory` in `VacationsPage.jsx`, Panel `EmployeeSettingsPanel`). Den Link „zentral verwaltet“ in den Benutzer-Details (`pages/admin/UserDetailPage.jsx`, heute nur `/vacations/admin`) auf den neuen Ort zeigen lassen
 - [x] **Verwaltung: Zurück aus dem Zeitkonto landet auf „Übersicht“ statt bei den Zeitkonten** (auch die Ansicht im Tab „Arbeitszeit“ steht jetzt in der Adresse) – Tab, Einstellungs-Bereich und -Unterpunkt sind nur Zustand der Seite (`adminTab`, `settingsCategory`, `settingsSection` per `useState`), nicht in der Adresse; „Zurück“ im Zeitkonto (`navigate(-1)` in `TimeTrackingUserDetailPage.jsx`) baut die Seite neu auf → Standard-Tab. Lösung: Tab und Bereich in die URL (`?tab=…&bereich=…` per `useSearchParams`, Tabwechsel ersetzt den Verlaufseintrag), Links von außen direkt auf den Tab. Zusammen mit dem Verschieben des Mitarbeiter-Tabs erledigen
-- [ ] **Zeitmodell-Verlauf, Vorschau „1 → 1 Tage“:** Abwesenheiten, deren Tageszahl mit altem und neuem Verlauf verschieden berechnet wird, deren gespeicherter Wert aber schon dem neuen entspricht, stehen in der Vorschau (z. B. Überstundenabbau von Mitarbeiter 13 im April) und werden beim Übernehmen neu geschrieben – `updated_at` verliert dadurch seine Aussage. Lösung: nur aufführen und schreiben, wenn der neue Wert vom gespeicherten abweicht (zusätzlich zur Bedingung alt ≠ neu aus 2.10.1)
+- [x] **Zeitmodell-Verlauf, Vorschau „1 → 1 Tage“** (Branch `fix/zeitmodell-vorschau-unveraendert`): Abwesenheiten, deren Tageszahl mit altem und neuem Verlauf verschieden berechnet wird, deren gespeicherter Wert aber schon dem neuen entspricht, stehen in der Vorschau (z. B. Überstundenabbau von Mitarbeiter 13 im April) und werden beim Übernehmen neu geschrieben – `updated_at` verliert dadurch seine Aussage. Lösung: nur aufführen und schreiben, wenn der neue Wert vom gespeicherten abweicht (zusätzlich zur Bedingung alt ≠ neu aus 2.10.1)
 - [ ] **`scripts/restore.sh`:** nutzt `docker compose` ohne `cd` ins Repo – nur aus `~/mds` heraus aufrufen bzw. wie `backup.sh` absichern
 - [ ] **Hinweis „Neue Version verfügbar“** im Frontend (Version aus `/api/health` mit eigener vergleichen) – offene Tabs/Web-App zeigen sonst bis zum Reload die alte Version
 
@@ -555,13 +555,13 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: 17.10.2026 – **v2.11.0 läuft auf dem Pi** (Prüfpunkte grün, Nacht-Lauf seit 2.10.0 ohne Befund), `[Unreleased]`: Kalender-Tooltip an „+N mehr“ und in der Tagesliste
+Stand: 17.10.2026 – **v2.11.0 läuft auf dem Pi** (Prüfpunkte grün, Nacht-Lauf seit 2.10.0 ohne Befund), `[Unreleased]`: Kalender-Tooltip an „+N mehr“ und in der Tagesliste, Vorschau Zeitmodell-Verlauf ohne „1 → 1“
 
-0. **Nächstes Release** mit dem Kalender-Tooltip (Prüfpunkt in `docs/RELEASE-CHECKLISTE.md`), gern zusammen mit weiteren Fixes aus Punkt 4
+0. **Nächstes Release** mit dem Kalender-Tooltip und dem Fix der Vorschau „1 → 1“ (Prüfpunkt in `docs/RELEASE-CHECKLISTE.md`), gern zusammen mit weiteren Fixes aus Punkt 4
 1. **Zeitmodell-Historie Schritt 4:** `users.time_model_id` entfernen, sobald 2.10.x ein paar Tage ohne Befund läuft (Anzeigen laufen schon über den Verlauf; übrig: Erstzuordnung beim Aktivieren über `PUT /api/users/:id`, die Spalte selbst)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel, Vorschau Zeitmodell-Verlauf „1 → 1“
+4. **Weitere Fixes** (siehe „Offene Fixes“) – Kandidaten: Mitarbeiter-Einstellungen mobil, Audit-Log-Zeitstempel
 5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
 6. **Backup-Konzept** umsetzen, sobald das Ziel-Netzlaufwerk geklärt ist
 7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
