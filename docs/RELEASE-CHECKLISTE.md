@@ -36,6 +36,9 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Nächstes Release** – Kalender: Tooltip an „+N mehr“ und in der Tagesliste. Keine Migration, nur Frontend.
 
 - [ ] Klicktest Kalender (Monatsansicht): Maus auf „+N mehr“ zeigt die ausgeblendeten Abwesenheiten (Name, Art, Zeitraum); in der Tagesliste steht der Zeitraum in jeder Zeile, Maus auf einen Eintrag zeigt den Tooltip – auch ohne Verwaltungsrecht
+- [x] Vor dem Deploy (17.10.): Herkunft der Audit-Einträge in Produktion geprüft – nur `user_time_model` (4 Einträge vom 16.10.) in Berliner Zeit, alles andere UTC (auch `part`: `partsController` hat einen eigenen Pool). Migration `1737000119000` rechnet danach um
+- [ ] Deploy-Log: Migration `1737000119000_audit-logs-timestamptz` gelaufen
+- [ ] Benutzer → Aktivitäten eines Mitarbeiters mit Zeitmodell-Verlauf (16.10.): Einträge `user_time_model` und `time-models` desselben Vorgangs zeigen dieselbe Uhrzeit; Bauteil-Detail → Historie unverändert richtig
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
 ---
