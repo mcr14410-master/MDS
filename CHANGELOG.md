@@ -17,9 +17,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Im Kalender zeigt „+N mehr“ beim Drüberfahren mit der Maus, wer sich dahinter verbirgt. In der Liste aller Abwesenheiten eines Tages steht jetzt auch der Zeitraum, und jeder Eintrag zeigt dieselben Details wie im Kalender.
+- Im Änderungsverlauf von Bauteilen und bei den Aktivitäten eines Benutzers stimmen die Uhrzeiten jetzt überall. Manche Einträge wurden bisher ein bis zwei Stunden zu spät angezeigt.
 
 ### Changed
 - Kalender (Monatsansicht): `title`-Tooltip an „+N mehr“ mit den ausgeblendeten Einträgen (Name, Art, Zeitraum); Tagesliste mit Kurz-Zeitraum je Zeile und Tooltip. Ohne `vacations.manage` sind die Einträge der Tagesliste keine deaktivierten Buttons mehr (zeigten in Chrome keinen Tooltip), sondern einfache Zeilen. Tooltip-Text als gemeinsamer Helper `vacationTooltip`
+
+### Fixed
+- Audit-Log-Zeitstempel: `audit_logs.created_at` ist jetzt `timestamptz` (Migration `1737000119000`). Bisher `timestamp` ohne Zeitzone mit der Uhrzeit der Session – die Middleware (eigener Pool ohne `SET timezone`) schrieb UTC, direkte Einträge (Teile, Zeitmodell-Verlauf) Berliner Zeit, die dann 1–2 h zu spät angezeigt wurden. Altdaten nach Herkunft umgerechnet (`changes.method` vorhanden → UTC, sonst Europe/Berlin), `down` stellt die Originalwerte wieder her. Die Middleware nutzt den zentralen Pool. Testsammlung `tests/integration/test-audit-zeitstempel.js`
 
 ---
 
