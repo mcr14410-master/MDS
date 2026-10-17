@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.12.0] - 2026-10-17 - Kalender-Tooltip, Handy-Ansicht, Audit-Log
+
 ### Für Anwender
 - Im Kalender zeigt „+N mehr“ beim Drüberfahren mit der Maus, wer sich dahinter verbirgt. In der Liste aller Abwesenheiten eines Tages steht jetzt auch der Zeitraum, und jeder Eintrag zeigt dieselben Details wie im Kalender.
 - Beim Ändern des Zeitmodell-Verlaufs nennt die Vorschau nur noch Abwesenheiten, deren Tageszahl sich wirklich ändert. Einträge wie „1 → 1“ erscheinen nicht mehr.
