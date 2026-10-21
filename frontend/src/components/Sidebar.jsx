@@ -282,7 +282,6 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
   const hasUnseenChangelog = !!user && user.last_seen_version !== appVersion;
   const { isDark, toggleTheme } = useThemeStore();
   const { escalations, fetchEscalations } = useMaintenanceStore();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Offene Eskalationen zählen
   const openEscalationsCount = escalations.filter(e => e.status === 'open' || e.status === 'acknowledged').length;
@@ -292,7 +291,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
     if (user?.permissions?.includes('maintenance.read')) {
       fetchEscalations();
     }
-  }, [user]);
+  }, [user, fetchEscalations]);
 
   const hasPermission = (permission) => {
     return user?.permissions?.includes(permission);

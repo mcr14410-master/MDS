@@ -28,6 +28,8 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Variablen, die nur in JSX benutzt werden (z. B. `icon: Icon` → <Icon />), als benutzt markieren
+      'react/jsx-uses-vars': 'error',
       // Nicht importierte JSX-Komponenten (z. B. fehlendes Icon) erst zur Laufzeit sichtbar → hier abfangen
       'react/jsx-no-undef': 'error',
     },
