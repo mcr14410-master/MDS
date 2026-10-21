@@ -39,8 +39,15 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen.
+**Release 2.13.0** – Zeitmodell-Spalte entfernt (#186, Migration `1737000120000`), `deploy.sh` abgesichert (#187), `restore.sh`, `.migrationrc.json`, Sidebar-ESLint (#188), Versionshinweis und Caddy-Header für Deep-Links (#189). **Änderung an `Caddyfile` und den Skripten** – dieser Deploy läuft noch mit der alten `deploy.sh`, also manuelles Backup (Schritt 2) und vorher `cp -a frontend/dist ~/mds-dist-backup`.
 
+- [x] Vor dem Release (21.10.): in Produktion geprüft, dass kein Mitarbeiter ein Zeitmodell nur in `users.time_model_id` hat (0 Zeilen)
+- [ ] Vor dem Deploy: einen Browser-Tab mit dem MDS (gern auf einer Unterseite wie Bauteile) offen lassen – für den Versionshinweis
+- [ ] Deploy-Log: Migration `1737000120000_drop-users-time-model-id` gelaufen
+- [ ] **Caddy neu starten** (nicht nur `reload`): `docker compose restart caddy` – der Container sieht nach `git pull` sonst weiter das alte `Caddyfile` (Einzeldatei als Bind-Mount behält die alte Datei; getestet 21.10.). Danach `curl -sI http://localhost:81/parts/12 | grep -i cache-control` → `no-store`
+- [ ] Offener Tab von vorhin: spätestens beim Zurückwechseln zeigt er „Neue MDS-Version 2.13.0 verfügbar“, „Neu laden“ → Sidebar unten zeigt v2.13.0
+- [ ] Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter: Zeitmodell-Spalte und Verlauf zeigen dieselben Modelle wie vorher, Speichern geht; „Zeiterfassung ab“ unverändert
+- [ ] Sidebar: Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden) erscheint
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
