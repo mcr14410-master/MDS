@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import Sidebar, { Icons } from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
 import GlobalSearch from './GlobalSearch';
+import UpdateBanner from './UpdateBanner';
 
 const SIDEBAR_COLLAPSED_KEY = 'mds-sidebar-collapsed';
 
@@ -51,6 +52,7 @@ export default function Layout({ children }) {
       <div className={`${mainPadding} flex flex-col min-h-screen transition-all duration-300`}>
         {/* Schmaler Header - Breadcrumbs links, Suche rechts */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <UpdateBanner />
           <div className="flex items-center justify-between h-10 px-4">
             {/* Left: Mobile Menu + Breadcrumbs */}
             <div className="flex items-center min-w-0 flex-1">

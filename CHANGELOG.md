@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Hinweis „Neue Version verfügbar“: Banner oben im Kopf mit „Neu laden“ und Ausblenden, sobald `/api/health` eine andere Version meldet als das geladene Frontend. Geprüft beim Laden, bei Fokus/Tabwechsel (höchstens alle 10 s) und alle 5 Minuten; ist das Backend nicht erreichbar (Deploy), wird still erneut geprüft. Kein automatisches Neuladen (ungespeicherte Eingaben)
+- Fehlt eine nachgeladene Datei (`vite:preloadError`, z. B. 3D-Viewer in einem alten Tab nach einem Deploy), lädt die Seite einmal neu – höchstens einmal pro Minute
+
 ### Removed
 - `users.time_model_id` (Zeitmodell-Verlauf, Schritt 4): Spalte per Migration entfernt, Zeitmodell kommt nur noch aus `user_time_models`. `PUT /api/users/:id` nimmt `time_model_id` weiter an (erstes Aktivieren → Verlaufseintrag), Löschen eines Zeitmodells prüft nur noch den Verlauf. Vor dem Release in Produktion geprüft, dass kein Modell nur in der Spalte steht
 
