@@ -16,9 +16,11 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
    ./scripts/deploy.sh 2>&1 | tee ~/deploy-X.Y.Z.log
    ```
    `deploy.sh` sichert die DB inzwischen selbst direkt vor der Migration und baut das Frontend erst in
-   `.cache/frontend-dist`. Das gilt erst ab dem Deploy **nach** dem Release, das diese Version von
-   `deploy.sh` ausliefert (der laufende Deploy nutzt noch das alte Skript) – bis dahin das manuelle Backup
-   oben nicht weglassen. Danach ist es optional (doppelt schadet nicht).
+   `.cache/frontend-dist`. Diese Fassung kam mit 2.13.0 auf den Pi und greift ab dem nächsten Deploy
+   (ein laufender Deploy nutzt immer noch das Skript von vorher) – ab dann ist das manuelle Backup oben
+   optional (doppelt schadet nicht).
+   Ändert sich das `Caddyfile`, danach `docker compose restart caddy` – `deploy.sh` lädt nur neu und sieht
+   die geänderte Datei nicht (Fix-Liste in der ROADMAP).
 3. Auf `✅ Deploy abgeschlossen!` und die richtige Version im Health-Check achten
 4. Geöffnete Browser-Tabs / Web-App einmal neu laden (`Strg+F5`), dann kurz prüfen: Login, „Was ist neu“, die geänderten Funktionen
 
@@ -39,17 +41,21 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.13.0** – Zeitmodell-Spalte entfernt (#186, Migration `1737000120000`), `deploy.sh` abgesichert (#187), `restore.sh`, `.migrationrc.json`, Sidebar-ESLint (#188), Versionshinweis und Caddy-Header für Deep-Links (#189). **Änderung an `Caddyfile` und den Skripten** – dieser Deploy läuft noch mit der alten `deploy.sh`, also manuelles Backup (Schritt 2) und vorher `cp -a frontend/dist ~/mds-dist-backup`.
+**Nächstes Release** – noch keine Änderungen. Erster Deploy mit der neuen `deploy.sh` (Backup vor der Migration, Frontend-Build in `.cache/frontend-dist`).
 
-- [x] Vor dem Release (21.10.): in Produktion geprüft, dass kein Mitarbeiter ein Zeitmodell nur in `users.time_model_id` hat (0 Zeilen)
-- [ ] Vor dem Deploy: einen Browser-Tab mit dem MDS (gern auf einer Unterseite wie Bauteile) offen lassen – für den Versionshinweis
-- [ ] Deploy-Log: Migration `1737000120000_drop-users-time-model-id` gelaufen
-- [ ] **Caddy neu starten** (nicht nur `reload`): `docker compose restart caddy` – der Container sieht nach `git pull` sonst weiter das alte `Caddyfile` (Einzeldatei als Bind-Mount behält die alte Datei; getestet 21.10.). Danach `curl -sI http://localhost:81/parts/12 | grep -i cache-control` → `no-store`
-- [ ] Offener Tab von vorhin: spätestens beim Zurückwechseln zeigt er „Neue MDS-Version 2.13.0 verfügbar“, „Neu laden“ → Sidebar unten zeigt v2.13.0
-- [ ] Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter: Zeitmodell-Spalte und Verlauf zeigen dieselben Modelle wie vorher, Speichern geht; „Zeiterfassung ab“ unverändert
-- [ ] Sidebar: Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden) erscheint
+- [ ] Versionshinweis: vor dem Deploy einen Tab mit 2.13.0 offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
+- [ ] Deploy-Log: `deploy.sh` meldet das Backup vor der Migration und übernimmt das Frontend per `rsync`
+- [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
+
+---
+
+## Erledigt: Release 2.13.0 (21.10.2026)
+
+Zeitmodell-Spalte entfernt (#186, Migration `1737000120000`), `deploy.sh` abgesichert (#187), `restore.sh`, `.migrationrc.json`, Sidebar-ESLint (#188), Versionshinweis und Caddy-Header für Deep-Links (#189). Vorab in Produktion geprüft: kein Mitarbeiter mit Zeitmodell nur in `users.time_model_id` (0 Zeilen). Deploy noch mit der alten `deploy.sh`, Sidebar zeigt v2.13.0. Danach `docker compose restart caddy` – `curl -sI http://localhost:81/parts/12` liefert `Cache-Control: no-store`.
+
+Der geplante Banner-Test ging bei diesem Release nicht: Ein Tab mit 2.12.0 enthält den Versionshinweis noch nicht – Test beim nächsten Release (oben). Auf dem Dev-System zeigte das Banner nach dem Versionssprung dauerhaft „verfügbar“: der Vite-Dev-Server liest die Version nur beim Start aus `package.json` und lieferte weiter 2.12.0, das Backend schon 2.13.0 – Dev-Server neu starten (betrifft Produktion nicht, dort wird die Version beim Build eingebaut).
 
 ---
 
