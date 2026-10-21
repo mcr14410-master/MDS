@@ -37,8 +37,8 @@ async function createUser(startDate) {
   userCount++;
   const id = (await pool.query(`
     INSERT INTO users (username, email, password_hash, first_name, last_name, is_active,
-                       vacation_tracking_enabled, time_tracking_enabled, time_model_id, time_tracking_start_date)
-    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, 1, $4) RETURNING id`,
+                       vacation_tracking_enabled, time_tracking_enabled, time_tracking_start_date)
+    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4) RETURNING id`,
     [`test_abw_${userCount}`, `test_abw_${userCount}@example.invalid`, `Abwesenheit ${userCount}`, startDate])).rows[0].id;
   await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, 1, $2)', [id, startDate]);
   const days = Math.ceil((Date.now() - Date.parse(`${startDate}T00:00:00Z`)) / 86400000) + 1;

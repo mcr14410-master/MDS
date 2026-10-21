@@ -45,20 +45,19 @@ async function createUser(startDate, timeModelId = 1) {
   userCount++;
   const r = await pool.query(`
     INSERT INTO users (username, email, password_hash, first_name, last_name, is_active,
-                       vacation_tracking_enabled, time_tracking_enabled, time_model_id, time_tracking_start_date)
-    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4, $5) RETURNING id`,
-    [`test_${userCount}`, `test_${userCount}@example.invalid`, `Nr. ${userCount}`, timeModelId, startDate]);
+                       vacation_tracking_enabled, time_tracking_enabled, time_tracking_start_date)
+    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4) RETURNING id`,
+    [`test_${userCount}`, `test_${userCount}@example.invalid`, `Nr. ${userCount}`, startDate]);
   const id = r.rows[0].id;
   await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
     [id, timeModelId, startDate]);
   return id;
 }
 
-// Modellwechsel ab Datum – users.time_model_id zeigt danach (wie in der Oberfläche) auf das neue Modell
+// Modellwechsel ab Datum
 async function switchModel(userId, timeModelId, validFrom) {
   await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
     [userId, timeModelId, validFrom]);
-  await pool.query('UPDATE users SET time_model_id = $2 WHERE id = $1', [userId, timeModelId]);
 }
 
 async function createModel(name, minutes) {
@@ -324,12 +323,12 @@ const setRegion = (region) =>
     assert.equal((await day(u11, '2026-10-05')).saldo, -480);
   });
 
-  await test('Terminal: Tagessoll heute aus dem Verlauf, nicht aus users.time_model_id', async () => {
+  await test('Terminal: Tagessoll heute aus dem Verlauf', async () => {
     const today = toDateStr(new Date());
     const fuenfStunden = await createModel('Test 5 h täglich', [300, 300, 300, 300, 300, 300, 300]);
     const u12 = await createUser('2026-09-01');
     await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
-      [u12, fuenfStunden, today]); // users.time_model_id bleibt Vollzeit
+      [u12, fuenfStunden, today]);
     const res = { statusCode: 200, status(c) { this.statusCode = c; return this; }, json(d) { this.body = d; return this; } };
     await terminalController.getUserInfo({ params: { id: String(u12) } }, res);
     assert.equal(res.statusCode, 200, JSON.stringify(res.body));

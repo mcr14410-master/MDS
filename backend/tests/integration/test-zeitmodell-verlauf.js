@@ -79,7 +79,7 @@ const verlauf = async (userId) => (await pool.query(
   await test('ab 01.09.2026 → Vollzeit', async () => {
     assert.equal((await getTimeModelAt(user, '2026-09-01')).id, vollzeit);
   });
-  await test('heute → Teilzeit (Verlauf zählt, nicht users.time_model_id)', async () => {
+  await test('heute → Teilzeit', async () => {
     assert.equal((await getTimeModelAt(user, today)).id, teilzeit);
   });
   await test('Resolver für Schleifen liefert dieselben Modelle', async () => {

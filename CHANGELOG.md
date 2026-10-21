@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Removed
+- `users.time_model_id` (Zeitmodell-Verlauf, Schritt 4): Spalte per Migration entfernt, Zeitmodell kommt nur noch aus `user_time_models`. `PUT /api/users/:id` nimmt `time_model_id` weiter an (erstes Aktivieren → Verlaufseintrag), Löschen eines Zeitmodells prüft nur noch den Verlauf. Vor dem Release in Produktion geprüft, dass kein Modell nur in der Spalte steht
+
 ---
 
 ## [2.12.0] - 2026-10-17 - Kalender-Tooltip, Handy-Ansicht, Audit-Log

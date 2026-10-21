@@ -14,8 +14,7 @@ const todayBerlin = () => toDateStr(new Date());
 
 /**
  * SQL-Baustein: Zeitmodell, das heute (Europe/Berlin) laut Verlauf gilt – als LEFT JOIN LATERAL mit den
- * Spalten von time_models unter `alias` (kein Eintrag → alle Spalten NULL). Ersetzt den Join über
- * users.time_model_id, der künftig datierte Einträge nicht kennt.
+ * Spalten von time_models unter `alias` (kein Eintrag → alle Spalten NULL).
  * @param {string} userCol  Spalte mit der Benutzer-ID, z. B. 'u.id'
  * @param {string} alias    z. B. 'tm'
  */
