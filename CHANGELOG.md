@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.13.0] - 2026-10-21 - Versionshinweis, sicherer Deploy
+
+### Für Anwender
+- Nach einem Update zeigt das MDS oben den Hinweis „Neue Version verfügbar“ mit einem Knopf zum Neuladen. Neu geladen wird nur auf Klick – vorher ungespeicherte Eingaben speichern.
+- Wer nach einem Update eine Seite neu lädt, bekommt zuverlässig die neue Version, auch auf Unterseiten. Bisher konnte dort eine leere Seite erscheinen.
+- Hinter den Kulissen: Updates sichern die Datenbank jetzt automatisch vorher, und die Oberfläche bleibt während eines Updates erreichbar.
+
 ### Added
 - Hinweis „Neue Version verfügbar“: Banner oben im Kopf mit „Neu laden“ und Ausblenden, sobald `/api/health` eine andere Version meldet als das geladene Frontend. Geprüft beim Laden, bei Fokus/Tabwechsel (höchstens alle 10 s) und alle 5 Minuten; ist das Backend nicht erreichbar (Deploy), wird still erneut geprüft. Kein automatisches Neuladen (ungespeicherte Eingaben)
 - Fehlt eine nachgeladene Datei (`vite:preloadError`, z. B. 3D-Viewer in einem alten Tab nach einem Deploy), lädt die Seite einmal neu – höchstens einmal pro Minute
