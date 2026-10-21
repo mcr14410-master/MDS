@@ -15,6 +15,10 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
    git status                        # muss sauber sein
    ./scripts/deploy.sh 2>&1 | tee ~/deploy-X.Y.Z.log
    ```
+   `deploy.sh` sichert die DB inzwischen selbst direkt vor der Migration und baut das Frontend erst in
+   `.cache/frontend-dist`. Das gilt erst ab dem Deploy **nach** dem Release, das diese Version von
+   `deploy.sh` ausliefert (der laufende Deploy nutzt noch das alte Skript) – bis dahin das manuelle Backup
+   oben nicht weglassen. Danach ist es optional (doppelt schadet nicht).
 3. Auf `✅ Deploy abgeschlossen!` und die richtige Version im Health-Check achten
 4. Geöffnete Browser-Tabs / Web-App einmal neu laden (`Strg+F5`), dann kurz prüfen: Login, „Was ist neu“, die geänderten Funktionen
 
@@ -23,7 +27,9 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 |---|---|
 | `❌ Migration fehlgeschlagen` | Alte Version läuft weiter. Fehlermeldung darüber lesen |
 | `npm ci` bricht ab | Lockfile passt nicht zu `package.json` → nicht mit `npm install` umgehen, Ursache klären |
-| Frontend-Build bricht ab | `frontend/dist` kann leer sein → vorher `cp -a frontend/dist ~/mds-dist-backup` und im Notfall `cp -a ~/mds-dist-backup/. frontend/dist/` |
+| `❌ Backup fehlgeschlagen` | Noch nichts geändert, alte Version läuft weiter. Meldung von `backup.sh` darüber lesen |
+| `❌ Lokale Änderungen passen nicht zum neuen Stand` / `❌ git stash fehlgeschlagen` | Alte Version läuft weiter. `git status` zeigt die Dateien, Änderungen liegen im Stash (`git stash list`) |
+| `❌ Frontend-Build fehlgeschlagen` | Bisheriges Frontend bleibt, Migrationen sind aber schon gelaufen (altes Backend läuft weiter). Mit der alten `deploy.sh` (siehe oben) kann `frontend/dist` leer sein → vorher `cp -a frontend/dist ~/mds-dist-backup` und im Notfall `cp -a ~/mds-dist-backup/. frontend/dist/` |
 | `❌ Health-Check fehlgeschlagen` | `docker compose logs --tail=50 backend` |
 | Daten kaputt | `./scripts/restore.sh /srv/mds/backups/mds_backup_….sql.gz` |
 
