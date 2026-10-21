@@ -442,12 +442,6 @@ async function update(req, res) {
         updates.push(`time_tracking_start_date = $${paramIndex++}`);
         values.push(time_tracking_start_date);
       }
-      // Zeitmodell entfernen (z. B. beim Deaktivieren der Zeiterfassung) gibt es nicht mehr – der
-      // Zeitmodell-Verlauf bleibt stehen, vergangene Tage rechnen weiter mit ihm
-      if (time_model_id) {
-        updates.push(`time_model_id = $${paramIndex++}`);
-        values.push(time_model_id);
-      }
       if (pin_code !== undefined) {
         if (pin_code) {
           if (!/^\d{4}$/.test(pin_code)) {

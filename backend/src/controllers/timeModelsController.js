@@ -211,12 +211,11 @@ const remove = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Prüfen ob Benutzer zugewiesen sind – auch im Zeitmodell-Verlauf (vergangene Tage rechnen damit)
+    // Prüfen ob Benutzer zugewiesen sind – auch vergangene Einträge im Verlauf (vergangene Tage rechnen damit)
     const usersCheck = await pool.query(`
       SELECT u.first_name || ' ' || u.last_name AS name
       FROM users u
-      WHERE u.time_model_id = $1
-         OR EXISTS (SELECT 1 FROM user_time_models utm WHERE utm.user_id = u.id AND utm.time_model_id = $1)
+      WHERE EXISTS (SELECT 1 FROM user_time_models utm WHERE utm.user_id = u.id AND utm.time_model_id = $1)
       ORDER BY u.last_name, u.first_name
     `, [id]);
 

@@ -3,7 +3,7 @@
  *
  * Ablauf: Verlauf laden → Änderung im Speicher anwenden (prüfen) → Auswirkung berechnen
  * (Tage, an denen sich das gültige Modell ändert; Urlaube, deren Tage sich ändern) →
- * bei „Übernehmen“: Verlauf + users.time_model_id + Audit-Log in einer Transaktion, danach
+ * bei „Übernehmen“: Verlauf + Audit-Log in einer Transaktion, danach
  * Tageswerte, Urlaubstage und Monatssalden neu rechnen.
  *
  * Tage: vorhandene Tageswerte werden neu gerechnet (manuelles Soll bleibt), Tage, die ein neuer
@@ -286,7 +286,6 @@ async function previewChange(userId, change) {
 async function applyChange(userId, change, meta = {}) {
   const plan = await planChange(userId, change);
   const impact = await computeImpact(userId, plan);
-  const today = todayBerlin();
 
   const client = await pool.connect();
   try {
@@ -305,10 +304,6 @@ async function applyChange(userId, change, meta = {}) {
     } else {
       await client.query('DELETE FROM user_time_models WHERE id = $1', [plan.oldEntry.id]);
     }
-
-    // users.time_model_id bis Schritt 4 mitführen: Modell, das heute gilt
-    await client.query('UPDATE users SET time_model_id = $2, updated_at = NOW() WHERE id = $1',
-      [userId, makeResolver(plan.after)(today)?.id ?? null]);
 
     await client.query(`
       INSERT INTO audit_logs (user_id, entity_type, entity_id, action, changes, reason, ip_address)

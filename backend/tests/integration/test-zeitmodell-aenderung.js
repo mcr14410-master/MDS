@@ -50,9 +50,9 @@ async function createUser(startDate, timeModelId = VOLLZEIT) {
   userCount++;
   const r = await pool.query(`
     INSERT INTO users (username, email, password_hash, first_name, last_name, is_active,
-                       vacation_tracking_enabled, time_tracking_enabled, time_model_id, time_tracking_start_date)
-    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4, $5) RETURNING id`,
-    [`test_aend_${userCount}`, `test_aend_${userCount}@example.invalid`, `Änderung ${userCount}`, timeModelId, startDate]);
+                       vacation_tracking_enabled, time_tracking_enabled, time_tracking_start_date)
+    VALUES ($1, $2, 'x', 'Test', $3, true, true, true, $4) RETURNING id`,
+    [`test_aend_${userCount}`, `test_aend_${userCount}@example.invalid`, `Änderung ${userCount}`, startDate]);
   const id = r.rows[0].id;
   await pool.query('INSERT INTO user_time_models (user_id, time_model_id, valid_from) VALUES ($1, $2, $3)',
     [id, timeModelId, startDate]);
@@ -152,13 +152,11 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     assert.deepEqual(preview.summary.past_months.includes('2026-09'), true);
   });
 
-  await test('Übernehmen: Verlauf, users.time_model_id, Audit-Log', async () => {
+  await test('Übernehmen: Verlauf, Audit-Log', async () => {
     const result = await applyChange(u1, { action: 'create', timeModelId: vierTage, validFrom: '2026-09-01' },
       { actorId: adminId, reason: 'Test' });
     assert.equal(result.summary.changed_days, preview.summary.changed_days);
     assert.deepEqual((await verlauf(u1)).map(e => [e.time_model_id, e.ab]), [[VOLLZEIT, '2026-08-03'], [vierTage, '2026-09-01']]);
-    const u = (await pool.query('SELECT time_model_id FROM users WHERE id = $1', [u1])).rows[0];
-    assert.equal(u.time_model_id, vierTage);
     const audit = (await pool.query(
       "SELECT user_id, action, reason, changes FROM audit_logs WHERE entity_type = 'user_time_model' AND entity_id = $1", [u1])).rows;
     assert.equal(audit.length, 1);
@@ -241,8 +239,6 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     const v = (await pool.query('SELECT calculated_days FROM vacations WHERE id = $1', [urlaub.id])).rows[0];
     assert.equal(parseFloat(v.calculated_days), 5);
     assert.equal((await day(u1, '2026-09-25')).status, 'Urlaub');
-    const u = (await pool.query('SELECT time_model_id FROM users WHERE id = $1', [u1])).rows[0];
-    assert.equal(u.time_model_id, VOLLZEIT);
     await assertBalanceConsistent(u1, 2026, 9);
     const actions = (await pool.query(
       "SELECT action FROM audit_logs WHERE entity_type = 'user_time_model' AND entity_id = $1 ORDER BY id", [u1])).rows;
@@ -317,11 +313,8 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     assert.equal(r.summary.vacations, 1);
     const v = (await pool.query('SELECT calculated_days FROM vacations WHERE id = $1', [urlaub3.id])).rows[0];
     assert.ok(parseFloat(v.calculated_days) < parseFloat(urlaub3.calculated_days));
-    assert.equal((await pool.query('SELECT time_model_id FROM users WHERE id = $1', [u3])).rows[0].time_model_id, VOLLZEIT);
   });
   await test('Anzeige heute gültig: Benutzer-API, Zeitmodell-Liste, Verlauf mit is_future', async () => {
-    // users.time_model_id absichtlich falsch – die Anzeige muss aus dem Verlauf kommen
-    await pool.query('UPDATE users SET time_model_id = $2 WHERE id = $1', [u3, vierTage]);
     const res = fakeRes();
     await usersController.getById({ params: { id: String(u3) } }, res);
     assert.deepEqual([res.body.user?.time_model_id ?? res.body.time_model_id, res.body.user?.time_model_name ?? res.body.time_model_name],
@@ -340,7 +333,6 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
       INSERT INTO time_models (name, monday_minutes) VALUES ('Test nur Verlauf', 480) RETURNING id`)).rows[0].id;
     const u4 = await createUser('2026-08-03', nurVerlauf);
     await applyChange(u4, { action: 'create', timeModelId: VOLLZEIT, validFrom: '2026-09-01' }, { actorId: adminId });
-    assert.equal((await pool.query('SELECT time_model_id FROM users WHERE id = $1', [u4])).rows[0].time_model_id, VOLLZEIT);
     const res = fakeRes();
     await timeModelsController.remove({ params: { id: String(nurVerlauf) } }, res);
     assert.equal(res.statusCode, 400);
@@ -357,9 +349,9 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
     const res = fakeRes();
     await usersController.update({ params: { id: String(u5) }, body: { time_tracking_enabled: false, time_model_id: null }, user: { id: adminId } }, res);
     assert.ok(res.statusCode < 300, JSON.stringify(res.body));
-    const u = (await pool.query('SELECT time_tracking_enabled, time_model_id FROM users WHERE id = $1', [u5])).rows[0];
-    assert.deepEqual([u.time_tracking_enabled, u.time_model_id], [false, VOLLZEIT]);
-    assert.equal((await verlauf(u5)).length, 1);
+    const u = (await pool.query('SELECT time_tracking_enabled FROM users WHERE id = $1', [u5])).rows[0];
+    assert.equal(u.time_tracking_enabled, false);
+    assert.deepEqual((await verlauf(u5)).map(e => e.time_model_id), [VOLLZEIT]);
   });
 
   console.log(`\n${passed} Tests bestanden`);
