@@ -25,9 +25,9 @@
 - [x] **Custom-Fields:** „Option hinzufügen“ bei Dropdown-Feldern ließ das Frontend abstürzen (fehlender Icon-Import, auch Werkzeug-Kategorien; gleicher Fehler im Upload-Dialog Verbrauchsmaterial)
 - [x] **Urlaub:** Wochentage mit Soll-Zeit 0 wurden als Urlaubstag abgezogen (#92)
 - [x] **`scripts/deploy.sh`:** verschluckte Migrationsfehler – jetzt Migration vor dem Umschalten, Abbruch bei Fehler, strenger Health-Check
-- [ ] **`deploy.sh`: DB-Backup direkt vor der Migration** (`scripts/backup.sh`) als Rückfall bei missglückter Migration
-- [ ] **`deploy.sh`: Frontend-Build** schreibt direkt nach `frontend/dist` (Vite leert den Ordner vorher) – bricht der Build ab, ist das Frontend weg. Besser in temporären Ordner bauen und erst bei Erfolg tauschen
-- [ ] **`deploy.sh`: Autostash** – `git stash pop || true` ignoriert Konflikte stillschweigend
+- [x] **`deploy.sh`: DB-Backup direkt vor der Migration** (`scripts/backup.sh`) als Rückfall bei missglückter Migration
+- [x] **`deploy.sh`: Frontend-Build** schreibt direkt nach `frontend/dist` (Vite leert den Ordner vorher) – bricht der Build ab, ist das Frontend weg. Besser in temporären Ordner bauen und erst bei Erfolg tauschen – jetzt `.cache/frontend-dist` + `rsync` (Bind-Mount von Caddy bleibt gültig)
+- [x] **`deploy.sh`: Autostash** – `git stash pop || true` ignoriert Konflikte stillschweigend – bricht jetzt vor dem Bauen mit Hinweis ab
 - [ ] **`backend/.migrationrc.json`** zeigt auf `./src/migrations` (Migrationen liegen in `backend/migrations`), wird von node-pg-migrate v6 nicht gelesen → entfernen oder korrigieren
 - [x] **Lockfiles:** jetzt im Repo, Backend-Image und Frontend-Build mit `npm ci`
 - [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`

@@ -18,6 +18,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Removed
 - `users.time_model_id` (Zeitmodell-Verlauf, Schritt 4): Spalte per Migration entfernt, Zeitmodell kommt nur noch aus `user_time_models`. `PUT /api/users/:id` nimmt `time_model_id` weiter an (erstes Aktivieren → Verlaufseintrag), Löschen eines Zeitmodells prüft nur noch den Verlauf. Vor dem Release in Produktion geprüft, dass kein Modell nur in der Spalte steht
 
+### Fixed
+- `scripts/deploy.sh`: DB-Backup (`scripts/backup.sh`) direkt vor der Migration – schlägt es fehl, bricht der Deploy ab (bei nicht laufender DB, z. B. Erstinstallation, mit Hinweis übersprungen)
+- `scripts/deploy.sh`: Frontend wird nach `.cache/frontend-dist` gebaut und erst nach erfolgreichem Build per `rsync` nach `frontend/dist` übernommen (Inhalt statt Ordner tauschen – Caddy hat ihn als Bind-Mount). Bisher war das Frontend während des Builds leer bzw. halb neu und nach einem Fehler weg; jetzt gehen Frontend und Backend erst kurz vor `up -d` live. Prüft vorab, ob `rsync` installiert ist
+- `scripts/deploy.sh`: Autostash bricht bei Fehlern ab statt sie zu ignorieren – `git stash push`, `git pull` und Konflikte bei `git stash pop` beenden den Deploy vor dem Bauen mit Hinweis (Änderungen bleiben im Stash); die gestashten Dateien werden aufgelistet
+
 ---
 
 ## [2.12.0] - 2026-10-17 - Kalender-Tooltip, Handy-Ansicht, Audit-Log
