@@ -20,6 +20,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 - `scripts/restore.sh`: aus jedem Ordner aufrufbar (wechselt ins Repo, Backup-Pfad vorher absolut); prüft die Backup-Datei (gzip + Endmarke) bevor die Datenbank gelöscht wird; Import mit `pipefail` und `ON_ERROR_STOP` – ein Fehler beim Einspielen meldete bisher trotzdem „✅ Restore abgeschlossen“
+- `Sidebar.jsx`: ESLint-Befunde behoben (ungenutzter State `userMenuOpen`, fehlende Effekt-Abhängigkeit `fetchEscalations`); ESLint-Regel `react/jsx-uses-vars` aktiv – als Prop umbenannte Komponenten wie `icon: Icon` galten als unbenutzt
 - `backend/.migrationrc.json` entfernt – wurde von node-pg-migrate 6 nicht gelesen und zeigte auf das nicht existierende `./src/migrations`
 - `scripts/deploy.sh`: DB-Backup (`scripts/backup.sh`) direkt vor der Migration – schlägt es fehl, bricht der Deploy ab (bei nicht laufender DB, z. B. Erstinstallation, mit Hinweis übersprungen)
 - `scripts/deploy.sh`: Frontend wird nach `.cache/frontend-dist` gebaut und erst nach erfolgreichem Build per `rsync` nach `frontend/dist` übernommen (Inhalt statt Ordner tauschen – Caddy hat ihn als Bind-Mount). Bisher war das Frontend während des Builds leer bzw. halb neu und nach einem Fehler weg; jetzt gehen Frontend und Backend erst kurz vor `up -d` live. Prüft vorab, ob `rsync` installiert ist

@@ -30,9 +30,9 @@
 - [x] **`deploy.sh`: Autostash** – `git stash pop || true` ignoriert Konflikte stillschweigend – bricht jetzt vor dem Bauen mit Hinweis ab
 - [x] **`backend/.migrationrc.json`** zeigt auf `./src/migrations` (Migrationen liegen in `backend/migrations`), wird von node-pg-migrate v6 nicht gelesen → entfernt
 - [x] **Lockfiles:** jetzt im Repo, Backend-Image und Frontend-Build mit `npm ci`
-- [ ] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx`
+- [x] **ESLint:** 4 Fehler, 1 Warnung in `Sidebar.jsx` – ungenutzter State entfernt, `fetchEscalations` in die Effekt-Abhängigkeiten, `react/jsx-uses-vars` aktiv (`icon: Icon` galt als unbenutzt)
 - [x] **ESLint-Regel `react/jsx-no-undef`** (`eslint-plugin-react`) aktiv
-- [ ] **ESLint aufräumen:** 270 Fehler / 118 Warnungen im Frontend; `varsIgnorePattern: '^[A-Z_]'` durch `react/jsx-uses-vars` ersetzen
+- [ ] **ESLint aufräumen:** 138 Fehler / 116 Warnungen im Frontend (Stand 21.10.2026); `react/jsx-uses-vars` ist aktiv – `varsIgnorePattern: '^[A-Z_]'` noch entfernen
 - [x] **Abhängigkeiten, Stufe 1:** `npm audit fix` ohne Breaking Changes (Backend 16 → 5 Lücken, kritisch behoben; Frontend 29 → 9)
 - [ ] **Abhängigkeiten, Stufe 2 (Major, einzeln prüfen):** `multer` 2.x (alle Uploads!), `exceljs`, `chokidar` (prüfen ob noch genutzt), `uuid`, `online-3d-viewer`; Tailwind 4 **nicht** (großer Umbau)
 - [x] **Urlaub über den Jahreswechsel:** Tage werden je Kalenderjahr aufgeteilt (`vacations.days_by_year`), Saldo, Übertrag, Listen und PDFs rechnen mit dem Jahresanteil (Branch `fix/urlaub-jahreswechsel`)
