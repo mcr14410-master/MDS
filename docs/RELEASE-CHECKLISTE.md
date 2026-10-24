@@ -46,12 +46,13 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 - [ ] Caddy nach dem Deploy: `docker compose ps caddy` läuft, `docker inspect $(docker compose ps -q caddy) --format '{{range .Mounts}}{{.Source}} {{end}}'` zeigt `…/mds/caddy` statt `…/mds/Caddyfile`
 - [ ] Header: `curl -sI http://localhost:81/parts/12` → `Cache-Control: no-store`; `curl -sI http://localhost:81/assets/gibtsnicht.js` → `404` mit `Cache-Control: no-store`
-
 - [ ] Versionshinweis: vor dem Deploy einen Tab mit 2.13.0 offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
 - [ ] Deploy-Log: `deploy.sh` meldet das Backup vor der Migration und übernimmt das Frontend per `rsync`
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
+- [ ] **Netzlaufwerk-Backup einrichten** (nach dem Deploy, `DEPLOYMENT.md` → „Backup aufs Netzlaufwerk“, Schritte 1–6): `restic` installieren, fstab-Eintrag, Passwort erzeugen **und an den zweiten Ort**, `restic init`, erster Lauf von Hand, Crontab. Bis dahin meldet der neue Job „Netzlaufwerk-Backup“ rot „Noch kein Netzlaufwerk-Backup gelaufen“
+- [ ] Am Tag danach: Administration → Automatische Aufgaben → „Netzlaufwerk-Backup“ grün mit Snapshot von ca. 02:45; einmal `restic snapshots` und eine Probe-Wiederherstellung nach `/tmp/mds-restore` (Dump vorhanden, Uploads vollständig)
 
 ---
 
