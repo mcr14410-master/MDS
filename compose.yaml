@@ -65,7 +65,8 @@ services:
     ports:
       - "81:80"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Ordner statt Einzeldatei: Ein Einzeldatei-Mount hängt am Inode, nach git pull sähe Caddy weiter die alte Datei
+      - ./caddy:/etc/caddy:ro
       - ./frontend/dist:/srv/frontend:ro
     depends_on:
       - backend

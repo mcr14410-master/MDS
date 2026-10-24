@@ -148,7 +148,7 @@ MDS/
 │                            backup.sh, restore.sh)
 │
 ├── compose.yaml             Docker-Compose (Backend, Frontend, Postgres, Caddy)
-├── Caddyfile                Reverse Proxy / TLS
+├── caddy/Caddyfile          Reverse Proxy / TLS
 ├── .env.production.example  Env-Template
 ├── ROADMAP.md               Wochen-Meilensteine
 ├── CHANGELOG.md             Release-Notes

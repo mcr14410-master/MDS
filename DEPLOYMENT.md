@@ -245,7 +245,7 @@ docker compose restart caddy
 ~/mds/                    # Git Repository
 ├── .env                  # Lokale Konfiguration (nicht im Git!)
 ├── compose.yaml          # Docker Compose
-├── Caddyfile             # Reverse Proxy
+├── caddy/Caddyfile       # Reverse Proxy (Ordner eingebunden, damit `caddy reload` Änderungen sieht)
 ├── scripts/              # Deploy & Maintenance Scripts
 ├── backend/              # Node.js Backend
 └── frontend/             # React Frontend
