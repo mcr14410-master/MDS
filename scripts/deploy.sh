@@ -62,6 +62,17 @@ sudo chown -R 1001:1001 /srv/mds/uploads 2>/dev/null || true
 # Compose-Befehle aus dem Repo-Root (dort liegt die .env mit DB_PASSWORD/JWT_SECRET)
 cd "$REPO_ROOT"
 
+# --- Caddyfile prüfen, bevor etwas umgestellt wird ---
+# Einmal-Container mit dem Ordner-Mount aus compose.yaml – prüft also die frisch gepullte Datei.
+# Ein ungültiges Caddyfile würde Caddy beim Neustart/Neuanlegen des Containers lahmlegen.
+echo "[deploy] 🔎 Caddyfile prüfen..."
+if ! docker compose -f "$REPO_ROOT/compose.yaml" run --rm --no-deps -T caddy \
+    caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+  echo "[deploy] ❌ caddy/Caddyfile ist ungültig – Deploy abgebrochen, die bisherige Version läuft unverändert weiter."
+  echo "[deploy]    Fehlermeldung oben prüfen, Caddyfile korrigieren und erneut deployen."
+  exit 1
+fi
+
 # --- DB-Backup vor der Migration (Rückfall, falls eine Migration Daten falsch umbaut) ---
 if [ -n "$(docker compose -f "$REPO_ROOT/compose.yaml" ps -q --status running db 2>/dev/null || true)" ]; then
   echo "[deploy] 💾 DB-Backup vor der Migration..."
@@ -133,12 +144,12 @@ rsync -a --delete-delay --delay-updates "$BUILD_OUT/" "$FRONTEND_DIR/dist/"
 echo "[deploy] ▶️  Services starten..."
 docker compose -f "$REPO_ROOT/compose.yaml" up -d
 
-# --- Caddy reload (keine Downtime) ---
+# --- Caddy reload (keine Downtime; Caddyfile oben schon geprüft) ---
+# Neustart nur als Rückfall, falls der Reload selbst scheitert
 CID="$(docker compose -f "$REPO_ROOT/compose.yaml" ps -q caddy 2>/dev/null || true)"
 if [ -n "$CID" ]; then
   echo "[deploy] 🔄 Caddy reload..."
-  docker exec -i "$CID" caddy validate --config /etc/caddy/Caddyfile 2>/dev/null \
-    && docker exec -i "$CID" caddy reload --config /etc/caddy/Caddyfile 2>/dev/null \
+  docker exec -i "$CID" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
     || docker compose -f "$REPO_ROOT/compose.yaml" restart caddy
 fi
 
