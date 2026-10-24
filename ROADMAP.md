@@ -71,7 +71,7 @@
 - [x] **Urlaubsberechnung beachtet „ab“-Datum** (mit Zeitmodell-Verlauf Schritt 2): vor `time_tracking_start_date` (Feld „ab“ neben dem Zeitmodell) ohne Zeitmodell rechnen (Mo–Fr) – sonst verfälscht jede Neuberechnung Urlaube aus der Zeit vor dem Zeitmodell (Fall MA 13, Release 2.8.0). Kleiner Zwischenschritt bis zur Workforce-Konsolidierung (Zeitmodell-Verlauf)
 - [x] **Testmaschinen endgültig löschen (Pi):** 13.10.2026 Maschinen 1–9 (alle ohne Abhängigkeiten) nach Backup über die API gelöscht (`hard_delete`, Audit-Log auf admin); übrig 31–38. Beim Löschen werden Wartungspläne/-aufgaben (inkl. Historie), Werkzeugnummernlisten, Betriebsstunden und Dokumente per CASCADE mitgelöscht – künftig vorher prüfen
 - [x] **`scripts/backup.sh`:** nächtliche Backups waren leer (Cron startete ohne Repo-Ordner, kein `pipefail`) – jetzt `cd` ins Repo, `pipefail`, Prüfung auf Größe + Endmarke, Aufräumen nur nach Erfolg; Backup-Monitor im MDS prüft inhaltlich und meldet Fehler rot
-- [ ] **Backup-Konzept außerhalb des Pi** (DB, Backups und Uploads liegen auf derselben SSD) – Ziel: Windows-Freigabe „MDS Backup“ auf dem Firmen-Server (SMB, im Firmen-Backup enthalten, keine Cloud-Synchronisation, ~330 GB frei, geteilt). Ebene 1+2 per restic (Branch `feat/backup-netzlaufwerk`), auf dem Pi noch einzurichten (Release-Checkliste). Stand Pi 08.10.2026: OS auf SD-Karte (58 GB, 20 GB belegt), Daten auf SSD `/srv` (112 GB, 1 % belegt), Uploads 67 MB, DB-Backup ~0,7 MB/Tag
+- [ ] **Backup-Konzept außerhalb des Pi** (DB, Backups und Uploads liegen auf derselben SSD) – Ziel: Windows-Freigabe „MDS Backup“ auf dem Firmen-Server (SMB, im Firmen-Backup enthalten, keine Cloud-Synchronisation, ~330 GB frei, geteilt). Ebene 1+2 per restic (#194/#195), **in Betrieb seit 24.10.2026** (erster Snapshot, Monitor grün). Stand Pi 08.10.2026: OS auf SD-Karte (58 GB, 20 GB belegt), Daten auf SSD `/srv` (112 GB, 1 % belegt), Uploads 67 MB, DB-Backup ~0,7 MB/Tag
   - [x] **Ebene 1 – Datenbank:** täglichen `pg_dump` zusätzlich aufs Netzlaufwerk, dort längere Aufbewahrung (30 Tage + 12 Monate, `scripts/backup-offsite.sh`)
   - [x] **Ebene 2 – Dateien:** `/srv/mds/uploads` + `.env` vom Pi (Secrets, nicht im Repo) täglich mit Versionsständen (restic statt `rsync`, im selben Lauf)
   - [ ] **Ebene 3 – Pi-System:** Image der SD-Karte monatlich und vor größeren Änderungen (Datei aufs Netzlaufwerk oder bootfähiger Klon auf Ersatz-SD/USB)
@@ -558,19 +558,19 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: 24.10.2026 – v2.13.0 läuft auf dem Pi, **v2.14.0 vorbereitet, Deploy offen** (Caddy-Ordner-Mount #193, Netzlaufwerk-Backup #194/#195), `[Unreleased]` leer
+Stand: [Session 24.10.2026](docs/sessions/SESSION-2026-10-24-caddy-backup-2.14.md) – **v2.14.0 läuft auf dem Pi** (Caddy-Ordner-Mount, Netzlaufwerk-Backup eingerichtet), `[Unreleased]` leer
 
-0. **Deploy 2.14.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (Caddy-Container wird einmal neu angelegt, Versionshinweis, neue `deploy.sh` greift erst ab dem Deploy danach), danach Netzlaufwerk-Backup Schritt 5 + 6 (erster Lauf, Crontab)
+0. **Netzlaufwerk-Backup am 25.10. prüfen:** Snapshot von ca. 02:45 (Crontab greift, Nacht der Zeitumstellung), erstes `restic check`, Probe-Wiederherstellung – Prüfpunkte in `docs/RELEASE-CHECKLISTE.md`
 1. **Offene Prüfpunkte** aus `docs/RELEASE-CHECKLISTE.md`: Mitarbeiter-Einstellungen und Sidebar (2.13.0), Test am Handy (2.12.0)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 4. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
 5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-6. **Backup-Konzept:** Ebene 1+2 fertig (#194), auf dem Pi Schritte 1–4 erledigt (24.10.2026, fstab mit `nosharesock`), nach dem Deploy erster Lauf + Crontab (Release-Checkliste); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
+6. **Backup-Konzept:** Ebene 1+2 in Betrieb (24.10.2026); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
 7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
 8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
 9. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-24
+**Letzte Aktualisierung:** 2026-10-25
