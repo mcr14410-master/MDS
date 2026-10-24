@@ -558,10 +558,10 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 21.10.2026](docs/sessions/SESSION-2026-10-21-release-2.13.md) – **v2.13.0 läuft auf dem Pi** (Caddy neu gestartet, Deep-Links `no-store`), `[Unreleased]` leer
+Stand: 24.10.2026 – v2.13.0 läuft auf dem Pi, **v2.14.0 vorbereitet, Deploy offen** (Caddy-Ordner-Mount #193, Netzlaufwerk-Backup #194/#195), `[Unreleased]` leer
 
-0. **Offene Prüfpunkte** aus `docs/RELEASE-CHECKLISTE.md`: Mitarbeiter-Einstellungen und Sidebar (2.13.0), Test am Handy (2.12.0); Versionshinweis und neue `deploy.sh` beim nächsten Release
-1. **`deploy.sh` und `Caddyfile`:** erledigt (Branch `fix/caddy-ordner-mount`), Prüfpunkte beim nächsten Deploy in `docs/RELEASE-CHECKLISTE.md`
+0. **Deploy 2.14.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (Caddy-Container wird einmal neu angelegt, Versionshinweis, neue `deploy.sh` greift erst ab dem Deploy danach), danach Netzlaufwerk-Backup Schritt 5 + 6 (erster Lauf, Crontab)
+1. **Offene Prüfpunkte** aus `docs/RELEASE-CHECKLISTE.md`: Mitarbeiter-Einstellungen und Sidebar (2.13.0), Test am Handy (2.12.0)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 4. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
@@ -573,4 +573,4 @@ Stand: [Session 21.10.2026](docs/sessions/SESSION-2026-10-21-release-2.13.md) �
 
 ---
 
-**Letzte Aktualisierung:** 2026-10-17
+**Letzte Aktualisierung:** 2026-10-24

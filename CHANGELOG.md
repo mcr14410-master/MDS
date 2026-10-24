@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.14.0] - 2026-10-24 - Backup aufs Netzlaufwerk
+
+### Für Anwender
+- Die Daten des MDS – Datenbank sowie hochgeladene Fotos und Dokumente – werden jetzt jede Nacht zusätzlich auf den Firmen-Server gesichert. Fällt der MDS-Rechner aus, lassen sie sich von dort wiederherstellen, auch Stände von bis zu einem Jahr zurück.
+- Administratoren sehen unter „Automatische Aufgaben“, ob die nächtliche Sicherung geklappt hat.
+- Für die tägliche Arbeit ändert sich nichts.
+
 ### Added
 - Backup aufs Netzlaufwerk: `scripts/backup-offsite.sh` sichert nachts (root-Crontab 02:45, nach `backup.sh`) den neuesten geprüften DB-Dump, `/srv/mds/uploads` und die `.env` per restic auf eine Windows-Freigabe (fstab-Eintrag `noauto`, nur während der Sicherung eingebunden). Aufbewahrung 30 Tage täglich + 12 Monate, sonntags `restic check` mit 10 % der Daten. Prüft vorher Dump (Größe, Endmarke, höchstens 26 h alt), Passwortdatei und Repository; schreibt nach jedem Lauf `offsite-status.json`
 - Cron-Job „Netzlaufwerk-Backup“ (`backup_offsite_monitor`, täglich 03:05): liest die Statusdatei und meldet rot, wenn der letzte Lauf fehlschlug, älter als 26 h ist oder noch nie lief
