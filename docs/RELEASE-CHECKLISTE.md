@@ -51,7 +51,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
-- [ ] **Netzlaufwerk-Backup einrichten** (nach dem Deploy, `DEPLOYMENT.md` → „Backup aufs Netzlaufwerk“, Schritte 1–6): `restic` installieren, fstab-Eintrag, Passwort erzeugen **und an den zweiten Ort**, `restic init`, erster Lauf von Hand, Crontab. Bis dahin meldet der neue Job „Netzlaufwerk-Backup“ rot „Noch kein Netzlaufwerk-Backup gelaufen“
+- [ ] **Netzlaufwerk-Backup einrichten** (nach dem Deploy, `DEPLOYMENT.md` → „Backup aufs Netzlaufwerk“): Schritte 1–4 am 24.10.2026 erledigt (restic, fstab mit `nosharesock`, Passwort, `restic init`) – nach dem Deploy noch Schritt 5 (erster Lauf von Hand) und 6 (Crontab). Bis dahin meldet der neue Job „Netzlaufwerk-Backup“ rot „Noch kein Netzlaufwerk-Backup gelaufen“
 - [ ] Am Tag danach: Administration → Automatische Aufgaben → „Netzlaufwerk-Backup“ grün mit Snapshot von ca. 02:45; einmal `restic snapshots` und eine Probe-Wiederherstellung nach `/tmp/mds-restore` (Dump vorhanden, Uploads vollständig)
 
 ---

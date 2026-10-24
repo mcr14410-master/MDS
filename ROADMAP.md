@@ -566,7 +566,7 @@ Stand: [Session 21.10.2026](docs/sessions/SESSION-2026-10-21-release-2.13.md) �
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 4. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
 5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-6. **Backup-Konzept:** Ebene 1+2 fertig (Branch `feat/backup-netzlaufwerk`), auf dem Pi einrichten (Release-Checkliste); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
+6. **Backup-Konzept:** Ebene 1+2 fertig (#194), auf dem Pi Schritte 1–4 erledigt (24.10.2026, fstab mit `nosharesock`), nach dem Deploy erster Lauf + Crontab (Release-Checkliste); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
 7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
 8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
 9. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen

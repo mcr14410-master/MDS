@@ -18,7 +18,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Added
 - Backup aufs Netzlaufwerk: `scripts/backup-offsite.sh` sichert nachts (root-Crontab 02:45, nach `backup.sh`) den neuesten geprüften DB-Dump, `/srv/mds/uploads` und die `.env` per restic auf eine Windows-Freigabe (fstab-Eintrag `noauto`, nur während der Sicherung eingebunden). Aufbewahrung 30 Tage täglich + 12 Monate, sonntags `restic check` mit 10 % der Daten. Prüft vorher Dump (Größe, Endmarke, höchstens 26 h alt), Passwortdatei und Repository; schreibt nach jedem Lauf `offsite-status.json`
 - Cron-Job „Netzlaufwerk-Backup“ (`backup_offsite_monitor`, täglich 03:05): liest die Statusdatei und meldet rot, wenn der letzte Lauf fehlschlug, älter als 26 h ist oder noch nie lief
-- `DEPLOYMENT.md`: Einrichtung und Wiederherstellung des Netzlaufwerk-Backups
+- `DEPLOYMENT.md`: Einrichtung und Wiederherstellung des Netzlaufwerk-Backups; fstab-Vorlage mit `nosharesock` (sonst zufällig `mount error(13)`, wenn schon eine andere Freigabe desselben Servers mit anderem Benutzer eingebunden ist)
 
 ### Changed
 - `Caddyfile` liegt jetzt in `caddy/Caddyfile`; `compose.yaml` bindet den Ordner `./caddy` statt der Einzeldatei ein
