@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const { autoCloseOpenDays, generateAbsenceEntries } = require('../controllers/timeEntriesController');
 const { generateDueTasks } = require('../controllers/maintenanceTasksController');
 const { runGarbageCollection } = require('./fsGarbageCollector');
-const { checkBackupStatus } = require('./backupMonitor');
+const { checkBackupStatus, checkOffsiteStatus } = require('./backupMonitor');
 
 // ============================================
 // Job Registry
@@ -238,6 +238,13 @@ registerJob(
   '0 3 * * *',
   async () => checkBackupStatus(),
   'Backup-Status prüfen – Größe, Vollständigkeit, Alter (täglich 03:00)'
+);
+
+registerJob(
+  'backup_offsite_monitor',
+  '5 3 * * *',
+  async () => checkOffsiteStatus(),
+  'Netzlaufwerk-Backup prüfen – letzter Lauf erfolgreich und höchstens 26 h alt (täglich 03:05)'
 );
 
 registerJob(
