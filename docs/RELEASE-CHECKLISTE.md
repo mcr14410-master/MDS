@@ -19,8 +19,8 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
    `.cache/frontend-dist`. Diese Fassung kam mit 2.13.0 auf den Pi und greift ab dem nächsten Deploy
    (ein laufender Deploy nutzt immer noch das Skript von vorher) – ab dann ist das manuelle Backup oben
    optional (doppelt schadet nicht).
-   Ändert sich das `Caddyfile`, danach `docker compose restart caddy` – `deploy.sh` lädt nur neu und sieht
-   die geänderte Datei nicht (Fix-Liste in der ROADMAP).
+   `caddy/Caddyfile` prüft `deploy.sh` vorab (ungültig → Abbruch, nichts geändert) und lädt es am Ende ohne
+   Neustart neu.
 3. Auf `✅ Deploy abgeschlossen!` und die richtige Version im Health-Check achten
 4. Geöffnete Browser-Tabs / Web-App einmal neu laden (`Strg+F5`), dann kurz prüfen: Login, „Was ist neu“, die geänderten Funktionen
 
@@ -29,6 +29,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 |---|---|
 | `❌ Migration fehlgeschlagen` | Alte Version läuft weiter. Fehlermeldung darüber lesen |
 | `npm ci` bricht ab | Lockfile passt nicht zu `package.json` → nicht mit `npm install` umgehen, Ursache klären |
+| `❌ caddy/Caddyfile ist ungültig` | Noch nichts geändert, alte Version läuft weiter. Zeile steht in der Meldung darüber |
 | `❌ Backup fehlgeschlagen` | Noch nichts geändert, alte Version läuft weiter. Meldung von `backup.sh` darüber lesen |
 | `❌ Lokale Änderungen passen nicht zum neuen Stand` / `❌ git stash fehlgeschlagen` | Alte Version läuft weiter. `git status` zeigt die Dateien, Änderungen liegen im Stash (`git stash list`) |
 | `❌ Frontend-Build fehlgeschlagen` | Bisheriges Frontend bleibt, Migrationen sind aber schon gelaufen (altes Backend läuft weiter). Mit der alten `deploy.sh` (siehe oben) kann `frontend/dist` leer sein → vorher `cp -a frontend/dist ~/mds-dist-backup` und im Notfall `cp -a ~/mds-dist-backup/. frontend/dist/` |
@@ -41,7 +42,10 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen. Erster Deploy mit der neuen `deploy.sh` (Backup vor der Migration, Frontend-Build in `.cache/frontend-dist`).
+**Nächstes Release** – Erster Deploy mit der neuen `deploy.sh` (Backup vor der Migration, Frontend-Build in `.cache/frontend-dist`). `Caddyfile` liegt jetzt in `caddy/` und wird als Ordner eingebunden: `up -d` legt den Caddy-Container dabei einmal neu an (kurz nicht erreichbar), kein manueller Neustart nötig – auch nicht mit der alten `deploy.sh`, die bei diesem Deploy noch läuft.
+
+- [ ] Caddy nach dem Deploy: `docker compose ps caddy` läuft, `docker inspect $(docker compose ps -q caddy) --format '{{range .Mounts}}{{.Source}} {{end}}'` zeigt `…/mds/caddy` statt `…/mds/Caddyfile`
+- [ ] Header: `curl -sI http://localhost:81/parts/12` → `Cache-Control: no-store`; `curl -sI http://localhost:81/assets/gibtsnicht.js` → `404` mit `Cache-Control: no-store`
 
 - [ ] Versionshinweis: vor dem Deploy einen Tab mit 2.13.0 offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
 - [ ] Deploy-Log: `deploy.sh` meldet das Backup vor der Migration und übernimmt das Frontend per `rsync`
