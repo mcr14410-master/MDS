@@ -113,7 +113,7 @@ MDS/
 │   ├── archiv/         Dokumentation abgeschlossener Features
 │   └── *.md            Cron-System, pgAdmin, PWA, Toleranzarten, Farben
 ├── compose.yaml        Docker Compose
-├── Caddyfile           Reverse Proxy
+├── caddy/Caddyfile     Reverse Proxy
 ├── CHANGELOG.md        Versionen und Änderungen
 ├── ROADMAP.md          Planung
 └── CLAUDE.md           Arbeitsweise und Konventionen für die KI-gestützte Entwicklung

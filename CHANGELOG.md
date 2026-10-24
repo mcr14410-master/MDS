@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Changed
+- `Caddyfile` liegt jetzt in `caddy/Caddyfile`; `compose.yaml` bindet den Ordner `./caddy` statt der Einzeldatei ein
+
+### Fixed
+- `scripts/deploy.sh`: Änderungen am `Caddyfile` kamen ohne Neustart nicht an – ein Einzeldatei-Mount hängt am Inode, nach `git pull` sah Caddy weiter die alte Datei und `caddy reload` lud die alte Konfiguration. Mit dem Ordner-Mount reicht jetzt der Reload (ohne Unterbrechung)
+- `scripts/deploy.sh`: prüft das `Caddyfile` direkt nach dem `git pull` in einem Einmal-Container und bricht bei Fehlern ab, bevor etwas umgestellt wird. Bisher startete ein fehlgeschlagenes `caddy validate` Caddy neu – mit ungültiger Konfiguration wäre die Seite danach weg gewesen
+- `Caddyfile`: fehlende Dateien unter `/assets/` liefern `404` statt `index.html` mit Status 200 und Asset-Cache-Header (ein Jahr, `immutable`); Fehlerantworten bekommen `Cache-Control: no-store`
+
 ---
 
 ## [2.13.0] - 2026-10-21 - Versionshinweis, sicherer Deploy
