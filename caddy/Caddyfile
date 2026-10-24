@@ -20,6 +20,16 @@
     }
   }
 
+  # Build-Assets: fehlende Dateien (z. B. Chunks einer alten Version) mit 404 statt index.html
+  handle /assets/* {
+    file_server
+  }
+
+  # Fehlerantworten (z. B. 404 unter /assets/) nie cachen – sonst trügen sie den Asset-Header
+  handle_errors {
+    header Cache-Control "no-store"
+  }
+
   # SPA Fallback
   handle {
     # index.html nie cachen – auch nicht unter Deep-Links wie /parts/12, sonst lädt
