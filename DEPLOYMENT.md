@@ -192,6 +192,83 @@ ob das neueste Backup vollständig und höchstens 26 h alt ist – sonst wird de
 
 ---
 
+## Backup aufs Netzlaufwerk
+
+DB, Backups und Uploads liegen auf derselben SSD. `scripts/backup-offsite.sh` sichert deshalb jede Nacht
+den neuesten geprüften DB-Dump, `/srv/mds/uploads` und die `.env` (Secrets, nicht im Repo) per **restic**
+auf eine Windows-Freigabe im Firmennetz. Die Freigabe ist nur während der Sicherung eingebunden.
+restic verschlüsselt, speichert gleiche Daten nur einmal und hält **30 Tage täglich + 12 Monate** vor;
+sonntags prüft es das Repository und liest dabei 10 % der Daten.
+
+> **Ohne das restic-Passwort ist das Backup wertlos.** Es liegt auf dem Pi in `/root/.mds-restic-password`
+> und muss zusätzlich an einen zweiten Ort (Passwort-Safe der Firma, Ausdruck im Tresor) – stirbt der Pi,
+> braucht man genau dieses Passwort.
+
+### Einrichten (einmalig, als root)
+
+1. Pakete (`cifs-utils` ist schon da):
+   ```bash
+   sudo apt install restic
+   ```
+2. Zugangsdaten für die Freigabe in `/etc/samba/creds/mds` (`root:root`, `chmod 600`):
+   ```
+   username=BENUTZER
+   password=…
+   domain=FIRMA
+   ```
+   Ein persönlicher Benutzer geht, aber: Ändert sich sein Passwort, bricht das Backup (der Monitor meldet es rot),
+   und der Pi hält Zugangsdaten, die mehr können als nötig. Besser später ein eigener Benutzer, der nur in
+   „MDS Backup“ schreiben darf – dann nur diese Datei anpassen.
+3. Einhängepunkt und `/etc/fstab`-Eintrag (`\040` = Leerzeichen im Freigabenamen, `noauto` = nur auf Anforderung):
+   ```bash
+   sudo mkdir -p /mnt/mds-offsite
+   ```
+   ```
+   //SERVER/MDS\040Backup /mnt/mds-offsite cifs noauto,_netdev,credentials=/etc/samba/creds/mds,uid=0,gid=0,file_mode=0600,dir_mode=0700,iocharset=utf8 0 0
+   ```
+   Test: `sudo mount /mnt/mds-offsite && ls /mnt/mds-offsite && sudo umount /mnt/mds-offsite`
+4. restic-Passwort erzeugen, **an den zweiten Ort übertragen**, Repository anlegen:
+   ```bash
+   sudo sh -c 'umask 077; head -c 32 /dev/urandom | base64 > /root/.mds-restic-password'
+   sudo cat /root/.mds-restic-password
+   sudo mount /mnt/mds-offsite
+   sudo restic init -r /mnt/mds-offsite/restic --password-file /root/.mds-restic-password
+   sudo umount /mnt/mds-offsite
+   ```
+5. Erster Lauf von Hand, endet mit `✅ Netzlaufwerk-Backup fertig: Snapshot …`:
+   ```bash
+   cd ~/mds && sudo ./scripts/backup-offsite.sh
+   ```
+6. Eintrag in der **root**-Crontab (`sudo crontab -e`), nach `backup.sh` um 02:30:
+   ```
+   45 2 * * * /home/rpi01/mds/scripts/backup-offsite.sh >> /srv/mds/backups/backup-offsite.log 2>&1
+   ```
+
+Nach jedem Lauf schreibt das Skript `/srv/mds/backups/offsite-status.json`. Im MDS prüft der Cron-Job
+**Netzlaufwerk-Backup** (Administration → Automatische Aufgaben, täglich 03:05), ob der letzte Lauf erfolgreich
+und höchstens 26 h alt ist – sonst rot mit der Meldung des Skripts. Log: `tail -40 /srv/mds/backups/backup-offsite.log`
+
+### Snapshots ansehen und wiederherstellen
+
+```bash
+sudo mount /mnt/mds-offsite
+R="-r /mnt/mds-offsite/restic --password-file /root/.mds-restic-password"
+sudo restic $R snapshots                                   # Liste mit Datum und ID
+sudo restic $R ls latest | grep mds_backup_                # welcher Dump steckt drin
+sudo restic $R restore latest --target /tmp/mds-restore    # oder statt latest eine ID
+sudo umount /mnt/mds-offsite
+```
+
+Im Zielordner liegen die Dateien unter ihrem Originalpfad (`/tmp/mds-restore/srv/mds/…`, `…/home/rpi01/mds/.env`).
+- **Datenbank:** `./scripts/restore.sh /tmp/mds-restore/srv/mds/backups/mds_backup_….sql.gz`
+- **Uploads:** einzelne Dateien zurückkopieren; komplett: `sudo rsync -a /tmp/mds-restore/srv/mds/uploads/ /srv/mds/uploads/`
+- **`.env`:** nur bei einem neu aufgesetzten Pi zurückkopieren
+
+**Pi tot:** Das Repository lässt sich auch an einem Windows-PC öffnen – `restic.exe` (einzelne Datei von
+github.com/restic/restic/releases) mit `-r "\\SERVER\MDS Backup\restic"` und dem restic-Passwort.
+
+---
+
 ## Troubleshooting
 
 ### Container startet nicht

@@ -6,6 +6,9 @@
  * (20 Bytes), die als „Backup vorhanden“ durchging.
  *
  * Jeder Zustand außer „ok“ wirft einen Fehler → der Cron-Lauf wird als Fehler protokolliert.
+ *
+ * Die Kopie aufs Netzlaufwerk (scripts/backup-offsite.sh, restic) prüft checkOffsiteStatus über die
+ * Statusdatei, die das Skript nach jedem Lauf schreibt – der Container sieht die Freigabe selbst nicht.
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +17,7 @@ const zlib = require('zlib');
 const MIN_BYTES = 10240;
 const MAX_AGE_HOURS = 26;
 const END_MARKER = 'PostgreSQL database dump complete';
+const OFFSITE_STATUS_FILE = 'offsite-status.json';
 
 function validateBackup(filePath, size) {
   if (size < MIN_BYTES) return { valid: false, reason: `zu klein (${size} Bytes)` };
@@ -83,4 +87,46 @@ function checkBackupStatus(dir = '/app/backups', now = Date.now()) {
   };
 }
 
-module.exports = { checkBackupStatus, validateBackup, MIN_BYTES, MAX_AGE_HOURS, END_MARKER };
+/**
+ * @param {string} dir     Backup-Verzeichnis (dort schreibt backup-offsite.sh seine Statusdatei)
+ * @param {number} now     Zeitpunkt in ms (für Tests)
+ * @returns {object}       Ergebnis bei Status „ok“, sonst Error
+ */
+function checkOffsiteStatus(dir = '/app/backups', now = Date.now()) {
+  const file = path.join(dir, OFFSITE_STATUS_FILE);
+  if (!fs.existsSync(file)) {
+    throw new Error(`Noch kein Netzlaufwerk-Backup gelaufen (${OFFSITE_STATUS_FILE} fehlt) – scripts/backup-offsite.sh eingerichtet? Siehe DEPLOYMENT.md`);
+  }
+  let status;
+  try {
+    status = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (err) {
+    throw new Error(`Statusdatei des Netzlaufwerk-Backups nicht lesbar (${err.message})`);
+  }
+  const finished = Date.parse(status.finished_at);
+  if (Number.isNaN(finished)) {
+    throw new Error(`Statusdatei des Netzlaufwerk-Backups ohne gültigen Zeitpunkt (${status.finished_at})`);
+  }
+  const ageHours = Math.round((now - finished) / (1000 * 60 * 60));
+
+  if (status.status !== 'ok') {
+    throw new Error(`Netzlaufwerk-Backup fehlgeschlagen (vor ${ageHours} h): ${status.message || 'ohne Meldung'}`);
+  }
+  if (ageHours > MAX_AGE_HOURS) {
+    throw new Error(`Letztes Netzlaufwerk-Backup ist ${ageHours} h alt (erwartet: täglich), Snapshot ${status.snapshot}`);
+  }
+
+  return {
+    status: 'ok',
+    finished_at: new Date(finished).toISOString(),
+    age_hours: ageHours,
+    snapshot: status.snapshot,
+    db_dump: status.db_dump,
+    duration_s: status.duration_s,
+  };
+}
+
+module.exports = {
+  checkBackupStatus, validateBackup, checkOffsiteStatus,
+  MIN_BYTES, MAX_AGE_HOURS, END_MARKER, OFFSITE_STATUS_FILE,
+};

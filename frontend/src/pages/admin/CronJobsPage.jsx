@@ -54,6 +54,15 @@ function formatResult(jobName, result) {
       : `(vor ${latest?.age_hours}h)`;
     return `${result.status === 'ok' ? '✓' : '⚠'} ${valid}, neuestes: ${latest?.size_mb} MB ${latestAt}, gesamt: ${result.total_size_mb} MB`;
   }
+  if (jobName === 'backup_offsite_monitor') {
+    // Fehlgeschlagen / veraltet / nie gelaufen kommen als Fehler-Lauf mit Meldung (backupMonitor.js)
+    const at = result.finished_at
+      ? new Date(result.finished_at).toLocaleString('de-DE', {
+          timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+        })
+      : '?';
+    return `✓ Snapshot ${result.snapshot} von ${at}, DB-Dump ${result.db_dump}`;
+  }
   if (jobName === 'generate_absence_entries') {
     let text = `${result.processed || 0} User geprüft, ${result.created || 0} Einträge erstellt`;
     if (result.created > 0 && result.details?.length > 0) {
