@@ -42,7 +42,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Erster Deploy mit der neuen `deploy.sh` (Backup vor der Migration, Frontend-Build in `.cache/frontend-dist`). `Caddyfile` liegt jetzt in `caddy/` und wird als Ordner eingebunden: `up -d` legt den Caddy-Container dabei einmal neu an (kurz nicht erreichbar), kein manueller Neustart nötig – auch nicht mit der alten `deploy.sh`, die bei diesem Deploy noch läuft.
+**Release 2.14.0** – Caddyfile als Ordner eingebunden, Prüfung vor dem Deploy, 404 unter `/assets/` (#193), Netzlaufwerk-Backup per restic mit Monitor (#194, #195). Erster Deploy mit der neuen `deploy.sh` (Backup vor der Migration, Frontend-Build in `.cache/frontend-dist`). `Caddyfile` liegt jetzt in `caddy/` und wird als Ordner eingebunden: `up -d` legt den Caddy-Container dabei einmal neu an (kurz nicht erreichbar), kein manueller Neustart nötig – auch nicht mit der alten `deploy.sh`, die bei diesem Deploy noch läuft.
 
 - [ ] Caddy nach dem Deploy: `docker compose ps caddy` läuft, `docker inspect $(docker compose ps -q caddy) --format '{{range .Mounts}}{{.Source}} {{end}}'` zeigt `…/mds/caddy` statt `…/mds/Caddyfile`
 - [ ] Header: `curl -sI http://localhost:81/parts/12` → `Cache-Control: no-store`; `curl -sI http://localhost:81/assets/gibtsnicht.js` → `404` mit `Cache-Control: no-store`
