@@ -219,14 +219,22 @@ sonntags prüft es das Repository und liest dabei 10 % der Daten.
    Ein persönlicher Benutzer geht, aber: Ändert sich sein Passwort, bricht das Backup (der Monitor meldet es rot),
    und der Pi hält Zugangsdaten, die mehr können als nötig. Besser später ein eigener Benutzer, der nur in
    „MDS Backup“ schreiben darf – dann nur diese Datei anpassen.
-3. Einhängepunkt und `/etc/fstab`-Eintrag (`\040` = Leerzeichen im Freigabenamen, `noauto` = nur auf Anforderung):
+3. Einhängepunkt und `/etc/fstab`-Eintrag (`\040` = Leerzeichen im Freigabenamen, `noauto` = nur auf Anforderung,
+   `nosharesock` = eigene Verbindung, siehe unten):
    ```bash
    sudo mkdir -p /mnt/mds-offsite
    ```
    ```
-   //SERVER/MDS\040Backup /mnt/mds-offsite cifs noauto,_netdev,credentials=/etc/samba/creds/mds,uid=0,gid=0,file_mode=0600,dir_mode=0700,iocharset=utf8 0 0
+   //SERVER/MDS\040Backup /mnt/mds-offsite cifs noauto,_netdev,nosharesock,credentials=/etc/samba/creds/mds,uid=0,gid=0,file_mode=0600,dir_mode=0700,iocharset=utf8 0 0
    ```
    Test: `sudo mount /mnt/mds-offsite && ls /mnt/mds-offsite && sudo umount /mnt/mds-offsite`
+
+   **`mount error(13): Permission denied` nur manchmal:** Ist schon eine andere Freigabe desselben Servers mit
+   einem anderen Benutzer eingebunden (z. B. für die Task-App), hängt der Kernel die neue Anmeldung an deren
+   Verbindung, und der Server lehnt ab – je nach aufgelöster Adresse (Server mit zwei Netzwerkkarten) mal ja,
+   mal nein. `nosharesock` erzwingt eine eigene Verbindung (Befund rpi01, 24.10.2026: ohne zufällig `-13`,
+   mit 6/6 OK). Zum Eingrenzen hilft eine Schleife über mehrere `mount`-Versuche; die Freigabe über die IP
+   statt den Namen einzubinden umgeht es ebenfalls.
 4. restic-Passwort erzeugen, **an den zweiten Ort übertragen**, Repository anlegen:
    ```bash
    sudo sh -c 'umask 077; head -c 32 /dev/urandom | base64 > /root/.mds-restic-password'
