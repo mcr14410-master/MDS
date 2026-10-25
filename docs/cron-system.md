@@ -21,7 +21,7 @@ server.js → cronService.js → Job-Handler (Controller-Funktionen)
 
 | Job | Schedule | Beschreibung |
 |-----|----------|--------------|
-| `auto_close_open_days` | `0 2 * * *` (täglich 02:00) | Schließt offene Tage aller aktiven User automatisch ab, setzt `needs_review = true` |
+| `auto_close_open_days` | `0 1 * * *` (täglich 01:00) | Schließt offene Tage aller aktiven User automatisch ab, setzt `needs_review = true` |
 
 ## API-Endpoints
 
@@ -69,12 +69,12 @@ registerJob(
 ```
 
 Beispiele:
-- `0 2 * * *` – Täglich 02:00
+- `0 1 * * *` – Täglich 01:00
 - `0 7 * * 1` – Montags 07:00
 - `0 */6 * * *` – Alle 6 Stunden
 - `30 23 * * 1-5` – Werktags 23:30
 
-Alle Zeiten in `Europe/Berlin` (CET/CEST).
+Alle Zeiten in `Europe/Berlin` (CET/CEST). Keine Jobs zwischen 02:00 und 02:59 planen: die Stunde fehlt bei der Umstellung auf Sommerzeit und kommt bei der auf Winterzeit doppelt – node-cron lässt den Lauf an diesen Tagen aus. Bis node-cron 4.2.1 fielen außerdem Jobs ab 03:00 am Umstellungstag aus (behoben mit 4.6.0).
 
 ## Abhängigkeiten
 

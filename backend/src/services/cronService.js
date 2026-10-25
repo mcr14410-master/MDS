@@ -111,7 +111,7 @@ async function runJob(name) {
 
 /**
  * Auto-Abschluss offener Tage für alle aktiven Benutzer
- * Läuft täglich um 02:00 nachts
+ * Läuft täglich um 01:00 nachts
  */
 async function autoCloseAllOpenDays() {
   // Alle aktiven User mit Zeitmodell-Verlauf holen
@@ -153,17 +153,19 @@ async function autoCloseAllOpenDays() {
 // ============================================
 // Jobs registrieren
 // ============================================
+// Keine Zeiten zwischen 02:00 und 02:59: die Stunde fehlt bei der Umstellung auf Sommerzeit
+// und kommt bei der auf Winterzeit doppelt – node-cron lässt den Lauf dann ganz aus.
 
 registerJob(
   'auto_close_open_days',
-  '0 2 * * *',
+  '0 1 * * *',
   autoCloseAllOpenDays,
-  'Offene Tage automatisch abschließen (täglich 02:00)'
+  'Offene Tage automatisch abschließen (täglich 01:00)'
 );
 
 /**
  * Abwesenheitseinträge generieren für alle aktiven User
- * Läuft täglich um 02:15 (nach auto_close)
+ * Läuft täglich um 01:15 (nach auto_close)
  * Erstellt time_daily_summary für Feiertage, Urlaub, Krank und unentschuldigte Abwesenheit
  */
 async function generateAllAbsenceEntries() {
@@ -204,14 +206,14 @@ async function generateAllAbsenceEntries() {
 
 registerJob(
   'generate_absence_entries',
-  '15 2 * * *',
+  '15 1 * * *',
   generateAllAbsenceEntries,
-  'Abwesenheitseinträge generieren – Feiertage, Urlaub, Krank (täglich 02:15)'
+  'Abwesenheitseinträge generieren – Feiertage, Urlaub, Krank (täglich 01:15)'
 );
 
 /**
  * Wartungsaufgaben aus fälligen Plänen generieren
- * Läuft täglich um 02:30 (nach absences, vor backup_monitor)
+ * Läuft täglich um 01:30 (nach absences, vor backup_monitor)
  */
 async function generateMaintenanceTasks() {
   const result = await generateDueTasks();
@@ -227,9 +229,9 @@ async function generateMaintenanceTasks() {
 
 registerJob(
   'generate_maintenance_tasks',
-  '30 2 * * *',
+  '30 1 * * *',
   generateMaintenanceTasks,
-  'Wartungsaufgaben aus fälligen Plänen generieren (täglich 02:30)'
+  'Wartungsaufgaben aus fälligen Plänen generieren (täglich 01:30)'
 );
 
 // Backup-Monitor: neuestes Backup muss vollständig und < 26 h alt sein, sonst Fehler

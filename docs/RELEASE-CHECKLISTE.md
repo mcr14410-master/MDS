@@ -42,11 +42,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen. Erster Deploy, bei dem `deploy.sh` das Caddyfile vorab prüft (Fassung aus 2.14.0; bei 2.14.0 lief noch die aus 2.13.0).
+**Nächstes Release** – Cron-Jobs bei der Zeitumstellung (node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30). Erster Deploy, bei dem `deploy.sh` das Caddyfile vorab prüft (Fassung aus 2.14.0; bei 2.14.0 lief noch die aus 2.13.0).
 
 - [ ] Deploy-Log: `🔎 Caddyfile prüfen` ohne Fehler, Backup vor der Migration, Frontend per `rsync`, am Ende `🔄 Caddy reload` (kein Neustart)
+- [ ] Automatische Aufgaben: „Offene Tage abschließen“, „Abwesenheiten“, „Wartungsaufgaben“ zeigen 01:00/01:15/01:30 im Titel; am Morgen nach dem Deploy haben alle sechs Jobs einen Lauf aus der Nacht (keiner „Überfällig“)
 - [ ] Versionshinweis (nicht berichtet bei 2.14.0): vor dem Deploy einen Tab offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
-- [ ] Noch von 2.14.0, **am 25.10.**: Automatische Aufgaben → „Netzlaufwerk-Backup“ grün mit Snapshot von ca. **02:45** (nicht 23:57 – sonst greift die Crontab nicht: `sudo crontab -l | grep backup`); `/srv/mds/backups/backup-offsite.log` zeigt das erste `restic check` (Sonntag) ohne Fehler; Probe-Wiederherstellung nach `/tmp/mds-restore` (DEPLOYMENT.md, Dump vorhanden, Uploads vollständig), danach `sudo rm -rf /tmp/mds-restore`
+- [ ] Noch von 2.14.0, **am 25.10.**: ~~„Netzlaufwerk-Backup“ grün mit Snapshot von ca. 02:45~~ (erledigt: Snapshot `4e86561c` um 02:45, Crontab greift); `/srv/mds/backups/backup-offsite.log` zeigt das erste `restic check` (Sonntag) ohne Fehler; Probe-Wiederherstellung nach `/tmp/mds-restore` (DEPLOYMENT.md, Dump vorhanden, Uploads vollständig), danach `sudo rm -rf /tmp/mds-restore`
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
