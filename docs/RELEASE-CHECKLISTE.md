@@ -42,7 +42,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Cron-Jobs bei der Zeitumstellung (node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30). Erster Deploy, bei dem `deploy.sh` das Caddyfile vorab prüft (Fassung aus 2.14.0; bei 2.14.0 lief noch die aus 2.13.0).
+**Release 2.14.1** – Cron-Jobs bei der Zeitumstellung (#198: node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30). Keine Migration. Erster Deploy, bei dem `deploy.sh` das Caddyfile vorab prüft (Fassung aus 2.14.0; bei 2.14.0 lief noch die aus 2.13.0).
 
 - [ ] Deploy-Log: `🔎 Caddyfile prüfen` ohne Fehler, Backup vor der Migration, Frontend per `rsync`, am Ende `🔄 Caddy reload` (kein Neustart)
 - [ ] Automatische Aufgaben: „Offene Tage abschließen“, „Abwesenheiten“, „Wartungsaufgaben“ zeigen 01:00/01:15/01:30 im Titel; am Morgen nach dem Deploy haben alle sechs Jobs einen Lauf aus der Nacht (keiner „Überfällig“)

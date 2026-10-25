@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.14.1] - 2026-10-25 - Nacht-Jobs bei der Zeitumstellung
+
+### Für Anwender
+- Die automatischen Aufgaben in der Nacht laufen jetzt auch an den Tagen der Zeitumstellung zuverlässig. Bisher fiel dort die Prüfung der Datensicherung für einen Tag aus.
+- Offene Arbeitstage werden schon um 01:00 statt um 02:00 Uhr abgeschlossen. Für die tägliche Arbeit ändert sich nichts.
+
 ### Fixed
 - Cron-Jobs bei der Zeitumstellung: node-cron 4.2.1 berechnete am Umstellungstag den nächsten Lauf mit dem alten UTC-Versatz und sprang auf den 1. Januar – Jobs ab 03:00 (Backup-Monitore, Aufräumen der Uploads) fielen dadurch einen Tag aus, bei der Umstellung auf Sommerzeit zwei. Update auf node-cron 4.6.0
 
