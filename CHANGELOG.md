@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- Cron-Jobs bei der Zeitumstellung: node-cron 4.2.1 berechnete am Umstellungstag den nächsten Lauf mit dem alten UTC-Versatz und sprang auf den 1. Januar – Jobs ab 03:00 (Backup-Monitore, Aufräumen der Uploads) fielen dadurch einen Tag aus, bei der Umstellung auf Sommerzeit zwei. Update auf node-cron 4.6.0
+
+### Changed
+- Nächtliche Jobs „Offene Tage abschließen“, „Abwesenheiten erzeugen“ und „Wartungsaufgaben erzeugen“ laufen um 01:00/01:15/01:30 statt 02:00/02:15/02:30 – die Stunde 02:00–02:59 fehlt bzw. kommt doppelt bei der Zeitumstellung, node-cron lässt Läufe darin aus
+
 ---
 
 ## [2.14.0] - 2026-10-24 - Backup aufs Netzlaufwerk
