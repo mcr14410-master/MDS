@@ -47,7 +47,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 - [ ] Deploy-Log: `🔎 Caddyfile prüfen` ohne Fehler, Backup vor der Migration, Frontend per `rsync`, am Ende `🔄 Caddy reload` (kein Neustart)
 - [ ] Automatische Aufgaben: „Offene Tage abschließen“, „Abwesenheiten“, „Wartungsaufgaben“ zeigen 01:00/01:15/01:30 im Titel; am Morgen nach dem Deploy haben alle sechs Jobs einen Lauf aus der Nacht (keiner „Überfällig“)
 - [ ] Versionshinweis (nicht berichtet bei 2.14.0): vor dem Deploy einen Tab offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
-- [ ] Noch von 2.14.0, **am 25.10.**: ~~„Netzlaufwerk-Backup“ grün mit Snapshot von ca. 02:45~~ (erledigt: Snapshot `4e86561c` um 02:45, Crontab greift); `/srv/mds/backups/backup-offsite.log` zeigt das erste `restic check` (Sonntag) ohne Fehler; Probe-Wiederherstellung nach `/tmp/mds-restore` (DEPLOYMENT.md, Dump vorhanden, Uploads vollständig), danach `sudo rm -rf /tmp/mds-restore`
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
@@ -58,7 +57,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 Caddyfile als Ordner eingebunden, Prüfung vor dem Deploy, 404 unter `/assets/` (#193), Netzlaufwerk-Backup per restic mit Monitor (#194, #195). Deploy ohne Befund: Caddy-Container neu angelegt, Mount zeigt auf `…/mds/caddy`, `/parts/12` liefert `no-store`, `/assets/gibtsnicht.js` 404 mit `no-store`.
 
-Netzlaufwerk-Backup eingerichtet (DEPLOYMENT.md, Schritte 1–5): Beim Einbinden kam zufällig `mount error(13)` – die Task-App-Freigabe desselben Servers (anderer Benutzer) teilte sich die Verbindung; mit `nosharesock` in der fstab stabil (#195). Erster Lauf von Hand: Snapshot `599850ec`, 152 Dateien, 67 MB (53 MB gespeichert); Monitor „Netzlaufwerk-Backup“ per „Ausführen“ grün. Nachtlauf und Crontab: Prüfpunkt oben.
+Netzlaufwerk-Backup eingerichtet (DEPLOYMENT.md, Schritte 1–5): Beim Einbinden kam zufällig `mount error(13)` – die Task-App-Freigabe desselben Servers (anderer Benutzer) teilte sich die Verbindung; mit `nosharesock` in der fstab stabil (#195). Erster Lauf von Hand: Snapshot `599850ec`, 152 Dateien, 67 MB (53 MB gespeichert); Monitor „Netzlaufwerk-Backup“ per „Ausführen“ grün. Prüfung am 25.10.: Nachtlauf um 02:45 aus der Crontab (Snapshot `4e86561c`, Nacht der Zeitumstellung), erstes `restic check` ohne Fehler, Probe-Wiederherstellung nach `/tmp/mds-restore` vollständig (Dump mit Endmarke, `.env`, 150/150 Upload-Dateien). Dabei aufgefallen: Jobs ab 03:00 im MDS fielen am Umstellungstag aus – behoben in #198.
 
 ---
 
