@@ -558,9 +558,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 24.10.2026](docs/sessions/SESSION-2026-10-24-caddy-backup-2.14.md) – **v2.14.0 läuft auf dem Pi** (Caddy-Ordner-Mount, Netzlaufwerk-Backup eingerichtet und am 25.10. geprüft, inkl. Probe-Wiederherstellung), **v2.14.1 vorbereitet, Deploy offen** (Cron-Jobs bei der Zeitumstellung #198), `[Unreleased]` leer
+Stand: [Session 24.10.2026](docs/sessions/SESSION-2026-10-24-caddy-backup-2.14.md) – **v2.14.1 läuft auf dem Pi** (25.10.: Cron-Jobs bei der Zeitumstellung #198; Netzlaufwerk-Backup geprüft inkl. Probe-Wiederherstellung), `[Unreleased]` leer
 
-0. **Deploy 2.14.1** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (erster Deploy mit Caddyfile-Prüfung, Versionshinweis, am Morgen danach kein Cron-Job „Überfällig“)
+0. **Am 26.10.:** Automatische Aufgaben – alle sechs Jobs mit Lauf aus der Nacht, keiner „Überfällig“ (Prüfpunkt in `docs/RELEASE-CHECKLISTE.md`)
 1. **Offene Prüfpunkte** aus `docs/RELEASE-CHECKLISTE.md`: Mitarbeiter-Einstellungen und Sidebar (2.13.0), Test am Handy (2.12.0)
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)

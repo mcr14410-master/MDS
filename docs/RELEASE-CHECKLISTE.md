@@ -42,14 +42,18 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.14.1** – Cron-Jobs bei der Zeitumstellung (#198: node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30). Keine Migration. Erster Deploy, bei dem `deploy.sh` das Caddyfile vorab prüft (Fassung aus 2.14.0; bei 2.14.0 lief noch die aus 2.13.0).
+**Nächstes Release** – noch keine Änderungen.
 
-- [ ] Deploy-Log: `🔎 Caddyfile prüfen` ohne Fehler, Backup vor der Migration, Frontend per `rsync`, am Ende `🔄 Caddy reload` (kein Neustart)
-- [ ] Automatische Aufgaben: „Offene Tage abschließen“, „Abwesenheiten“, „Wartungsaufgaben“ zeigen 01:00/01:15/01:30 im Titel; am Morgen nach dem Deploy haben alle sechs Jobs einen Lauf aus der Nacht (keiner „Überfällig“)
-- [ ] Versionshinweis (nicht berichtet bei 2.14.0): vor dem Deploy einen Tab offen lassen (gern auf einer Unterseite wie Bauteile); nach dem Deploy zeigt er spätestens beim Zurückwechseln „Neue MDS-Version … verfügbar“, „Neu laden“ → Sidebar unten zeigt die neue Version
+- [ ] Noch von 2.14.1, **am 26.10.**: Automatische Aufgaben – alle sechs Jobs mit Lauf aus der Nacht (01:00/01:15/01:30, 03:00/03:05/03:30), keiner „Überfällig“
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
+
+---
+
+## Erledigt: Release 2.14.1 (25.10.2026)
+
+Cron-Jobs bei der Zeitumstellung (#198): node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30. Erster Deploy mit Caddyfile-Prüfung in `deploy.sh`: lief durch, am Ende `🔄 Caddy reload` ohne Neustart (Caddy-Container blieb oben). Health-Check meldet 2.14.1, Versionshinweis „Neue MDS-Version … verfügbar“ erschien sofort. Automatische Aufgaben zeigen die neuen Zeiten. Reload meldet `Caddyfile input is not formatted` – nur Einrückung (Leerzeichen statt Tabs), harmlos.
 
 ---
 
