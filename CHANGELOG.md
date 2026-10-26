@@ -15,6 +15,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- Breadcrumbs: alle Bereiche auf Deutsch (bisher z. B. „Vacations“, „Time tracking“, „Maintenance“); Pfadteile, die je nach Bereich anders heißen, über den ganzen Pfad („Mein Bereich“ / „Meine Aufgaben“, „Verwaltung“ / „Administration“)
+- Breadcrumbs: Namen auf Detailseiten (Bauteil-Nr., Werkzeug, Maschine, Mitarbeiter …) werden wieder geladen – der Import zeigte auf die Basis-URL statt auf die Axios-Instanz, die Endpunkte hatten kein `/api`; es stand immer „#…“
+- Breadcrumbs: Stufen ohne eigene Seite (`/admin`, `/qr`, einzelne Wartungsaufgabe) sind Text statt Link – ein Klick führte bisher aufs Dashboard; Zeiterfassung eines Mitarbeiters erscheint unter „Urlaub & Arbeitszeit › Verwaltung“
+
 ---
 
 ## [2.14.1] - 2026-10-25 - Nacht-Jobs bei der Zeitumstellung
