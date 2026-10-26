@@ -42,8 +42,9 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen.
+**Nächstes Release** – Breadcrumbs auf Deutsch, Namen auf Detailseiten.
 
+- [ ] Breadcrumbs: Urlaub & Arbeitszeit (Kalender, Mein Bereich, Verwaltung), Zeiterfassung eines Mitarbeiters („… › Verwaltung › Vorname Nachname“), Wartung, Administration auf Deutsch; Detailseiten (Bauteil, Werkzeug, Maschine) zeigen den Namen statt „#…“
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 
