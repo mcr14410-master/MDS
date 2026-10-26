@@ -44,7 +44,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 **Nächstes Release** – noch keine Änderungen.
 
-- [ ] Noch von 2.14.1, **am 26.10.**: Automatische Aufgaben – alle sechs Jobs mit Lauf aus der Nacht (01:00/01:15/01:30, 03:00/03:05/03:30), keiner „Überfällig“
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 - [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
@@ -53,7 +52,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 ## Erledigt: Release 2.14.1 (25.10.2026)
 
-Cron-Jobs bei der Zeitumstellung (#198): node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30. Erster Deploy mit Caddyfile-Prüfung in `deploy.sh`: lief durch, am Ende `🔄 Caddy reload` ohne Neustart (Caddy-Container blieb oben). Health-Check meldet 2.14.1, Versionshinweis „Neue MDS-Version … verfügbar“ erschien sofort. Automatische Aufgaben zeigen die neuen Zeiten. Reload meldet `Caddyfile input is not formatted` – nur Einrückung (Leerzeichen statt Tabs), harmlos.
+Cron-Jobs bei der Zeitumstellung (#198): node-cron 4.6.0, drei Nacht-Jobs auf 01:00/01:15/01:30. Erster Deploy mit Caddyfile-Prüfung in `deploy.sh`: lief durch, am Ende `🔄 Caddy reload` ohne Neustart (Caddy-Container blieb oben). Health-Check meldet 2.14.1, Versionshinweis „Neue MDS-Version … verfügbar“ erschien sofort. Automatische Aufgaben zeigen die neuen Zeiten. Kontrolle am 26.10.: alle sechs Jobs pünktlich aus der Nacht (01:00/01:15/01:30, 03:00/03:05/03:30), keiner „Überfällig“. Reload meldet `Caddyfile input is not formatted` – nur Einrückung (Leerzeichen statt Tabs), harmlos.
 
 ---
 
