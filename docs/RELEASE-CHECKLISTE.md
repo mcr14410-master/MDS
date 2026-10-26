@@ -46,7 +46,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 - [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
-- [ ] Noch von 2.11.0: bei der nächsten gelöschten oder geänderten genehmigten Abwesenheit passt der Tageswert danach (gelöschter Urlaubstag → fehlende Buchung, außer es wurde gestempelt)
 
 ---
 
@@ -83,6 +82,8 @@ Kalender-Tooltip (#178), Vorschau Zeitmodell-Verlauf ohne „1 → 1“ (#179), 
 Deploy ohne Befund, Migration `1737000118000_add-role-color` gelaufen. Umbenannte und selbst angelegte Rollen eingefärbt, Abzeichen in Benutzerliste und Profil passen, Klicktests Verwaltung (Einstellungen → Mitarbeiter, Zurück aus dem Zeitkonto) und Kalender („+N mehr“) bestanden.
 
 Nacht-Lauf seit 2.10.0 kontrolliert (17.10.): `auto_close_open_days` vom 12.10. bis 17.10. jede Nacht genau einmal um 02:00, `success`, je 8 Mitarbeiter verarbeitet, keine Fehler oder Warnungen – vor und nach 2.10.0 gleich.
+
+Nachgeprüft am 26.10.2026: Tageswert nach gelöschter/geänderter genehmigter Abwesenheit passt.
 
 ---
 
