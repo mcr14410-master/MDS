@@ -45,7 +45,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Nächstes Release** – Breadcrumbs auf Deutsch, Namen auf Detailseiten.
 
 - [ ] Breadcrumbs: Urlaub & Arbeitszeit (Kalender, Mein Bereich, Verwaltung), Zeiterfassung eines Mitarbeiters („… › Verwaltung › Vorname Nachname“), Wartung, Administration auf Deutsch; Detailseiten (Bauteil, Werkzeug, Maschine) zeigen den Namen statt „#…“
-- [ ] Noch von 2.13.0: Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – Zeitmodell-Spalte und Verlauf wie vorher, Speichern geht, „Zeiterfassung ab“ unverändert; Sidebar-Menüs auf- und zuklappen, Eskalations-Abzeichen (falls vorhanden)
 - [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 
 ---
@@ -69,6 +68,8 @@ Netzlaufwerk-Backup eingerichtet (DEPLOYMENT.md, Schritte 1–5): Beim Einbinden
 Zeitmodell-Spalte entfernt (#186, Migration `1737000120000`), `deploy.sh` abgesichert (#187), `restore.sh`, `.migrationrc.json`, Sidebar-ESLint (#188), Versionshinweis und Caddy-Header für Deep-Links (#189). Vorab in Produktion geprüft: kein Mitarbeiter mit Zeitmodell nur in `users.time_model_id` (0 Zeilen). Deploy noch mit der alten `deploy.sh`, Sidebar zeigt v2.13.0. Danach `docker compose restart caddy` – `curl -sI http://localhost:81/parts/12` liefert `Cache-Control: no-store`.
 
 Der geplante Banner-Test ging bei diesem Release nicht: Ein Tab mit 2.12.0 enthält den Versionshinweis noch nicht – Test beim nächsten Release (oben). Auf dem Dev-System zeigte das Banner nach dem Versionssprung dauerhaft „verfügbar“: der Vite-Dev-Server liest die Version nur beim Start aus `package.json` und lieferte weiter 2.12.0, das Backend schon 2.13.0 – Dev-Server neu starten (betrifft Produktion nicht, dort wird die Version beim Build eingebaut).
+
+Nachgeprüft am 27.10.2026: Mitarbeiter-Einstellungen (Zeitmodell-Spalte und Verlauf, Speichern, „Zeiterfassung ab“) und Sidebar (Menüs, Eskalations-Abzeichen) wie vorher.
 
 ---
 
