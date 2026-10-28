@@ -307,6 +307,29 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 
 ---
 
+### 📋 Messmaschinen-Terminal (KMG / PC-DMIS) 📐
+**Status:** 📋 Konzept · [docs/konzepte/MESSPROGRAMME_KONZEPT.md](docs/konzepte/MESSPROGRAMME_KONZEPT.md)
+**Ziel:** PC-DMIS-Messprogramme im MDS versioniert und freigegeben verwalten, auf dem Mess-PC lokal bereitstellen, Änderungen sauber zurückholen
+
+- Prinzip „Bereitstellen → Arbeiten → Abschließen“: auf dem Mess-PC liegt nur die aktuelle Arbeit, nach „Fertig“ ist das Arbeitsverzeichnis wieder leer; lokale Änderungen landen im **Eingang**, ein Mensch übernimmt sie als neue Revision
+- **MDS-Agent** (C#, Tray) auf dem Mess-PC, Pull per API-Key – später auch Module NC-Transfer (Maschinen-Terminal) und TopSolid
+- Ein Datenmodell für NC- und Messprogramme (`programs.kind`, `program_revision_files`, `agents`, `agent_deployments`, `program_transfers`, `program_inbox`)
+
+**Umsetzungsschritte:**
+- [ ] 0 – Binär-Fix Programm-Upload (`.prg` endet heute mit 500; Voraussetzung für alles Weitere)
+- [ ] 1 – Migration: `programs.kind`, `program_revision_files`, Maschinentyp „Messmaschine“, Rechte
+- [ ] 2 – Backend: Upload mehrerer Dateien je Revision, Download einzeln/ZIP, `.http`-Tests
+- [ ] 3 – Frontend: Menüpunkt „Messprogramme“ → nutzbar ohne Agent
+- [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
+- [ ] 5 – Abschließen + Eingang
+- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe
+- [ ] 7 – Erstimport vom Netzlaufwerk
+- [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
+
+Offene Punkte stehen im Konzept (Abschnitt 10).
+
+---
+
 ### 📋 Maschinen-Terminal 🏭
 **Status:** 📋 Geplant
 **Ziel:** Produktions-Terminal an jeder Maschine
@@ -319,7 +342,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - „Angelehnt“, nicht kopiert: eigenes Design, keine Heidenhain-Logos/-Namen; später ggf. Erscheinungsbild je Steuerung (Siemens, Mazatrol) auf gemeinsamem Grundgerüst
 - Erstes klickbares Mockup (08.10.2026): Arbeitsgang scannen → Rüsten (Werkzeugliste, Checkliste) → Produktion (Stück fertig, Zeiten) → Unterbrechung mit Grund, Messen, Programme, Wartung
 
-**NC-Programm Transfer (Kernfunktion):**
+**NC-Programm Transfer (Kernfunktion):** – gleiches Prinzip wie beim Messmaschinen-Terminal (Bereitstellen/Abschließen, Eingang, MDS-Agent mit Steuerungs-Adapter), siehe [MESSPROGRAMME_KONZEPT.md](docs/konzepte/MESSPROGRAMME_KONZEPT.md) Abschnitt 5.4
 - [ ] Programm laden: DB → Maschine (einzeln oder alle zur OP)
 - [ ] Programm senden: Maschine → DB als neue Version
 - [ ] Änderungserkennung (welche Programme wurden modifiziert)
