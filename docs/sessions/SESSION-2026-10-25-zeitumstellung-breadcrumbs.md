@@ -1,6 +1,6 @@
 # Session 25.–28. Oktober 2026 – Cron-Jobs bei der Zeitumstellung, Breadcrumbs, Releases 2.14.1/2.14.2
 
-**PRs:** #198 – #207, Tag `v2.14.1` · Arbeit auf dem Dev-Server `homepi`, Prüfungen und Deploy auf rpi01 durch den Nutzer
+**PRs:** #198 – #208, Tags `v2.14.1`, `v2.14.2` · Arbeit auf dem Dev-Server `homepi`, Prüfungen und Deploy auf rpi01 durch den Nutzer
 
 Fortsetzung der Session vom 24.10. Das Netzlaufwerk-Backup lief in der Nacht der Zeitumstellung durch. Dabei fiel auf, dass zwei MDS-Jobs „Überfällig“ waren: Ursache war ein Fehler in node-cron. Danach folgten die Reste aus den Klicktests 2.11–2.13. Die Breadcrumbs waren eine Mischung aus Englisch und Deutsch und haben die Namen auf den Detailseiten nie geladen.
 
@@ -16,7 +16,7 @@ Fortsetzung der Session vom 24.10. Das Netzlaufwerk-Backup lief in der Nacht der
 | #202 | Kontrolle am 26.10.: alle sechs Jobs pünktlich |
 | #203, #205, #206 | Prüfpunkte aus 2.11 (Tageswert nach Abwesenheit), 2.13 (Mitarbeiter-Einstellungen, Sidebar) und 2.12 (Handy) nachgeprüft – aus früheren Releases ist nichts mehr offen |
 | #204 | **Breadcrumbs:** durchgehend Deutsch, Pfad-Labels für Teile, die je nach Bereich anders heißen. Namen auf Detailseiten werden wieder geladen: Der Import zeigte auf die Basis-URL statt auf die Axios-Instanz, und den Endpunkten fehlte `/api`. Stufen ohne eigene Seite sind Text statt Link |
-| #207 | **Release 2.14.2** (Breadcrumbs), diese Session-Doku |
+| #207, #208 | **Release 2.14.2** (Breadcrumbs) und Deploy am 28.10., Tag `v2.14.2`; diese Session-Doku |
 
 ## Entscheidungen
 
@@ -33,7 +33,6 @@ Fortsetzung der Session vom 24.10. Das Netzlaufwerk-Backup lief in der Nacht der
 
 ## Offen
 
-- **Deploy 2.14.2** mit dem Breadcrumb-Prüfpunkt aus `docs/RELEASE-CHECKLISTE.md`, danach Tag `v2.14.2` auf den Merge-Commit
 - Auf rpi01 `/tmp/mds-restore` löschen (Probe-Wiederherstellung vom 25.10., enthält die `.env`), falls noch nicht geschehen
 - Optional: `caddy fmt` für das Caddyfile (Reload meldet „not formatted“, nur Einrückung)
 - Restliche Lint-Meldungen in `Breadcrumbs.jsx` (unbenutztes `index`, useEffect-Abhängigkeiten) – stammen aus der Zeit vor #204
