@@ -560,7 +560,6 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 25.–28.10.2026](docs/sessions/SESSION-2026-10-25-zeitumstellung-breadcrumbs.md) – **v2.14.2 läuft auf dem Pi** (28.10.: Breadcrumbs auf Deutsch #204; davor 2.14.1 mit Cron-Jobs bei der Zeitumstellung #198), `[Unreleased]` leer; Prüfpunkte aus 2.11–2.13 alle erledigt
 
-0. **Auf rpi01** `/tmp/mds-restore` löschen, falls noch nicht geschehen (Probe-Wiederherstellung vom 25.10., enthält die `.env`): `sudo rm -rf /tmp/mds-restore`
 1. **Handy-Test aller Seiten:** Mitarbeiter-Einstellungen gehen am Handy (2.12.0, geprüft 28.10.), andere Seiten weniger gut. Alle Seiten am Handy durchgehen, Befunde sammeln (seitliches Scrollen, abgeschnittene Tabellen, unerreichbare Knöpfe), dann priorisieren. Vorab möglich: Playwright mit Handy-Viewport auf dem Dev-System, seitlicher Überlauf je Seite
 2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
