@@ -46,5 +46,10 @@ r = HH.run(['1 BLK FORM 0.1 Z X0 Y-13 Z-52', '2 BLK FORM 0.2 X21,986 Y0 Z0', '3 
 const q = r.segs.filter(s => !s.rapid)[0];
 ok(q && near(q.b[0], 14.193) && near(q.b[1], -0.32) && near(q.b[2], -39.696), 'QL-Parameter/FN-Sprung: PLANE SPA+QL101 (= -90) im Unterprogramm');
 
+// 8) Zählschleife mit Formel (FN 1: Q1 = Q1 + 1): Q1 danach unbekannt -> Rücksprung nicht ausgeführt statt Endlosschleife
+r = HH.run(['1 TOOL CALL 1 Z', '2 L X0 Y0 Z0 FMAX', '3 Q1 = 0', '4 FN 9: IF +0 EQU +0 GOTO LBL 1', '5 LBL 1', '6 L X+5 F100', '7 L X0 F100',
+  '8 FN 1: Q1 = Q1 + 1', '9 FN 12: IF +Q1 LT +3 GOTO LBL 1', '10 END PGM T MM'].join('\n'));
+ok(r.segs.length === 2 && r.info.warnings.length === 1 && /nicht berechnet.*Zeile 9/.test(r.info.warnings[0]), 'Zaehlschleife mit Formel: Koerper einmal, Hinweis statt Endlosschleife');
+
 console.log(fail ? `\n${fail} Test(s) fehlgeschlagen` : '\nAlle Tests ok');
 process.exit(fail ? 1 : 0);

@@ -58,7 +58,10 @@ mcs -sdk:4.8 -target:winexe -out:NC-Viewer-Start.exe -r:System.Windows.Forms.dll
 - Rundachs-Wörter in Verfahrsätzen (`L … A-90 B0`) werden ignoriert, die Lage kommt aus `PLANE`.
 - Andere Zyklen (Taschen, Gewindefräszyklen, Konturzyklen …) werden **nicht** gezeichnet – Hinweis unter „Info“.
   TopSolid gibt bei uns fast alles als Bahnen aus, deshalb bisher kein Problem.
-- `M91`/`M92`-Sätze (Maschinenkoordinaten) werden ausgelassen; `CALL PGM` wird ignoriert; `FN`-Sprünge nicht ausgewertet.
+- `M91`/`M92`-Sätze (Maschinenkoordinaten) werden ausgelassen; `CALL PGM` wird ignoriert.
+- `FN`-Sprünge nur mit einfachen Werten: Ein Parameter mit Formel (`FN 1–8`, `Q1 = Q1 + 1`) gilt danach als unbekannt,
+  Sprünge darauf werden nicht ausgeführt (Zählschleifen laufen einmal durch) – Hinweis unter „Info“.
+- Läuft das Hauptprogramm ohne Sprung auf ein `LBL`, endet es dort (gilt als Beginn der Unterprogramme).
 - Werkzeugdurchmesser = Nennmaß aus dem Kommentar, nicht die echten Werte (R + DR) der Maschinen-Werkzeugtabelle.
 - Kein Materialabtrag / keine Kollisionsprüfung.
 - Laufzeit ohne Werkzeugwechsel, Beschleunigung, Messzyklen.

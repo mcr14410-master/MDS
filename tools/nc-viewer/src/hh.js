@@ -271,10 +271,12 @@
       const t = /QL?\d/.test(b.text) ? subst(b.text) : b.text;
       let m;
       if ((m = t.match(/^(?:FN 0:\s*)?(QL?\d+)\s*=\s*([+-]?[\d.,]+)\s*(?:;.*)?$/))) { qv[m[1]] = num(m[2]); i++; continue; }
+      // Formeln (FN 1–8, Q1 = Q1 + 1 …) werden nicht berechnet: Wert unbekannt, sonst liefe eine Zählschleife endlos
+      if ((m = t.match(/^(?:FN \d+:\s*)?(QL?\d+)\s*=/))) { delete qv[m[1]]; i++; continue; }
       if ((m = t.match(/^FN (9|10|11|12):\s*IF\s+(\S+)\s+(EQU|NE|GT|LT)\s+(\S+)\s+GOTO LBL\s+("?[\w-]+"?)/))) {
         const a = qval(m[2]), c = qval(m[4]), name = m[5].replace(/"/g, '');
         if (a === undefined || c === undefined) {
-          if (!fnWarned[line]) { fnWarned[line] = 1; info.warnings.push('FN-Sprung mit Wert, der erst an der Maschine feststeht (' + (qval(m[2]) === undefined ? m[2] : m[4]).replace(/^[+-]/, '') + '), nicht ausgeführt – Zeile ' + line); }
+          if (!fnWarned[line]) { fnWarned[line] = 1; info.warnings.push('FN-Sprung mit Wert, der hier nicht berechnet wird (' + (qval(m[2]) === undefined ? m[2] : m[4]).replace(/^[+-]/, '') + ', Formel oder Wert von der Maschine), nicht ausgeführt – Zeile ' + line); }
           i++; continue;
         }
         const go = { EQU: a === c, NE: a !== c, GT: a > c, LT: a < c }[m[3]];
