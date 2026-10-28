@@ -560,14 +560,14 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 25.–28.10.2026](docs/sessions/SESSION-2026-10-25-zeitumstellung-breadcrumbs.md) – **v2.14.2 läuft auf dem Pi** (28.10.: Breadcrumbs auf Deutsch #204; davor 2.14.1 mit Cron-Jobs bei der Zeitumstellung #198), `[Unreleased]` leer; Prüfpunkte aus 2.11–2.13 alle erledigt
 
-1. **Handy-Tauglichkeit** – Befunde aus dem Handy-Test vom 28.10. in [docs/konzepte/HANDY-TEST.md](docs/konzepte/HANDY-TEST.md) (27 von 52 Seiten zu breit). Zuerst überall: Kopfzeile/Breadcrumbs inkl. doppelter Breadcrumbs auf fünf Admin-Seiten, Tab-Leisten der Detailseiten, drei abgeschnittene Tabellen (Benutzer, Verbrauchsmaterial, Operationstypen). Seitenkopf mit Knöpfen nur auf Seiten, die am Handy genutzt werden – vorher festlegen, welche; komplexe Seiten bleiben PC-Seiten
-2. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
-3. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
-4. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
-5. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
-6. **Backup-Konzept:** Ebene 1+2 in Betrieb (24.10.2026); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
-7. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
-8. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
+2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
+3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
+4. **TopSolid-Werkzeugimport, Phase 1:** Konzept-Ist-Stand gegen Code prüfen → Spec + Plan → Migration → preview/commit-API → `.http`-Tests mit echtem Export → Frontend
+5. **Backup-Konzept:** Ebene 1+2 in Betrieb (24.10.2026); offen Ebene 3 (Images Pi/Terminals), Anleitung „frischer Pi“, eigener Backup-Benutzer
+6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
+7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
+8. **Handy-Tauglichkeit** (niedrige Priorität) – Befunde aus dem Handy-Test vom 28.10. in [docs/konzepte/HANDY-TEST.md](docs/konzepte/HANDY-TEST.md) (27 von 52 Seiten zu breit). Zuerst überall: Kopfzeile/Breadcrumbs inkl. doppelter Breadcrumbs auf fünf Admin-Seiten, Tab-Leisten der Detailseiten, drei abgeschnittene Tabellen (Benutzer, Verbrauchsmaterial, Operationstypen). Seitenkopf mit Knöpfen nur auf Seiten, die am Handy genutzt werden – vorher festlegen, welche; komplexe Seiten bleiben PC-Seiten
 9. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer-Rechtsklick am Arbeitsplatz, auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
