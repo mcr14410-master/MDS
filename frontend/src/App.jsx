@@ -12,6 +12,7 @@ import PartDetailPage from './pages/PartDetailPage';
 import PartFormPage from './pages/PartFormPage';
 
 import MachinesPage from './pages/MachinesPage';
+import ProgramsOverviewPage from './pages/ProgramsOverviewPage';
 import MachineDetailPage from './pages/MachineDetailPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
 import StorageLocationDetailPage from './pages/StorageLocationDetailPage';
@@ -147,6 +148,24 @@ function App() {
             } 
           />
           
+          {/* Programm-Übersichten (NC-Programme, Messprogramme) */}
+          <Route
+            path="/nc-programs"
+            element={
+              <ProtectedRoute requiredPermission="part.read">
+                <ProgramsOverviewPage key="nc" kind="nc" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cmm-programs"
+            element={
+              <ProtectedRoute requiredPermission="part.read">
+                <ProgramsOverviewPage key="cmm" kind="cmm" />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Machines Routes */}
           <Route
             path="/machines"

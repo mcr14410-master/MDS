@@ -10,6 +10,8 @@ const routeLabels = {
   'edit': 'Bearbeiten',
   'operations': 'Operationen',
   'machines': 'Maschinen',
+  'nc-programs': 'NC-Programme',
+  'cmm-programs': 'Messprogramme',
   'tools': 'Werkzeuge',
   'categories': 'Kategorien',
   'tool-number-lists': 'T-Nummern Listen',
