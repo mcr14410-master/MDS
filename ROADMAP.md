@@ -319,7 +319,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [x] 0 – Binär-Fix Programm-Upload (PR #215)
 - [x] 1 – Migration: `programs.kind`, `program_revision_files`, `machines.measuring_equipment_id` (Freigabe über `program.release`, Maschinentyp „Messmaschine“ per Oberfläche)
 - [x] 2 – Backend: Upload mehrerer Dateien je Revision (Änderungen per Hash erkannt, Rest aus der Vorversion übernommen), Download einzeln/ZIP, `.http`-Tests
-- [ ] 3 – Frontend: Menüpunkt „Messprogramme“ → nutzbar ohne Agent
+- [ ] 3 – Frontend: Menüpunkt „Messprogramme“ → nutzbar ohne Agent – Übersicht (mit „NC-Programme“) erledigt; offen: Messprogramme am Arbeitsgang (Hochladen mit Vorschau, Dateiliste, ZIP)
 - [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
 - [ ] 5 – Abschließen + Eingang
 - [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig); offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
