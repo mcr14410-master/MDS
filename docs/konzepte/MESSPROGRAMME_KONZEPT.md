@@ -98,7 +98,7 @@ CREATE TABLE program_revision_files (
   filesize      integer,
   file_hash     varchar(64) NOT NULL,
   mime_type     varchar(100),
-  created_at    timestamp NOT NULL DEFAULT now(),
+  created_at    timestamptz NOT NULL DEFAULT now(),
   UNIQUE (revision_id, filename)
 );
 ```
@@ -395,16 +395,20 @@ Regeln:
 
 ### 4.5 KMG als Maschine
 
-- Maschinentyp **„Messmaschine“** anlegen (Seed per Migration).
+- Maschinentyp **„Messmaschine“** in der Oberfläche anlegen (Stammdaten). **Nicht per
+  Migration** (28.10.2026): Maschinen- und Arbeitsgangtypen werden in Produktion über die
+  Oberfläche gepflegt; das MDS erkennt Messprogramme an `programs.kind = 'cmm'`, nicht am Typnamen.
 - KMG als Maschine erfassen, optional Verknüpfung zum Messmittel (Kalibrierung bleibt dort):
   `machines.measuring_equipment_id`.
-- Arbeitsgang „Messen“ (Operation-Typ) am Bauteil → Maschine = KMG → Messprogramme hängen
-  daran wie NC-Programme.
+- Arbeitsgang „Messen“ am Bauteil → Maschine = KMG → Messprogramme hängen daran wie
+  NC-Programme. Dafür reicht der vorhandene Typ „Qualitätskontrolle“ mit zugeschaltetem
+  Reiter „Programme“ oder ein eigener Typ – Entscheidung beim Einrichten.
 
 ### 4.6 Rechte (per Migration, nur `admin`)
 
-`cmm_program.read`, `cmm_program.write`, `cmm_program.release` (oder bestehendes
-`program.release` wiederverwenden – offen), `agent.manage`.
+**Entschieden (28.10.2026):** Freigabe über das bestehende `program.release` – kein eigenes
+`cmm_program.*`. Die Programm-Routen prüfen heute außer dem Login keine Rechte, nur der
+Workflow-Wechsel verlangt `program.release`. Neu kommt nur `agent.manage` (Schritt 4).
 
 ---
 
@@ -725,6 +729,6 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
       Variablen-Zuweisungen mit Laufwerten); `ExportToXML` als Alternative ansehen
 - [x] `V_PROTOKOLLPFAD` = PDF, `RESULT FOLDER` = Excel; beide fest im Programm, sollen auf dasselbe
       Messdaten-Verzeichnis zeigen → Pfad-Prüfung mit Warnung (4.4) (19.10.2026)
-- [ ] Freigaberecht: eigenes `cmm_program.release` oder `program.release` mitbenutzen?
+- [x] Freigaberecht → `program.release` mitbenutzen, kein eigenes Recht (28.10.2026) → 4.6
 - [ ] Menüpunkt eigenständig oder unter „NC-Programme“ (Oberfläche, nicht Datenmodell)
 - [ ] Agent als Tray-Programm genügt, oder von Anfang an Dienst (Mess-PC ohne Anmeldung)?

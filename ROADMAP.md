@@ -316,8 +316,8 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - Ein Datenmodell für NC- und Messprogramme (`programs.kind`, `program_revision_files`, `agents`, `agent_deployments`, `program_transfers`, `program_inbox`)
 
 **Umsetzungsschritte:**
-- [ ] 0 – Binär-Fix Programm-Upload (`.prg` endet heute mit 500; Voraussetzung für alles Weitere)
-- [ ] 1 – Migration: `programs.kind`, `program_revision_files`, Maschinentyp „Messmaschine“, Rechte
+- [x] 0 – Binär-Fix Programm-Upload (PR #215)
+- [x] 1 – Migration: `programs.kind`, `program_revision_files`, `machines.measuring_equipment_id` (Freigabe über `program.release`, Maschinentyp „Messmaschine“ per Oberfläche)
 - [ ] 2 – Backend: Upload mehrerer Dateien je Revision, Download einzeln/ZIP, `.http`-Tests
 - [ ] 3 – Frontend: Menüpunkt „Messprogramme“ → nutzbar ohne Agent
 - [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
