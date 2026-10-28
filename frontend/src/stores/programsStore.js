@@ -86,6 +86,39 @@ export const useProgramsStore = create((set, get) => ({
     set({ overviewStats: response.data?.data || null });
   },
 
+  // Messprogramme (KMG): Dateigruppe hochladen. programId = null → neues Programm.
+  // dryRun → nur prüfen, Antwort ist die Vorschau ({ valid, errors, files, removed, ... })
+  uploadCmm: async ({ programId = null, fields, files, remove = [], dryRun = false }) => {
+    const formData = new FormData();
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value !== '' && value !== null && value !== undefined) formData.append(key, value);
+    });
+    remove.forEach((name) => formData.append('remove', name));
+    files.forEach((file) => formData.append('files', file, file.name));
+    const url = programId
+      ? `${API_ENDPOINTS.PROGRAMS}/${programId}/cmm-revisions`
+      : `${API_ENDPOINTS.PROGRAMS}/cmm`;
+    try {
+      const response = await axios.post(`${url}${dryRun ? '?dry_run=true' : ''}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('uploadCmm error:', error);
+      const data = error.response?.data;
+      const err = new Error(data?.error || 'Fehler beim Hochladen des Messprogramms');
+      err.details = data?.details || [];
+      throw err;
+    }
+  },
+
+  fetchCmmFiles: async (programId, version = null) => {
+    const response = await axios.get(
+      `${API_ENDPOINTS.PROGRAMS}/${programId}/files${version ? `?version=${encodeURIComponent(version)}` : ''}`
+    );
+    return response.data.data;
+  },
+
   // Fetch single program
   fetchProgram: async (id) => {
     try {
