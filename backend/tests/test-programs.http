@@ -408,6 +408,63 @@ DELETE {{baseUrl}}/api/programs/2
 Authorization: Bearer {{token}}
 
 ### ==============================================
+### 16. CREATE - Binärdatei (z. B. PC-DMIS .prg)
+### Erwartung: 201, content = null (Null-Bytes), Hash gesetzt
+### ==============================================
+POST {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="operation_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="program_name"
+
+MESSPROGRAMM BINÄR
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-binary.prg"
+Content-Type: application/octet-stream
+
+< ./test-binary.prg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 17. REVISION - Binärdatei als neue Version
+### Erwartung: 201, content = null
+### (ID aus Test 16 einsetzen)
+### ==============================================
+POST {{baseUrl}}/api/programs/3/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="version_type"
+
+minor
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-binary-v2.prg"
+Content-Type: application/octet-stream
+
+< ./test-binary-v2.prg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==============================================
+### 18. COMPARE - Binärdateien (Error)
+### Erwartung: 400 - Content nicht verfügbar
+### ==============================================
+GET {{baseUrl}}/api/programs/3/compare?from=1.0.0&to=1.1.0
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 19. DOWNLOAD - Binärdatei unverändert
+### Erwartung: 200, Datei byte-gleich mit test-binary-v2.prg
+### ==============================================
+GET {{baseUrl}}/api/programs/3/download
+Authorization: Bearer {{token}}
+
+### ==============================================
 ### NOTES:
 ### ==============================================
 ### API Endpoints:

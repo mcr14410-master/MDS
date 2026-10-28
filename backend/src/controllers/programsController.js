@@ -25,10 +25,15 @@ const calculateFileHash = (filepath) => {
 };
 
 // Helper: File-Content lesen (für Syntax-Highlighting später)
+// Binärdateien (z. B. PC-DMIS .prg) enthalten Null-Bytes, die PostgreSQL in
+// Textspalten ablehnt → kein Content, Vergleich nur über den Hash
 const readFileContent = async (filepath) => {
   try {
-    const content = await fs.readFile(filepath, 'utf8');
-    return content;
+    const buffer = await fs.readFile(filepath);
+    if (buffer.includes(0)) {
+      return null;
+    }
+    return buffer.toString('utf8');
   } catch (error) {
     console.error('Error reading file content:', error);
     return null;
@@ -771,7 +776,7 @@ exports.compareRevisions = async (req, res) => {
     // Prüfe ob Content vorhanden ist
     if (!revision1.content || !revision2.content) {
       return res.status(400).json({ 
-        error: 'Content nicht verfügbar',
+        error: 'Kein Textvergleich möglich – mindestens eine Version ist eine Binärdatei (z. B. Messprogramm).',
         details: 'Eine oder beide Revisionen haben keinen gespeicherten Content'
       });
     }
@@ -868,7 +873,7 @@ exports.compareRevisionsByVersion = async (req, res) => {
     // Prüfe ob Content vorhanden ist
     if (!revision1.content || !revision2.content) {
       return res.status(400).json({ 
-        error: 'Content nicht verfügbar',
+        error: 'Kein Textvergleich möglich – mindestens eine Version ist eine Binärdatei (z. B. Messprogramm).',
         details: 'Eine oder beide Revisionen haben keinen gespeicherten Content'
       });
     }

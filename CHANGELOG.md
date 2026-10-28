@@ -17,6 +17,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 - NC-Viewer: Programme mit Q-/QL-Parametern in `PLANE` (z. B. `PLANE SPATIAL SPA+QL101 … SYM+` im Unterprogramm `LBL "PLANE_SYM"`) wurden ungeschwenkt gezeichnet – einfache Parameter-Zuweisungen, `FN 9–12`-Sprünge und Text-Labels werden jetzt ausgewertet. Parameter mit Formel (`FN 1–8`, `Q1 = Q1 + 1`) gelten danach als unbekannt, Sprünge darauf werden nicht ausgeführt (Hinweis unter „Info“) – sonst liefe eine Zählschleife endlos
+- Programm-Upload: Binärdateien (z. B. PC-DMIS-Messprogramme `.prg`) brachen mit Fehler 500 ab, weil der Inhalt als Text in die DB geschrieben wurde (Null-Bytes). Binärdateien werden jetzt erkannt und nur als Datei mit Hash gespeichert, ohne Textinhalt; NC-Programme unverändert
+- Versionsvergleich: Bei Versionen ohne Textinhalt (Binärdateien) blieb das Lade-Fenster ohne Schließen-Knopf stehen – jetzt erscheint eine Meldung „Versionsvergleich nicht möglich“ mit Schließen
 
 ---
 
