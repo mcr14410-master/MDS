@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.14.2] - 2026-10-28 - Breadcrumbs auf Deutsch
+
+### Für Anwender
+- Die Pfadangabe oben auf jeder Seite (z. B. „Urlaub & Arbeitszeit › Verwaltung“) ist jetzt durchgehend auf Deutsch. Bisher standen dort teils englische Begriffe wie „Vacations“ oder „Time tracking“.
+- Auf Detailseiten steht dort wieder der Name, etwa die Bauteil-Nummer oder der Name des Mitarbeiters, statt einer Nummer mit „#“.
+- Stufen ohne eigene Seite sind kein Link mehr – ein Klick darauf führte bisher aufs Dashboard.
+
 ### Fixed
 - Breadcrumbs: alle Bereiche auf Deutsch (bisher z. B. „Vacations“, „Time tracking“, „Maintenance“); Pfadteile, die je nach Bereich anders heißen, über den ganzen Pfad („Mein Bereich“ / „Meine Aufgaben“, „Verwaltung“ / „Administration“)
 - Breadcrumbs: Namen auf Detailseiten (Bauteil-Nr., Werkzeug, Maschine, Mitarbeiter …) werden wieder geladen – der Import zeigte auf die Basis-URL statt auf die Axios-Instanz, die Endpunkte hatten kein `/api`; es stand immer „#…“
