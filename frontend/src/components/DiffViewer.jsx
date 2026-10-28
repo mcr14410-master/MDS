@@ -1,12 +1,12 @@
 // frontend/src/components/DiffViewer.jsx
 import { useState, useEffect } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
-import { toast } from './Toaster';
 
 export default function DiffViewer({ program, fromRevision, toRevision, onClose }) {
   const { compareRevisions, loading } = useProgramsStore();
   
   const [diffData, setDiffData] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [viewMode, setViewMode] = useState('unified'); // 'unified' or 'split'
 
   useEffect(() => {
@@ -27,9 +27,29 @@ export default function DiffViewer({ program, fromRevision, toRevision, onClose 
         diff: data.diff.changes
       });
     } catch (error) {
-      toast.error('Fehler beim Laden des Vergleichs');
+      setLoadError(error.message || 'Fehler beim Laden des Vergleichs');
     }
   };
+
+  // Fehler (z. B. Binärdatei ohne Textinhalt): Meldung statt Endlos-Spinner
+  if (loadError && !loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Versionsvergleich nicht möglich</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{loadError}</p>
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || !diffData) {
     return (

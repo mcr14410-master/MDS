@@ -271,7 +271,7 @@ export const useProgramsStore = create((set, get) => ({
       return response.data.data;
     } catch (error) {
       console.error('compareRevisions error:', error);
-      const errorMessage = error.response?.data?.message || 'Fehler beim Vergleichen der Versionen';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Fehler beim Vergleichen der Versionen';
       set({ loading: false, error: errorMessage });
       throw new Error(errorMessage);
     }
