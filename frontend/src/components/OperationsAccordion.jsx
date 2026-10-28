@@ -10,7 +10,7 @@
  * - Maschinen-Varianten
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOperationsStore } from '../stores/operationsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
@@ -28,7 +28,7 @@ import MeasuringEquipmentTab from './MeasuringEquipmentTab';
 import RawMaterialTab from './RawMaterialTab';
 import ConsumablesTab from './ConsumablesTab';
 
-export default function OperationsAccordion({ partId }) {
+export default function OperationsAccordion({ partId, focusOperationId = null }) {
   const { operations, loading, error, fetchOperations, deleteOperation, updateOperation } = useOperationsStore();
   const { hasPermission } = useAuthStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
@@ -91,6 +91,27 @@ export default function OperationsAccordion({ partId }) {
     }
     return 'programs'; // Fallback
   };
+
+  // Direktsprung (z. B. aus NC-Programme/Messprogramme): Arbeitsgang aufklappen, bei Varianten
+  // die Variante wählen, Reiter „Programme“ öffnen und hinscrollen – einmal je Ziel
+  const focusedRef = useRef(null);
+  useEffect(() => {
+    if (!focusOperationId || focusedRef.current === focusOperationId) return;
+    const target = operations.find(op => op.id === focusOperationId);
+    if (!target) return;
+    const primary = target.variant_group_id
+      ? operations.find(op => op.variant_group_id === target.variant_group_id && op.is_variant_primary) || target
+      : target;
+    focusedRef.current = focusOperationId;
+    setExpandedIds(prev => new Set(prev).add(primary.id));
+    if (primary.id !== target.id) {
+      setActiveVariant(prev => ({ ...prev, [primary.id]: target.id }));
+    }
+    setActiveTab(prev => ({ ...prev, [target.id]: 'programs' }));
+    setTimeout(() => {
+      document.getElementById(`operation-${primary.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, [focusOperationId, operations]);
 
   // Accordion toggle (einzeln)
   const handleToggle = (operationId) => {
@@ -405,7 +426,7 @@ export default function OperationsAccordion({ partId }) {
             const currentTab = activeTab[selectedVariantId] || 'programs';
 
             return (
-              <div key={operation.id} className="space-y-1">
+              <div key={operation.id} id={`operation-${operation.id}`} className="space-y-1 scroll-mt-4">
                 {/* Primäre Operation */}
                 <div
                   draggable={hasPermission('part.update')}
