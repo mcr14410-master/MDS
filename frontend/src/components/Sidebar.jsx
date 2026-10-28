@@ -354,13 +354,15 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, 
             <NavGroup 
               title="Fertigung" 
               icon={Icons.Parts} 
-              routes={['/parts', '/machines', '/customers']}
+              routes={['/parts', '/machines', '/customers', '/nc-programs', '/cmm-programs']}
               collapsed={collapsed}
             >
               {hasPermission('part.read') && (
                 <>
                   <NavSubItem to="/customers" label="Kunden" />
                   <NavSubItem to="/parts" label="Bauteile" />
+                  <NavSubItem to="/nc-programs" label="NC-Programme" />
+                  <NavSubItem to="/cmm-programs" label="Messprogramme" />
                 </>
               )}
               {hasPermission('machine.read') && (

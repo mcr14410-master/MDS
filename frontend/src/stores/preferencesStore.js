@@ -14,6 +14,8 @@ const defaultPreferences = {
     fixtures: 'table',
     clampingDevices: 'table',
     machines: 'grid',
+    ncPrograms: 'table',
+    cmmPrograms: 'table',
     // Weitere Seiten hier hinzufügen
   },
   pageSizes: {

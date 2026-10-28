@@ -314,10 +314,13 @@ exports.getPrograms = async (req, res) => {
         ws.color as workflow_color,
         o.op_number as operation_number,
         o.op_name as operation_name,
+        o.part_id,
         pt.part_number,
         pt.part_name,
         m.name as machine_name,
         u.username as created_by_username
+    `;
+    const fromClause = `
       FROM programs p
       LEFT JOIN program_revisions pr ON p.current_revision_id = pr.id
       LEFT JOIN workflow_states ws ON p.workflow_state_id = ws.id
@@ -337,24 +340,92 @@ exports.getPrograms = async (req, res) => {
       params.push(kind);
       conditions.push(`p.kind = $${params.length}`);
     }
-    if (conditions.length > 0) {
-      query += ` WHERE ${conditions.join(' AND ')}`;
+
+    // Übersichtsseiten: Suche, Status, Sortierung, Seiten – nur wenn `page` angegeben ist
+    // (die Liste am Arbeitsgang lädt weiterhin alle Programme ohne Seiten)
+    const { page, page_size, search, status, sort_by, sort_order } = req.query;
+    if (search) {
+      params.push(`%${search}%`);
+      const n = params.length;
+      conditions.push(`(p.program_number ILIKE $${n} OR p.program_name ILIKE $${n} OR pt.part_number ILIKE $${n}
+        OR pt.part_name ILIKE $${n} OR pr.filename ILIKE $${n} OR o.op_number ILIKE $${n})`);
+    }
+    if (status) {
+      params.push(status);
+      conditions.push(`ws.name = $${params.length}`);
     }
 
-    query += ` ORDER BY p.created_at DESC`;
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
-    const result = await pool.query(query, params);
+    if (!page) {
+      const result = await pool.query(`${query} ${fromClause} ${whereClause} ORDER BY p.created_at DESC`, params);
+      // Format standardisieren: data statt programs
+      return res.json({
+        success: true,
+        count: result.rows.length,
+        data: result.rows
+      });
+    }
 
-    // Format standardisieren: data statt programs
+    const SORT_COLUMNS = {
+      updated_at: 'p.updated_at',
+      created_at: 'p.created_at',
+      program_number: 'p.program_number',
+      program_name: 'p.program_name',
+      part_number: 'pt.part_number',
+      operation_number: 'o.op_number',
+    };
+    const sortColumn = SORT_COLUMNS[sort_by] || 'p.updated_at';
+    const sortDirection = sort_order === 'asc' ? 'ASC' : 'DESC';
+    const pageInt = Math.max(1, parseInt(page, 10) || 1);
+    const sizeInt = Math.min(500, Math.max(1, parseInt(page_size, 10) || 50));
+
+    const countResult = await pool.query(`SELECT COUNT(*) AS total ${fromClause} ${whereClause}`, params);
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    const result = await pool.query(
+      `${query} ${fromClause} ${whereClause}
+       ORDER BY ${sortColumn} ${sortDirection} NULLS LAST, p.id DESC
+       LIMIT ${sizeInt} OFFSET ${(pageInt - 1) * sizeInt}`,
+      params
+    );
+
     res.json({
       success: true,
       count: result.rows.length,
+      total,
+      page: pageInt,
+      page_size: sizeInt,
       data: result.rows
     });
 
   } catch (error) {
     console.error('Error fetching programs:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Programme', details: error.message });
+  }
+};
+
+// GET /api/programs/stats?kind=nc|cmm - Anzahl je Workflow-Status (Übersichtsseiten)
+exports.getProgramStats = async (req, res) => {
+  try {
+    const { kind } = req.query;
+    if (kind && !['nc', 'cmm'].includes(kind)) {
+      return res.status(400).json({ error: 'Ungültige Programmart', allowed: ['nc', 'cmm'] });
+    }
+    const result = await pool.query(
+      `SELECT ws.name AS state, COUNT(p.id)::int AS count
+       FROM programs p
+       LEFT JOIN workflow_states ws ON p.workflow_state_id = ws.id
+       WHERE ($1::varchar IS NULL OR p.kind = $1)
+       GROUP BY ws.name`,
+      [kind || null]
+    );
+    const by_state = Object.fromEntries(result.rows.map(r => [r.state, r.count]));
+    const total = result.rows.reduce((sum, r) => sum + r.count, 0);
+    res.json({ success: true, data: { total, by_state } });
+  } catch (error) {
+    console.error('Error fetching program stats:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Programm-Statistik', details: error.message });
   }
 };
 

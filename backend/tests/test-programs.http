@@ -465,6 +465,41 @@ GET {{baseUrl}}/api/programs/3/download
 Authorization: Bearer {{token}}
 
 ### ==============================================
+### 20. ÜBERSICHT - NC-Programme seitenweise
+### Erwartung: 200, total, page, page_size; part_id je Eintrag
+### ==============================================
+GET {{baseUrl}}/api/programs?kind=nc&page=1&page_size=10&sort_by=part_number&sort_order=asc
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 21. ÜBERSICHT - Suche (Bauteil, Arbeitsgang, Programm, Datei)
+### Erwartung: 200, nur Treffer
+### ==============================================
+GET {{baseUrl}}/api/programs?page=1&search=OP20
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 22. ÜBERSICHT - nach Status
+### Erwartung: 200, nur freigegebene
+### ==============================================
+GET {{baseUrl}}/api/programs?kind=nc&page=1&status=released
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 23. STATS - Anzahl je Status
+### Erwartung: 200, { total, by_state: { draft: n, ... } }
+### ==============================================
+GET {{baseUrl}}/api/programs/stats?kind=nc
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 24. STATS - ungültige Programmart (Error)
+### Erwartung: 400 - Ungültige Programmart
+### ==============================================
+GET {{baseUrl}}/api/programs/stats?kind=xyz
+Authorization: Bearer {{token}}
+
+### ==============================================
 ### NOTES:
 ### ==============================================
 ### API Endpoints:

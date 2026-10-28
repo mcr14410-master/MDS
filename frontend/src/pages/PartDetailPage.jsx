@@ -1,6 +1,6 @@
 // frontend/src/pages/PartDetailPage.jsx
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
@@ -20,10 +20,13 @@ const STATUS_CONFIG = {
 
 export default function PartDetailPage() {
   const { id } = useParams();
+  // ?op=<Arbeitsgang-ID>: Direktsprung aus NC-Programme/Messprogramme
+  const [searchParams] = useSearchParams();
+  const focusOperationId = parseInt(searchParams.get('op'), 10) || null;
   const navigate = useNavigate();
   const { currentPart, loading, error, fetchPart, deletePart, updatePart } = usePartsStore();
   const { hasPermission } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('details'); // 'details', 'operations', 'documents'
+  const [activeTab, setActiveTab] = useState(focusOperationId ? 'operations' : 'details'); // 'details', 'operations', 'documents'
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const statusDropdownRef = useRef(null);
@@ -661,7 +664,7 @@ export default function PartDetailPage() {
       ) : activeTab === 'operations' ? (
         /* Operations Tab - Accordion */
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <OperationsAccordion partId={id} />
+          <OperationsAccordion partId={id} focusOperationId={focusOperationId} />
         </div>
       ) : activeTab === 'history' ? (
         /* History Tab */

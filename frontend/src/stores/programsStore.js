@@ -51,6 +51,41 @@ export const useProgramsStore = create((set, get) => ({
     }
   },
 
+  // Übersichtsseiten NC-Programme / Messprogramme (seitenweise, über alle Bauteile)
+  overviewPrograms: [],
+  overviewTotal: 0,
+  overviewStats: null,
+  overviewLoading: false,
+  overviewError: null,
+
+  fetchProgramsOverview: async (params) => {
+    set({ overviewLoading: true, overviewError: null });
+    try {
+      const query = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+      ).toString();
+      const response = await axios.get(`${API_ENDPOINTS.PROGRAMS}?${query}`);
+      set({
+        overviewPrograms: Array.isArray(response.data?.data) ? response.data.data : [],
+        overviewTotal: response.data?.total || 0,
+        overviewLoading: false,
+      });
+    } catch (error) {
+      console.error('fetchProgramsOverview error:', error);
+      set({
+        overviewPrograms: [],
+        overviewTotal: 0,
+        overviewLoading: false,
+        overviewError: error.response?.data?.error || 'Fehler beim Laden der Programme',
+      });
+    }
+  },
+
+  fetchProgramStats: async (kind) => {
+    const response = await axios.get(`${API_ENDPOINTS.PROGRAMS}/stats?kind=${kind}`);
+    set({ overviewStats: response.data?.data || null });
+  },
+
   // Fetch single program
   fetchProgram: async (id) => {
     try {
