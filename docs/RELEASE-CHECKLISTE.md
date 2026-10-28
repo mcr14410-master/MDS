@@ -45,7 +45,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Nächstes Release** – Breadcrumbs auf Deutsch, Namen auf Detailseiten.
 
 - [ ] Breadcrumbs: Urlaub & Arbeitszeit (Kalender, Mein Bereich, Verwaltung), Zeiterfassung eines Mitarbeiters („… › Verwaltung › Vorname Nachname“), Wartung, Administration auf Deutsch; Detailseiten (Bauteil, Werkzeug, Maschine) zeigen den Namen statt „#…“
-- [ ] Noch von 2.12.0: am Handy Urlaub & Arbeitszeit → Verwaltung → Einstellungen → Mitarbeiter – kein seitliches Wackeln der Seite, Mitarbeiter aufklappen, Zeitmodell-Verlauf und Speichern erreichbar (Test in der Firma)
 
 ---
 
@@ -75,7 +74,9 @@ Nachgeprüft am 27.10.2026: Mitarbeiter-Einstellungen (Zeitmodell-Spalte und Ver
 
 ## Erledigt: Release 2.12.0 (17.10.2026)
 
-Kalender-Tooltip (#178), Vorschau Zeitmodell-Verlauf ohne „1 → 1“ (#179), Mitarbeiter-Einstellungen am Handy (#180), Audit-Log-Zeitstempel (#181). Deploy ohne Befund, Migration `1737000119000_audit-logs-timestamptz` gelaufen, Prüfpunkte grün (Aktivitäten-Uhrzeiten, Kalender-Tooltip). Vorab in Produktion geprüft: nur `user_time_model` (4 Einträge vom 16.10.) stand in Berliner Zeit, alles andere in UTC (auch `part` – `partsController` hat einen eigenen Pool); die erste Fassung der Migration hätte Teile-Einträge verschoben. Offen: Test am Handy (oben).
+Kalender-Tooltip (#178), Vorschau Zeitmodell-Verlauf ohne „1 → 1“ (#179), Mitarbeiter-Einstellungen am Handy (#180), Audit-Log-Zeitstempel (#181). Deploy ohne Befund, Migration `1737000119000_audit-logs-timestamptz` gelaufen, Prüfpunkte grün (Aktivitäten-Uhrzeiten, Kalender-Tooltip). Vorab in Produktion geprüft: nur `user_time_model` (4 Einträge vom 16.10.) stand in Berliner Zeit, alles andere in UTC (auch `part` – `partsController` hat einen eigenen Pool); die erste Fassung der Migration hätte Teile-Einträge verschoben.
+
+Nachgeprüft am 28.10.2026: Mitarbeiter-Einstellungen am Handy ohne seitliches Wackeln, Aufklappen, Zeitmodell-Verlauf und Speichern erreichbar.
 
 ---
 
