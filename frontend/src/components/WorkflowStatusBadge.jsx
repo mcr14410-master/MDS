@@ -1,6 +1,7 @@
 // frontend/src/components/WorkflowStatusBadge.jsx
 import { useEffect } from 'react';
 import { useWorkflowStore } from '../stores/workflowStore';
+import { WORKFLOW_STATUS_LABELS } from '../utils/workflowLabels';
 
 export default function WorkflowStatusBadge({ 
   status, 
@@ -18,7 +19,7 @@ export default function WorkflowStatusBadge({
 
   // Get state info
   const stateInfo = getStateInfo(status);
-  const displayName = stateInfo?.display_name || status || 'Unbekannt';
+  const displayName = stateInfo?.display_name || WORKFLOW_STATUS_LABELS[status] || status || 'Unbekannt';
   const description = stateInfo?.description || '';
 
   // Size variants
