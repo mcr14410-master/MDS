@@ -22,8 +22,12 @@ router.post('/cmm',
   cmmProgramsController.createCmmProgram
 );
 
-// GET /api/programs - Liste aller Programme (mit Filter: ?operation_id=1, ?kind=cmm)
+// GET /api/programs - Liste aller Programme (mit Filter: ?operation_id=1, ?kind=cmm;
+// mit ?page= zusätzlich search, status, sort_by, sort_order, page_size)
 router.get('/', programsController.getPrograms);
+
+// GET /api/programs/stats?kind=nc|cmm - Anzahl je Status (VOR /:id!)
+router.get('/stats', programsController.getProgramStats);
 
 // POST /api/programs/:id/cmm-revisions - Messprogramm: neue Version (geänderte Dateien, Rest wird übernommen)
 router.post('/:id/cmm-revisions',
