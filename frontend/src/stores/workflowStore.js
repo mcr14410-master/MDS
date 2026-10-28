@@ -127,7 +127,8 @@ const useWorkflowStore = create((set, get) => ({
   // Get state info by state code
   getStateInfo: (stateCode) => {
     const states = get().states;
-    return states.find(s => s.code === stateCode) || null;
+    // API liefert den Code als `name`
+    return states.find(s => (s.code ?? s.name) === stateCode) || null;
   },
 
   // Clear error

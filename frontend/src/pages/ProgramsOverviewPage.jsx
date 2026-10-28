@@ -8,6 +8,8 @@ import { usePreferencesStore } from '../stores/preferencesStore';
 import { downloadFileViaApi } from '../utils/fileDownload';
 import { toast } from '../components/Toaster';
 import Pagination from '../components/Pagination';
+import { WORKFLOW_STATUS_LABELS as STATUS_LABELS } from '../utils/workflowLabels';
+import { cmmZipName } from '../utils/cmmPrograms';
 
 const KIND_CONFIG = {
   nc: {
@@ -24,15 +26,6 @@ const KIND_CONFIG = {
     empty: 'Keine Messprogramme gefunden',
     downloadTitle: 'Alle Dateien als ZIP herunterladen',
   },
-};
-
-const STATUS_LABELS = {
-  draft: 'Entwurf',
-  review: 'In Prüfung',
-  approved: 'Geprüft',
-  released: 'Freigegeben',
-  rejected: 'Abgelehnt',
-  archived: 'Archiviert',
 };
 
 const STATUS_COLORS = {
@@ -108,10 +101,7 @@ export default function ProgramsOverviewPage({ kind }) {
 
   const handleDownload = async (p) => {
     const result = kind === 'cmm'
-      ? await downloadFileViaApi(
-        `/api/programs/${p.id}/files/zip`,
-        `${[p.part_number, p.program_number, `v${p.version}`].filter(Boolean).join('_')}.zip`
-      )
+      ? await downloadFileViaApi(`/api/programs/${p.id}/files/zip`, cmmZipName(p, p.version))
       // NC speichert nur den internen Ablagenamen (Zeitstempel-Zufallszahl-Name) → Präfix weglassen
       : await downloadFileViaApi(`/api/programs/${p.id}/download`, (p.filename || '').replace(/^\d+-\d+-/, ''));
     if (!result.success) toast.error(result.error);

@@ -480,6 +480,47 @@ Content-Type: application/octet-stream
 --{{boundary}}--
 
 ### ==============================================
+### 27b. PROBELAUF - neue Version prüfen, nichts speichern
+### Erwartung: 200, .cad "unchanged", Rest "carried" → valid false
+### („Keine Änderung gegenüber der Vorversion“); es wird nichts gespeichert
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions?dry_run=true
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.cad"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.cad
+--{{boundary}}--
+
+### ==============================================
+### 27c. PROBELAUF - neues Programm mit unvollständiger Vorlage
+### Erwartung: 200, valid false, errors: Excel-Vorlage unvollständig
+### (program_name im Probelauf nicht nötig)
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm?dry_run=true
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/KD00000_TEIL-0001_C.xlsx
+--{{boundary}}--
+
+### ==============================================
 ### 28. LÖSCHEN - Messprogramm mit allen Dateien
 ### Erwartung: 200, deleted_files = alle Dateien aller Versionen
 ### ==============================================

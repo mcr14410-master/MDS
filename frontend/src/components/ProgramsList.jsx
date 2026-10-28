@@ -6,6 +6,7 @@ import { toast } from './Toaster';
 import ProgramCard from './ProgramCard';
 import ProgramUploadForm from './ProgramUploadForm';
 import RevisionsList from './RevisionsList'; // NEU: Woche 7
+import CmmUploadForm from './CmmUploadForm';
 
 export default function ProgramsList({ operationId }) {
   const { programsByOperation, loadingByOperation, errorByOperation, fetchPrograms, deleteProgram } = useProgramsStore();
@@ -19,6 +20,8 @@ export default function ProgramsList({ operationId }) {
   const [showRevisions, setShowRevisions] = useState(false);         // NEU: Woche 7
   const [selectedProgram, setSelectedProgram] = useState(null);      // NEU: Woche 7
   const [statusFilter, setStatusFilter] = useState('all');           // NEU: Woche 9
+  // Messprogramm (KMG): { program: null } = neu, { program } = neue Version
+  const [cmmUpload, setCmmUpload] = useState(null);
 
   useEffect(() => {
     if (operationId) {
@@ -35,6 +38,10 @@ export default function ProgramsList({ operationId }) {
 
   // NEU: Woche 7 - Neue Version hochladen
   const handleNewRevision = (program) => {
+    if (program.kind === 'cmm') {
+      setCmmUpload({ program });
+      return;
+    }
     setEditingProgram(program);
     setIsNewRevision(true);
     setShowUploadForm(true);
@@ -114,15 +121,27 @@ export default function ProgramsList({ operationId }) {
         </div>
         
         {hasPermission('part.update') && (
-          <button
-            onClick={() => setShowUploadForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Programm hochladen
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              onClick={() => setCmmUpload({ program: null })}
+              className="px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center gap-2"
+              title="PC-DMIS-Messprogramm (KMG) mit Dateigruppe hochladen"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              Messprogramm hochladen
+            </button>
+            <button
+              onClick={() => setShowUploadForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              Programm hochladen
+            </button>
+          </div>
         )}
       </div>
 
@@ -201,7 +220,7 @@ export default function ProgramsList({ operationId }) {
             Noch keine Programme
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Laden Sie das erste NC-Programm für diesen Arbeitsgang hoch.
+            Laden Sie das erste NC-Programm oder Messprogramm für diesen Arbeitsgang hoch.
           </p>
           {hasPermission('part.update') && (
             <button
@@ -242,6 +261,19 @@ export default function ProgramsList({ operationId }) {
           isNewRevision={isNewRevision}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {/* Messprogramm hochladen / neue Version */}
+      {cmmUpload && (
+        <CmmUploadForm
+          operationId={operationId}
+          program={cmmUpload.program}
+          onClose={() => setCmmUpload(null)}
+          onSuccess={() => {
+            setCmmUpload(null);
+            fetchPrograms(operationId);
+          }}
         />
       )}
 
