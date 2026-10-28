@@ -42,9 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.14.2** – Breadcrumbs auf Deutsch, Namen auf Detailseiten (#204). Nur Frontend, keine Migration.
+**Nächstes Release** – noch keine Änderungen.
 
-- [ ] Breadcrumbs: Urlaub & Arbeitszeit (Kalender, Mein Bereich, Verwaltung), Zeiterfassung eines Mitarbeiters („… › Verwaltung › Vorname Nachname“), Wartung, Administration auf Deutsch; Detailseiten (Bauteil, Werkzeug, Maschine) zeigen den Namen statt „#…“
+---
+
+## Erledigt: Release 2.14.2 (28.10.2026)
+
+Breadcrumbs auf Deutsch, Namen auf Detailseiten (#204). Nur Frontend, keine Migration. Deploy ohne Befund, Breadcrumbs geprüft, Tag `v2.14.2`.
 
 ---
 
