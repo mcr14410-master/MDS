@@ -33,7 +33,6 @@ Fortsetzung der Session vom 24.10. Das Netzlaufwerk-Backup lief in der Nacht der
 
 ## Offen
 
-- Auf rpi01 `/tmp/mds-restore` löschen (Probe-Wiederherstellung vom 25.10., enthält die `.env`), falls noch nicht geschehen
 - Optional: `caddy fmt` für das Caddyfile (Reload meldet „not formatted“, nur Einrückung)
 - Restliche Lint-Meldungen in `Breadcrumbs.jsx` (unbenutztes `index`, useEffect-Abhängigkeiten) – stammen aus der Zeit vor #204
 - Siehe ROADMAP „Nächste Session“
