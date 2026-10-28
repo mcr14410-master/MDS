@@ -260,10 +260,30 @@
 
     const stack = []; let guard = 0; let i = 0;
     let shiftDef = null;
+    // Q-/QL-Parameter: einfache Zuweisungen merken, in Adressen (X+Q1, SPA+QL101 …) einsetzen
+    const qv = {};
+    const qval = s => { const mm = String(s).match(/^([+-]?)(QL?\d+)$/); if (mm) { const v = qv[mm[2]]; return v === undefined ? undefined : (mm[1] === '-' ? -v : v); } const n = num(s); return isNaN(n) ? undefined : n; };
+    const subst = s => s.replace(/([A-Z]{1,3})([+-]?)(QL?\d+)\b/g, (all, w, sg, q) => { const v = qv[q]; if (v === undefined) return all; const x = sg === '-' ? -v : v; return w + (x < 0 ? '' : '+') + String(x); });
+    const fnWarned = {};
     while (i < blocks.length) {
       if (++guard > 500000) { info.warnings.push('Abbruch: zu viele Sätze (Schleife?)'); break; }
-      const b = blocks[i], t = b.text, line = b.line;
+      const b = blocks[i], line = b.line;
+      const t = /QL?\d/.test(b.text) ? subst(b.text) : b.text;
       let m;
+      if ((m = t.match(/^(?:FN 0:\s*)?(QL?\d+)\s*=\s*([+-]?[\d.,]+)\s*(?:;.*)?$/))) { qv[m[1]] = num(m[2]); i++; continue; }
+      // Formeln (FN 1–8, Q1 = Q1 + 1 …) werden nicht berechnet: Wert unbekannt, sonst liefe eine Zählschleife endlos
+      if ((m = t.match(/^(?:FN \d+:\s*)?(QL?\d+)\s*=/))) { delete qv[m[1]]; i++; continue; }
+      if ((m = t.match(/^FN (9|10|11|12):\s*IF\s+(\S+)\s+(EQU|NE|GT|LT)\s+(\S+)\s+GOTO LBL\s+("?[\w-]+"?)/))) {
+        const a = qval(m[2]), c = qval(m[4]), name = m[5].replace(/"/g, '');
+        if (a === undefined || c === undefined) {
+          if (!fnWarned[line]) { fnWarned[line] = 1; info.warnings.push('FN-Sprung mit Wert, der hier nicht berechnet wird (' + (qval(m[2]) === undefined ? m[2] : m[4]).replace(/^[+-]/, '') + ', Formel oder Wert von der Maschine), nicht ausgeführt – Zeile ' + line); }
+          i++; continue;
+        }
+        const go = { EQU: a === c, NE: a !== c, GT: a > c, LT: a < c }[m[3]];
+        if (go && labels[name] !== undefined) { i = labels[name] + 1; continue; }
+        i++; continue;
+      }
+      if (/^FN 14:/.test(t)) { info.warnings.push('Programm würde hier mit Fehler abbrechen (FN 14, Zeile ' + line + ')'); i++; continue; }
       if (/^END PGM/.test(t)) break;
       if ((m = t.match(/^LBL\s+(\S+)/))) {
         if (m[1] === '0') { if (stack.length) { const fr = stack[stack.length - 1]; if (fr.rep > 0) { fr.rep--; i = fr.start + 1; continue; } stack.pop(); i = fr.ret; continue; } }
