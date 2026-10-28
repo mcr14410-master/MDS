@@ -381,6 +381,15 @@ async function runGarbageCollection() {
     results.areas.programs = { error: err.message };
   }
 
+  // --- 3b. Messprogramme (flache Struktur, alle Dateien der Gruppe) ---
+  try {
+    const { rows } = await pool.query('SELECT filepath FROM program_revision_files');
+    const validFilenames = new Set(rows.map(r => path.basename(r.filepath)));
+    results.areas.cmm_programs = await cleanupFlatFiles('cmm-programs', validFilenames, ctx);
+  } catch (err) {
+    results.areas.cmm_programs = { error: err.message };
+  }
+
   // --- 4. Temp-Uploads (Age-Cutoff) ---
   try {
     results.areas.temp = await cleanupTempDir('temp', ctx);

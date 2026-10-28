@@ -295,8 +295,12 @@ exports.createProgram = async (req, res) => {
 // GET /api/programs - Liste aller Programme (mit Filter)
 exports.getPrograms = async (req, res) => {
   try {
-    const { operation_id } = req.query;
-    
+    const { operation_id, kind } = req.query;
+
+    if (kind && !['nc', 'cmm'].includes(kind)) {
+      return res.status(400).json({ error: 'Ungültige Programmart', allowed: ['nc', 'cmm'] });
+    }
+
     let query = `
       SELECT 
         p.*,
@@ -324,9 +328,17 @@ exports.getPrograms = async (req, res) => {
     `;
 
     const params = [];
+    const conditions = [];
     if (operation_id) {
-      query += ` WHERE p.operation_id = $1`;
       params.push(operation_id);
+      conditions.push(`p.operation_id = $${params.length}`);
+    }
+    if (kind) {
+      params.push(kind);
+      conditions.push(`p.kind = $${params.length}`);
+    }
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     query += ` ORDER BY p.created_at DESC`;
@@ -451,9 +463,13 @@ exports.deleteProgram = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Alle Revisionen + Dateipfade holen
+    // Alle Revisionen + Dateipfade holen (bei Messprogrammen auch alle Dateien der Gruppe)
     const revisionsResult = await client.query(
-      'SELECT filepath FROM program_revisions WHERE program_id = $1',
+      `SELECT filepath FROM program_revisions WHERE program_id = $1
+       UNION
+       SELECT f.filepath FROM program_revision_files f
+       JOIN program_revisions r ON r.id = f.revision_id
+       WHERE r.program_id = $1`,
       [id]
     );
 
@@ -555,16 +571,22 @@ exports.uploadNewRevision = async (req, res) => {
 
     // Prüfe ob Programm existiert
     const programCheck = await pool.query(
-      'SELECT id, program_number, program_name, workflow_state_id FROM programs WHERE id = $1',
+      'SELECT id, program_number, program_name, workflow_state_id, kind FROM programs WHERE id = $1',
       [id]
     );
-    
+
     if (programCheck.rows.length === 0) {
       await fs.unlink(req.file.path).catch(() => {});
       return res.status(404).json({ error: 'Programm nicht gefunden' });
     }
 
     const program = programCheck.rows[0];
+
+    // Messprogramme bestehen aus einer Dateigruppe → eigener Endpunkt
+    if (program.kind === 'cmm') {
+      await fs.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: 'Messprogramm – neue Versionen über /cmm-revisions hochladen' });
+    }
 
     await client.query('BEGIN');
 

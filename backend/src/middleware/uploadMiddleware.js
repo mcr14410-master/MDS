@@ -80,6 +80,36 @@ const upload = multer({
   }
 });
 
+// Messprogramme (KMG / PC-DMIS): Dateigruppe je Revision, eigenes Verzeichnis.
+// Kein Endungsfilter hier – die Einordnung (Rolle, Nebendateien, unbekannte
+// Dateien) macht der Controller, damit alle Probleme in einer Meldung landen.
+const CMM_UPLOAD_DIR = path.join(__dirname, '../../uploads/cmm-programs');
+if (!fs.existsSync(CMM_UPLOAD_DIR)) {
+  fs.mkdirSync(CMM_UPLOAD_DIR, { recursive: true });
+}
+
+const cmmStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, CMM_UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, ext);
+    const cleanBasename = basename.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanExt = ext.replace(/[^a-zA-Z0-9.]/g, '_');
+    cb(null, `${uniqueSuffix}-${cleanBasename}${cleanExt}`);
+  }
+});
+
+const cmmUpload = multer({
+  storage: cmmStorage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MB je Datei
+    files: 30,
+  }
+});
+
 // Error-Handler für Multer
 const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -104,7 +134,9 @@ const handleMulterError = (err, req, res, next) => {
 
 module.exports = {
   upload,
+  cmmUpload,
   handleMulterError,
   ALLOWED_EXTENSIONS,
-  UPLOAD_DIR
+  UPLOAD_DIR,
+  CMM_UPLOAD_DIR
 };
