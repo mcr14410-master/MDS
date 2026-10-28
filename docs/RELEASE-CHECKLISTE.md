@@ -42,7 +42,15 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen.
+**Release 2.15.0** – Messprogramme (KMG / PC-DMIS) Schritte 0–3, Übersichten NC-Programme/Messprogramme, Status deutsch (#215–#219), NC-Viewer QL-Parameter (#212).
+
+- [ ] Migration `1737000121000_add-cmm-programs-schema` läuft durch (nur neue Spalten/Tabelle: `programs.kind`, `program_revision_files`, `machines.measuring_equipment_id` – keine Datenänderung, keine neuen Rechte)
+- [ ] Backend hat neue Abhängigkeiten (`archiver`, `fast-xml-parser`) – kommen über `npm ci` im Build, kein Handgriff nötig
+- [ ] Klicktest: Fertigung → NC-Programme (Zahlen plausibel, Suche, Auge springt zum Arbeitsgang mit Reiter „Programme“), Messprogramme (leer); Programmkarte am Arbeitsgang zeigt Status deutsch und den Dateinamen ohne Zahlen davor
+- [ ] Zeichnungsvorschau (PDF) am Bauteil lädt noch – der PDF-Viewer holt eine Hilfsdatei von unpkg.com; im Test unter `http://` blieb sie leer
+- [ ] Am Arbeitsplatz: ersten echten PC-DMIS-Ordner als Messprogramm hochladen (Vorschau: `.prg`/`.cad`/Zeichnung/Vorlage richtig eingeordnet, `.PRG~`/`.PRG^` aussortiert), ZIP laden und in PC-DMIS öffnen; Ordner auch per „Ordner wählen“ und per Ziehen aus dem Explorer
+- [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
+- Neuer Upload-Ordner `/srv/mds/uploads/cmm-programs` entsteht beim Start von selbst; das Netzlaufwerk-Backup sichert den ganzen Uploads-Ordner
 
 ---
 

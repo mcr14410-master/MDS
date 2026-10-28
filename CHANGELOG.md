@@ -15,6 +15,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.15.0] - 2026-10-29 - Messprogramme und Programm-Übersichten
+
+### Für Anwender
+- Unter „Fertigung“ gibt es zwei neue Menüpunkte: „NC-Programme“ und „Messprogramme“ zeigen alle Programme über alle Bauteile, mit Suche und Status. Ein Klick springt direkt zum Arbeitsgang am Bauteil.
+- Messprogramme für die Messmaschine (PC-DMIS) lassen sich jetzt im MDS ablegen und versionieren: am Arbeitsgang „Messprogramm hochladen“ und einfach den ganzen Ordner hineinziehen. Vor dem Speichern zeigt das MDS, welche Dateien neu, geändert oder unverändert sind; Sicherungsdateien von PC-DMIS werden aussortiert.
+- Eine Excel-Protokollvorlage wird nur zusammen mit ihrer Layout-Datei angenommen – ohne sie entstünde ein Protokoll ohne Messwerte.
+- Der Status von Programmen steht wieder auf Deutsch, Dateinamen erscheinen ohne die Zahlen davor.
+- Der NC-Viewer zeichnet Programme mit Q-Parametern in geschwenkten Ebenen jetzt richtig.
+
 ### Added
 - Datenmodell für Messprogramme (KMG / PC-DMIS, Schritt 1 aus `docs/konzepte/MESSPROGRAMME_KONZEPT.md`): Migration `1737000121000` mit `programs.kind` (`nc` | `cmm`, bestehende = `nc`), Tabelle `program_revision_files` (mehrere Dateien je Revision mit Rolle und Zielort, Originalname eindeutig je Revision ohne Groß-/Kleinschreibung) und `machines.measuring_equipment_id` (KMG ↔ Messmittel). Keine neuen Rechte (Freigabe über `program.release`), keine Stammdaten; noch ohne Backend-/Oberflächen-Funktion
 - Messprogramme Backend (Schritt 2): `POST /api/programs/cmm` (anlegen mit Dateigruppe), `POST /api/programs/:id/cmm-revisions` (neue Version: hochladen, was man hat – Änderungen per Hash erkannt, nicht Hochgeladenes aus der aktiven Version übernommen, Entfernen über `remove` bzw. `excel_report=false`), `GET /api/programs/:id/files[/zip|/:fileId/view|/:fileId/download]`, `GET /api/programs?kind=cmm`. Rollen nach Endung, PC-DMIS-Nebendateien (`.PRG~`, `.PRG^`, `.MiniRoutines.xml` ohne eigene Mini-Routinen) werden mit Hinweis aussortiert; Excel-Vorlage nur als Paar mit gültigem XML und eindeutigem Namen. Ablage `uploads/cmm-programs/` (im Dateisystem-Aufräumjob berücksichtigt). Neue Abhängigkeiten `archiver`, `fast-xml-parser`. NC-Upload lehnt Messprogramme ab; Löschen entfernt alle Dateien der Gruppe
