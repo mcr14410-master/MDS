@@ -1,0 +1,6 @@
+<FeatureBasedMeasurement>
+  <MiniRoutine ID="MiniRoutine1" UID="1" Time="00:00:00">
+    <Dimension ID="PM1" Marked="True" />
+  </MiniRoutine>
+  <MarkSets />
+</FeatureBasedMeasurement>

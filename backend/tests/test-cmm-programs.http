@@ -1,0 +1,513 @@
+### ==============================================
+### MESSPROGRAMME (KMG / PC-DMIS) – API TESTS
+### ==============================================
+### Schritt 2 aus docs/konzepte/MESSPROGRAMME_KONZEPT.md
+### Dateigruppe je Revision: .prg + .cad + Prüfzeichnung (.pdf),
+### optional Excel-Vorlage (.xlsx + .layout.xml) und eigene Mini-Routinen
+### Testdateien: ./cmm/ (künstlich, keine echten Messprogramme)
+###
+### Ablauf: Login → Token unten eintragen → Tests der Reihe nach.
+### IDs (@programId, @fileId) nach Test 1 bzw. 4 anpassen.
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = TOKEN_AUS_LOGIN
+@operationId = 3
+@programId = 2
+@fileId = 1
+@boundary = ----MdsCmmBoundary
+
+### ==============================================
+### 0. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "DEIN_PASSWORT"
+}
+
+### ==============================================
+### 1. ANLEGEN - ganzer Ordner (inkl. PC-DMIS-Nebendateien)
+### Erwartung: 201, Version 1.0.0, 5 Dateien "new",
+### ignored: .PRG~ und MiniRoutines.xml (nur Standard-Inhalt)
+### template_name: KD00000_TEIL-0001_C
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+MESSPROGRAMM OP30
+--{{boundary}}
+Content-Disposition: form-data; name="excel_report"
+
+true
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.cad"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.cad
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30_Pruefzeichnung.pdf"
+Content-Type: application/pdf
+
+< ./cmm/v1/TEIL-0001_OP30_Pruefzeichnung.pdf
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/KD00000_TEIL-0001_C.xlsx
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.layout.xml"
+Content-Type: application/xml
+
+< ./cmm/v1/KD00000_TEIL-0001_C.layout.xml
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.PRG~"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.PRG~
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.MiniRoutines.xml"
+Content-Type: application/xml
+
+< ./cmm/v1/TEIL-0001_OP30.MiniRoutines.xml
+--{{boundary}}--
+
+### ==============================================
+### 2. LISTE - nur Messprogramme
+### Erwartung: 200, alle Einträge kind = "cmm"
+### ==============================================
+GET {{baseUrl}}/api/programs?kind=cmm
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 3. LISTE - ungültige Programmart
+### Erwartung: 400 - Ungültige Programmart
+### ==============================================
+GET {{baseUrl}}/api/programs?kind=xyz
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 4. DATEILISTE - aktuelle Version
+### Erwartung: 200, 5 Dateien (.prg zuerst), excel_report: true
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 5. NEUE VERSION - ganzer Ordner unverändert
+### Erwartung: 400 - Keine Änderung gegenüber der Vorversion
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.cad"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.cad
+--{{boundary}}--
+
+### ==============================================
+### 6. NEUE VERSION - .prg geändert + eigene Mini-Routine (minor)
+### Erwartung: 201, Version 1.1.0, .prg "changed", .cad "unchanged",
+### MiniRoutines.xml "new" (Rolle other), Rest "carried"
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="version_type"
+
+minor
+--{{boundary}}
+Content-Disposition: form-data; name="comment"
+
+Ebenheitstoleranz angepasst
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v2/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.cad"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.cad
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.MiniRoutines.xml"
+Content-Type: application/xml
+
+< ./cmm/v2/TEIL-0001_OP30.MiniRoutines.xml
+--{{boundary}}--
+
+### ==============================================
+### 7. NEUE VERSION - nur Zeichnung entfernen (ohne Upload)
+### Erwartung: 201, Version 1.1.1, removed: Prüfzeichnung
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+TEIL-0001_OP30_Pruefzeichnung.pdf
+--{{boundary}}--
+
+### ==============================================
+### 8. NEUE VERSION - .prg entfernen (Error)
+### Erwartung: 400 - kann nicht entfernt, nur ersetzt werden
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### 9. NEUE VERSION - Vorlagendatei einzeln entfernen (Error)
+### Erwartung: 400 - nur zusammen über excel_report=false
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+KD00000_TEIL-0001_C.layout.xml
+--{{boundary}}--
+
+### ==============================================
+### 10. NEUE VERSION - Datei entfernen, die es nicht gibt (Error)
+### Erwartung: 400 - nicht in der Vorversion
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+gibt-es-nicht.pdf
+--{{boundary}}--
+
+### ==============================================
+### 11. DATEILISTE - ältere Version
+### Erwartung: 200, version 1.0.0 mit Zeichnung
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files?version=1.0.0
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 12. DATEILISTE - Version gibt es nicht
+### Erwartung: 404 - Version nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files?version=9.9.9
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 13. ZIP - aktuelle Version
+### Erwartung: 200, application/zip, Vorlagen im Ordner PC-DMIS-Vorlagen/
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files/zip
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 14. ZIP - ältere Version
+### Erwartung: 200, Dateiname ..._v1.0.0.zip
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files/zip?version=1.0.0
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 15. EINZELDATEI - herunterladen (fileId aus Test 4/11)
+### Erwartung: 200, Content-Disposition attachment mit Originalname
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files/{{fileId}}/download
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 16. EINZELDATEI - anzeigen (z. B. Prüfzeichnung)
+### Erwartung: 200, Content-Disposition inline
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files/{{fileId}}/view
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 17. EINZELDATEI - über fremdes Programm (Error)
+### Erwartung: 404 - Datei nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/programs/1/files/{{fileId}}/download
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 18. HAUPTDATEI - bestehender Download-Endpunkt
+### Erwartung: 200, .prg mit Originalname
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/download
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 19. NC-ENDPUNKT auf Messprogramm (Error)
+### Erwartung: 400 - neue Versionen über /cmm-revisions
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="file"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v2/TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### 20. MESSPROGRAMM-ENDPUNKT auf NC-Programm (Error)
+### Erwartung: 400 - Kein Messprogramm
+### ==============================================
+POST {{baseUrl}}/api/programs/1/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v2/TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### 21. ANLEGEN - gleicher Vorlagenname wie Test 1 (Error)
+### Erwartung: 400 - Vorlagenname ... wird schon verwendet
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+DOPPELTE VORLAGE
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP50.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/KD00000_TEIL-0001_C.xlsx
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.layout.xml"
+Content-Type: application/xml
+
+< ./cmm/v1/KD00000_TEIL-0001_C.layout.xml
+--{{boundary}}--
+
+### ==============================================
+### 22. ANLEGEN - ungültiges XML, unbekannter Typ (Error)
+### Erwartung: 400 mit drei Meldungen (kein gültiges XML,
+### Dateityp nicht erlaubt, Vorlage unvollständig)
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+FEHLERHAFT
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KAPUTT.xlsx"
+Content-Type: application/octet-stream
+
+< ./cmm/fehler/KAPUTT.xlsx
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="KAPUTT.layout.xml"
+Content-Type: application/xml
+
+< ./cmm/fehler/KAPUTT.layout.xml
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="notiz.docx"
+Content-Type: application/octet-stream
+
+< ./cmm/fehler/notiz.docx
+--{{boundary}}--
+
+### ==============================================
+### 23. ANLEGEN - Excel-Protokoll an, aber keine Vorlage (Error)
+### Erwartung: 400 - Excel-Protokoll eingeschaltet, aber keine Vorlage
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+OHNE VORLAGE
+--{{boundary}}
+Content-Disposition: form-data; name="excel_report"
+
+true
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### 24. ANLEGEN - nur .cad, kein .prg (Error)
+### Erwartung: 400 - Messprogramm (.prg) fehlt
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+OHNE PRG
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.cad"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.cad
+--{{boundary}}--
+
+### ==============================================
+### 25. ANLEGEN - ohne Dateien (Error)
+### Erwartung: 400 - Keine Dateien hochgeladen
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="program_name"
+
+LEER
+--{{boundary}}--
+
+### ==============================================
+### 26. NEUE VERSION - ohne Excel-Protokoll
+### Erwartung: 201, removed: .xlsx und .layout.xml
+### (danach ist der Vorlagenname wieder frei → Test 21 klappt)
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="excel_report"
+
+false
+--{{boundary}}--
+
+### ==============================================
+### 27. ROLLBACK + neue Version (Basis = aktive Version)
+### Erst Rollback auf 1.0.0, dann nur .prg hochladen →
+### Erwartung: base_version 1.0.0, Rest aus 1.0.0 übernommen
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/rollback?to=1.0.0
+Authorization: Bearer {{token}}
+
+###
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v2/TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### 28. LÖSCHEN - Messprogramm mit allen Dateien
+### Erwartung: 200, deleted_files = alle Dateien aller Versionen
+### ==============================================
+DELETE {{baseUrl}}/api/programs/{{programId}}
+Authorization: Bearer {{token}}
+
+### ==============================================
+### NOTES:
+### ==============================================
+### Endpunkte:
+### - POST   /api/programs/cmm                         - anlegen (files[] + Felder)
+### - POST   /api/programs/:id/cmm-revisions           - neue Version
+### - GET    /api/programs/:id/files[?version=]        - Dateien einer Version
+### - GET    /api/programs/:id/files/zip[?version=]    - alle Dateien als ZIP
+### - GET    /api/programs/:id/files/:fileId/view      - inline
+### - GET    /api/programs/:id/files/:fileId/download  - attachment
+### - GET    /api/programs?kind=cmm                    - Liste
+### Workflow, Rollback, Löschen, Versionsliste: bestehende Programm-Endpunkte
+###
+### Felder neue Version:
+### - files[]       hochladen, was man hat; Vergleich per Hash, Rest wird übernommen
+### - version_type  patch | minor | major (Standard patch)
+### - comment
+### - remove        Dateinamen der Vorversion, die wegfallen (mehrfach oder kommagetrennt)
+### - excel_report  false = Vorlage entfernen, true = Vorlage Pflicht
+###
+### Einordnung nach Endung: .prg Messprogramm, .cad CAD, .pdf Zeichnung,
+### .xlsx + .layout.xml Excel-Vorlage (Zielort PC-DMIS-Vorlagenverzeichnis),
+### .MiniRoutines.xml nur mit eigenen Mini-Routinen (sonst Nebendatei).
+### Aussortiert mit Hinweis: .PRG~, .PRG^, .prg.corrupt
+### ==============================================

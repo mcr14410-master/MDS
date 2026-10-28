@@ -318,15 +318,15 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 **Umsetzungsschritte:**
 - [x] 0 – Binär-Fix Programm-Upload (PR #215)
 - [x] 1 – Migration: `programs.kind`, `program_revision_files`, `machines.measuring_equipment_id` (Freigabe über `program.release`, Maschinentyp „Messmaschine“ per Oberfläche)
-- [ ] 2 – Backend: Upload mehrerer Dateien je Revision, Download einzeln/ZIP, `.http`-Tests
+- [x] 2 – Backend: Upload mehrerer Dateien je Revision (Änderungen per Hash erkannt, Rest aus der Vorversion übernommen), Download einzeln/ZIP, `.http`-Tests
 - [ ] 3 – Frontend: Menüpunkt „Messprogramme“ → nutzbar ohne Agent
 - [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
 - [ ] 5 – Abschließen + Eingang
-- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe
+- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig); offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
 - [ ] 7 – Erstimport vom Netzlaufwerk
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
-Offene Punkte stehen im Konzept (Abschnitt 10).
+Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.
 
 ---
 

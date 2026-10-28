@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/authMiddleware');
-const { upload, handleMulterError } = require('../middleware/uploadMiddleware');
+const { upload, cmmUpload, handleMulterError } = require('../middleware/uploadMiddleware');
 const programsController = require('../controllers/programsController');
+const cmmProgramsController = require('../controllers/cmmProgramsController');
 
 // Alle Routes benötigen Authentication
 router.use(authenticateToken);
@@ -14,8 +15,28 @@ router.post('/',
   programsController.createProgram
 );
 
-// GET /api/programs - Liste aller Programme (mit Filter: ?operation_id=1)
+// POST /api/programs/cmm - Messprogramm (KMG) mit Dateigruppe anlegen
+router.post('/cmm',
+  cmmUpload.array('files'),
+  handleMulterError,
+  cmmProgramsController.createCmmProgram
+);
+
+// GET /api/programs - Liste aller Programme (mit Filter: ?operation_id=1, ?kind=cmm)
 router.get('/', programsController.getPrograms);
+
+// POST /api/programs/:id/cmm-revisions - Messprogramm: neue Version (geänderte Dateien, Rest wird übernommen)
+router.post('/:id/cmm-revisions',
+  cmmUpload.array('files'),
+  handleMulterError,
+  cmmProgramsController.createCmmRevision
+);
+
+// Messprogramm-Dateien (VOR /:id!): Liste, ZIP, einzeln anzeigen/herunterladen
+router.get('/:id/files', cmmProgramsController.getCmmFiles);
+router.get('/:id/files/zip', cmmProgramsController.downloadCmmZip);
+router.get('/:id/files/:fileId/view', cmmProgramsController.viewCmmFile);
+router.get('/:id/files/:fileId/download', cmmProgramsController.downloadCmmFile);
 
 // POST /api/programs/:id/revisions - Neue Revision hochladen (VOR GET!)
 router.post('/:id/revisions',
