@@ -4,7 +4,8 @@
  * Schritt 2 aus docs/konzepte/MESSPROGRAMME_KONZEPT.md. Messprogramme sind `programs` mit
  * kind = 'cmm'; Versionierung, Workflow und Rollback laufen über die bestehenden
  * Programm-Endpunkte. Hier: Anlegen und neue Revision mit mehreren Dateien, Dateiliste,
- * Anzeige/Download einzeln und als ZIP.
+ * Anzeige/Download einzeln und als ZIP. Mit ?dry_run=true prüfen beide Uploads nur und
+ * melden die geplante Dateigruppe (Vorschau), ohne etwas zu speichern.
  *
  * program_revisions.filename/filepath/file_hash = Hauptdatei (.prg), alle Dateien der Gruppe
  * zusätzlich in program_revision_files (filename = Originalname).
@@ -195,6 +196,23 @@ const fileSummary = (f) => ({
   file_hash: f.hash,
 });
 
+// Probelauf (?dry_run=true): prüfen und melden, nichts speichern – Vorschau im Upload-Fenster
+function previewResponse(res, { errors, plan, ignored, baseVersion = null }) {
+  return res.json({
+    success: true,
+    data: {
+      valid: errors.length === 0,
+      errors,
+      base_version: baseVersion,
+      files: plan.files.map(fileSummary),
+      removed: plan.removed.map(f => ({ filename: f.name, role: f.role, reason: f.reason })),
+      template_name: plan.templateName,
+      warnings: plan.warnings,
+      ignored,
+    },
+  });
+}
+
 async function draftStateId(db) {
   const result = await db.query(`SELECT id FROM workflow_states WHERE name = 'draft' LIMIT 1`);
   return result.rows[0].id;
@@ -207,8 +225,9 @@ exports.createCmmProgram = async (req, res) => {
   try {
     let { operation_id, program_number, program_name, description, comment } = req.body;
     const excelReport = parseExcelReport(req.body.excel_report);
+    const dryRun = req.query.dry_run === 'true';
 
-    if (!operation_id || !program_name) {
+    if (!operation_id || (!program_name && !dryRun)) {
       await removeFiles(tempPaths);
       return res.status(400).json({ error: 'Pflichtfelder fehlen', required: ['operation_id', 'program_name', 'files'] });
     }
@@ -230,6 +249,10 @@ exports.createCmmProgram = async (req, res) => {
       if (conflict) {
         errors.push(`Vorlagenname ${plan.templateName} wird schon verwendet: ${conflict.part_number || ''} ${conflict.program_number} ${conflict.program_name}`.replace(/\s+/g, ' '));
       }
+    }
+    if (dryRun) {
+      await removeFiles(tempPaths);
+      return previewResponse(res, { errors, plan, ignored });
     }
     if (errors.length > 0) {
       await removeFiles(tempPaths);
@@ -295,6 +318,7 @@ exports.createCmmRevision = async (req, res) => {
     const versionType = VERSION_TYPES.includes(req.body.version_type) ? req.body.version_type : 'patch';
     const excelReport = parseExcelReport(req.body.excel_report);
     const remove = toList(req.body.remove);
+    const dryRun = req.query.dry_run === 'true';
 
     const programResult = await pool.query(
       'SELECT id, kind, program_number, program_name, current_revision_id FROM programs WHERE id = $1', [id]
@@ -327,6 +351,10 @@ exports.createCmmRevision = async (req, res) => {
       if (conflict) {
         errors.push(`Vorlagenname ${plan.templateName} wird schon verwendet: ${conflict.part_number || ''} ${conflict.program_number} ${conflict.program_name}`.replace(/\s+/g, ' '));
       }
+    }
+    if (dryRun) {
+      await removeFiles(tempPaths);
+      return previewResponse(res, { errors, plan, ignored, baseVersion });
     }
     if (errors.length > 0) {
       await removeFiles(tempPaths);
