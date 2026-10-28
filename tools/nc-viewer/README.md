@@ -44,6 +44,7 @@ mcs -sdk:4.8 -target:winexe -out:NC-Viewer-Start.exe -r:System.Windows.Forms.dll
   Werkzeugkommentar („… D6“), im Tab „Werkzeuge“ überschreibbar. Abschaltbar unter „Ansicht“.
 - `PLANE SPATIAL` (Reihenfolge A→B→C um raumfeste Achsen, R = Rz·Ry·Rx – am Modell verifiziert),
   `PLANE AXIAL` (Achswinkel, z. B. GROB G350 `A-90`), `PLANE RESET`, Zyklus 7 (Nullpunktverschiebung), `CALL LBL` / `REP`, `L`, `C`/`CC`, `CR`, `CP` (Helix)
+- Q-/QL-Parameter mit einfacher Zuweisung (`QL101 = -90`) in Adressen (`SPA+QL101`, `X+Q5`), `FN 9–12`-Sprünge, Text-Labels (`LBL "NAME"`); Formeln und Werte von der Maschine (`FN 18`, `Q120`) werden nicht berechnet – Hinweis unter „Info“
 - Bohrzyklen 200/201/202/203/204/205/240 bei `M99` / `CYCL CALL`
 - Nullpunkt-Symbol + Achsen X/Y/Z, bei geschwenkten Bearbeitungen zusätzlich X′/Y′/Z′ mit Ebenen-Schild
 - **Automatische Ausrichtung** der Aufspannung: Bauteil mit den Maßen der `BLK FORM` wird gesucht und

@@ -36,5 +36,15 @@ r = HH.run('1 BLK FORM 0.1 Z X-11 Y-6,5 Z-52\n2 BLK FORM 0.2 X10,986 Y6,5 Z0\n3 
 const g = r.segs.filter(s => !s.rapid)[0];
 ok(g && near(g.b[0], 3.367) && near(g.b[1], 6.15) && near(g.b[2], -39.696) && near(g.ax[1], 1), 'PLANE AXIAL A-90: Gravur auf Y+-Flaeche (Y6,15 / Z-39,7)');
 
+// 7) QL-Parameter + FN-Sprünge + String-Labels (PLANE SPATIAL SPA+QL101 … SYM+ im Unterprogramm)
+r = HH.run(['1 BLK FORM 0.1 Z X0 Y-13 Z-52', '2 BLK FORM 0.2 X21,986 Y0 Z0', '3 TOOL CALL 6301 Z S11141', '4 CALL LBL 100',
+  '5 L X14,193 Y39,696 A-90 B0 R0 FMAX', '6 L Z2 FMAX', '7 L Z-0,32 F200', '8 M30',
+  '9 LBL "PLANE_SYM"', '10 FN 12: IF +QL104 LT -90 GOTO LBL "PLANE_SYM_M"', '11 PLANE SPATIAL SPA+QL101 SPB+QL102 SPC+QL103 STAY SYM+',
+  '12 FN 9: IF +0 EQU +0 GOTO LBL "PLANE_SYM_E"', '13 LBL "PLANE_SYM_M"', '14 PLANE SPATIAL SPA+QL101 SPB+QL102 SPC+QL103 STAY SYM-',
+  '15 LBL "PLANE_SYM_E"', '16 LBL 0', '17 LBL 100', '18 QL101 = -90 ; SPA', '19 QL102 = 0', '20 QL103 = 0', '21 QL104 = -90',
+  '22 CALL LBL "PLANE_SYM"', '23 LBL 0', '24 END PGM T MM'].join('\n'));
+const q = r.segs.filter(s => !s.rapid)[0];
+ok(q && near(q.b[0], 14.193) && near(q.b[1], -0.32) && near(q.b[2], -39.696), 'QL-Parameter/FN-Sprung: PLANE SPA+QL101 (= -90) im Unterprogramm');
+
 console.log(fail ? `\n${fail} Test(s) fehlgeschlagen` : '\nAlle Tests ok');
 process.exit(fail ? 1 : 0);
