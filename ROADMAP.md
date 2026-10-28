@@ -582,8 +582,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 25.–28.10.2026](docs/sessions/SESSION-2026-10-25-zeitumstellung-breadcrumbs.md) – **v2.14.2 läuft auf dem Pi** (28.10.: Breadcrumbs auf Deutsch #204; davor 2.14.1 mit Cron-Jobs bei der Zeitumstellung #198), `[Unreleased]` leer; Prüfpunkte aus 2.11–2.13 alle erledigt
+Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.14.2 läuft auf dem Pi**, **v2.15.0 vorbereitet, Deploy offen** (Messprogramme Schritte 0–3, Übersichten NC-Programme/Messprogramme), `[Unreleased]` leer
 
+0. **Deploy 2.15.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`, danach Tag `v2.15.0`. Am Arbeitsplatz erstes echtes Messprogramm hochladen – Befunde fließen in Schritt 4 (Agent) ein
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
@@ -592,7 +593,8 @@ Stand: [Session 25.–28.10.2026](docs/sessions/SESSION-2026-10-25-zeitumstellun
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
 7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
 8. **Handy-Tauglichkeit** (niedrige Priorität) – Befunde aus dem Handy-Test vom 28.10. in [docs/konzepte/HANDY-TEST.md](docs/konzepte/HANDY-TEST.md) (27 von 52 Seiten zu breit). Zuerst überall: Kopfzeile/Breadcrumbs inkl. doppelter Breadcrumbs auf fünf Admin-Seiten, Tab-Leisten der Detailseiten, drei abgeschnittene Tabellen (Benutzer, Verbrauchsmaterial, Operationstypen). Seitenkopf mit Knöpfen nur auf Seiten, die am Handy genutzt werden – vorher festlegen, welche; komplexe Seiten bleiben PC-Seiten
-9. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer am Arbeitsplatz (Rechtsklick, G350-Programme mit `PLANE AXIAL` und QL-Parametern), auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
+9. **Messprogramme Schritt 4** (MDS-Agent auf dem Mess-PC, Bereitstellen) – nach dem Test mit echten Dateien; siehe Phase 10 „Messmaschinen-Terminal“
+10. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer am Arbeitsplatz (Rechtsklick, G350-Programme mit `PLANE AXIAL` und QL-Parametern), auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
