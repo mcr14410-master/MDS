@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Datenmodell für Messprogramme (KMG / PC-DMIS, Schritt 1 aus `docs/konzepte/MESSPROGRAMME_KONZEPT.md`): Migration `1737000121000` mit `programs.kind` (`nc` | `cmm`, bestehende = `nc`), Tabelle `program_revision_files` (mehrere Dateien je Revision mit Rolle und Zielort, Originalname eindeutig je Revision ohne Groß-/Kleinschreibung) und `machines.measuring_equipment_id` (KMG ↔ Messmittel). Keine neuen Rechte (Freigabe über `program.release`), keine Stammdaten; noch ohne Backend-/Oberflächen-Funktion
+
 ### Fixed
 - NC-Viewer: Programme mit Q-/QL-Parametern in `PLANE` (z. B. `PLANE SPATIAL SPA+QL101 … SYM+` im Unterprogramm `LBL "PLANE_SYM"`) wurden ungeschwenkt gezeichnet – einfache Parameter-Zuweisungen, `FN 9–12`-Sprünge und Text-Labels werden jetzt ausgewertet. Parameter mit Formel (`FN 1–8`, `Q1 = Q1 + 1`) gelten danach als unbekannt, Sprünge darauf werden nicht ausgeführt (Hinweis unter „Info“) – sonst liefe eine Zählschleife endlos
 - Programm-Upload: Binärdateien (z. B. PC-DMIS-Messprogramme `.prg`) brachen mit Fehler 500 ab, weil der Inhalt als Text in die DB geschrieben wurde (Null-Bytes). Binärdateien werden jetzt erkannt und nur als Datei mit Hash gespeichert, ohne Textinhalt; NC-Programme unverändert
