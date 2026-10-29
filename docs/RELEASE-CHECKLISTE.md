@@ -42,11 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen.
+**Nächstes Release** – PDF-Worker vom eigenen Server (#222). Nur Frontend, keine Migration.
+
+- [ ] Zeichnungsvorschau (PDF) am Bauteil und im Dateifenster eines Messprogramms lädt; im Browser (F12 → Netzwerk) keine Anfrage an `unpkg.com`, der Worker kommt aus `/assets/pdf.worker.min-….mjs`
 
 **Noch offen aus 2.15.0** (kein neuer Deploy nötig):
 
-- [ ] Zeichnungsvorschau (PDF) am Bauteil lädt noch – der PDF-Viewer holt eine Hilfsdatei von unpkg.com; im Test unter `http://` blieb sie leer
+- [x] Zeichnungsvorschau (PDF) am Bauteil lädt (29.10.) – holte ihren Worker allerdings von unpkg.com, behoben in #222
 - [ ] Am Arbeitsplatz: ersten echten PC-DMIS-Ordner als Messprogramm hochladen (Vorschau: `.prg`/`.cad`/Zeichnung/Vorlage richtig eingeordnet, `.PRG~`/`.PRG^` aussortiert), ZIP laden und in PC-DMIS öffnen; Ordner auch per „Ordner wählen“ und per Ziehen aus dem Explorer
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
 
