@@ -500,6 +500,32 @@ GET {{baseUrl}}/api/programs/stats?kind=xyz
 Authorization: Bearer {{token}}
 
 ### ==============================================
+### 25. UPDATE - wie das Formular „Bearbeiten“: ohne program_number
+### Erwartung: 200, Programmnummer bleibt unverändert
+### ==============================================
+PUT {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_name": "FRÄSEN RECHTECK",
+  "description": "Nur Name und Beschreibung geändert"
+}
+
+### ==============================================
+### 26. UPDATE - leere program_number (Error)
+### Erwartung: 400 - Pflichtfelder fehlen
+### ==============================================
+PUT {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "  ",
+  "program_name": "FRÄSEN RECHTECK"
+}
+
+### ==============================================
 ### NOTES:
 ### ==============================================
 ### API Endpoints:

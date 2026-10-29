@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { suggestProgramNumber } = require('../utils/programNumber');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -179,18 +180,9 @@ exports.createProgram = async (req, res) => {
 
     const operation = opCheck.rows[0];
 
-    // Auto-Generierung von program_number wenn nicht vorhanden
+    // Auto-Generierung von program_number wenn nicht vorhanden (Format: OP10-001, …)
     if (!program_number) {
-      // Zähle existierende Programme für diese Operation
-      const countResult = await pool.query(
-        'SELECT COUNT(*) as count FROM programs WHERE operation_id = $1',
-        [operation_id]
-      );
-      const count = parseInt(countResult.rows[0].count);
-      
-      // Format: OP10-001, OP10-002, etc.
-      // TODO: Format später nochmal überdenken (siehe ROADMAP)
-      program_number = `${operation.op_number}-${String(count + 1).padStart(3, '0')}`;
+      program_number = await suggestProgramNumber(pool, operation_id, operation.op_number);
     }
 
     await client.query('BEGIN');
@@ -493,20 +485,22 @@ exports.updateProgram = async (req, res) => {
     const { id } = req.params;
     const { program_number, program_name, description } = req.body;
 
-    // Validierung
-    if (!program_number || !program_name) {
+    // Validierung – program_number ist optional (das Formular kennt sie nicht), leer darf sie
+    // aber nicht werden (NOT NULL); fehlt sie, bleibt die bisherige
+    if (!program_name || (program_number !== undefined && !String(program_number).trim())) {
       return res.status(400).json({ 
         error: 'Pflichtfelder fehlen',
-        required: ['program_number', 'program_name']
+        required: ['program_name']
       });
     }
 
     const result = await pool.query(
       `UPDATE programs 
-       SET program_number = $1, program_name = $2, description = $3, updated_at = CURRENT_TIMESTAMP
+       SET program_number = COALESCE($1, program_number), program_name = $2, description = $3,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $4
        RETURNING *`,
-      [program_number, program_name, description || null, id]
+      [program_number === undefined ? null : String(program_number).trim(), program_name, description || null, id]
     );
 
     if (result.rows.length === 0) {
