@@ -1,6 +1,6 @@
 # Session 28./29. Oktober 2026 – Messprogramme (KMG / PC-DMIS) Schritte 0–3, Release 2.15.0
 
-**PRs:** #214 – #219, Release-PR 2.15.0 · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
+**PRs:** #214 – #221, Tag `v2.15.0` · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
 
 Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vier Umsetzungsschritte gebaut: Messprogramme lassen sich jetzt ohne Agent im MDS ablegen, versionieren und freigeben. Dazu kamen die bisher fehlenden Übersichten „NC-Programme“ und „Messprogramme“.
 
@@ -16,7 +16,7 @@ Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vie
 | #217 | **Schritt 2 – Backend:** Anlegen/neue Version mit Dateigruppe, Hash-Vergleich mit der aktiven Version, Übernahme nicht hochgeladener Dateien, Dateiliste, Einzel-/ZIP-Download, Aufräumjob; `archiver`, `fast-xml-parser` |
 | #218 | **Schritt 3a – Übersichten** NC-Programme/Messprogramme unter Fertigung, Direktsprung `/parts/:id?op=` |
 | #219 | **Schritt 3b – am Arbeitsgang:** Upload-Fenster für Dateien/Ordner mit Vorschau per Probelauf (`?dry_run=true`), Dateiliste, ZIP; Programmkarte: Status deutsch, Dateiname ohne Präfix |
-| Release-PR | **Release 2.15.0** |
+| #220, #221 | **Release 2.15.0** und Deploy am 29.10. (Deploy und Klicktest grün), Tag `v2.15.0`; diese Session-Doku |
 
 ## Entscheidungen
 
