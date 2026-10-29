@@ -77,20 +77,53 @@ jeder Maschine liegt nur eine davon. Eindeutig ist dann (Bauteil, Art, `n`, Masc
 
 ## 4. Name an der Maschine
 
-Der Dateiname an der Steuerung wird aus der MDS-Nummer **abgeleitet**, je Steuerung mit eigener
-Regel (Endung, Länge, erlaubte Zeichen). Das MDS hält dafür je Steuerungstyp eine Namensregel – ähnlich
-einem Postprozessor, nur für den Namen.
+Der Dateiname an der Steuerung wird aus der MDS-Nummer **abgeleitet** – mit einer Namensregel je
+Steuerung, die in den Stammdaten eingestellt wird (Abschnitt 4.1), nicht fest im Code.
 
-| Steuerung | Endung | Regeln (Länge, Zeichen) | Beispiel |
-|---|---|---|---|
-| Heidenhain TNC 640 | `.H` | **offen** | `KD00000-00004-1.H` |
-| Siemens (Drehen) | `.MPF` | **offen** | |
-| Mazatrol 640M | | **offen** – evtl. nur Ziffern (Work-Nr.)? Dann Zuordnungstabelle MDS-Nummer ↔ Work-Nr. | |
-| PC-DMIS (KMG) | `.PRG` | **offen**; Name der Excel-Vorlage muss eindeutig sein (siehe Messprogramme-Konzept) | `KD00000-00004-M1.PRG` |
+**Was die Steuerungen erlauben** (Stand 29.10.2026):
 
-Passt eine Nummer nicht zur Regel, meldet das MDS das beim Anlegen – nicht erst an der Maschine.
+| Steuerung | erlaubt | Folge |
+|---|---|---|
+| Heidenhain (TNC 640) | Ziffern, Buchstaben, `-`, `_`; keine Umlaute/Sonderzeichen | MDS-Nummer passt direkt: `KD00000-00004-1.H` |
+| Mazatrol (640M) | **nur Ziffern** | MDS-Nummer passt nicht → eigene Ziffernfolge je Programm, vom MDS vergeben und gespeichert (4.2) |
+| Siemens | **offen** – nachschauen | |
+| PC-DMIS (KMG) | **offen**; Name der Excel-Vorlage muss eindeutig sein (siehe Messprogramme-Konzept) | |
 
----
+Passt eine Nummer nicht zur Regel, meldet das MDS das beim Anlegen bzw. bei der Zuordnung zur
+Maschine – nicht erst an der Maschine.
+
+### 4.1 Namensregel in den Stammdaten
+
+Die Steuerungstypen gibt es schon (Stammdaten → Steuerungen, Tabelle `control_types`, Maschinen
+verweisen über `control_type_id`). Dort kommt je Steuerung eine Namensregel dazu:
+
+| Einstellung | Beispiel Heidenhain | Beispiel Mazatrol |
+|---|---|---|
+| Art | Text | Nur Ziffern |
+| Vorlage (Text) | `{programmnummer}` | – |
+| Ziffernbereich (Ziffern) | – | z. B. `1000`–`9999` (offen, siehe Fragen) |
+| erlaubte Zeichen | `A–Z a–z 0–9 - _` | `0–9` |
+| Großbuchstaben erzwingen | nein | – |
+| max. Länge | offen | offen |
+| Dateiendung | `.H` | offen |
+
+- **Vorlage** mit Platzhaltern, z. B. `{programmnummer}`, `{bauteil}`, `{n}`, `{kunde}`. Standard ist
+  `{programmnummer}`; braucht eine Steuerung etwas Kürzeres, stellt man es hier um, ohne Code
+- **Umlaute/Sonderzeichen** werden nicht still ersetzt, sondern gemeldet (ä → ae wäre an der
+  Maschine überraschend)
+- Später bei Bedarf: Abweichung je Maschine (gleiche Steuerung, andere Gewohnheit) als Übersteuerung an
+  `machines`; erst einbauen, wenn es den Fall gibt
+- Einrichten über die Oberfläche (Stammdaten), keine Werte per Migration – wie Operationstypen
+
+### 4.2 Nur-Ziffern-Steuerungen (Mazatrol)
+
+- Das MDS vergibt je Programm und Maschine eine **Ziffernfolge** aus dem eingestellten Bereich
+  (nächste freie), einmal vergeben bleibt sie
+- gespeichert als Zuordnung Programm ↔ Maschine ↔ Name (neue Tabelle, siehe 7) – an der Maschine
+  steht `4711`, im MDS sieht man dazu `KD00000-00004-1`
+- Suche im MDS auch nach dieser Ziffernfolge (wer an der Maschine `4711` liest, findet das Programm)
+- Eindeutig je Maschine bzw. je Steuerungsspeicher – zwei Mazatrol-Maschinen dürfen dieselbe Zahl haben,
+  wenn sie getrennte Speicher haben (offen: einfacher wäre eindeutig über alle Mazatrol)
 
 ## 5. Programmkopf und Postprozessor
 
@@ -112,6 +145,7 @@ Im NC-Kopf stehen heute Zeichnungsnummer, Bezeichnung und Revision aus dem TopSo
 - Bestehende Programme behalten ihre Nummer (siehe offene Fragen)
 
 **Stufe 2 – MDS → Maschine**
+- Namensregel je Steuerung in den Stammdaten (4.1), Ziffernvergabe für Mazatrol (4.2)
 - Download/Bereitstellung benennt die Datei nach der Namensregel der Ziel-Steuerung
 - Kopf-Prüfung beim Hochladen (Abschnitt 5)
 
@@ -131,14 +165,19 @@ Im NC-Kopf stehen heute Zeichnungsnummer, Bezeichnung und Revision aus dem TopSo
   dran, daher per Prüfung im Backend oder Trigger statt einfachem Index; genaue Form bei der Umsetzung
 - Vergabe in derselben Transaktion wie das Anlegen (zwei gleichzeitige Uploads dürfen nicht dieselbe
   Nummer bekommen)
-- Namensregeln je Steuerung: an `machines` bzw. Steuerungstyp, erst in Stufe 2
+- Namensregel je Steuerung: neue Spalten an `control_types` (Art, Vorlage, Ziffernbereich, erlaubte
+  Zeichen, max. Länge, Endung) – Stufe 2
+- Name an der Maschine: neue Tabelle `program_machine_names` (Programm, Maschine, Name, vergeben am/von)
+  – für Ziffern-Steuerungen nötig, für Text-Steuerungen als Nachweis, welcher Name an die Maschine ging
 
 ---
 
 ## 8. Offene Fragen
 
-1. **Namensgrenzen der Steuerungen:** TNC 640, Siemens, Mazatrol 640M, PC-DMIS – max. Länge,
-   erlaubte Zeichen (Bindestrich?), Mazatrol nur Ziffern?
+1. **Namensgrenzen der Steuerungen:** Heidenhain (Ziffern, Buchstaben, `-`, `_`) und Mazatrol (nur
+   Ziffern) geklärt. Offen: Siemens; max. Länge bei Heidenhain; bei Mazatrol wie viele Stellen und
+   welcher Bereich (gibt es Nummern, die schon belegt oder für etwas reserviert sind?); Dateiendungen;
+   PC-DMIS
 2. **Mehrere Programme je Aufspannung** (z. B. Hauptprogramm mit Unterprogrammen, Schruppen/Schlichten
    getrennt): eigene Nummern (`-1`, `-2`) oder Zusatz (`-1A`, `-1B`)?
 3. **Bestehende Programme:** alte Nummern behalten und nur neue nach Schema vergeben, oder einmalig
