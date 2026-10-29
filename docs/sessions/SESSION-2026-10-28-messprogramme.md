@@ -39,6 +39,6 @@ Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vie
 
 - Version löschen in der Versionsliste ruft einen Endpunkt auf, den es nicht gibt (betrifft auch NC) – eigener Fix
 - Rollback prüft den Vorlagennamen nicht (zwei aktive Programme mit derselben Vorlage möglich) – spätestens beim Bereitstellen (Schritt 4) abfangen
-- PDF-Viewer lädt seinen Worker von unpkg.com – in Produktion prüfen, sonst lokal ausliefern
+- ~~PDF-Viewer lädt seinen Worker von unpkg.com~~ – in Produktion lief die Vorschau, der Worker kommt seit #222 vom eigenen Server
 - Alte ESLint-Befunde in `ProgramsList`, `programsStore`, `OperationsAccordion`, `Breadcrumbs`
 - Siehe ROADMAP „Nächste Session“

@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Die Vorschau von Zeichnungen (PDF) braucht keine Internetverbindung mehr: Das Anzeigeprogramm kommt jetzt vom MDS selbst statt von einem fremden Server.
+
+### Fixed
+- PDF-Viewer: Der Worker von PDF.js wurde bei jedem Seitenaufruf von `unpkg.com` geladen – Abhängigkeit vom Internet und fremder Code, der die Zeichnungen verarbeitet. Jetzt aus `pdfjs-dist` mitgebaut und vom eigenen Server ausgeliefert (`assets/pdf.worker.min-*.mjs`, Caddy liefert `.mjs` als `text/javascript`)
+
 ---
 
 ## [2.15.0] - 2026-10-29 - Messprogramme und Programm-Übersichten
