@@ -11,8 +11,9 @@ import { useAuthStore } from '../../stores/authStore';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// PDF.js Worker konfigurieren
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// PDF.js Worker konfigurieren – vom eigenen Server (Vite liefert die Datei aus dem Paket mit),
+// kein CDN: der Worker verarbeitet die Zeichnungen
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 export default function PdfViewer({ fileUrl, fileName, className = '' }) {
   const [pdfData, setPdfData] = useState(null);
