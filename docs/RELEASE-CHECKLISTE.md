@@ -42,14 +42,15 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – PDF-Worker vom eigenen Server (#222). Nur Frontend, keine Migration.
+**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224). Keine Migration.
 
 - [ ] Zeichnungsvorschau (PDF) am Bauteil und im Dateifenster eines Messprogramms lädt; im Browser (F12 → Netzwerk) keine Anfrage an `unpkg.com`, der Worker kommt aus `/assets/pdf.worker.min-….mjs`
+- [ ] Messprogramm per „Ordner wählen“ und per Ziehen aus dem Explorer: STEP-Datei und Messprotokolle im Unterordner erscheinen als „Aussortiert“, „Messprogramm anlegen“ ist frei, gespeichert werden nur `.prg`/`.cad`/Prüfzeichnung (ggf. Vorlage, Mini-Routinen)
 
 **Noch offen aus 2.15.0** (kein neuer Deploy nötig):
 
 - [x] Zeichnungsvorschau (PDF) am Bauteil lädt (29.10.) – holte ihren Worker allerdings von unpkg.com, behoben in #222
-- [ ] Am Arbeitsplatz: ersten echten PC-DMIS-Ordner als Messprogramm hochladen (Vorschau: `.prg`/`.cad`/Zeichnung/Vorlage richtig eingeordnet, `.PRG~`/`.PRG^` aussortiert), ZIP laden und in PC-DMIS öffnen; Ordner auch per „Ordner wählen“ und per Ziehen aus dem Explorer
+- [ ] Am Arbeitsplatz (29.10.: Einzelauswahl, Einzel- und ZIP-Download gehen; Ordner scheiterte an `.stp` und nahm Messprotokolle aus dem Unterordner mit → #224): ersten echten PC-DMIS-Ordner als Messprogramm hochladen (Vorschau: `.prg`/`.cad`/Zeichnung/Vorlage richtig eingeordnet, `.PRG~`/`.PRG^` aussortiert), ZIP laden und in PC-DMIS öffnen; Ordner auch per „Ordner wählen“ und per Ziehen aus dem Explorer
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
 
 ---

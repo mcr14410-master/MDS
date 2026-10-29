@@ -17,8 +17,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Die Vorschau von Zeichnungen (PDF) braucht keine Internetverbindung mehr: Das Anzeigeprogramm kommt jetzt vom MDS selbst statt von einem fremden Server.
+- Messprogramme: Ein ganzer Ordner lässt sich jetzt hochladen, auch wenn noch andere Dateien darin liegen (z. B. die STEP-Datei vom Import). Sie werden in der Vorschau grau als „Aussortiert“ gezeigt statt das Hochladen zu sperren. Dateien aus Unterordnern, etwa Messprotokolle, werden nicht mitgenommen.
 
 ### Fixed
+- Messprogramm-Upload per Ordner: Unbekannte Dateitypen sperrten das Anlegen („Dateityp nicht erlaubt“) – jetzt aussortiert mit Hinweis, STEP (`.stp`/`.step`) mit eigenem Hinweis „steckt bereits in der .cad“. Ordnerauswahl und Ziehen nahmen auch Dateien aus Unterordnern mit, Messprotokolle (PDF) landeten so als Prüfzeichnung in der Version – jetzt zählt nur die oberste Ebene der Auswahl, Dateien darunter erscheinen als „Aus Unterordner … – nicht hochgeladen“
 - PDF-Viewer: Der Worker von PDF.js wurde bei jedem Seitenaufruf von `unpkg.com` geladen – Abhängigkeit vom Internet und fremder Code, der die Zeichnungen verarbeitet. Jetzt aus `pdfjs-dist` mitgebaut und vom eigenen Server ausgeliefert (`assets/pdf.worker.min-*.mjs`, Caddy liefert `.mjs` als `text/javascript`)
 
 ---
