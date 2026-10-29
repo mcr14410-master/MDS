@@ -42,7 +42,9 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225). Keine Migration.
+**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225), Programm bearbeiten und Programmnummer (#226). Keine Migration.
+
+- [ ] Programm bearbeiten (Stift auf der Karte): Name ändern und speichern – bei NC- und Messprogramm, Nummer bleibt gleich
 
 - [ ] **Nach dem Deploy einschalten:** Administration → Operationstypen → „CNC-Messen“: „Messprogramme“ anhaken (ggf. „NC-Programme“ abwählen). Bestehende Arbeitsgänge mit Messprogrammen: „Arbeitsgang bearbeiten“ → „Aktivierte Bereiche“ → „Messprogramme“ – bis dahin weist der Reiter „NC-Programme“ auf vorhandene Messprogramme hin
 - [ ] Reiter „NC-Programme“ zeigt nur NC-Programme, „Messprogramme“ nur Messprogramme (Hochladen, neue Version, Dateien, ZIP, Freigabe); Übersicht Messprogramme → Programm öffnet den Reiter „Messprogramme“
