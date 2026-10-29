@@ -46,17 +46,14 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 **Noch offen aus 2.16.0** (kein neuer Deploy nötig):
 
-- [ ] Programm bearbeiten (Stift auf der Karte): Name ändern und speichern – bei NC- und Messprogramm, Nummer bleibt gleich
-- [ ] Reiter „NC-Programme“ zeigt nur NC-Programme, „Messprogramme“ nur Messprogramme (Hochladen, neue Version, Dateien, ZIP, Freigabe); Übersicht Messprogramme → Programm öffnet den Reiter „Messprogramme“
-- [ ] Zeichnungsvorschau (PDF) am Bauteil und im Dateifenster eines Messprogramms lädt; im Browser (F12 → Netzwerk) keine Anfrage an `unpkg.com`, der Worker kommt aus `/assets/pdf.worker.min-….mjs`
-- [ ] Am Arbeitsplatz: echten PC-DMIS-Ordner per „Ordner wählen“ und per Ziehen aus dem Explorer hochladen – STEP-Datei und Messprotokolle im Unterordner erscheinen als „Aussortiert“, gespeichert werden nur `.prg`/`.cad`/Prüfzeichnung (ggf. Vorlage, Mini-Routinen); `.PRG~`/`.PRG^` aussortiert; ZIP laden und in PC-DMIS öffnen (übernimmt den offenen Punkt aus 2.15.0)
+- [ ] ZIP eines Messprogramms in PC-DMIS öffnen (Programm, CAD, ggf. Excel-Vorlage im Vorlagenverzeichnis)
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
 
 ---
 
 ## Erledigt: Release 2.16.0 (29.10.2026)
 
-Messprogramme im eigenen Reiter (#225), Ordner-Upload ohne Zusatzdateien/Unterordner (#224), Programm bearbeiten und Nummernvergabe (#226), PDF-Worker vom eigenen Server (#222). Keine Migration. Deploy grün, Tag `v2.16.0`. Bereich „Messprogramme“ beim Operationstyp „CNC-Messen“ und an den betroffenen Arbeitsgängen eingeschaltet, Arbeitsgang anlegen/bearbeiten geprüft.
+Messprogramme im eigenen Reiter (#225), Ordner-Upload ohne Zusatzdateien/Unterordner (#224), Programm bearbeiten und Nummernvergabe (#226), PDF-Worker vom eigenen Server (#222). Keine Migration. Deploy grün, Tag `v2.16.0`. Bereich „Messprogramme“ beim Operationstyp „CNC-Messen“ und an den betroffenen Arbeitsgängen eingeschaltet, Arbeitsgang anlegen/bearbeiten geprüft. Restprüfung 30.10.: Programm umbenennen, getrennte Reiter NC-/Messprogramme, PDF-Vorschau und Ordner-Upload eines echten PC-DMIS-Ordners in Ordnung.
 
 ---
 
