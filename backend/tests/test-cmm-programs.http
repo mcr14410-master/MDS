@@ -339,8 +339,8 @@ Content-Type: application/xml
 
 ### ==============================================
 ### 22. ANLEGEN - ungültiges XML, unbekannter Typ (Error)
-### Erwartung: 400 mit drei Meldungen (kein gültiges XML,
-### Dateityp nicht erlaubt, Vorlage unvollständig)
+### Erwartung: 400 mit zwei Meldungen (kein gültiges XML,
+### Vorlage unvollständig); notiz.docx wird nur aussortiert
 ### ==============================================
 POST {{baseUrl}}/api/programs/cmm
 Authorization: Bearer {{token}}
