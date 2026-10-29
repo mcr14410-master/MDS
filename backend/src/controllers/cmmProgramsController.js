@@ -19,6 +19,7 @@ const archiver = require('archiver');
 const { XMLValidator } = require('fast-xml-parser');
 const pool = require('../config/db');
 const { CMM_UPLOAD_DIR } = require('../middleware/uploadMiddleware');
+const { suggestProgramNumber } = require('../utils/programNumber');
 const {
   ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision,
 } = require('../services/cmmProgramFiles');
@@ -266,8 +267,7 @@ exports.createCmmProgram = async (req, res) => {
     }
 
     if (!program_number) {
-      const countResult = await pool.query('SELECT COUNT(*) AS count FROM programs WHERE operation_id = $1', [operation_id]);
-      program_number = `${opResult.rows[0].op_number}-${String(parseInt(countResult.rows[0].count) + 1).padStart(3, '0')}`;
+      program_number = await suggestProgramNumber(pool, operation_id, opResult.rows[0].op_number);
     }
 
     const workflowStateId = await draftStateId(pool);

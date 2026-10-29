@@ -19,11 +19,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Die Vorschau von Zeichnungen (PDF) braucht keine Internetverbindung mehr: Das Anzeigeprogramm kommt jetzt vom MDS selbst statt von einem fremden Server.
 - Messprogramme: Ein ganzer Ordner lässt sich jetzt hochladen, auch wenn noch andere Dateien darin liegen (z. B. die STEP-Datei vom Import). Sie werden in der Vorschau grau als „Aussortiert“ gezeigt statt das Hochladen zu sperren. Dateien aus Unterordnern, etwa Messprotokolle, werden nicht mitgenommen.
 - Messprogramme haben am Arbeitsgang einen eigenen Reiter „Messprogramme“, der bisherige Reiter heißt jetzt „NC-Programme“. Den neuen Reiter schaltet man wie die anderen Bereiche ein: beim Arbeitsgang unter „Aktivierte Bereiche“ oder als Standard beim Operationstyp (z. B. „CNC-Messen“).
+- Name und Beschreibung von NC- und Messprogrammen lassen sich wieder bearbeiten – das Speichern brach bisher mit „Pflichtfelder fehlen“ ab.
 
 ### Changed
 - Arbeitsgang: Messprogramme in eigenem Reiter mit neuem Bereich `cmm_programs` (Arbeitsgang-Formular, Operationstypen, `GET /api/operation-types/features`). `CmmProgramsList`/`CmmProgramCard` statt Weichen in `ProgramsList`/`ProgramCard` – die zeigen nur noch NC-Programme, mit Hinweis, falls am Arbeitsgang Messprogramme liegen. Status-Filter als `ProgramStatusFilter` für beide. Reiter „Programme“ → „NC-Programme“. Direktsprung aus der Übersicht Messprogramme öffnet den neuen Reiter (`/parts/:id?op=…&tab=cmm_programs`). Daten und Backend unverändert (gemeinsame Tabelle `programs`, `kind`); keine Migration – der Bereich wird über die Oberfläche eingeschaltet
 
 ### Fixed
+- Programm bearbeiten: `PUT /api/programs/:id` verlangte `program_number`, das Formular schickt sie nicht mit → jedes Bearbeiten scheiterte mit 400. `program_number` ist jetzt optional (fehlt sie, bleibt die bisherige; leer → 400)
+- Programmnummer: automatische Vergabe zählte die Programme am Arbeitsgang („Anzahl + 1“) und vergab nach dem Löschen eine Nummer doppelt – jetzt höchste vorhandene Nummer + 1 (`utils/programNumber.js`, für NC- und Messprogramme)
 - Messprogramm-Upload per Ordner: Unbekannte Dateitypen sperrten das Anlegen („Dateityp nicht erlaubt“) – jetzt aussortiert mit Hinweis, STEP (`.stp`/`.step`) mit eigenem Hinweis „steckt bereits in der .cad“. Ordnerauswahl und Ziehen nahmen auch Dateien aus Unterordnern mit, Messprotokolle (PDF) landeten so als Prüfzeichnung in der Version – jetzt zählt nur die oberste Ebene der Auswahl, Dateien darunter erscheinen als „Aus Unterordner … – nicht hochgeladen“
 - PDF-Viewer: Der Worker von PDF.js wurde bei jedem Seitenaufruf von `unpkg.com` geladen – Abhängigkeit vom Internet und fremder Code, der die Zeichnungen verarbeitet. Jetzt aus `pdfjs-dist` mitgebaut und vom eigenen Server ausgeliefert (`assets/pdf.worker.min-*.mjs`, Caddy liefert `.mjs` als `text/javascript`)
 
