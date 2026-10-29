@@ -23,10 +23,11 @@ const formatFileSize = (bytes) => {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
-// Ordner aus Drag & Drop rekursiv auslesen (Ordnerstruktur zählt nicht, nur die Dateien)
+// Ordner aus Drag & Drop rekursiv auslesen – mit Pfad, damit Unterordner erkennbar bleiben
 async function filesFromEntry(entry) {
   if (entry.isFile) {
-    return [await new Promise((resolve, reject) => entry.file(resolve, reject))];
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    return [{ file, path: entry.fullPath.replace(/^\//, '') }];
   }
   if (entry.isDirectory) {
     const reader = entry.createReader();
@@ -43,11 +44,32 @@ async function filesFromEntry(entry) {
   return [];
 }
 
+// Nur die oberste Ebene der Auswahl zählt: Dateien aus Unterordnern (z. B. Messprotokolle,
+// die PC-DMIS neben das Programm schreibt) gehören nicht zum Messprogramm.
+// items: [{ file, path }] mit Pfad relativ zur Auswahl ('' bzw. Dateiname = oberste Ebene)
+function splitTopLevel(items) {
+  const depth = (p) => (p ? p.split('/').length - 1 : 0);
+  const top = Math.min(...items.map((i) => depth(i.path)));
+  const keep = [];
+  const skipped = [];
+  items.forEach((i) => {
+    if (depth(i.path) === top) {
+      keep.push(i.file);
+    } else {
+      const parts = i.path.split('/');
+      const folder = parts.slice(top, -1).join('/');
+      skipped.push({ filename: parts.slice(top).join('/'), filesize: i.file.size, folder });
+    }
+  });
+  return { keep, skipped };
+}
+
 export default function CmmUploadForm({ operationId, program, onClose, onSuccess }) {
   const { uploadCmm, fetchCmmFiles } = useProgramsStore();
   const isRevision = Boolean(program);
 
   const [files, setFiles] = useState([]);
+  const [skipped, setSkipped] = useState([]);   // Dateien aus Unterordnern, nicht hochgeladen
   const [fields, setFields] = useState({ program_name: '', description: '', comment: '', version_type: 'patch' });
   const [excelReport, setExcelReport] = useState(false);       // neues Programm: Vorlage Pflicht
   const [removeTemplate, setRemoveTemplate] = useState(false);  // neue Version: Vorlage entfernen
@@ -119,6 +141,20 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files, remove, excelReport, removeTemplate]);
 
+  // items: [{ file, path }] aus Ordnerauswahl oder Drag & Drop
+  const addItems = (items) => {
+    if (items.length === 0) return;
+    const { keep, skipped: newSkipped } = splitTopLevel(items);
+    if (newSkipped.length > 0) {
+      setSkipped((prev) => {
+        const byName = new Map(prev.map((s) => [s.filename.toLowerCase(), s]));
+        newSkipped.forEach((s) => byName.set(s.filename.toLowerCase(), s));
+        return [...byName.values()];
+      });
+    }
+    addFiles(keep);
+  };
+
   const addFiles = (newFiles) => {
     if (newFiles.length === 0) return;
     setFiles((prev) => {
@@ -144,7 +180,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
       .filter(Boolean);
     if (entries.length > 0) {
       const nested = await Promise.all(entries.map(filesFromEntry));
-      addFiles(nested.flat());
+      addItems(nested.flat());
     } else {
       addFiles([...e.dataTransfer.files]);
     }
@@ -176,6 +212,11 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
 
   const canSave = preview?.valid && !previewing && !saving && (isRevision || fields.program_name.trim());
   const userRemoved = new Set(remove.map((n) => n.toLowerCase()));
+  const skippedRows = skipped.map((s) => ({
+    ...s,
+    status: 'ignored',
+    reason: `Aus Unterordner „${s.folder}“ – nicht hochgeladen (z. B. Messprotokolle)`,
+  }));
   const inputClass = 'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
   return (
@@ -230,12 +271,15 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
               <label className="cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
                 Ordner wählen
                 <input type="file" multiple webkitdirectory="" className="sr-only"
-                  onChange={(e) => { addFiles([...e.target.files]); e.target.value = ''; }} />
+                  onChange={(e) => {
+                    addItems([...e.target.files].map((file) => ({ file, path: file.webkitRelativePath || file.name })));
+                    e.target.value = '';
+                  }} />
               </label>
             </p>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
               .prg, .cad, Prüfzeichnung (.pdf), Excel-Vorlage (.xlsx + .layout.xml), .MiniRoutines.xml –
-              PC-DMIS-Sicherungen (.PRG~, .PRG^) werden automatisch aussortiert
+              PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert
             </p>
             {isRevision && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -244,10 +288,13 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
             )}
           </div>
 
-          {files.length > 0 && (
+          {(files.length > 0 || skipped.length > 0) && (
             <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-              <span>{files.length} {files.length === 1 ? 'Datei' : 'Dateien'} ausgewählt</span>
-              <button type="button" onClick={() => setFiles([])} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <span>
+                {files.length} {files.length === 1 ? 'Datei' : 'Dateien'} ausgewählt
+                {skipped.length > 0 && ` · ${skipped.length} aus Unterordnern nicht hochgeladen`}
+              </span>
+              <button type="button" onClick={() => { setFiles([]); setSkipped([]); }} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Auswahl leeren
               </button>
             </div>
@@ -325,6 +372,9 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
             {!hasChanges && !isRevision && (
               <p className="text-sm text-gray-500 dark:text-gray-400">Noch keine Dateien ausgewählt.</p>
             )}
+            {!hasChanges && skipped.length > 0 && (
+              <div className="mt-3"><FileTable rows={skippedRows} /></div>
+            )}
 
             {previewError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300">
@@ -349,6 +399,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
                     ...preview.files,
                     ...preview.removed.map((f) => ({ ...f, status: 'removed' })),
                     ...preview.ignored.map((f) => ({ filename: f.name, status: 'ignored', reason: f.reason })),
+                    ...skippedRows,
                   ]}
                   onToggleRemove={isRevision ? toggleRemove : null}
                   userRemoved={userRemoved}
