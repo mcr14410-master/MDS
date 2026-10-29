@@ -117,6 +117,13 @@ verweisen über `control_type_id`). Dort kommt je Steuerung eine Namensregel daz
 
 ### 4.2 Nur-Ziffern-Steuerungen (Mazatrol)
 
+**Heute schon so:** Mazatrol-Programme bekommen eine fortlaufende Nummer (7-stellig, z. B. `1000010`),
+von Hand vergeben. In TopSolid steht sie nicht im Dokumentnamen, sondern im Programm-Dialog unter
+„Dateiname“ – getrennt vom „Programmname“ (der lässt sich „erzwingen“). Beides ist parametrisch.
+Das MDS übernimmt also nur die Vergabe, die Arbeitsweise bleibt.
+
+- **Startwert:** höchste bisher vergebene Nummer als Start in der Namensregel eintragen, damit das MDS
+  nahtlos weiterzählt und nichts doppelt vergibt
 - Das MDS vergibt je Programm und Maschine eine **Ziffernfolge** aus dem eingestellten Bereich
   (nächste freie), einmal vergeben bleibt sie
 - gespeichert als Zuordnung Programm ↔ Maschine ↔ Name (neue Tabelle, siehe 7) – an der Maschine
@@ -153,6 +160,13 @@ Im NC-Kopf stehen heute Zeichnungsnummer, Bezeichnung und Revision aus dem TopSo
 - Programm im MDS anlegen (Nummer reserviert, Status „geplant“), bevor programmiert wird
 - TopSolid übernimmt die Nummer: über den Dokumentnamen (wertet der Postprozessor heute schon aus)
   oder per TopSolid-API (Erfahrung aus dem Seriennummern-Generator)
+- Im Programm-Dialog von TopSolid sind **„Programmname“ und „Dateiname“ getrennte, parametrische
+  Felder** – ein MDS-Agent bzw. die TopSolid-API kann beide setzen: Dateiname nach der Namensregel der
+  Steuerung (Heidenhain `KD00000-00004-1`, Mazatrol die vergebene Ziffernfolge), Programmname = MDS-Nummer.
+  Damit braucht es dafür keinen Umbau am Dokumentnamen
+- Idee für später: Das Feld „Kopf“ im selben Dialog (heute Freitext wie Spanndruck, Standzeit,
+  Einstellhinweise) könnte aus dem MDS kommen, etwa aus Einrichteblatt bzw. Vorrichtung – dann stehen die
+  Hinweise an einer Stelle
 - passt zu „In TopSolid anlegen“ aus TOPSOLID_INTEGRATION_IDEEN.md, Abschnitt 2
 
 ---
@@ -175,8 +189,8 @@ Im NC-Kopf stehen heute Zeichnungsnummer, Bezeichnung und Revision aus dem TopSo
 ## 8. Offene Fragen
 
 1. **Namensgrenzen der Steuerungen:** Heidenhain (Ziffern, Buchstaben, `-`, `_`) und Mazatrol (nur
-   Ziffern) geklärt. Offen: Siemens; max. Länge bei Heidenhain; bei Mazatrol wie viele Stellen und
-   welcher Bereich (gibt es Nummern, die schon belegt oder für etwas reserviert sind?); Dateiendungen;
+   Ziffern) geklärt. Offen: Siemens; max. Länge bei Heidenhain; bei Mazatrol 7-stellig fortlaufend
+   (z. B. `1000010`) – offen: höchste bisher vergebene Nummer als Startwert, gibt es reservierte Bereiche?; Dateiendungen;
    PC-DMIS
 2. **Mehrere Programme je Aufspannung** (z. B. Hauptprogramm mit Unterprogrammen, Schruppen/Schlichten
    getrennt): eigene Nummern (`-1`, `-2`) oder Zusatz (`-1A`, `-1B`)?
