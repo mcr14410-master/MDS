@@ -582,9 +582,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.14.2 läuft auf dem Pi**, **v2.15.0 vorbereitet, Deploy offen** (Messprogramme Schritte 0–3, Übersichten NC-Programme/Messprogramme), `[Unreleased]` leer
+Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.15.0 läuft auf dem Pi** (29.10.: Messprogramme Schritte 0–3, Übersichten NC-Programme/Messprogramme), `[Unreleased]` leer
 
-0. **Deploy 2.15.0** auf dem Pi mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`, danach Tag `v2.15.0`. Am Arbeitsplatz erstes echtes Messprogramm hochladen – Befunde fließen in Schritt 4 (Agent) ein
+0. **Restprüfung 2.15.0** (`docs/RELEASE-CHECKLISTE.md`, „Noch offen aus 2.15.0“): PDF-Zeichnungsvorschau in Produktion; am Arbeitsplatz erstes echtes Messprogramm hochladen und ZIP in PC-DMIS öffnen – Befunde fließen in Schritt 4 (Agent) ein
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
