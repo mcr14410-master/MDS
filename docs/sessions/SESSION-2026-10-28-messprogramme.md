@@ -1,6 +1,6 @@
-# Session 28./29. Oktober 2026 – Messprogramme (KMG / PC-DMIS) Schritte 0–3, Release 2.15.0
+# Session 28./29. Oktober 2026 – Messprogramme (KMG / PC-DMIS) Schritte 0–3, Releases 2.15.0/2.16.0
 
-**PRs:** #214 – #221, Tag `v2.15.0` · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
+**PRs:** #214 – #230, Tag `v2.15.0` · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
 
 Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vier Umsetzungsschritte gebaut: Messprogramme lassen sich jetzt ohne Agent im MDS ablegen, versionieren und freigeben. Dazu kamen die bisher fehlenden Übersichten „NC-Programme“ und „Messprogramme“.
 
@@ -17,6 +17,12 @@ Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vie
 | #218 | **Schritt 3a – Übersichten** NC-Programme/Messprogramme unter Fertigung, Direktsprung `/parts/:id?op=` |
 | #219 | **Schritt 3b – am Arbeitsgang:** Upload-Fenster für Dateien/Ordner mit Vorschau per Probelauf (`?dry_run=true`), Dateiliste, ZIP; Programmkarte: Status deutsch, Dateiname ohne Präfix |
 | #220, #221 | **Release 2.15.0** und Deploy am 29.10. (Deploy und Klicktest grün), Tag `v2.15.0`; diese Session-Doku |
+| #222, #223 | **PDF-Worker vom eigenen Server** statt unpkg.com (verarbeitet die Zeichnungen); Fixliste „weitere externe Adressen prüfen“ |
+| #224 | **Ordner-Upload Messprogramme** (Befund erster Test am Arbeitsplatz): unbekannte Typen und STEP aussortiert statt Fehler, nur oberste Ordnerebene – Messprotokolle im Unterordner bleiben draußen |
+| #225 | **Eigener Reiter „Messprogramme“** am Arbeitsgang, Bereich `cmm_programs`; NC-Liste/-Karte ohne Messprogramm-Weichen |
+| #226 | **Programm bearbeiten** scheiterte immer (Backend verlangte die Nummer); automatische Nummer ohne Doppelte nach dem Löschen |
+| #227 – #229 | **Konzept Programmnummern** (`docs/konzepte/PROGRAMMNUMMERN_KONZEPT.md`): MDS vergibt, Schema `<Bauteil-Nr>-<n>`, Namensregel je Steuerung in den Stammdaten, Mazatrol nur Ziffern, TopSolid-Felder Programm-/Dateiname |
+| #230 | **Release 2.16.0** |
 
 ## Entscheidungen
 

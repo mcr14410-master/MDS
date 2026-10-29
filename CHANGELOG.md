@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.16.0] - 2026-10-29 - Messprogramme im eigenen Reiter
+
 ### Für Anwender
 - Die Vorschau von Zeichnungen (PDF) braucht keine Internetverbindung mehr: Das Anzeigeprogramm kommt jetzt vom MDS selbst statt von einem fremden Server.
 - Messprogramme: Ein ganzer Ordner lässt sich jetzt hochladen, auch wenn noch andere Dateien darin liegen (z. B. die STEP-Datei vom Import). Sie werden in der Vorschau grau als „Aussortiert“ gezeigt statt das Hochladen zu sperren. Dateien aus Unterordnern, etwa Messprotokolle, werden nicht mitgenommen.

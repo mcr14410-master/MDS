@@ -42,7 +42,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225), Programm bearbeiten und Programmnummer (#226). Keine Migration.
+**Release 2.16.0** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225), Programm bearbeiten und Programmnummer (#226). Keine Migration.
 
 - [ ] Programm bearbeiten (Stift auf der Karte): Name ändern und speichern – bei NC- und Messprogramm, Nummer bleibt gleich
 
