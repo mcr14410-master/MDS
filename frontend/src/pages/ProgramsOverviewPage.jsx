@@ -53,7 +53,7 @@ const DEFAULT_FILTERS = { search: '', status: '', sort_by: 'updated_at', sort_or
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('de-DE') : '-');
 
 // Direktsprung: Bauteil → Arbeitsgang aufklappen → Reiter „Programme“
-const programLink = (p) => `/parts/${p.part_id}?op=${p.operation_id}`;
+const programLink = (p) => `/parts/${p.part_id}?op=${p.operation_id}${p.kind === 'cmm' ? '&tab=cmm_programs' : ''}`;
 
 function StatusBadge({ status }) {
   return (

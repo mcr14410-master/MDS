@@ -20,9 +20,10 @@ const STATUS_CONFIG = {
 
 export default function PartDetailPage() {
   const { id } = useParams();
-  // ?op=<Arbeitsgang-ID>: Direktsprung aus NC-Programme/Messprogramme
+  // ?op=<Arbeitsgang-ID>[&tab=cmm_programs]: Direktsprung aus NC-Programme/Messprogramme
   const [searchParams] = useSearchParams();
   const focusOperationId = parseInt(searchParams.get('op'), 10) || null;
+  const focusTab = searchParams.get('tab') === 'cmm_programs' ? 'cmm_programs' : 'programs';
   const navigate = useNavigate();
   const { currentPart, loading, error, fetchPart, deletePart, updatePart } = usePartsStore();
   const { hasPermission } = useAuthStore();
@@ -664,7 +665,7 @@ export default function PartDetailPage() {
       ) : activeTab === 'operations' ? (
         /* Operations Tab - Accordion */
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <OperationsAccordion partId={id} focusOperationId={focusOperationId} />
+          <OperationsAccordion partId={id} focusOperationId={focusOperationId} focusTab={focusTab} />
         </div>
       ) : activeTab === 'history' ? (
         /* History Tab */

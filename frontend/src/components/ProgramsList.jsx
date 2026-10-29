@@ -1,4 +1,5 @@
 // frontend/src/components/ProgramsList.jsx
+// NC-Programme am Arbeitsgang (Messprogramme: CmmProgramsList, eigener Reiter)
 import { useEffect, useState } from 'react';
 import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 import { useAuthStore } from '../stores/authStore';
@@ -6,11 +7,13 @@ import { toast } from './Toaster';
 import ProgramCard from './ProgramCard';
 import ProgramUploadForm from './ProgramUploadForm';
 import RevisionsList from './RevisionsList'; // NEU: Woche 7
-import CmmUploadForm from './CmmUploadForm';
+import ProgramStatusFilter from './ProgramStatusFilter';
 
 export default function ProgramsList({ operationId }) {
   const { programsByOperation, loadingByOperation, errorByOperation, fetchPrograms, deleteProgram } = useProgramsStore();
-  const programs = programsByOperation[operationId] || EMPTY_PROGRAMS;
+  const allPrograms = programsByOperation[operationId] || EMPTY_PROGRAMS;
+  const programs = allPrograms.filter((p) => p && p.kind !== 'cmm');
+  const cmmCount = allPrograms.filter((p) => p?.kind === 'cmm').length;
   const loading = loadingByOperation[operationId];
   const error = errorByOperation[operationId];
   const { hasPermission } = useAuthStore();
@@ -20,8 +23,6 @@ export default function ProgramsList({ operationId }) {
   const [showRevisions, setShowRevisions] = useState(false);         // NEU: Woche 7
   const [selectedProgram, setSelectedProgram] = useState(null);      // NEU: Woche 7
   const [statusFilter, setStatusFilter] = useState('all');           // NEU: Woche 9
-  // Messprogramm (KMG): { program: null } = neu, { program } = neue Version
-  const [cmmUpload, setCmmUpload] = useState(null);
 
   useEffect(() => {
     if (operationId) {
@@ -38,10 +39,6 @@ export default function ProgramsList({ operationId }) {
 
   // NEU: Woche 7 - Neue Version hochladen
   const handleNewRevision = (program) => {
-    if (program.kind === 'cmm') {
-      setCmmUpload({ program });
-      return;
-    }
     setEditingProgram(program);
     setIsNewRevision(true);
     setShowUploadForm(true);
@@ -90,7 +87,7 @@ export default function ProgramsList({ operationId }) {
     fetchPrograms(operationId);
   };
 
-  if (loading && programs.length === 0) {
+  if (loading && allPrograms.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -114,7 +111,7 @@ export default function ProgramsList({ operationId }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Programme</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">NC-Programme</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {programs.length} {programs.length === 1 ? 'Programm' : 'Programme'}
           </p>
@@ -122,16 +119,6 @@ export default function ProgramsList({ operationId }) {
         
         {hasPermission('part.update') && (
           <div className="flex flex-wrap justify-end gap-2">
-            <button
-              onClick={() => setCmmUpload({ program: null })}
-              className="px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center gap-2"
-              title="PC-DMIS-Messprogramm (KMG) mit Dateigruppe hochladen"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Messprogramm hochladen
-            </button>
             <button
               onClick={() => setShowUploadForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -145,70 +132,14 @@ export default function ProgramsList({ operationId }) {
         )}
       </div>
 
-      {/* Status Filter (NEU: Woche 9) */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
-        <button
-          onClick={() => setStatusFilter('all')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Alle
-        </button>
-        <button
-          onClick={() => setStatusFilter('draft')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'draft'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Entwurf
-        </button>
-        <button
-          onClick={() => setStatusFilter('review')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'review'
-              ? 'bg-orange-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          In Prüfung
-        </button>
-        <button
-          onClick={() => setStatusFilter('approved')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'approved'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Geprüft
-        </button>
-        <button
-          onClick={() => setStatusFilter('released')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'released'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Freigegeben
-        </button>
-        <button
-          onClick={() => setStatusFilter('archived')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            statusFilter === 'archived'
-              ? 'bg-gray-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Archiviert
-        </button>
-      </div>
+      {cmmCount > 0 && (
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          {cmmCount === 1 ? 'Ein Messprogramm' : `${cmmCount} Messprogramme`} an diesem Arbeitsgang
+          {cmmCount === 1 ? ' steht' : ' stehen'} im Reiter „Messprogramme“ – fehlt er, unter „Arbeitsgang bearbeiten“ bei „Aktivierte Bereiche“ einschalten.
+        </p>
+      )}
+
+      <ProgramStatusFilter value={statusFilter} onChange={setStatusFilter} />
 
       {/* Programs Grid */}
       {programs.length === 0 ? (
@@ -217,10 +148,10 @@ export default function ProgramsList({ operationId }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Noch keine Programme
+            Noch keine NC-Programme
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Laden Sie das erste NC-Programm oder Messprogramm für diesen Arbeitsgang hoch.
+            Laden Sie das erste NC-Programm für diesen Arbeitsgang hoch.
           </p>
           {hasPermission('part.update') && (
             <button
@@ -237,7 +168,7 @@ export default function ProgramsList({ operationId }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {programs
-            .filter(program => program && program.id) // Nur gültige Programme
+            .filter(program => program.id) // Nur gültige Programme
             .filter(program => statusFilter === 'all' || program.workflow_state === statusFilter) // NEU: Status-Filter
             .map((program) => (
               <ProgramCard
@@ -261,19 +192,6 @@ export default function ProgramsList({ operationId }) {
           isNewRevision={isNewRevision}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
-        />
-      )}
-
-      {/* Messprogramm hochladen / neue Version */}
-      {cmmUpload && (
-        <CmmUploadForm
-          operationId={operationId}
-          program={cmmUpload.program}
-          onClose={() => setCmmUpload(null)}
-          onSuccess={() => {
-            setCmmUpload(null);
-            fetchPrograms(operationId);
-          }}
         />
       )}
 

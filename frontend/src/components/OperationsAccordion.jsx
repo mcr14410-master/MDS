@@ -18,6 +18,7 @@ import API_BASE_URL from '../config/api';
 import OperationForm from './OperationForm';
 import CreateVariantModal from './CreateVariantModal';
 import ProgramsList from './ProgramsList';
+import CmmProgramsList from './CmmProgramsList';
 import ToolListsOverview from './ToolListsOverview';
 import SetupSheetsList from './SetupSheetsList';
 import InspectionPlanTab from './InspectionPlanTab';
@@ -28,7 +29,7 @@ import MeasuringEquipmentTab from './MeasuringEquipmentTab';
 import RawMaterialTab from './RawMaterialTab';
 import ConsumablesTab from './ConsumablesTab';
 
-export default function OperationsAccordion({ partId, focusOperationId = null }) {
+export default function OperationsAccordion({ partId, focusOperationId = null, focusTab = 'programs' }) {
   const { operations, loading, error, fetchOperations, deleteOperation, updateOperation } = useOperationsStore();
   const { hasPermission } = useAuthStore();
   const [expandedIds, setExpandedIds] = useState(new Set());
@@ -69,13 +70,14 @@ export default function OperationsAccordion({ partId, focusOperationId = null })
   // Hilfsfunktion: Ersten verfügbaren Tab für eine Operation ermitteln
   const getFirstAvailableTab = (operation) => {
     const enabledFeatures = operation.enabled_features || ['programs', 'tools', 'setup_sheet', 'inspection'];
-    const tabOrder = ['programs', 'tools', 'setup_sheet', 'inspection', 'work_instruction', 'checklist', 'documents', 'measuring_equipment', 'raw_material', 'consumables'];
+    const tabOrder = ['programs', 'tools', 'setup_sheet', 'inspection', 'cmm_programs', 'work_instruction', 'checklist', 'documents', 'measuring_equipment', 'raw_material', 'consumables'];
     // Feature-ID zu Tab-ID Mapping (setup_sheet -> setup)
     const featureToTab = {
       'programs': 'programs',
       'tools': 'tools', 
       'setup_sheet': 'setup',
       'inspection': 'inspection',
+      'cmm_programs': 'cmm_programs',
       'work_instruction': 'work_instruction',
       'checklist': 'checklist',
       'documents': 'documents',
@@ -93,7 +95,7 @@ export default function OperationsAccordion({ partId, focusOperationId = null })
   };
 
   // Direktsprung (z. B. aus NC-Programme/Messprogramme): Arbeitsgang aufklappen, bei Varianten
-  // die Variante wählen, Reiter „Programme“ öffnen und hinscrollen – einmal je Ziel
+  // die Variante wählen, Reiter „NC-Programme“ bzw. „Messprogramme“ öffnen und hinscrollen – einmal je Ziel
   const focusedRef = useRef(null);
   useEffect(() => {
     if (!focusOperationId || focusedRef.current === focusOperationId) return;
@@ -107,11 +109,11 @@ export default function OperationsAccordion({ partId, focusOperationId = null })
     if (primary.id !== target.id) {
       setActiveVariant(prev => ({ ...prev, [primary.id]: target.id }));
     }
-    setActiveTab(prev => ({ ...prev, [target.id]: 'programs' }));
+    setActiveTab(prev => ({ ...prev, [target.id]: focusTab }));
     setTimeout(() => {
       document.getElementById(`operation-${primary.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
-  }, [focusOperationId, operations]);
+  }, [focusOperationId, focusTab, operations]);
 
   // Accordion toggle (einzeln)
   const handleToggle = (operationId) => {
@@ -740,10 +742,11 @@ export default function OperationsAccordion({ partId, focusOperationId = null })
                         {(() => {
                           // Alle verfügbaren Tabs definieren
                           const allTabs = [
-                            { id: 'programs', featureId: 'programs', label: 'Programme', icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
+                            { id: 'programs', featureId: 'programs', label: 'NC-Programme', icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
                             { id: 'tools', featureId: 'tools', label: 'Werkzeuge', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
                             { id: 'setup', featureId: 'setup_sheet', label: 'Einrichteblatt', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
                             { id: 'inspection', featureId: 'inspection', label: 'Prüfplan', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+                            { id: 'cmm_programs', featureId: 'cmm_programs', label: 'Messprogramme', icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
                             { id: 'work_instruction', featureId: 'work_instruction', label: 'Anweisung', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
                             { id: 'checklist', featureId: 'checklist', label: 'Checkliste', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
                             { id: 'documents', featureId: 'documents', label: 'Dokumente', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
@@ -780,6 +783,9 @@ export default function OperationsAccordion({ partId, focusOperationId = null })
                     <div className="min-h-[200px]">
                       {currentTab === 'programs' && (
                         <ProgramsList operationId={selectedVariantId} />
+                      )}
+                      {currentTab === 'cmm_programs' && (
+                        <CmmProgramsList operationId={selectedVariantId} />
                       )}
                       {currentTab === 'tools' && (
                         <ToolListsOverview operationId={selectedVariantId} />
