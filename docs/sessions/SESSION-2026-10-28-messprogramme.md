@@ -1,6 +1,6 @@
 # Session 28./29. Oktober 2026 – Messprogramme (KMG / PC-DMIS) Schritte 0–3, Releases 2.15.0/2.16.0
 
-**PRs:** #214 – #230, Tag `v2.15.0` · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
+**PRs:** #214 – #231, Tags `v2.15.0`, `v2.16.0` · Arbeit auf dem Dev-Server `homepi`, Deploy und Test am Arbeitsplatz durch den Nutzer
 
 Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vier Umsetzungsschritte gebaut: Messprogramme lassen sich jetzt ohne Agent im MDS ablegen, versionieren und freigeben. Dazu kamen die bisher fehlenden Übersichten „NC-Programme“ und „Messprogramme“.
 
@@ -22,7 +22,7 @@ Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vie
 | #225 | **Eigener Reiter „Messprogramme“** am Arbeitsgang, Bereich `cmm_programs`; NC-Liste/-Karte ohne Messprogramm-Weichen |
 | #226 | **Programm bearbeiten** scheiterte immer (Backend verlangte die Nummer); automatische Nummer ohne Doppelte nach dem Löschen |
 | #227 – #229 | **Konzept Programmnummern** (`docs/konzepte/PROGRAMMNUMMERN_KONZEPT.md`): MDS vergibt, Schema `<Bauteil-Nr>-<n>`, Namensregel je Steuerung in den Stammdaten, Mazatrol nur Ziffern, TopSolid-Felder Programm-/Dateiname |
-| #230 | **Release 2.16.0** |
+| #230, #231 | **Release 2.16.0** und Deploy am 29.10. (Deploy grün, Bereich „Messprogramme“ eingeschaltet), Tag `v2.16.0`; diese Session-Doku |
 
 ## Entscheidungen
 
