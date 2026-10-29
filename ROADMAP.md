@@ -585,9 +585,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.15.0 läuft auf dem Pi**, **v2.16.0 vorbereitet, Deploy offen** (Messprogramme im eigenen Reiter, Ordner-Upload ohne Zusatzdateien/Unterordner, Programm bearbeiten, PDF-Worker lokal), `[Unreleased]` leer
+Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.16.0 läuft auf dem Pi** (29.10.: Messprogramme im eigenen Reiter, Ordner-Upload ohne Zusatzdateien/Unterordner, Programm bearbeiten, PDF-Worker lokal), `[Unreleased]` leer
 
-0. **Deploy 2.16.0** mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md` (danach Bereich „Messprogramme“ bei „CNC-Messen“ und betroffenen Arbeitsgängen einschalten), danach Tag `v2.16.0` pushen. Am Arbeitsplatz echten PC-DMIS-Ordner per Auswahl und Ziehen hochladen, ZIP in PC-DMIS öffnen – Befunde fließen in Schritt 4 (Agent) ein
+0. **Restprüfung 2.16.0** (`docs/RELEASE-CHECKLISTE.md`, „Noch offen aus 2.16.0“): Programm bearbeiten, Reiter-Trennung, PDF ohne unpkg; am Arbeitsplatz echten PC-DMIS-Ordner per Auswahl und Ziehen hochladen, ZIP in PC-DMIS öffnen – Befunde fließen in Schritt 4 (Agent) ein
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt

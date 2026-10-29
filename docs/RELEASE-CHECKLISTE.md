@@ -42,21 +42,21 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.16.0** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225), Programm bearbeiten und Programmnummer (#226). Keine Migration.
+**Nächstes Release** – noch keine Änderungen.
+
+**Noch offen aus 2.16.0** (kein neuer Deploy nötig):
 
 - [ ] Programm bearbeiten (Stift auf der Karte): Name ändern und speichern – bei NC- und Messprogramm, Nummer bleibt gleich
-
-- [ ] **Nach dem Deploy einschalten:** Administration → Operationstypen → „CNC-Messen“: „Messprogramme“ anhaken (ggf. „NC-Programme“ abwählen). Bestehende Arbeitsgänge mit Messprogrammen: „Arbeitsgang bearbeiten“ → „Aktivierte Bereiche“ → „Messprogramme“ – bis dahin weist der Reiter „NC-Programme“ auf vorhandene Messprogramme hin
 - [ ] Reiter „NC-Programme“ zeigt nur NC-Programme, „Messprogramme“ nur Messprogramme (Hochladen, neue Version, Dateien, ZIP, Freigabe); Übersicht Messprogramme → Programm öffnet den Reiter „Messprogramme“
-
 - [ ] Zeichnungsvorschau (PDF) am Bauteil und im Dateifenster eines Messprogramms lädt; im Browser (F12 → Netzwerk) keine Anfrage an `unpkg.com`, der Worker kommt aus `/assets/pdf.worker.min-….mjs`
-- [ ] Messprogramm per „Ordner wählen“ und per Ziehen aus dem Explorer: STEP-Datei und Messprotokolle im Unterordner erscheinen als „Aussortiert“, „Messprogramm anlegen“ ist frei, gespeichert werden nur `.prg`/`.cad`/Prüfzeichnung (ggf. Vorlage, Mini-Routinen)
-
-**Noch offen aus 2.15.0** (kein neuer Deploy nötig):
-
-- [x] Zeichnungsvorschau (PDF) am Bauteil lädt (29.10.) – holte ihren Worker allerdings von unpkg.com, behoben in #222
-- [ ] Am Arbeitsplatz (29.10.: Einzelauswahl, Einzel- und ZIP-Download gehen; Ordner scheiterte an `.stp` und nahm Messprotokolle aus dem Unterordner mit → #224): ersten echten PC-DMIS-Ordner als Messprogramm hochladen (Vorschau: `.prg`/`.cad`/Zeichnung/Vorlage richtig eingeordnet, `.PRG~`/`.PRG^` aussortiert), ZIP laden und in PC-DMIS öffnen; Ordner auch per „Ordner wählen“ und per Ziehen aus dem Explorer
+- [ ] Am Arbeitsplatz: echten PC-DMIS-Ordner per „Ordner wählen“ und per Ziehen aus dem Explorer hochladen – STEP-Datei und Messprotokolle im Unterordner erscheinen als „Aussortiert“, gespeichert werden nur `.prg`/`.cad`/Prüfzeichnung (ggf. Vorlage, Mini-Routinen); `.PRG~`/`.PRG^` aussortiert; ZIP laden und in PC-DMIS öffnen (übernimmt den offenen Punkt aus 2.15.0)
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
+
+---
+
+## Erledigt: Release 2.16.0 (29.10.2026)
+
+Messprogramme im eigenen Reiter (#225), Ordner-Upload ohne Zusatzdateien/Unterordner (#224), Programm bearbeiten und Nummernvergabe (#226), PDF-Worker vom eigenen Server (#222). Keine Migration. Deploy grün, Tag `v2.16.0`. Bereich „Messprogramme“ beim Operationstyp „CNC-Messen“ und an den betroffenen Arbeitsgängen eingeschaltet, Arbeitsgang anlegen/bearbeiten geprüft.
 
 ---
 
