@@ -1,4 +1,5 @@
 // frontend/src/components/ProgramCard.jsx
+// Karte eines NC-Programms (Messprogramme: CmmProgramCard)
 import { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useProgramsStore } from '../stores/programsStore';
@@ -6,26 +7,15 @@ import { toast } from './Toaster';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowActions from './WorkflowActions';
 import ToolListReadOnly from './ToolListReadOnly';
-import CmmFilesModal from './CmmFilesModal';
-import { cmmZipName } from '../utils/cmmPrograms';
-import { downloadFileViaApi } from '../utils/fileDownload';
 
 export default function ProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision, onStatusChange }) {
   const { hasPermission } = useAuthStore();
   const { downloadProgram } = useProgramsStore();
   const [showTools, setShowTools] = useState(false);
-  const [showFiles, setShowFiles] = useState(false);
-  const isCmm = program.kind === 'cmm';
-  // NC speichert nur den internen Ablagenamen (Zeitstempel-Zufallszahl-Name) → Präfix weglassen;
-  // Messprogramme haben den Originalnamen der .prg
-  const displayFilename = isCmm ? program.filename : (program.filename || '').replace(/^\d+-\d+-/, '');
+  // NC speichert nur den internen Ablagenamen (Zeitstempel-Zufallszahl-Name) → Präfix weglassen
+  const displayFilename = (program.filename || '').replace(/^\d+-\d+-/, '');
 
   const handleDownload = async () => {
-    if (isCmm) {
-      const result = await downloadFileViaApi(`/api/programs/${program.id}/files/zip`, cmmZipName(program, program.version));
-      if (!result.success) toast.error(result.error);
-      return;
-    }
     try {
       await downloadProgram(program.id, displayFilename);
       toast.success('Download gestartet');
@@ -48,7 +38,6 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
 
   // Get file extension icon
   const getFileIcon = (filename) => {
-    if (isCmm) return '📐';
     const ext = filename?.split('.').pop()?.toLowerCase();
     
     // G-Code files
@@ -78,11 +67,6 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-all" title={displayFilename}>
             {displayFilename}
           </h3>
-          {isCmm && (
-            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-              Messprogramm
-            </span>
-          )}
           <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={program.program_name}>
             {program.program_name}
           </p>
@@ -140,27 +124,14 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         <button
           onClick={handleDownload}
           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          title={isCmm ? 'Alle Dateien als ZIP herunterladen' : 'Herunterladen'}
+          title="Herunterladen"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         </button>
 
-        {isCmm && (
-          <button
-            onClick={() => setShowFiles(true)}
-            className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-            title="Dateien anzeigen"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-          </button>
-        )}
-
-        {/* Werkzeugliste Button (nur NC) */}
-        {!isCmm && (
+        {/* Werkzeugliste Button */}
         <button
           onClick={() => setShowTools(!showTools)}
           className={`p-2 rounded-lg transition-colors ${
@@ -175,7 +146,6 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
-        )}
 
         {onViewVersions && (
           <button
@@ -226,10 +196,8 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         )}
       </div>
 
-      {showFiles && <CmmFilesModal program={program} onClose={() => setShowFiles(false)} />}
-
       {/* Tool List (expandable) */}
-      {showTools && !isCmm && (
+      {showTools && (
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <ToolListReadOnly programId={program.id} />
         </div>

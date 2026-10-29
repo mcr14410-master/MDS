@@ -26,6 +26,7 @@ Konzept für die Messprogramm-Verwaltung ins Repo übernommen und die ersten vie
 - **Excel-Schalter aus der Vorversion abgeleitet** (keine Spalte); Vorlage nur als Paar `.xlsx` + `.layout.xml`, Name eindeutig über alle aktiven Messprogramme
 - **Vorschau per Probelauf auf dem Server** statt Hash im Browser: Produktion läuft über `http://`, dort fehlt `crypto.subtle`; Regeln stehen nur an einer Stelle
 - **Eigene Menüpunkte** „Messprogramme“ und (neu) „NC-Programme“ unter Fertigung; Anlegen und Freigeben bleiben am Arbeitsgang
+- **Eigener Reiter „Messprogramme“ am Arbeitsgang** (29.10., nach dem ersten Test): zuerst teilten sich NC- und Messprogramme den Reiter „Programme“. Mit Schritt 4 (Bereitstellen, Agent-Status, Protokolle) wären die Weichen in Liste und Karte gewachsen → getrennte Komponenten und eigener Bereich `cmm_programs`; Daten und Backend bleiben gemeinsam (Workflow, Versionen, Audit)
 
 ## Hinweise / Lehren
 

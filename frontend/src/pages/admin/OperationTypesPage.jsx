@@ -28,6 +28,7 @@ const FEATURES = [
   { id: 'tools', label: 'Werkzeuge' },
   { id: 'setup_sheet', label: 'Einrichteblatt' },
   { id: 'inspection', label: 'Prüfplan' },
+  { id: 'cmm_programs', label: 'Messprogramme' },
   { id: 'work_instruction', label: 'Arbeitsanweisung' },
   { id: 'checklist', label: 'Checkliste' },
   { id: 'documents', label: 'Dokumente' },

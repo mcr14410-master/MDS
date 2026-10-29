@@ -171,6 +171,7 @@ const getFeatureDefinitions = async (req, res) => {
       { id: 'tools', label: 'Werkzeuge', icon: 'wrench', description: 'Werkzeuglisten und Werkzeugdaten' },
       { id: 'setup_sheet', label: 'Einrichteblatt', icon: 'clipboard', description: 'Einrichteblätter und Aufspannung' },
       { id: 'inspection', label: 'Prüfplan', icon: 'check-circle', description: 'Prüfpläne und Qualitätskontrolle' },
+      { id: 'cmm_programs', label: 'Messprogramme', icon: 'chart-bar', description: 'Messprogramme für die Messmaschine (PC-DMIS) verwalten und versionieren' },
       { id: 'work_instruction', label: 'Arbeitsanweisung', icon: 'document-text', description: 'Schritt-für-Schritt Anleitungen' },
       { id: 'checklist', label: 'Checkliste', icon: 'list-check', description: 'Abhak-Listen für Prozessschritte' },
       { id: 'documents', label: 'Dokumente', icon: 'folder', description: 'Zusätzliche Dokumente und Anhänge' },

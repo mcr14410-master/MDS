@@ -42,7 +42,10 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224). Keine Migration.
+**Nächstes Release** – PDF-Worker vom eigenen Server (#222), Messprogramm-Upload per Ordner (#224), eigener Reiter „Messprogramme“ (#225). Keine Migration.
+
+- [ ] **Nach dem Deploy einschalten:** Administration → Operationstypen → „CNC-Messen“: „Messprogramme“ anhaken (ggf. „NC-Programme“ abwählen). Bestehende Arbeitsgänge mit Messprogrammen: „Arbeitsgang bearbeiten“ → „Aktivierte Bereiche“ → „Messprogramme“ – bis dahin weist der Reiter „NC-Programme“ auf vorhandene Messprogramme hin
+- [ ] Reiter „NC-Programme“ zeigt nur NC-Programme, „Messprogramme“ nur Messprogramme (Hochladen, neue Version, Dateien, ZIP, Freigabe); Übersicht Messprogramme → Programm öffnet den Reiter „Messprogramme“
 
 - [ ] Zeichnungsvorschau (PDF) am Bauteil und im Dateifenster eines Messprogramms lädt; im Browser (F12 → Netzwerk) keine Anfrage an `unpkg.com`, der Worker kommt aus `/assets/pdf.worker.min-….mjs`
 - [ ] Messprogramm per „Ordner wählen“ und per Ziehen aus dem Explorer: STEP-Datei und Messprotokolle im Unterordner erscheinen als „Aussortiert“, „Messprogramm anlegen“ ist frei, gespeichert werden nur `.prg`/`.cad`/Prüfzeichnung (ggf. Vorlage, Mini-Routinen)
