@@ -18,6 +18,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Die Vorschau von Zeichnungen (PDF) braucht keine Internetverbindung mehr: Das Anzeigeprogramm kommt jetzt vom MDS selbst statt von einem fremden Server.
 - Messprogramme: Ein ganzer Ordner lässt sich jetzt hochladen, auch wenn noch andere Dateien darin liegen (z. B. die STEP-Datei vom Import). Sie werden in der Vorschau grau als „Aussortiert“ gezeigt statt das Hochladen zu sperren. Dateien aus Unterordnern, etwa Messprotokolle, werden nicht mitgenommen.
+- Messprogramme haben am Arbeitsgang einen eigenen Reiter „Messprogramme“, der bisherige Reiter heißt jetzt „NC-Programme“. Den neuen Reiter schaltet man wie die anderen Bereiche ein: beim Arbeitsgang unter „Aktivierte Bereiche“ oder als Standard beim Operationstyp (z. B. „CNC-Messen“).
+
+### Changed
+- Arbeitsgang: Messprogramme in eigenem Reiter mit neuem Bereich `cmm_programs` (Arbeitsgang-Formular, Operationstypen, `GET /api/operation-types/features`). `CmmProgramsList`/`CmmProgramCard` statt Weichen in `ProgramsList`/`ProgramCard` – die zeigen nur noch NC-Programme, mit Hinweis, falls am Arbeitsgang Messprogramme liegen. Status-Filter als `ProgramStatusFilter` für beide. Reiter „Programme“ → „NC-Programme“. Direktsprung aus der Übersicht Messprogramme öffnet den neuen Reiter (`/parts/:id?op=…&tab=cmm_programs`). Daten und Backend unverändert (gemeinsame Tabelle `programs`, `kind`); keine Migration – der Bereich wird über die Oberfläche eingeschaltet
 
 ### Fixed
 - Messprogramm-Upload per Ordner: Unbekannte Dateitypen sperrten das Anlegen („Dateityp nicht erlaubt“) – jetzt aussortiert mit Hinweis, STEP (`.stp`/`.step`) mit eigenem Hinweis „steckt bereits in der .cad“. Ordnerauswahl und Ziehen nahmen auch Dateien aus Unterordnern mit, Messprotokolle (PDF) landeten so als Prüfzeichnung in der Version – jetzt zählt nur die oberste Ebene der Auswahl, Dateien darunter erscheinen als „Aus Unterordner … – nicht hochgeladen“

@@ -95,6 +95,7 @@
 - [x] **Caddy: fehlende Dateien unter `/assets/`** liefern per `try_files` die `index.html` mit Status 200 und Asset-Header (`immutable`, 1 Jahr) statt 404 – kosmetisch, der Reload bei `vite:preloadError` fängt es ab. Jetzt eigener `handle /assets/*` (404), Fehlerantworten mit `no-store` (Branch `fix/caddy-ordner-mount`)
 - [x] **PDF-Viewer lud seinen Worker von unpkg.com** (der Teil von PDF.js, der die Zeichnungen verarbeitet) – jetzt vom eigenen Server (#222)
 - [ ] **Weitere externe Adressen prüfen:** Das MDS soll ohne Internet laufen und keinen fremden Code an Kundendaten lassen. Funde im Frontend-Bundle (29.10.2026): 3D-Viewer (`online-3d-viewer`) mit `cdn.jsdelivr.net` für Draco, Rhino (`.3dm`) und IFC – STEP lädt aus `/libs/`, ob die anderen Pfade je greifen, ist nicht gemessen; `unpkg.com/chevrotain` (Diagramm-Funktion, vermutlich nie aufgerufen). Noch nicht durchsucht: Backend (Abhängigkeiten mit Netzzugriff), `index.html`/Service Worker/PWA-Manifest, Schriften und Icons. Vorgehen: Bundle und Backend nach `http(s)://` durchsuchen, im Browser je Seite mit Netzwerk-Mitschnitt (Playwright) externe Anfragen sammeln, Funde lokal ausliefern oder abschalten
+- [ ] **Arbeitsgang: Zykluszeit mit zwei Nachkommastellen** (z. B. 2.61 min aus dem Seed) blockiert das Speichern des Formulars – Eingabefeld hat `step="0.1"`, der Browser meldet den Wert als ungültig, ohne sichtbare Meldung. Gefunden 29.10.2026 im Test; ob in Produktion solche Werte vorkommen, offen. Hängt mit „Operations-Zeiteinheiten“ zusammen
 
 ---
 
