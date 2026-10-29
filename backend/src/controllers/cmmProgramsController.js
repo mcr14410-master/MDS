@@ -89,8 +89,14 @@ async function classifyUploads(reqFiles) {
       discard.push(file.path);
       continue;
     }
+    if (info.kind === 'cad_import') {
+      ignored.push({ name, reason: 'CAD-Import (STEP) – steckt bereits in der .cad, wird nicht versioniert' });
+      discard.push(file.path);
+      continue;
+    }
     if (info.kind === 'unknown') {
-      errors.push(`Dateityp nicht erlaubt: ${name} (erlaubt: .prg, .cad, .pdf, .xlsx, .layout.xml, .MiniRoutines.xml)`);
+      ignored.push({ name, reason: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .xlsx, .layout.xml, .MiniRoutines.xml)' });
+      discard.push(file.path);
       continue;
     }
 

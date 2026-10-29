@@ -36,7 +36,8 @@ function decodeOriginalName(name) {
 /**
  * Einordnung nach Dateiname (ohne Groß-/Kleinschreibung).
  * kind: 'file' (mit role/target) | 'sidecar' (PC-DMIS-Nebendatei, wird aussortiert)
- *     | 'corrupt' (.prg.corrupt) | 'miniroutines' (nach Inhalt entscheiden) | 'unknown'
+ *     | 'corrupt' (.prg.corrupt) | 'miniroutines' (nach Inhalt entscheiden)
+ *     | 'cad_import' (STEP, steckt schon in der .cad) | 'unknown' (wird aussortiert)
  */
 function classifyFile(name) {
   const lower = name.toLowerCase();
@@ -48,6 +49,7 @@ function classifyFile(name) {
   if (lower.endsWith('.prg')) return { kind: 'file', role: 'main', target: 'program_dir' };
   if (lower.endsWith('.cad')) return { kind: 'file', role: 'cad', target: 'program_dir' };
   if (lower.endsWith('.pdf')) return { kind: 'file', role: 'drawing', target: 'program_dir' };
+  if (lower.endsWith('.stp') || lower.endsWith('.step')) return { kind: 'cad_import' };
   return { kind: 'unknown' };
 }
 

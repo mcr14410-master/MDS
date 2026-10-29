@@ -46,6 +46,8 @@ test('PC-DMIS-Nebendateien, Wiederherstellung und Unbekanntes', () => {
   assert.equal(classifyFile('A.MiniRoutines.xml').kind, 'miniroutines');
   assert.equal(classifyFile('A.xml').kind, 'unknown');
   assert.equal(classifyFile('A.docx').kind, 'unknown');
+  assert.equal(classifyFile('A.stp').kind, 'cad_import');
+  assert.equal(classifyFile('A.STEP').kind, 'cad_import');
 });
 
 test('MiniRoutines.xml: nur Standard-Inhalt = Nebendatei', () => {
