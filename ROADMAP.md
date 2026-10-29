@@ -579,7 +579,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 - Lager-Architektur: siehe „Offene Entscheidung“ unter Phase 8
 - [ ] **Workforce-Konsolidierung:** Urlaubs- und Zeitverwaltung zu einem System zusammenführen – [docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md](docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md) (~20–30h). Dabei berücksichtigen: Zeitmodell ohne Historie (kein „gültig ab“), Teilzeit mit wechselndem freien Tag (aktuell Workaround). Release 2.8.0 hat gezeigt: Neuberechnungen nutzen das aktuelle Modell und verfälschen alte Urlaube (MA 13: 4-Tage-Woche ab 01.04.2026, freier Tag mal Montag, mal Freitag – Workaround Überstundenabbau)
 - [ ] **Operations-Zeiteinheiten:** `cycle_time_seconds` (Sekunden in DB, Minuten im Frontend) → `cycle_time_minutes` wie `setup_time_minutes` (~2h, niedrig)
-- [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ – anderes Format / manuell editierbar? (~1h, niedrig)
+- [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ (OP-Code des Arbeitsgangs, nicht eindeutig) – Vorschlag: MDS vergibt `<Bauteil-Nr>-<n>` bzw. `-M<n>`, Nummer läuft unverändert bis an die Maschine, später auch nach TopSolid. Entwurf mit offenen Fragen (Namensgrenzen der Steuerungen, Bestandsprogramme): [PROGRAMMNUMMERN_KONZEPT.md](docs/konzepte/PROGRAMMNUMMERN_KONZEPT.md). Bearbeiten-Fehler und doppelte Nummern behoben (#226)
 
 ---
 
