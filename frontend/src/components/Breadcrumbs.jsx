@@ -33,6 +33,7 @@ const routeLabels = {
   'roles': 'Rollen & Berechtigungen',
   'operation-types': 'Operationstypen',
   'cron-jobs': 'Automatische Aufgaben',
+  'agents': 'Agenten',
   'maintenance': 'Wartung',
   'plans': 'Wartungspläne',
   'tasks': 'Alle Aufgaben',

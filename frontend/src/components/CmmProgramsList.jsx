@@ -10,6 +10,8 @@ import CmmUploadForm from './CmmUploadForm';
 import ProgramUploadForm from './ProgramUploadForm';
 import RevisionsList from './RevisionsList';
 import ProgramStatusFilter from './ProgramStatusFilter';
+import DeployDialog from './DeployDialog';
+import DeploymentsPanel from './DeploymentsPanel';
 
 export default function CmmProgramsList({ operationId }) {
   const { programsByOperation, loadingByOperation, errorByOperation, fetchPrograms, deleteProgram } = useProgramsStore();
@@ -23,6 +25,8 @@ export default function CmmProgramsList({ operationId }) {
   const [editingProgram, setEditingProgram] = useState(null);
   const [revisionsProgram, setRevisionsProgram] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deploying, setDeploying] = useState(false);
+  const [deploymentsKey, setDeploymentsKey] = useState(0);
 
   useEffect(() => {
     if (operationId) {
@@ -86,7 +90,21 @@ export default function CmmProgramsList({ operationId }) {
             {programs.length} {programs.length === 1 ? 'Messprogramm' : 'Messprogramme'} · PC-DMIS
           </p>
         </div>
-        {hasPermission('part.update') && uploadButton('Messprogramm hochladen')}
+        <div className="flex flex-wrap gap-2">
+          {hasPermission('program.deploy') && programs.length > 0 && (
+            <button
+              onClick={() => setDeploying(true)}
+              className="px-4 py-2 rounded-lg border border-blue-600 text-blue-700 dark:text-blue-300 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              Auf Gerät bereitstellen
+            </button>
+          )}
+          {hasPermission('part.update') && uploadButton('Messprogramm hochladen')}
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <DeploymentsPanel operationId={operationId} reloadKey={deploymentsKey} />
       </div>
 
       <ProgramStatusFilter value={statusFilter} onChange={setStatusFilter} />
@@ -142,6 +160,18 @@ export default function CmmProgramsList({ operationId }) {
           onSuccess={() => {
             setEditingProgram(null);
             reload();
+          }}
+        />
+      )}
+
+      {deploying && (
+        <DeployDialog
+          operationId={operationId}
+          programs={programs}
+          onClose={() => setDeploying(false)}
+          onSuccess={() => {
+            setDeploying(false);
+            setDeploymentsKey((k) => k + 1);
           }}
         />
       )}
