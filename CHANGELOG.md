@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.18.0] - 2026-10-30 - Messprogramme auf dem Mess-PC bereitstellen (MDS-Seite)
+
 ### Für Anwender
 - Messprogramme, neue Version: In der Vorschau lässt sich jetzt jede optionale Datei gleich behandeln. „entfernen“ bei Excel-Vorlage oder Kalibrierprogramm schaltet den passenden Haken aus, „behalten“ wieder ein. Messprogramm und CAD-Datei lassen sich nur ersetzen, nicht entfernen – PC-DMIS braucht die CAD-Datei passend zum Programm.
 - NC- und Messprogramme merken sich jetzt, welche Version freigegeben ist. Lädt jemand eine neue Version hoch, steht bei der Version „freigegeben: 1.1.0“, bis die neue Version freigegeben ist; im Versionsverlauf ist die freigegebene Version markiert. Programme, die beim Update schon freigegeben sind, werden übernommen.
