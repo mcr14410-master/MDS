@@ -608,7 +608,8 @@ Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.m
 7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
 8. **Handy-Tauglichkeit** (niedrige Priorität) – Befunde aus dem Handy-Test vom 28.10. in [docs/konzepte/HANDY-TEST.md](docs/konzepte/HANDY-TEST.md) (27 von 52 Seiten zu breit). Zuerst überall: Kopfzeile/Breadcrumbs inkl. doppelter Breadcrumbs auf fünf Admin-Seiten, Tab-Leisten der Detailseiten, drei abgeschnittene Tabellen (Benutzer, Verbrauchsmaterial, Operationstypen). Seitenkopf mit Knöpfen nur auf Seiten, die am Handy genutzt werden – vorher festlegen, welche; komplexe Seiten bleiben PC-Seiten
 9. **Messprogramme Schritt 4** (MDS-Agent auf dem Mess-PC, Bereitstellen + Abschließen) – Umsetzung nach [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md) Abschnitt 9, PR 4.1–4.8; siehe Phase 10 „Messmaschinen-Terminal“
-10. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer am Arbeitsplatz (Rechtsklick, G350-Programme mit `PLANE AXIAL` und QL-Parametern), auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
+10. **Repos MDS und Time-Terminal auf privat schalten** (eigene Sitzung; `mds-agent` ist schon privat): zuerst auf rpi01 und dem Terminal-Pi prüfen, wie `origin` eingerichtet ist (HTTPS/SSH), und einen Deploy-Key (nur lesen) einrichten, sonst bricht `git pull` in `deploy.sh` ab. Danach umschalten (macht der Nutzer selbst) und die CLAUDE.md anpassen („Repo ist öffentlich“). Die Regeln zu Platzhaltern und `_lokal/` bleiben, weil schon Veröffentlichtes nicht zurückgeholt werden kann
+11. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer am Arbeitsplatz (Rechtsklick, G350-Programme mit `PLANE AXIAL` und QL-Parametern), auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
 
