@@ -52,6 +52,7 @@ Er misst wochenlang lokal. Wenn er auf „Fertig“ klickt, räumt der Agent all
 | E6 | Form | **Tray-Programm, .NET Framework 4.8** (wie `ts-sn-generator`), Autostart über den Autostart-Ordner |
 | E7 | Rechte | **`agent.manage`** (Geräte, Schlüssel, Module) und **`program.deploy`** (Bereitstellen, Aktualisieren, Abschließen, Verwerfen). Per Migration nur für `admin` |
 | E8 | Fremde Datei gleichen Namens am Ziel | **Gleicher Hash → übernehmen** (gilt danach als verwaltet). **Anderer Hash → nicht anfassen**, Programm wird nicht bereitgestellt, Warnung |
+| E9 | Wo liegt der Agent-Code? | **Eigenes privates Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent)** wie beim Time-Terminal: andere Plattform, eigener Release-Takt, eigene Tags (`vX.Y.Z`) und GitHub-Releases. Vereinbart am 30.10.2026 |
 
 Ohne Rückfrage festgelegt, weil nur Technik:
 - Alle neuen Zeitspalten sind `timestamptz`.
@@ -341,11 +342,19 @@ Abgeschlossene Bereitstellungen tauchen nicht auf. Für den Agenten heißt das: 
 
 ---
 
-## 6. Agent v1 (`tools/mds-agent/`)
+## 6. Agent v1 (Repo `mds-agent`)
 
 ### 6.1 Aufbau
 
-- .NET Framework 4.8, WinForms-Tray (`NotifyIcon`), eine `.exe` mit `MDS-Agent.ini` daneben. Im Repo liegt nur `MDS-Agent.example.ini`.
+**Repo und Schnittstelle (E9):**
+- Der Code liegt im privaten Repo `mcr14410-master/mds-agent`, mit eigener Version (SemVer), eigenem CHANGELOG und eigenen Tags `vX.Y.Z`.
+- Jedes Release ist ein GitHub-Release mit einem ZIP aus `.exe` und `MDS-Agent.example.ini`. Gebaut wird auf einem Windows-Rechner oder per GitHub Actions (Windows-Runner).
+- **Die Agent-API beschreibt nur diese Spec im MDS-Repo** (5.4). Das Agent-Repo verlinkt darauf und beschreibt sie nicht ein zweites Mal.
+- Das MDS ändert die Agent-API nur ergänzend (neue Felder, neue Endpunkte). Der Agent ignoriert Felder, die er nicht kennt. Wird ein Bruch doch einmal nötig, prüft das MDS `X-Agent-Version` und antwortet mit 426 „Agent zu alt“, die Agentenliste zeigt das an.
+- Wer im MDS eine Agent-Funktion ändert, nennt im PR die nötige Agent-Version. Wer im Agenten etwas ändert, nennt die nötige MDS-Version.
+
+
+- .NET Framework 4.8, WinForms-Tray (`NotifyIcon`), eine `.exe` mit `MDS-Agent.ini` daneben. Im Repo liegt nur `MDS-Agent.example.ini`. Die Regeln aus dem MDS gelten auch hier, obwohl das Repo privat ist: keine Kundendaten, keine TopSolid-DLLs, Platzhalter in Beispielen.
 - Projekte:
   - `MdsAgent.Core`: Abgleich, Zustände, Pfadregeln, ohne UI und ohne Dateisystem-Zugriff hinter Schnittstellen, damit testbar
   - `MdsAgent.Tray`: UI, HTTP, Dateisystem
@@ -515,9 +524,9 @@ Je Programm der Bereitstellung, die Gruppe zusammen:
 | **4.6** | Frontend: Administration → Agenten, „Auf dem Mess-PC“, Bereitstellen-Dialog, Aktualisieren/Fertig/Verwerfen | Playwright-Durchlauf mit simuliertem Agenten |
 | **4.7** | Agent Grundgerüst: Tray, ini, Selbsttest, Manifest, **Bereitstellen** inkl. Reihenfolge, Temp + Umbenennen, Übernahme/Konflikt, Sperre, Gesundheitscheck, Outbox, Core-Tests | am Mess-PC: Bereitstellen eines Testprogramms (Kopie, Platzhalter) |
 | **4.8** | Agent **Abschließen** und **Aktualisieren**: `run_saved`-Dialoge, Nebendateien, `.corrupt`, Verwerfen, leere Ordner, Unstimmigkeiten | Checkliste am Mess-PC (unten) |
-| Release | Minor-Release (Backend + Frontend), Agent-Version getrennt (`tools/mds-agent`, eigener Tag `agent-v1.0.0`?) | Pi aktualisiert, Agent installiert |
+| Release | MDS: Minor-Release (Backend + Frontend). Agent: `v1.0.0` als GitHub-Release im Repo `mds-agent` | Pi aktualisiert, Agent installiert |
 
-Die PRs 4.1 bis 4.6 bauen aufeinander auf und sind ohne Agent testbar. 4.7 und 4.8 brauchen einen Windows-Rechner zum Bauen und den Mess-PC zum Testen.
+Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agent testbar. 4.7 und 4.8 liegen im Repo `mds-agent`. Sie brauchen einen Windows-Rechner oder GitHub Actions zum Bauen und den Mess-PC zum Testen.
 
 **Checkliste am Mess-PC** (für 4.7/4.8, an einer Kopie, nie an Produktionsprogrammen):
 1. Selbsttest grün, Schreibrecht im Vorlagenverzeichnis bestätigt
@@ -537,7 +546,7 @@ Die PRs 4.1 bis 4.6 bauen aufeinander auf und sind ohne Agent testbar. 4.7 und 4
 
 - [ ] HTTPS für das MDS im LAN (Caddy mit interner CA oder eigenem Zertifikat). Betrifft Login, Terminal und Agent gleichermaßen. Eigenes Thema, nicht Voraussetzung für v1.
 - [ ] Speichert PC-DMIS auch das Kalibrier-`.prg` beim Lauf? Am Mess-PC prüfen (Checkliste 3). Bis dahin gilt `run_saved` sicherheitshalber.
-- [ ] Versionierung und Verteilung des Agenten: eigener Tag (`agent-vX.Y.Z`) und Build-Artefakt (ZIP mit `.exe` + `example.ini`) über ein GitHub-Release? Entscheidung mit PR 4.7.
+- [x] Versionierung und Verteilung des Agenten → eigenes privates Repo `mds-agent`, Tags `vX.Y.Z`, GitHub-Release mit ZIP (E9, 30.10.2026). Ob per GitHub Actions oder lokal gebaut wird, klären wir mit PR 4.7.
 - [ ] Rollback-Nebenbefund (Abschnitt 3): als eigener Fix in „Offene Fixes“ aufnehmen.
 - [ ] Mehrere Mess-PCs: Das Modell erlaubt sie. Die Oberfläche wählt das Gerät, sobald es mehr als eines gibt.
 - Schritt 5: Eingang, „Änderung ans MDS melden“, Nachfrage-Frist (Konzept 5.2, Vorschlag 14 Tage, einstellbar je Agent).
