@@ -97,6 +97,11 @@
 - [x] **PDF-Viewer lud seinen Worker von unpkg.com** (der Teil von PDF.js, der die Zeichnungen verarbeitet) – jetzt vom eigenen Server (#222)
 - [ ] **Weitere externe Adressen prüfen:** Das MDS soll ohne Internet laufen und keinen fremden Code an Kundendaten lassen. Funde im Frontend-Bundle (29.10.2026): 3D-Viewer (`online-3d-viewer`) mit `cdn.jsdelivr.net` für Draco, Rhino (`.3dm`) und IFC – STEP lädt aus `/libs/`, ob die anderen Pfade je greifen, ist nicht gemessen; `unpkg.com/chevrotain` (Diagramm-Funktion, vermutlich nie aufgerufen). Noch nicht durchsucht: Backend (Abhängigkeiten mit Netzzugriff), `index.html`/Service Worker/PWA-Manifest, Schriften und Icons. Vorgehen: Bundle und Backend nach `http(s)://` durchsuchen, im Browser je Seite mit Netzwerk-Mitschnitt (Playwright) externe Anfragen sammeln, Funde lokal ausliefern oder abschalten
 - [ ] **Arbeitsgang: Zykluszeit mit zwei Nachkommastellen** (z. B. 2.61 min aus dem Seed) blockiert das Speichern des Formulars – Eingabefeld hat `step="0.1"`, der Browser meldet den Wert als ungültig, ohne sichtbare Meldung. Gefunden 29.10.2026 im Test; ob in Produktion solche Werte vorkommen, offen. Hängt mit „Operations-Zeiteinheiten“ zusammen
+- [ ] **Versionsstatus je Revision wird nie gepflegt** (Befund 30.10.2026, [Agent-Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md) Abschnitt 3): `program_revisions.workflow_state_id` bleibt immer `draft`. Folgen: Der Versionsverlauf zeigt bei jeder Version „draft“ (englisch, neben dem Badge „Freigegeben“), und ein Rollback setzt jedes Programm auf „Entwurf“, auch zurück auf die freigegebene Version. Vorschlag: beim Freigeben auch den Status der Revision setzen; Rollback auf `released_revision_id` → Programm wieder „Freigegeben“; Badge übersetzen
+- [ ] **Version löschen geht ins Leere** (Befund 30.10.2026): Der Papierkorb im Versionsverlauf (`RevisionsList.jsx`, Recht `part.delete`) ruft `DELETE /api/programs/:id/revisions/:revisionId` auf – den Endpunkt gibt es nicht (404). Knopf entfernen oder Endpunkt bauen; dann mit Schutz für die freigegebene und für bereitgestellte Versionen (`services/deploymentGuards.js`) und Dateien mitlöschen
+- [ ] **Audit-Log ordnet Aktionspfade falsch zu** (Befund 30.10.2026): `auditLogMiddleware` nimmt bei `/api/<bereich>/<id>/<aktion>` die Aktion als Entity-Typ, z. B. `rollback`, `cmm-revisions`, `regenerate-key`, `close` mit ID 0 statt `<bereich>` mit `<id>`. Solche Einträge lassen sich dem Datensatz nicht zuordnen – betrifft auch ältere Routen. Regel ergänzen: letztes Segment keine Zahl → Aktion, Entity bleibt `<bereich>`/`<id>`
+- [ ] **Terminal-API-Schlüssel im Klartext** (Befund 30.10.2026): `time_terminals.api_key` steht unverschlüsselt in der DB (der Agent-Schlüssel nur als SHA-256, #247). Auf Hash umstellen wie beim Agenten – braucht einen neuen Schlüssel in der `config.yaml` am Terminal-Pi, daher zusammen mit einem Terminal-Deploy
+- [ ] **HTTPS im LAN** (Agent-Spec Abschnitt 10): Caddy spricht nur HTTP, Logins sowie Terminal- und Agent-Schlüssel gehen im Klartext durchs Netz. Interne CA oder eigenes Zertifikat; Vertrauen auf Mess-PC, Terminal-Pi und Browsern einrichten
 
 ---
 
@@ -329,7 +334,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
   - [x] 4.1 Freigabe-Zeiger `programs.released_revision_id` (freigegebene Version bleibt bereitstellbar, während eine neue in Arbeit ist) – PR #243; rpi01 am 30.10.: 3 Programme, alle Entwurf, keins je freigegeben → vor dem ersten Bereitstellen freigeben
   - [x] 4.2 Migration Agent-Schema + Rechte `agent.manage`, `program.deploy` – PR #245 (Bereitstellungen hängen per CASCADE am Arbeitsgang wie die Programme)
   - [x] 4.3 Backend Agentenverwaltung, API-Schlüssel (nur Hash), `authenticateAgent` – PR #247 (Manifest liefert vorerst nur die Gerätekonfiguration)
-  - [ ] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP)
+  - [x] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP, Löschschutz) – PR #249
   - [ ] 4.5 Backend Agent-API (Manifest, Dateien, Bericht, Fertig) + Integrationstest mit simuliertem Agenten
   - [ ] 4.6 Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen/Aktualisieren/Fertig/Verwerfen
   - [ ] 4.7 Agent (C#, Tray, .NET 4.8, eigenes privates Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent)): Grundgerüst + Bereitstellen, Gesundheitscheck, Offline
@@ -340,7 +345,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [x] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, eigener Upload-Bereich (Excel-Vorlage ebenso), Protokoll-PDFs aussortiert, ZIP-Unterordner `Kalibrierung/` (Konzept 4.2a, 30.10.2026); offen: `.MiniRoutines.xml` zur Kalibrierung, falls nötig
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
-Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 berücksichtigt (Spec): Modulliste in `agents` ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4), Vorlagenname-Prüfung beim Bereitstellen (Rollback-Fall). Nebenbefund: Rollback setzt jedes Programm auf „Entwurf“, weil `program_revisions.workflow_state_id` nie aktualisiert wird – eigener Fix nach 4.1.
+Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 berücksichtigt (Spec): Modulliste in `agents` ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4), Vorlagenname-Prüfung beim Bereitstellen (Rollback-Fall). Nebenbefunde aus Schritt 4 stehen unter „Offene Fixes“.
 
 ---
 
@@ -598,7 +603,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
 
-0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) läuft: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), 4.1 (Freigabe-Zeiger), 4.2 (Agent-Schema + Rechte) und 4.3 (Agentenverwaltung, Schlüssel) gemergt (`[Unreleased]`), weiter mit 4.4 (Bereitstellungen im Backend)
+0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) läuft: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), 4.1–4.4 gemergt (`[Unreleased]`: Freigabe-Zeiger, Agent-Schema, Agentenverwaltung, Bereitstellungen), weiter mit 4.5 (Agent-API: Manifest, Dateien, Bericht)
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
