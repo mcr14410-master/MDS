@@ -3,6 +3,7 @@ import { useRolesStore } from '../../stores/rolesStore';
 import { useAuthStore } from '../../stores/authStore';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { getRoleBadgeColor, ROLE_COLOR_OPTIONS } from '../../utils/roleColors';
+import { permissionCategoryLabel, sortedPermissionCategories } from '../../utils/permissionCategories';
 
 function RolesPage() {
   const { 
@@ -279,14 +280,14 @@ function RolesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {Object.entries(permissionMatrix.categories).map(([category, perms]) => (
+                  {sortedPermissionCategories(permissionMatrix.categories).map(([category, perms]) => (
                     <>
                       <tr key={`cat-${category}`} className="bg-gray-100 dark:bg-gray-900/30">
                         <td 
                           colSpan={permissionMatrix.roles.length + 1}
                           className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase"
                         >
-                          {category}
+                          {permissionCategoryLabel(category)}
                         </td>
                       </tr>
                       {perms.map(perm => (
@@ -396,10 +397,10 @@ function RolesPage() {
                     Berechtigungen
                   </label>
                   <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-64 overflow-y-auto">
-                    {Object.entries(permissionsGrouped).map(([category, perms]) => (
+                    {sortedPermissionCategories(permissionsGrouped).map(([category, perms]) => (
                       <div key={category} className="mb-4 last:mb-0">
                         <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
-                          {category}
+                          {permissionCategoryLabel(category)}
                         </h4>
                         <div className="space-y-1">
                           {perms.map(perm => (
