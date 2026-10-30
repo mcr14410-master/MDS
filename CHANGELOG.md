@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.18.1] - 2026-10-31 - Download der freigegebenen Version, Rechte-Kategorien
+
 ### Für Anwender
 - Der Download-Knopf an NC- und Messprogrammen lädt jetzt die freigegebene Version. Ist schon eine neuere Version in Arbeit, gibt es daneben einen eigenen Knopf „Entwurf …“ zum Bearbeiten. Programme ohne Freigabe werden wie bisher geladen, mit dem Hinweis „nicht freigegeben“.
 - Rollen & Berechtigungen: Die Rechte sind jetzt deutsch beschriftet und alphabetisch gruppiert; Urlaub und Zeiterfassung erscheinen je nur noch einmal.
