@@ -42,9 +42,20 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – Entfernen in der Messprogramm-Vorschau einheitlich. Keine Migration.
+**Release 2.18.0** – Messprogramme auf dem Mess-PC bereitstellen, MDS-Seite (Agent-Schritt 4.1–4.6, #243–#253) und Entfernen in der Messprogramm-Vorschau einheitlich (#238). **Zwei Migrationen.** Den Agenten selbst gibt es noch nicht (4.7/4.8, Repo `mds-agent`).
 
+- [ ] Migration `1737000123000_add-programs-released-revision` läuft im Deploy mit – Bestandsübernahme setzt laut Prüfabfrage vom 30.10. **0 Zeilen** (3 Programme, alle Entwurf)
+- [ ] Migration `1737000124000_add-agent-schema` läuft mit: Tabellen `agents`, `agent_deployments`, `agent_deployment_programs`, `agent_file_states`, `program_transfers`; Rechte `agent.manage` und `program.deploy` nur für `admin`
+- [ ] Benutzerverwaltung: `program.deploy` den Rollen geben, die am Mess-PC bereitstellen und abschließen sollen (z. B. wer heute freigibt); `agent.manage` nur Administratoren
+- [ ] Klicktest Freigabe-Zeiger: Testprogramm freigeben → neue Version hochladen → „freigegeben: 1.0.0“ an Karte/Übersicht, Badge „Freigegeben“ im Versionsverlauf
+- [ ] Klicktest Bereitstellen ohne Agent: Administration → Agenten → Test-Agent mit Modul „Messprogramme (PC-DMIS)“ anlegen (Schlüssel-Dialog, Kopieren), am Arbeitsgang „Auf Gerät bereitstellen“ → „Wird übertragen“; „Fertig“ → sofort zurückgenommen (Gerät hat nie gemeldet); Test-Agent danach deaktivieren
+- [ ] Optional: den echten Mess-PC schon anlegen – der Schlüssel wird erst mit dem Agenten (4.7) gebraucht und lässt sich jederzeit neu erzeugen
 - [ ] Klicktest neue Version eines Messprogramms: bei Vorlage/Kalibrierung „entfernen“ schaltet den Haken aus, „behalten“ wieder ein; Messprogramm und CAD zeigen „nur ersetzen“
+- [ ] „Was ist neu“ zeigt 2.18.0 mit drei Punkten für Anwender
+
+**Nächstes Release**
+
+- (noch nichts)
 
 **Noch offen aus 2.17.0** (kein neuer Deploy nötig):
 
