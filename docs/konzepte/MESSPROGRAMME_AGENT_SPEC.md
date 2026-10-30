@@ -245,7 +245,8 @@ Rechte in derselben Migration: `agent.manage` und `program.deploy` mit `ON CONFL
 
 **Statuswechsel** (nur durch das MDS, ausgelöst durch Klicks oder Berichte):
 - `requested → active`: Der erste Bericht meldet alle Dateien der Bereitstellung `current` oder `run_saved`.
-- `active/requested → closing`: „Fertig“ im MDS oder Agenten. `requested → closing` ist erlaubt, damit ein Fehlgriff verschwindet, solange der Agent noch nichts abgelegt hat.
+- `active/requested → closing`: „Fertig“ im MDS oder Agenten.
+- `requested → closed` direkt (`close_reason = 'cancelled'`): „Fertig“ bei einer Bereitstellung, von der das Gerät noch nichts gemeldet hat (keine Dateizustände, kein Protokoll). So verschwindet ein Fehlgriff auch dann, wenn der Agent nie abfragt. Hat der Agent trotzdem schon etwas abgelegt, findet er es als „verwaltet ohne offene Bereitstellung“ (6.5) und löscht nichts von selbst.
 - `closing → closed`: Der Agent meldet `closed: true` für die Bereitstellung, also keine verwaltete Datei mehr auf dem Gerät.
 - Ein `failed` gibt es nicht. Konflikte und Fehler stehen je Datei in `agent_file_states`. Die Bereitstellung bleibt `requested`, bis sie gelöst oder abgeschlossen ist.
 
@@ -493,7 +494,7 @@ Je Programm der Bereitstellung, die Gruppe zusammen:
 ## 8. Tests
 
 - **Backend unit** (`npm test`): `deviceLocation`, Bereinigung von `local_dir`, Statuswechsel aus Berichten, Vorlagen-Konfliktprüfung.
-- **`.http`** (`backend/http/agent.http`, `deployments.http`, 25+ Szenarien):
+- **`.http`** (`backend/tests/test-agents.http`, `test-deployments.http`, später `test-agent-api.http`, je 25+ Szenarien):
   - Schlüssel fehlt, falsch oder deaktiviert
   - Manifest leer bzw. mit Bereitstellung
   - Datei außerhalb des Manifests → 404

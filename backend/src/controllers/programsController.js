@@ -4,6 +4,7 @@ const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { suggestProgramNumber } = require('../utils/programNumber');
+const { openDeploymentFor } = require('../services/deploymentGuards');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -529,6 +530,15 @@ exports.deleteProgram = async (req, res) => {
   
   try {
     const { id } = req.params;
+
+    // Liegt das Programm gerade auf einem Gerät, erst dort abschließen
+    const deployed = await openDeploymentFor(client, { programId: id });
+    if (deployed) {
+      return res.status(409).json({
+        error: `Programm ist auf ${deployed.agent_name} bereitgestellt – erst dort abschließen („Fertig“), dann löschen`,
+        deployment_id: deployed.id,
+      });
+    }
 
     await client.query('BEGIN');
 

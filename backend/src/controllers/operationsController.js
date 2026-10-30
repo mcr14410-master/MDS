@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { openDeploymentFor } = require('../services/deploymentGuards');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -404,6 +405,17 @@ exports.deleteOperation = async (req, res) => {
     }
 
     const operation = existingOp.rows[0];
+
+    // Liegt der Arbeitsgang gerade auf einem Gerät, erst dort abschließen
+    const deployed = await openDeploymentFor(client, { operationId: id });
+    if (deployed) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: `Arbeitsgang ist auf ${deployed.agent_name} bereitgestellt – erst dort abschließen („Fertig“), dann löschen`,
+        deployment_id: deployed.id,
+      });
+    }
 
     // Wenn primäre Variante gelöscht wird: andere Variante zur Primären machen
     if (operation.is_variant_primary && operation.variant_group_id) {

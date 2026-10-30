@@ -24,7 +24,7 @@ const pool = require('../config/db');
 const { CMM_UPLOAD_DIR } = require('../middleware/uploadMiddleware');
 const { suggestProgramNumber } = require('../utils/programNumber');
 const {
-  ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision,
+  ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
 } = require('../services/cmmProgramFiles');
 
 const VERSION_TYPES = ['patch', 'minor', 'major'];
@@ -569,9 +569,7 @@ exports.downloadCmmZip = async (req, res) => {
     });
     archive.pipe(res);
     for (const f of result.rows) {
-      const folder = f.target === 'template_dir' ? 'PC-DMIS-Vorlagen/' : f.role === 'calibration' ? 'Kalibrierung/' : '';
-      const name = `${folder}${f.filename}`;
-      archive.file(path.resolve(f.filepath), { name });
+      archive.file(path.resolve(f.filepath), { name: zipEntryName(f) });
     }
     await archive.finalize();
   } catch (error) {

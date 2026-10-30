@@ -1,0 +1,147 @@
+### ==============================================
+### BEREITSTELLUNGEN (MDS-Agent) – API TESTS
+### ==============================================
+### Spec docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md 5.2 + 5.3 (PR 4.4)
+### Lesen alle Angemeldeten, Ändern mit program.deploy.
+### Voraussetzung: Agent mit Modul cmm_sync (test-agents.http, Test 3), ein Arbeitsgang mit
+### freigegebenem Messprogramm (test-cmm-programs.http + Freigabe über /api/workflow/change).
+### @deploymentId nach Test 6 übernehmen.
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = TOKEN_AUS_LOGIN
+@userToken = TOKEN_OHNE_PROGRAM_DEPLOY
+@agentId = 1
+@operationId = 1
+@programId = 1
+@deploymentId = 1
+
+### ==============================================
+### 0. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "PASSWORT"
+}
+
+### 1. Offene Bereitstellungen (Standard status=open)
+GET {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+
+### 2. Ohne program.deploy → 403
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}}, "operation_id": {{operationId}} }
+
+### 3. Pflichtfelder fehlen → 400
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}} }
+
+### 4. Agent unbekannt → 404
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": 99999, "operation_id": {{operationId}} }
+
+### 5. Arbeitsgang ohne freigegebenes Messprogramm → 400 „Kein freigegebenes Messprogramm“
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}}, "operation_id": 99 }
+
+### 6. Bereitstellen → 201: Version festgehalten, local_dir Teil\Programmnummer,
+###    Dateien mit target/rel_path (Kalibrierung\…, Vorlage direkt), nicht freigegebene in skipped
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}}, "operation_id": {{operationId}} }
+
+### 7. Gleicher Arbeitsgang nochmal → 409 mit deployment_id
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}}, "operation_id": {{operationId}} }
+
+### 8. Mit Auswahl: nicht freigegebenes Programm → 400
+POST {{baseUrl}}/api/deployments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "agent_id": {{agentId}}, "operation_id": {{operationId}}, "program_ids": [99999] }
+
+### 9. Detail mit Protokoll (transfers)
+GET {{baseUrl}}/api/deployments/{{deploymentId}}
+Authorization: Bearer {{token}}
+
+### 10. Lesen ohne program.deploy → 200
+GET {{baseUrl}}/api/deployments/{{deploymentId}}
+Authorization: Bearer {{userToken}}
+
+### 11. Ungültige ID → 404
+GET {{baseUrl}}/api/deployments/abc
+Authorization: Bearer {{token}}
+
+### 12. Filter
+GET {{baseUrl}}/api/deployments?status=all&agent_id={{agentId}}&operation_id={{operationId}}
+Authorization: Bearer {{token}}
+
+### 13. Ungültiger Status-Filter → 400
+GET {{baseUrl}}/api/deployments?status=offen
+Authorization: Bearer {{token}}
+
+### 14. Aktualisieren ohne neuere Freigabe → 400 „keine andere freigegebene Version“
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/programs/{{programId}}/update
+Authorization: Bearer {{token}}
+
+### 15. (neue Version hochladen und freigeben) → Liste zeigt newer_release; Aktualisieren → 200
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/programs/{{programId}}/update
+Authorization: Bearer {{token}}
+
+### 16. Programm löschen, solange bereitgestellt → 409
+DELETE {{baseUrl}}/api/programs/{{programId}}
+Authorization: Bearer {{token}}
+
+### 17. Arbeitsgang löschen, solange bereitgestellt → 409
+DELETE {{baseUrl}}/api/operations/{{operationId}}
+Authorization: Bearer {{token}}
+
+### 18. Verwerfen vor „Fertig“ → 409
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/discard-local
+Authorization: Bearer {{token}}
+
+### 19. Fertig: noch nie beim Gerät angekommen → closed (close_reason cancelled),
+###     sonst closing (der Agent räumt auf)
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/close
+Authorization: Bearer {{token}}
+
+### 20. Nochmal Fertig → 409
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/close
+Authorization: Bearer {{token}}
+
+### 21. Beim Abschließen: Verwerfen → 200 (discard_local_by/at gesetzt)
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/discard-local
+Authorization: Bearer {{token}}
+
+### 22. Beim Abschließen: Aktualisieren → 409
+POST {{baseUrl}}/api/deployments/{{deploymentId}}/programs/{{programId}}/update
+Authorization: Bearer {{token}}
+
+### 23. Abgeschlossene Bereitstellungen
+GET {{baseUrl}}/api/deployments?status=closed
+Authorization: Bearer {{token}}
+
+### 24. ZIP unverändert: Vorlagen unter PC-DMIS-Vorlagen/, Kalibrierprogramm unter Kalibrierung/
+GET {{baseUrl}}/api/programs/{{programId}}/files/zip
+Authorization: Bearer {{token}}
