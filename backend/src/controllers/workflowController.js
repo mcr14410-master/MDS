@@ -110,6 +110,14 @@ const changeWorkflowState = async (req, res) => {
       [toStateId, entityId]
     );
 
+    // Freigegebene Version merken – bleibt stehen, während eine neue Version in Arbeit ist
+    if (entityType === 'program' && toState.name === 'released') {
+      await client.query(
+        'UPDATE programs SET released_revision_id = current_revision_id WHERE id = $1',
+        [entityId]
+      );
+    }
+
     // 4. History-Eintrag erstellen
     await client.query(
       `INSERT INTO workflow_history 

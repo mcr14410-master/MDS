@@ -447,8 +447,10 @@ exports.createCmmRevision = async (req, res) => {
 // Revision bestimmen: ?version=1.2.0, sonst aktuelle
 async function resolveRevision(programId, version) {
   const programResult = await pool.query(
-    `SELECT p.id, p.kind, p.program_number, p.current_revision_id, pt.part_number
+    `SELECT p.id, p.kind, p.program_number, p.current_revision_id, pt.part_number,
+            rel.version_string AS released_version
      FROM programs p
+     LEFT JOIN program_revisions rel ON rel.id = p.released_revision_id
      LEFT JOIN operations o ON o.id = p.operation_id
      LEFT JOIN parts pt ON pt.id = o.part_id
      WHERE p.id = $1`,
@@ -485,6 +487,7 @@ exports.getCmmFiles = async (req, res) => {
         program_id: program.id,
         revision_id: revision.id,
         version: revision.version_string,
+        released_version: program.released_version,
         excel_report: result.rows.some(f => f.role === 'report_xlsx'),
         calibration: result.rows.some(f => f.role === 'calibration'),
         files: result.rows.map(f => ({ ...f, role_label: ROLE_LABELS[f.role] })),

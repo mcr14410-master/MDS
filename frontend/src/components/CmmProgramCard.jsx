@@ -6,6 +6,7 @@ import { toast } from './Toaster';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowActions from './WorkflowActions';
 import CmmFilesModal from './CmmFilesModal';
+import ReleasedVersionNote from './ReleasedVersionNote';
 import { cmmZipName } from '../utils/cmmPrograms';
 import { downloadFileViaApi } from '../utils/fileDownload';
 
@@ -44,7 +45,10 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-gray-600 dark:text-gray-400">Version:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>
+          <span className="text-right">
+            <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>
+            <ReleasedVersionNote version={program.version} releasedVersion={program.released_version} className="block" />
+          </span>
         </div>
 
         <div className="flex items-center justify-between">

@@ -189,6 +189,14 @@ export default function RevisionsList({ program, onClose }) {
                             </span>
                           )}
 
+                          {/* Freigegebene Version (programs.released_revision_id) */}
+                          {revision.is_released && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300"
+                              title="Diese Version ist freigegeben und darf an die Maschine">
+                              Freigegeben
+                            </span>
+                          )}
+
                           {/* Workflow State */}
                           <span className={`px-2 py-1 text-xs font-semibold rounded ${getWorkflowBadgeColor(revision.workflow_state)}`}>
                             {revision.workflow_state}

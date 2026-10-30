@@ -1,0 +1,125 @@
+### ==============================================
+### FREIGABE-ZEIGER programs.released_revision_id – API TESTS
+### ==============================================
+### Spec docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md 4.1 (PR 4.1)
+### Die freigegebene Version bleibt stehen, während eine neue in Arbeit ist.
+### Gilt für NC- und Messprogramme.
+###
+### Ablauf: Login → Token unten eintragen → Tests der Reihe nach.
+### @programId = NC-Programm mit mindestens einer Version, @cmmProgramId = Messprogramm.
+### Status-IDs per Test 1 prüfen (Standard: 2 review, 3 approved, 4 released).
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = TOKEN_AUS_LOGIN
+@programId = 1
+@cmmProgramId = 4
+@boundary = ----MdsReleasedBoundary
+
+### ==============================================
+### 0. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "PASSWORT"
+}
+
+### 1. Workflow-Status mit IDs
+GET {{baseUrl}}/api/workflow/states
+Authorization: Bearer {{token}}
+
+### ==============================================
+### NC-PROGRAMM
+### ==============================================
+
+### 2. Liste: released_version je Programm (NULL = nie freigegeben)
+GET {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+
+### 3. Detail: released_revision_id + released_version
+GET {{baseUrl}}/api/programs/{{programId}}
+Authorization: Bearer {{token}}
+
+### 4. Revisionen: is_released genau bei der freigegebenen Version
+GET {{baseUrl}}/api/programs/{{programId}}/revisions
+Authorization: Bearer {{token}}
+
+### 5. Freigabe: draft → review
+POST {{baseUrl}}/api/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "entityType": "program", "entityId": {{programId}}, "toStateId": 2 }
+
+### 6. review → approved
+POST {{baseUrl}}/api/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "entityType": "program", "entityId": {{programId}}, "toStateId": 3 }
+
+### 7. approved → released → released_revision_id = current_revision_id
+POST {{baseUrl}}/api/workflow/change
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "entityType": "program", "entityId": {{programId}}, "toStateId": 4 }
+
+### 8. Neue Version hochladen → Programm „draft“, released_version bleibt die alte
+POST {{baseUrl}}/api/programs/{{programId}}/revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+------MdsReleasedBoundary
+Content-Disposition: form-data; name="file"; filename="O1234.nc"
+Content-Type: text/plain
+
+G0 X0 Y0
+M30
+------MdsReleasedBoundary
+Content-Disposition: form-data; name="version_type"
+
+patch
+------MdsReleasedBoundary--
+
+### 9. Liste: version = neue, released_version = vorherige
+GET {{baseUrl}}/api/programs
+Authorization: Bearer {{token}}
+
+### 10. Revisionen: neue Version is_released = false, freigegebene = true
+GET {{baseUrl}}/api/programs/{{programId}}/revisions
+Authorization: Bearer {{token}}
+
+### 11. Rollback auf eine ältere Version → released_version unverändert
+POST {{baseUrl}}/api/programs/{{programId}}/rollback?to=1.0.0
+Authorization: Bearer {{token}}
+
+### 12. Nach Rollback: released_version unverändert
+GET {{baseUrl}}/api/programs/{{programId}}
+Authorization: Bearer {{token}}
+
+### 13. Freigabe ohne Recht program.release → 403 (Token eines Benutzers ohne Recht)
+POST {{baseUrl}}/api/workflow/change
+Authorization: Bearer TOKEN_OHNE_RECHT
+Content-Type: application/json
+
+{ "entityType": "program", "entityId": {{programId}}, "toStateId": 4 }
+
+### ==============================================
+### MESSPROGRAMM
+### ==============================================
+
+### 14. Dateiliste: version + released_version (NULL, solange nie freigegeben)
+GET {{baseUrl}}/api/programs/{{cmmProgramId}}/files
+Authorization: Bearer {{token}}
+
+### 15. Ältere Version anzeigen: released_version gilt fürs Programm, nicht für die angezeigte Version
+GET {{baseUrl}}/api/programs/{{cmmProgramId}}/files?version=1.0.0
+Authorization: Bearer {{token}}
+
+### 16. Liste Messprogramme mit released_version
+GET {{baseUrl}}/api/programs?kind=cmm
+Authorization: Bearer {{token}}

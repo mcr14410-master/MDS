@@ -7,6 +7,7 @@ import API_BASE_URL from '../config/api';
 import PdfViewer from './common/PdfViewer';
 import { toast } from './Toaster';
 import { cmmZipName } from '../utils/cmmPrograms';
+import ReleasedVersionNote from './ReleasedVersionNote';
 
 const formatFileSize = (bytes) => {
   if (!bytes && bytes !== 0) return '';
@@ -41,6 +42,7 @@ export default function CmmFilesModal({ program, onClose }) {
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {program.program_number}{data ? ` · Version ${data.version}` : ''}
               {data && (data.excel_report ? ' · mit Excel-Protokoll' : ' · ohne Excel-Protokoll')}
+              {data && <ReleasedVersionNote version={data.version} releasedVersion={data.released_version} className="ml-2" />}
             </p>
           </div>
           <button onClick={onClose} aria-label="Schließen"

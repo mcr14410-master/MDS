@@ -10,6 +10,7 @@ import { toast } from '../components/Toaster';
 import Pagination from '../components/Pagination';
 import { WORKFLOW_STATUS_LABELS as STATUS_LABELS } from '../utils/workflowLabels';
 import { cmmZipName } from '../utils/cmmPrograms';
+import ReleasedVersionNote from '../components/ReleasedVersionNote';
 
 const KIND_CONFIG = {
   nc: {
@@ -386,6 +387,7 @@ function ProgramOverviewCard({ program: p, downloadTitle, onDownload }) {
           <div className="text-gray-600 dark:text-gray-300">
             <span className="text-gray-500 dark:text-gray-400">Version:</span>{' '}
             <span className="font-mono">{p.version || '-'}</span>
+            <ReleasedVersionNote version={p.version} releasedVersion={p.released_version} className="ml-1" />
             <span className="text-gray-400 dark:text-gray-500"> · geändert {formatDate(p.updated_at)}</span>
           </div>
         </div>
@@ -449,7 +451,10 @@ function ProgramsTable({ programs, downloadTitle, onDownload }) {
                   <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{p.program_name}</div>
                 </td>
                 <td className="px-4 py-3 truncate text-sm font-mono text-gray-900 dark:text-gray-100">{p.version || '-'}</td>
-                <td className="px-4 py-3 whitespace-nowrap"><StatusBadge status={p.workflow_state} /></td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <StatusBadge status={p.workflow_state} />
+                  <ReleasedVersionNote version={p.version} releasedVersion={p.released_version} className="block mt-1" />
+                </td>
                 <td className="px-4 py-3 truncate text-sm text-gray-600 dark:text-gray-300">{p.machine_name || '-'}</td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatDate(p.updated_at)}</td>
                 <td className="px-4 py-3 whitespace-nowrap text-right">
