@@ -326,9 +326,9 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [x] 3 – Frontend: Menüpunkt „Messprogramme“ (mit „NC-Programme“), Messprogramme am Arbeitsgang (Hochladen mit Vorschau, Dateiliste, ZIP) → nutzbar ohne Agent; Test mit echten PC-DMIS-Dateien am Arbeitsplatz offen
 - [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
 - [ ] 5 – Abschließen + Eingang
-- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig); offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
+- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig), Rundlauf MDS → ZIP → Mess-PC am 30.10. geprüft; offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
 - [ ] 7 – Erstimport vom Netzlaufwerk
-- [ ] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, Erkennung über Unterordner, Protokoll-PDFs dort aussortieren (Konzept 4.2a, 30.10.2026); bis dahin als eigenes Messprogramm hochladen
+- [x] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, eigener Upload-Bereich (Excel-Vorlage ebenso), Protokoll-PDFs aussortiert, ZIP-Unterordner `Kalibrierung/` (Konzept 4.2a, 30.10.2026); offen: `.MiniRoutines.xml` zur Kalibrierung, falls nötig
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
 Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: `agents` bekommt von Anfang an eine Modulliste ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4). Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.

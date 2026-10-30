@@ -6,13 +6,17 @@
  *
  * Neue Revision: Hochgeladen wird, was man hat (ganzer Ordner oder nur Geändertes).
  * Das MDS vergleicht per Hash mit der Vorversion; nicht hochgeladene Dateien werden
- * übernommen. Entfernen nur ausdrücklich (`remove`, Excel-Vorlage über `excelReport=false`).
+ * übernommen. Entfernen nur ausdrücklich (`remove`, Excel-Vorlage über `excelReport=false`,
+ * Kalibrierprogramm über `calibration=false`).
+ *
+ * Hochgeladen wird in drei Bereichen mit eigenem Filter: Messprogramm (program), Excel-Vorlage
+ * (template) und Kalibrierprogramm (calibration). Der Bereich bestimmt die Rolle, nicht der Name.
  */
 
 const path = require('path');
 
 // Rollen mit genau einer Datei je Revision; eine neue Datei ersetzt die der Vorversion
-const SINGLE_ROLES = ['main', 'cad', 'report_xlsx', 'report_layout'];
+const SINGLE_ROLES = ['main', 'cad', 'report_xlsx', 'report_layout', 'calibration'];
 
 const ROLE_LABELS = {
   main: 'Messprogramm (.prg)',
@@ -21,6 +25,15 @@ const ROLE_LABELS = {
   report_xlsx: 'Excel-Protokollvorlage (.xlsx)',
   report_layout: 'Vorlagen-Layout (.layout.xml)',
   other: 'Mini-Routinen (.MiniRoutines.xml)',
+  calibration: 'Kalibrierprogramm (.prg)',
+};
+
+const UPLOAD_AREAS = ['program', 'template', 'calibration'];
+
+// Bereich, in dem eine Datei hochgeladen werden muss – für den Hinweis beim Aussortieren
+const WRONG_AREA_REASON = {
+  template: 'Excel-Vorlage – über „Excel-Protokoll“ hochladen',
+  program: 'Gehört zum Messprogramm – im Hauptbereich hochladen',
 };
 
 /**
@@ -34,12 +47,32 @@ function decodeOriginalName(name) {
 }
 
 /**
- * Einordnung nach Dateiname (ohne Groß-/Kleinschreibung).
+ * Einordnung nach Dateiname (ohne Groß-/Kleinschreibung) und Upload-Bereich.
  * kind: 'file' (mit role/target) | 'sidecar' (PC-DMIS-Nebendatei, wird aussortiert)
  *     | 'corrupt' (.prg.corrupt) | 'miniroutines' (nach Inhalt entscheiden)
  *     | 'cad_import' (STEP, steckt schon in der .cad) | 'unknown' (wird aussortiert)
+ *     | 'ignored' (falscher Bereich oder Kalibrierprotokoll, mit `reason`; wird aussortiert)
  */
-function classifyFile(name) {
+function classifyFile(name, area = 'program') {
+  const info = classifyByName(name);
+  if (info.kind === 'sidecar' || info.kind === 'corrupt' || info.kind === 'unknown') return info;
+  const isTemplate = info.role === 'report_xlsx' || info.role === 'report_layout';
+
+  if (area === 'template') {
+    return isTemplate ? info : { kind: 'ignored', reason: WRONG_AREA_REASON.program };
+  }
+  if (area === 'calibration') {
+    if (info.role === 'main') return { kind: 'file', role: 'calibration', target: 'program_dir' };
+    if (info.role === 'drawing') {
+      return { kind: 'ignored', reason: 'Kalibrierprotokoll (Ergebnis, kein Programmbestandteil) – nicht übernommen' };
+    }
+    if (isTemplate) return { kind: 'ignored', reason: WRONG_AREA_REASON.template };
+    return { kind: 'ignored', reason: 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen' };
+  }
+  return isTemplate ? { kind: 'ignored', reason: WRONG_AREA_REASON.template } : info;
+}
+
+function classifyByName(name) {
   const lower = name.toLowerCase();
   if (lower.endsWith('.prg~') || lower.endsWith('.prg^')) return { kind: 'sidecar' };
   if (lower.endsWith('.prg.corrupt')) return { kind: 'corrupt' };
@@ -82,11 +115,12 @@ const stem = (name) => path.parse(name).name.toLowerCase();
  * @param {Array|null} p.previous  Dateien der Basis-Revision [{ name, role, target, hash, ... }], null = neues Programm
  * @param {Array}  [p.remove]  Dateinamen der Vorversion, die nicht übernommen werden
  * @param {boolean|undefined} [p.excelReport]  true = Vorlage Pflicht, false = Vorlage entfernen
+ * @param {boolean|undefined} [p.calibration]  true = Kalibrierprogramm Pflicht, false = entfernen
  * @returns {{ files: Array, removed: Array, errors: string[], warnings: string[], templateName: string|null }}
  *   files: Einträge aus uploaded/previous mit `source` ('upload'|'previous') und
  *   `status` ('new'|'changed'|'unchanged'|'carried')
  */
-function planRevision({ uploaded, previous, remove = [], excelReport }) {
+function planRevision({ uploaded, previous, remove = [], excelReport, calibration }) {
   const errors = [];
   const warnings = [];
   const removed = [];
@@ -103,6 +137,9 @@ function planRevision({ uploaded, previous, remove = [], excelReport }) {
   }
   if (excelReport === false && uploaded.some(f => f.role === 'report_xlsx' || f.role === 'report_layout')) {
     errors.push('Excel-Protokoll ausgeschaltet, aber Vorlagendateien hochgeladen');
+  }
+  if (calibration === false && uploaded.some(f => f.role === 'calibration')) {
+    errors.push('Kalibrierprogramm ausgeschaltet, aber Kalibrierprogramm hochgeladen');
   }
 
   // Basis: Dateien der Vorversion
@@ -123,6 +160,10 @@ function planRevision({ uploaded, previous, remove = [], excelReport }) {
       errors.push('Excel-Vorlage nur zusammen entfernen: „ohne Excel-Protokoll“ (excel_report=false)');
       continue;
     }
+    if (file.role === 'calibration') {
+      errors.push('Kalibrierprogramm über „ohne Kalibrierprogramm“ entfernen (calibration=false)');
+      continue;
+    }
     removed.push({ ...file, reason: 'entfernt' });
     carried.splice(idx, 1);
   }
@@ -133,11 +174,19 @@ function planRevision({ uploaded, previous, remove = [], excelReport }) {
     }
     carried = carried.filter(c => c.role !== 'report_xlsx' && c.role !== 'report_layout');
   }
+  if (calibration === false) {
+    for (const f of carried.filter(c => c.role === 'calibration')) {
+      removed.push({ ...f, reason: 'ohne Kalibrierprogramm' });
+    }
+    carried = carried.filter(c => c.role !== 'calibration');
+  }
 
   // Hochgeladene Dateien ersetzen gleichnamige bzw. die gleiche Einzel-Rolle der Vorversion
   const files = [];
   for (const up of uploaded) {
-    const sameName = carried.find(c => key(c.name) === key(up.name));
+    // Kalibrierprogramm und Messprogramm-Dateien liegen in getrennten Ordnern
+    const sameName = carried.find(c => key(c.name) === key(up.name)
+      && (c.role === 'calibration') === (up.role === 'calibration'));
     let status = 'new';
     if (sameName) {
       status = sameName.hash === up.hash ? 'unchanged' : 'changed';
@@ -172,6 +221,14 @@ function planRevision({ uploaded, previous, remove = [], excelReport }) {
     errors.push('Excel-Protokoll eingeschaltet, aber keine Vorlage (.xlsx + .layout.xml)');
   }
 
+  const calibrationFile = files.find(f => f.role === 'calibration');
+  if (calibration === true && !calibrationFile) {
+    errors.push('Kalibrierprogramm eingeschaltet, aber keine .prg dafür hochgeladen');
+  }
+  if (calibrationFile && mains.some(m => key(m.name) === key(calibrationFile.name))) {
+    errors.push(`Kalibrierprogramm ${calibrationFile.name} muss anders heißen als das Messprogramm`);
+  }
+
   const cad = files.find(f => f.role === 'cad');
   if (cad && mains.length === 1 && stem(cad.name) !== stem(mains[0].name)) {
     warnings.push(`CAD-Datei ${cad.name} heißt anders als ${mains[0].name} – PC-DMIS findet sie über den Namen`);
@@ -186,6 +243,7 @@ function planRevision({ uploaded, previous, remove = [], excelReport }) {
 
 module.exports = {
   ROLE_LABELS,
+  UPLOAD_AREAS,
   decodeOriginalName,
   classifyFile,
   hasCustomMiniRoutines,

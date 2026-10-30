@@ -5,6 +5,13 @@ const { upload, cmmUpload, handleMulterError } = require('../middleware/uploadMi
 const programsController = require('../controllers/programsController');
 const cmmProgramsController = require('../controllers/cmmProgramsController');
 
+// Messprogramm-Upload: drei Bereiche mit eigenem Filter (Messprogramm, Excel-Vorlage, Kalibrierprogramm)
+const cmmFields = cmmUpload.fields([
+  { name: 'files' },
+  { name: 'template_files' },
+  { name: 'calibration_files' },
+]);
+
 // Alle Routes benötigen Authentication
 router.use(authenticateToken);
 
@@ -17,7 +24,7 @@ router.post('/',
 
 // POST /api/programs/cmm - Messprogramm (KMG) mit Dateigruppe anlegen
 router.post('/cmm',
-  cmmUpload.array('files'),
+  cmmFields,
   handleMulterError,
   cmmProgramsController.createCmmProgram
 );
@@ -31,7 +38,7 @@ router.get('/stats', programsController.getProgramStats);
 
 // POST /api/programs/:id/cmm-revisions - Messprogramm: neue Version (geänderte Dateien, Rest wird übernommen)
 router.post('/:id/cmm-revisions',
-  cmmUpload.array('files'),
+  cmmFields,
   handleMulterError,
   cmmProgramsController.createCmmRevision
 );

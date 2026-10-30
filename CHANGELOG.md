@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Messprogramme: Das Kalibrierprogramm für die Taster lässt sich jetzt mit dem Messprogramm zusammen ablegen. Es bekommt beim Hochladen einen eigenen Bereich, wird mit dem Messprogramm versioniert und liegt im heruntergeladenen ZIP im Ordner „Kalibrierung“. Kalibrierprotokolle (PDF) werden dabei aussortiert.
+- Die Excel-Protokollvorlage hat beim Hochladen ebenfalls einen eigenen Bereich mit Schalter. Der große Ablagebereich ist nur noch für das Messprogramm selbst.
+
+### Added
+- Messprogramme: Rolle `calibration` (Kalibrierprogramm, höchstens eine `.prg` je Revision, wird wie die CAD-Datei übernommen; Migration `1737000122000_add-cmm-calibration-role` erweitert die Prüfregel von `program_revision_files.role`). Entfernen nur über `calibration=false`, Pflicht mit `calibration=true`; darf nicht wie das Messprogramm heißen. ZIP: Unterordner `Kalibrierung/`. `GET /api/programs/:id/files` meldet `calibration`
+
+### Changed
+- Messprogramm-Upload in drei Bereichen mit eigenem Filter: `files` (Messprogramm: `.prg`, `.cad`, `.pdf`, `.MiniRoutines.xml`), `template_files` (Excel-Vorlage), `calibration_files` (Kalibrierprogramm: nur die `.prg`, PDFs = Kalibrierprotokolle). Der Bereich bestimmt die Rolle; Dateien im falschen Bereich werden mit Hinweis aussortiert, unbekannte Felder → 400. **Excel-Vorlagen unter `files` werden nicht mehr angenommen.** Formular: Schalter „Excel-Protokoll“ und „Kalibrierprogramm“ mit eigener Ablagefläche, bei neuer Version vorbelegt; ausschalten = in der neuen Version entfernen
+
 ---
 
 ## [2.16.0] - 2026-10-29 - Messprogramme im eigenen Reiter

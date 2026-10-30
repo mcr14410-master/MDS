@@ -2,6 +2,7 @@
 // Messprogramm (KMG / PC-DMIS) hochladen: neues Programm oder neue Version.
 // Man legt ab, was man hat (einzelne Dateien oder den ganzen Ordner). Das MDS prüft per
 // Probelauf und zeigt vor dem Speichern, was neu, geändert, unverändert oder übernommen ist.
+// Excel-Vorlage und Kalibrierprogramm haben je einen eigenen Schalter mit eigenem Upload.
 import { useEffect, useRef, useState } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
@@ -14,7 +15,10 @@ const FILE_STATUS = {
 };
 
 // Übernommene Dateien dieser Rollen lassen sich nicht einzeln entfernen (Backend-Regel)
-const NOT_REMOVABLE = ['main', 'report_xlsx', 'report_layout'];
+const NOT_REMOVABLE = ['main', 'report_xlsx', 'report_layout', 'calibration'];
+
+// Upload-Bereiche mit eigenem Filter im Backend: Messprogramm, Excel-Vorlage, Kalibrierprogramm
+const EMPTY_AREAS = { program: [], template: [], calibration: [] };
 
 const formatFileSize = (bytes) => {
   if (!bytes && bytes !== 0) return '';
@@ -68,43 +72,61 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
   const { uploadCmm, fetchCmmFiles } = useProgramsStore();
   const isRevision = Boolean(program);
 
-  const [files, setFiles] = useState([]);
+  const [areaFiles, setAreaFiles] = useState(EMPTY_AREAS);
   const [skipped, setSkipped] = useState([]);   // Dateien aus Unterordnern, nicht hochgeladen
   const [fields, setFields] = useState({ program_name: '', description: '', comment: '', version_type: 'patch' });
-  const [excelReport, setExcelReport] = useState(false);       // neues Programm: Vorlage Pflicht
-  const [removeTemplate, setRemoveTemplate] = useState(false);  // neue Version: Vorlage entfernen
+  const [excelReport, setExcelReport] = useState(false);   // Excel-Vorlage gehört dazu
+  const [calibration, setCalibration] = useState(false);   // Kalibrierprogramm gehört dazu
   const [remove, setRemove] = useState([]);
   const [currentFiles, setCurrentFiles] = useState(null);
   const [preview, setPreview] = useState(null);
   const [previewError, setPreviewError] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
   const previewRun = useRef(0);
 
   useEffect(() => {
     if (isRevision) {
       fetchCmmFiles(program.id)
-        .then((data) => setCurrentFiles(data))
-        .catch(() => setCurrentFiles({ files: [], excel_report: false }));
+        .then((data) => {
+          setCurrentFiles(data);
+          setExcelReport(Boolean(data.excel_report));
+          setCalibration(Boolean(data.calibration));
+        })
+        .catch(() => setCurrentFiles({ files: [], excel_report: false, calibration: false }));
     }
   }, [isRevision, program, fetchCmmFiles]);
 
-  const hasChanges = files.length > 0 || remove.length > 0 || removeTemplate;
+  const hadExcel = Boolean(currentFiles?.excel_report);
+  const hadCalibration = Boolean(currentFiles?.calibration);
+  const fileCount = areaFiles.program.length + areaFiles.template.length + areaFiles.calibration.length;
+  const hasChanges = fileCount > 0 || remove.length > 0
+    || (isRevision && currentFiles !== null && (excelReport !== hadExcel || calibration !== hadCalibration));
+
+  // Schalter: an = Pflicht, aus = in der neuen Version entfernen (nur wenn vorhanden)
+  const flag = (on, before) => (on ? 'true' : isRevision && before ? 'false' : '');
 
   const requestFields = () => (isRevision
     ? {
       version_type: fields.version_type,
       comment: fields.comment,
-      excel_report: removeTemplate ? 'false' : '',
+      excel_report: flag(excelReport, hadExcel),
+      calibration: flag(calibration, hadCalibration),
     }
     : {
       operation_id: operationId,
       program_name: fields.program_name,
       description: fields.description,
       comment: fields.comment,
-      excel_report: excelReport ? 'true' : '',
+      excel_report: flag(excelReport, false),
+      calibration: flag(calibration, false),
     });
+
+  const requestFiles = () => ({
+    files: areaFiles.program,
+    templateFiles: excelReport ? areaFiles.template : [],
+    calibrationFiles: calibration ? areaFiles.calibration : [],
+  });
 
   // Vorschau per Probelauf, sobald sich Dateien oder Optionen ändern
   useEffect(() => {
@@ -120,7 +142,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
         const result = await uploadCmm({
           programId: program?.id || null,
           fields: requestFields(),
-          files,
+          ...requestFiles(),
           remove,
           dryRun: true,
         });
@@ -139,10 +161,10 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files, remove, excelReport, removeTemplate]);
+  }, [areaFiles, remove, excelReport, calibration]);
 
-  // items: [{ file, path }] aus Ordnerauswahl oder Drag & Drop
-  const addItems = (items) => {
+  // items: [{ file, path }] aus Ordnerauswahl oder Drag & Drop, je Upload-Bereich
+  const addItems = (area, items) => {
     if (items.length === 0) return;
     const { keep, skipped: newSkipped } = splitTopLevel(items);
     if (newSkipped.length > 0) {
@@ -152,38 +174,25 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
         return [...byName.values()];
       });
     }
-    addFiles(keep);
-  };
-
-  const addFiles = (newFiles) => {
-    if (newFiles.length === 0) return;
-    setFiles((prev) => {
+    if (keep.length === 0) return;
+    setAreaFiles((prev) => {
       // Gleicher Name (ohne Groß-/Kleinschreibung) → neue Datei ersetzt die alte
-      const byName = new Map(prev.map((f) => [f.name.toLowerCase(), f]));
-      newFiles.forEach((f) => byName.set(f.name.toLowerCase(), f));
-      return [...byName.values()];
+      const byName = new Map(prev[area].map((f) => [f.name.toLowerCase(), f]));
+      keep.forEach((f) => byName.set(f.name.toLowerCase(), f));
+      return { ...prev, [area]: [...byName.values()] };
     });
-    if (!isRevision && !fields.program_name) {
-      const prg = newFiles.find((f) => f.name.toLowerCase().endsWith('.prg'));
+    if (area === 'program' && !isRevision && !fields.program_name) {
+      const prg = keep.find((f) => f.name.toLowerCase().endsWith('.prg'));
       if (prg) setFields((prev) => ({ ...prev, program_name: prg.name.replace(/\.prg$/i, '') }));
     }
-    if (!isRevision && newFiles.some((f) => /\.(xlsx|layout\.xml)$/i.test(f.name))) {
-      setExcelReport(true);
-    }
   };
 
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const entries = [...(e.dataTransfer.items || [])]
-      .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null))
-      .filter(Boolean);
-    if (entries.length > 0) {
-      const nested = await Promise.all(entries.map(filesFromEntry));
-      addItems(nested.flat());
-    } else {
-      addFiles([...e.dataTransfer.files]);
-    }
+  const clearArea = (area) => setAreaFiles((prev) => ({ ...prev, [area]: [] }));
+
+  // Bereich ausschalten verwirft dessen Auswahl
+  const toggleOption = (area, setter, on) => {
+    setter(on);
+    if (!on) clearArea(area);
   };
 
   const toggleRemove = (name) => {
@@ -196,7 +205,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
       const result = await uploadCmm({
         programId: program?.id || null,
         fields: requestFields(),
-        files,
+        ...requestFiles(),
         remove,
       });
       toast.success(isRevision
@@ -246,61 +255,31 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
         </div>
 
         <div className="p-6 space-y-5 overflow-y-auto">
-          {/* Drop-Zone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center px-6 py-6 border-2 border-dashed rounded-lg transition-colors ${
-              dragOver
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-            }`}
+          {/* Messprogramm */}
+          <DropArea
+            onItems={(items) => addItems('program', items)}
+            hint=".prg, .cad, Prüfzeichnung (.pdf), .MiniRoutines.xml – PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert"
           >
-            <svg className="h-10 w-10 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-              Ordner oder Dateien hierher ziehen –{' '}
-              <label className="cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
-                Dateien wählen
-                <input type="file" multiple className="sr-only"
-                  onChange={(e) => { addFiles([...e.target.files]); e.target.value = ''; }} />
-              </label>
-              {' '}oder{' '}
-              <label className="cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
-                Ordner wählen
-                <input type="file" multiple webkitdirectory="" className="sr-only"
-                  onChange={(e) => {
-                    addItems([...e.target.files].map((file) => ({ file, path: file.webkitRelativePath || file.name })));
-                    e.target.value = '';
-                  }} />
-              </label>
-            </p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
-              .prg, .cad, Prüfzeichnung (.pdf), Excel-Vorlage (.xlsx + .layout.xml), .MiniRoutines.xml –
-              PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert
-            </p>
             {isRevision && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
                 Einfach den ganzen Ordner ablegen – das MDS erkennt, was sich geändert hat. Nicht abgelegte Dateien werden übernommen.
               </p>
             )}
-          </div>
+          </DropArea>
 
-          {(files.length > 0 || skipped.length > 0) && (
+          {(fileCount > 0 || skipped.length > 0) && (
             <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
               <span>
-                {files.length} {files.length === 1 ? 'Datei' : 'Dateien'} ausgewählt
+                {fileCount} {fileCount === 1 ? 'Datei' : 'Dateien'} ausgewählt
                 {skipped.length > 0 && ` · ${skipped.length} aus Unterordnern nicht hochgeladen`}
               </span>
-              <button type="button" onClick={() => { setFiles([]); setSkipped([]); }} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <button type="button" onClick={() => { setAreaFiles(EMPTY_AREAS); setSkipped([]); }} className="text-blue-600 dark:text-blue-400 hover:underline">
                 Auswahl leeren
               </button>
             </div>
           )}
 
-          {/* Optionen */}
+          {/* Felder */}
           {!isRevision ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
@@ -316,16 +295,6 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
                 <input type="text" value={fields.description} className={inputClass}
                   onChange={(e) => setFields({ ...fields, description: e.target.value })} />
               </div>
-              <label className="md:col-span-2 flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input type="checkbox" checked={excelReport} onChange={(e) => setExcelReport(e.target.checked)}
-                  className="mt-0.5 rounded border-gray-300 dark:border-gray-600" />
-                <span>
-                  Excel-Protokoll
-                  <span className="block text-xs text-gray-500 dark:text-gray-400">
-                    Dann sind .xlsx und .layout.xml Pflicht – ohne .layout.xml entsteht ein Protokoll ohne Messwerte.
-                  </span>
-                </span>
-              </label>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -338,15 +307,36 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
                   <option value="major">Major – neuer Messablauf</option>
                 </select>
               </div>
-              {currentFiles?.excel_report && (
-                <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 md:pt-6">
-                  <input type="checkbox" checked={removeTemplate} onChange={(e) => setRemoveTemplate(e.target.checked)}
-                    className="mt-0.5 rounded border-gray-300 dark:border-gray-600" />
-                  <span>Ohne Excel-Protokoll (Vorlage entfernen)</span>
-                </label>
-              )}
             </div>
           )}
+
+          {/* Zusätze mit eigenem Upload */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <OptionArea
+              title="Excel-Protokoll"
+              description="Vorlage aus .xlsx und .layout.xml – ohne .layout.xml entsteht ein Protokoll ohne Messwerte. Zielort: PC-DMIS-Vorlagenverzeichnis."
+              checked={excelReport}
+              onChange={(on) => toggleOption('template', setExcelReport, on)}
+              files={areaFiles.template}
+              onItems={(items) => addItems('template', items)}
+              onClear={() => clearArea('template')}
+              dropHint=".xlsx + .layout.xml"
+              keepHint={hadExcel ? 'Leer lassen = bisherige Vorlage übernehmen' : null}
+              removeHint={hadExcel && !excelReport ? 'Die Vorlage wird in der neuen Version entfernt.' : null}
+            />
+            <OptionArea
+              title="Kalibrierprogramm"
+              description="Eigene .prg, die die Taster dieses Programms kalibriert – wird mit dem Messprogramm versioniert. Kalibrierprotokolle (.pdf) werden aussortiert."
+              checked={calibration}
+              onChange={(on) => toggleOption('calibration', setCalibration, on)}
+              files={areaFiles.calibration}
+              onItems={(items) => addItems('calibration', items)}
+              onClear={() => clearArea('calibration')}
+              dropHint=".prg oder Kalibrier-Ordner"
+              keepHint={hadCalibration ? 'Leer lassen = bisheriges Kalibrierprogramm übernehmen' : null}
+              removeHint={hadCalibration && !calibration ? 'Das Kalibrierprogramm wird in der neuen Version entfernt.' : null}
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Änderungsnotiz</label>
@@ -435,6 +425,95 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
   );
 }
 
+// Ablagefläche mit Datei- und Ordnerauswahl; liefert [{ file, path }] (Pfad relativ zur Auswahl)
+function DropArea({ onItems, hint, compact = false, children = null }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const entries = [...(e.dataTransfer.items || [])]
+      .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null))
+      .filter(Boolean);
+    if (entries.length > 0) {
+      const nested = await Promise.all(entries.map(filesFromEntry));
+      onItems(nested.flat());
+    } else {
+      onItems([...e.dataTransfer.files].map((file) => ({ file, path: file.name })));
+    }
+  };
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors ${
+        compact ? 'px-3 py-3' : 'px-6 py-6'
+      } ${
+        dragOver
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+      }`}
+    >
+      {!compact && (
+        <svg className="h-10 w-10 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      )}
+      <p className={`${compact ? '' : 'mt-2 '}text-sm text-gray-700 dark:text-gray-300 text-center`}>
+        {compact ? 'Hierher ziehen – ' : 'Ordner oder Dateien hierher ziehen – '}
+        <label className="cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+          Dateien wählen
+          <input type="file" multiple className="sr-only"
+            onChange={(e) => { onItems([...e.target.files].map((file) => ({ file, path: file.name }))); e.target.value = ''; }} />
+        </label>
+        {' '}oder{' '}
+        <label className="cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+          Ordner wählen
+          <input type="file" multiple webkitdirectory="" className="sr-only"
+            onChange={(e) => {
+              onItems([...e.target.files].map((file) => ({ file, path: file.webkitRelativePath || file.name })));
+              e.target.value = '';
+            }} />
+        </label>
+      </p>
+      {hint && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+// Zusatz zum Messprogramm (Excel-Vorlage, Kalibrierprogramm): Schalter + eigener Upload
+function OptionArea({ title, description, checked, onChange, files, onItems, onClear, dropHint, keepHint, removeHint }) {
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5 rounded border-gray-300 dark:border-gray-600" />
+        <span className="font-medium">
+          {title}
+          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">{description}</span>
+        </span>
+      </label>
+      {removeHint && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{removeHint}</p>}
+      {checked && (
+        <div className="mt-3">
+          <DropArea compact onItems={onItems} hint={dropHint} />
+          <div className="mt-1 flex items-start justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span className="break-all">{files.length > 0 ? files.map((f) => f.name).join(', ') : keepHint || 'Noch keine Datei ausgewählt'}</span>
+            {files.length > 0 && (
+              <button type="button" onClick={onClear} className="text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">
+                leeren
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FileTable({ rows, onToggleRemove = null, userRemoved = new Set() }) {
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -454,6 +533,7 @@ function FileTable({ rows, onToggleRemove = null, userRemoved = new Set() }) {
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {isIgnored ? f.reason : isRemoved ? `entfällt – ${f.reason}` : f.role_label}
                     {f.target === 'template_dir' && !isRemoved && ' · PC-DMIS-Vorlagenverzeichnis'}
+                    {f.role === 'calibration' && !isRemoved && ' · Unterordner Kalibrierung'}
                   </div>
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">

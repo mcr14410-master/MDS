@@ -3,7 +3,10 @@
 ### ==============================================
 ### Schritt 2 aus docs/konzepte/MESSPROGRAMME_KONZEPT.md
 ### Dateigruppe je Revision: .prg + .cad + Prüfzeichnung (.pdf),
-### optional Excel-Vorlage (.xlsx + .layout.xml) und eigene Mini-Routinen
+### optional Excel-Vorlage (.xlsx + .layout.xml), eigene Mini-Routinen
+### und Kalibrierprogramm (eigene .prg, im ZIP unter Kalibrierung/)
+### Upload-Felder: files (Messprogramm), template_files (Excel-Vorlage),
+### calibration_files (Kalibrierprogramm) – jedes mit eigenem Filter
 ### Testdateien: ./cmm/ (künstlich, keine echten Messprogramme)
 ###
 ### Ablauf: Login → Token unten eintragen → Tests der Reihe nach.
@@ -66,12 +69,12 @@ Content-Type: application/pdf
 
 < ./cmm/v1/TEIL-0001_OP30_Pruefzeichnung.pdf
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Disposition: form-data; name="template_files"; filename="KD00000_TEIL-0001_C.xlsx"
 Content-Type: application/octet-stream
 
 < ./cmm/v1/KD00000_TEIL-0001_C.xlsx
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.layout.xml"
+Content-Disposition: form-data; name="template_files"; filename="KD00000_TEIL-0001_C.layout.xml"
 Content-Type: application/xml
 
 < ./cmm/v1/KD00000_TEIL-0001_C.layout.xml
@@ -326,12 +329,12 @@ Content-Type: application/octet-stream
 
 < ./cmm/v1/TEIL-0001_OP30.prg
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Disposition: form-data; name="template_files"; filename="KD00000_TEIL-0001_C.xlsx"
 Content-Type: application/octet-stream
 
 < ./cmm/v1/KD00000_TEIL-0001_C.xlsx
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.layout.xml"
+Content-Disposition: form-data; name="template_files"; filename="KD00000_TEIL-0001_C.layout.xml"
 Content-Type: application/xml
 
 < ./cmm/v1/KD00000_TEIL-0001_C.layout.xml
@@ -360,12 +363,12 @@ Content-Type: application/octet-stream
 
 < ./cmm/v1/TEIL-0001_OP30.prg
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KAPUTT.xlsx"
+Content-Disposition: form-data; name="template_files"; filename="KAPUTT.xlsx"
 Content-Type: application/octet-stream
 
 < ./cmm/fehler/KAPUTT.xlsx
 --{{boundary}}
-Content-Disposition: form-data; name="files"; filename="KAPUTT.layout.xml"
+Content-Disposition: form-data; name="template_files"; filename="KAPUTT.layout.xml"
 Content-Type: application/xml
 
 < ./cmm/fehler/KAPUTT.layout.xml
@@ -514,10 +517,127 @@ Content-Type: application/octet-stream
 
 < ./cmm/v1/TEIL-0001_OP30.prg
 --{{boundary}}
+Content-Disposition: form-data; name="template_files"; filename="KD00000_TEIL-0001_C.xlsx"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/KD00000_TEIL-0001_C.xlsx
+--{{boundary}}--
+
+### ==============================================
+### K1. NEUE VERSION - Kalibrierprogramm dazu (Ordner mit Protokoll-PDF)
+### Erwartung: 201, Kalibrierprogramm "new" (Rolle calibration),
+### Kalibrierprotokoll.pdf aussortiert (ignored), Rest "carried"
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="calibration"
+
+true
+--{{boundary}}
+Content-Disposition: form-data; name="calibration_files"; filename="TEIL-0001_OP30_KAL.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/kal/TEIL-0001_OP30_KAL.prg
+--{{boundary}}
+Content-Disposition: form-data; name="calibration_files"; filename="Kalibrierprotokoll.pdf"
+Content-Type: application/pdf
+
+< ./cmm/kal/Kalibrierprotokoll.pdf
+--{{boundary}}--
+
+### ==============================================
+### K2. DATEILISTE - mit Kalibrierprogramm
+### Erwartung: 200, calibration: true, Kalibrierprogramm nach den Vorlagen
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files
+Authorization: Bearer {{token}}
+
+### ==============================================
+### K3. ZIP - Kalibrierprogramm im Ordner Kalibrierung/
+### Erwartung: 200, Kalibrierung/TEIL-0001_OP30_KAL.prg
+### ==============================================
+GET {{baseUrl}}/api/programs/{{programId}}/files/zip
+Authorization: Bearer {{token}}
+
+### ==============================================
+### K4. NEUE VERSION - Kalibrierprogramm über remove (Error)
+### Erwartung: 400 - über „ohne Kalibrierprogramm“ entfernen
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+TEIL-0001_OP30_KAL.prg
+--{{boundary}}--
+
+### ==============================================
+### K5. PROBELAUF - Kalibrierprogramm heißt wie das Messprogramm
+### Erwartung: 200, valid false, „muss anders heißen als das Messprogramm“
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions?dry_run=true
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="calibration_files"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/kal/TEIL-0001_OP30_KAL.prg
+--{{boundary}}--
+
+### ==============================================
+### K6. PROBELAUF - Excel-Vorlage im Messprogramm-Bereich
+### Erwartung: 200, .xlsx aussortiert („über Excel-Protokoll hochladen“),
+### valid false (Keine Änderung gegenüber der Vorversion)
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions?dry_run=true
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
 Content-Disposition: form-data; name="files"; filename="KD00000_TEIL-0001_C.xlsx"
 Content-Type: application/octet-stream
 
 < ./cmm/v1/KD00000_TEIL-0001_C.xlsx
+--{{boundary}}--
+
+### ==============================================
+### K7. ANLEGEN - unbekanntes Upload-Feld (Error)
+### Erwartung: 400 - Upload-Fehler (Unexpected field)
+### ==============================================
+POST {{baseUrl}}/api/programs/cmm
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="operation_id"
+
+{{operationId}}
+--{{boundary}}
+Content-Disposition: form-data; name="datei"; filename="TEIL-0001_OP30.prg"
+Content-Type: application/octet-stream
+
+< ./cmm/v1/TEIL-0001_OP30.prg
+--{{boundary}}--
+
+### ==============================================
+### K8. NEUE VERSION - ohne Kalibrierprogramm
+### Erwartung: 201, removed: TEIL-0001_OP30_KAL.prg („ohne Kalibrierprogramm“)
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="calibration"
+
+false
 --{{boundary}}--
 
 ### ==============================================
@@ -531,7 +651,7 @@ Authorization: Bearer {{token}}
 ### NOTES:
 ### ==============================================
 ### Endpunkte:
-### - POST   /api/programs/cmm                         - anlegen (files[] + Felder)
+### - POST   /api/programs/cmm                         - anlegen (Upload-Felder + Felder)
 ### - POST   /api/programs/:id/cmm-revisions           - neue Version
 ### - GET    /api/programs/:id/files[?version=]        - Dateien einer Version
 ### - GET    /api/programs/:id/files/zip[?version=]    - alle Dateien als ZIP
@@ -541,14 +661,18 @@ Authorization: Bearer {{token}}
 ### Workflow, Rollback, Löschen, Versionsliste: bestehende Programm-Endpunkte
 ###
 ### Felder neue Version:
-### - files[]       hochladen, was man hat; Vergleich per Hash, Rest wird übernommen
+### - files[]             Messprogramm: hochladen, was man hat; Vergleich per Hash, Rest wird übernommen
+### - template_files[]    Excel-Vorlage (.xlsx + .layout.xml)
+### - calibration_files[] Kalibrierprogramm (nur die .prg zählt, PDFs = Protokolle)
 ### - version_type  patch | minor | major (Standard patch)
 ### - comment
 ### - remove        Dateinamen der Vorversion, die wegfallen (mehrfach oder kommagetrennt)
 ### - excel_report  false = Vorlage entfernen, true = Vorlage Pflicht
+### - calibration   false = Kalibrierprogramm entfernen, true = Pflicht
 ###
-### Einordnung nach Endung: .prg Messprogramm, .cad CAD, .pdf Zeichnung,
-### .xlsx + .layout.xml Excel-Vorlage (Zielort PC-DMIS-Vorlagenverzeichnis),
-### .MiniRoutines.xml nur mit eigenen Mini-Routinen (sonst Nebendatei).
-### Aussortiert mit Hinweis: .PRG~, .PRG^, .prg.corrupt
+### Einordnung nach Bereich und Endung: files → .prg Messprogramm, .cad CAD,
+### .pdf Zeichnung, .MiniRoutines.xml nur mit eigenen Mini-Routinen (sonst Nebendatei);
+### template_files → .xlsx + .layout.xml (Zielort PC-DMIS-Vorlagenverzeichnis);
+### calibration_files → .prg Kalibrierprogramm (ZIP: Kalibrierung/).
+### Aussortiert mit Hinweis: .PRG~, .PRG^, .prg.corrupt, Dateien im falschen Bereich
 ### ==============================================

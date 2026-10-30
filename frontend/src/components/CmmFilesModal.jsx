@@ -67,6 +67,7 @@ export default function CmmFilesModal({ program, onClose }) {
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {f.role_label} · {formatFileSize(f.filesize)}
                       {f.target === 'template_dir' && ' · PC-DMIS-Vorlagenverzeichnis'}
+                      {f.role === 'calibration' && ' · Unterordner Kalibrierung'}
                     </div>
                   </div>
                   {f.role === 'drawing' && (

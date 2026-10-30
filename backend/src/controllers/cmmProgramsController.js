@@ -7,6 +7,9 @@
  * Anzeige/Download einzeln und als ZIP. Mit ?dry_run=true prüfen beide Uploads nur und
  * melden die geplante Dateigruppe (Vorschau), ohne etwas zu speichern.
  *
+ * Upload-Felder: `files` (Messprogramm), `template_files` (Excel-Vorlage),
+ * `calibration_files` (Kalibrierprogramm) – jedes mit eigenem Filter.
+ *
  * program_revisions.filename/filepath/file_hash = Hauptdatei (.prg), alle Dateien der Gruppe
  * zusätzlich in program_revision_files (filename = Originalname).
  */
@@ -35,7 +38,13 @@ const sha256 = (filepath) => new Promise((resolve, reject) => {
 });
 
 const removeFiles = (paths) => Promise.all(paths.map(p => fs.unlink(p).catch(() => {})));
-const uploadedPaths = (req) => (req.files || []).map(f => f.path);
+// Multipart-Feld → Upload-Bereich
+const UPLOAD_FIELDS = { files: 'program', template_files: 'template', calibration_files: 'calibration' };
+
+// req.files von multer .fields(): { feld: [Datei, …] } → [{ file, area }]
+const uploadedFiles = (req) => Object.entries(req.files || {})
+  .flatMap(([field, list]) => list.map(file => ({ file, area: UPLOAD_FIELDS[field] })));
+const uploadedPaths = (req) => uploadedFiles(req).map(u => u.file.path);
 
 // Pfad muss im Messprogramm-Verzeichnis liegen (Path-Traversal-Schutz)
 function insideCmmDir(filepath) {
@@ -50,7 +59,8 @@ const toList = (value) => {
     .map(v => String(v).trim()).filter(Boolean);
 };
 
-const parseExcelReport = (value) => {
+// excel_report / calibration: '' = unverändert, 'true' = Pflicht, 'false' = entfernen
+const parseFlag = (value) => {
   if (value === undefined || value === '') return undefined;
   return value === true || value === 'true';
 };
@@ -59,19 +69,25 @@ const parseExcelReport = (value) => {
  * Hochgeladene Dateien einordnen. Nebendateien werden sofort gelöscht und als Hinweis
  * gemeldet; unbekannte Dateien und ungültiges XML sind Fehler.
  */
-async function classifyUploads(reqFiles) {
+const UNKNOWN_REASON = {
+  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml)',
+  template: 'Excel-Vorlage besteht nur aus .xlsx und .layout.xml',
+  calibration: 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen',
+};
+
+async function classifyUploads(items) {
   const uploaded = [];
   const ignored = [];
   const errors = [];
   const discard = [];
 
-  for (const file of reqFiles) {
+  for (const { file, area } of items) {
     const name = decodeOriginalName(file.originalname);
     if (name !== path.basename(name) || /[\\/:*?"<>|\u0000-\u001f]/.test(name)) {
       errors.push(`Ungültiger Dateiname: ${name}`);
       continue;
     }
-    let info = classifyFile(name);
+    let info = classifyFile(name, area);
 
     if (info.kind === 'miniroutines') {
       const xml = await fs.readFile(file.path, 'utf8');
@@ -96,7 +112,12 @@ async function classifyUploads(reqFiles) {
       continue;
     }
     if (info.kind === 'unknown') {
-      ignored.push({ name, reason: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .xlsx, .layout.xml, .MiniRoutines.xml)' });
+      ignored.push({ name, reason: UNKNOWN_REASON[area] });
+      discard.push(file.path);
+      continue;
+    }
+    if (info.kind === 'ignored') {
+      ignored.push({ name, reason: info.reason });
       discard.push(file.path);
       continue;
     }
@@ -231,7 +252,8 @@ exports.createCmmProgram = async (req, res) => {
   let client;
   try {
     let { operation_id, program_number, program_name, description, comment } = req.body;
-    const excelReport = parseExcelReport(req.body.excel_report);
+    const excelReport = parseFlag(req.body.excel_report);
+    const calibration = parseFlag(req.body.calibration);
     const dryRun = req.query.dry_run === 'true';
 
     if (!operation_id || (!program_name && !dryRun)) {
@@ -248,8 +270,8 @@ exports.createCmmProgram = async (req, res) => {
       return res.status(404).json({ error: 'Arbeitsgang nicht gefunden' });
     }
 
-    const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(req.files);
-    const plan = planRevision({ uploaded, previous: null, excelReport });
+    const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(uploadedFiles(req));
+    const plan = planRevision({ uploaded, previous: null, excelReport, calibration });
     const errors = [...classifyErrors, ...plan.errors];
     if (plan.templateName) {
       const conflict = await findTemplateConflict(pool, plan.templateName, null);
@@ -322,7 +344,8 @@ exports.createCmmRevision = async (req, res) => {
   try {
     const { id } = req.params;
     const versionType = VERSION_TYPES.includes(req.body.version_type) ? req.body.version_type : 'patch';
-    const excelReport = parseExcelReport(req.body.excel_report);
+    const excelReport = parseFlag(req.body.excel_report);
+    const calibration = parseFlag(req.body.calibration);
     const remove = toList(req.body.remove);
     const dryRun = req.query.dry_run === 'true';
 
@@ -349,8 +372,8 @@ exports.createCmmRevision = async (req, res) => {
     const previous = prevResult.rows;
     const baseVersion = previous[0]?.version_string || null;
 
-    const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(req.files || []);
-    const plan = planRevision({ uploaded, previous, remove, excelReport });
+    const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(uploadedFiles(req));
+    const plan = planRevision({ uploaded, previous, remove, excelReport, calibration });
     const errors = [...classifyErrors, ...plan.errors];
     if (plan.templateName) {
       const conflict = await findTemplateConflict(pool, plan.templateName, program.id);
@@ -452,7 +475,8 @@ exports.getCmmFiles = async (req, res) => {
       `SELECT id, role, target, filename, filesize, file_hash, mime_type, created_at
        FROM program_revision_files WHERE revision_id = $1
        ORDER BY CASE role WHEN 'main' THEN 1 WHEN 'cad' THEN 2 WHEN 'drawing' THEN 3
-                WHEN 'report_xlsx' THEN 4 WHEN 'report_layout' THEN 5 ELSE 6 END, filename`,
+                WHEN 'report_xlsx' THEN 4 WHEN 'report_layout' THEN 5
+                WHEN 'calibration' THEN 6 ELSE 7 END, filename`,
       [revision.id]
     );
     res.json({
@@ -462,6 +486,7 @@ exports.getCmmFiles = async (req, res) => {
         revision_id: revision.id,
         version: revision.version_string,
         excel_report: result.rows.some(f => f.role === 'report_xlsx'),
+        calibration: result.rows.some(f => f.role === 'calibration'),
         files: result.rows.map(f => ({ ...f, role_label: ROLE_LABELS[f.role] })),
       },
     });
@@ -510,14 +535,14 @@ exports.viewCmmFile = (req, res) => sendFile(req, res, true);
 exports.downloadCmmFile = (req, res) => sendFile(req, res, false);
 
 // GET /api/programs/:id/files/zip?version=1.2.0 – alle Dateien einer Revision;
-// Vorlagen (Zielort PC-DMIS-Vorlagenverzeichnis) im Unterordner
+// Vorlagen (Zielort PC-DMIS-Vorlagenverzeichnis) und Kalibrierprogramm in Unterordnern
 exports.downloadCmmZip = async (req, res) => {
   try {
     const { program, revision, error } = await resolveRevision(req.params.id, req.query.version);
     if (error) return res.status(error[0]).json({ error: error[1] });
 
     const result = await pool.query(
-      'SELECT filename, filepath, target FROM program_revision_files WHERE revision_id = $1 ORDER BY id',
+      'SELECT filename, filepath, role, target FROM program_revision_files WHERE revision_id = $1 ORDER BY id',
       [revision.id]
     );
     for (const f of result.rows) {
@@ -541,7 +566,8 @@ exports.downloadCmmZip = async (req, res) => {
     });
     archive.pipe(res);
     for (const f of result.rows) {
-      const name = f.target === 'template_dir' ? `PC-DMIS-Vorlagen/${f.filename}` : f.filename;
+      const folder = f.target === 'template_dir' ? 'PC-DMIS-Vorlagen/' : f.role === 'calibration' ? 'Kalibrierung/' : '';
+      const name = `${folder}${f.filename}`;
       archive.file(path.resolve(f.filepath), { name });
     }
     await archive.finalize();
