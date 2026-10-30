@@ -38,6 +38,7 @@
 - [x] **Urlaub über den Jahreswechsel:** Tage werden je Kalenderjahr aufgeteilt (`vacations.days_by_year`), Saldo, Übertrag, Listen und PDFs rechnen mit dem Jahresanteil (Branch `fix/urlaub-jahreswechsel`)
 - [x] **Eigene Urlaubsanträge bearbeiten/zurückziehen,** solange nicht genehmigt – `PUT /vacations/:id/own`, `POST /vacations/:id/withdraw` (Status `cancelled`), Buttons in „Meine Anträge“ (Branch `fix/eigene-urlaubsantraege`); genehmigte Urlaube ändert weiterhin nur die Verwaltung
 - [x] **Deaktivierte Maschinen in Auswahllisten:** Bearbeiten-Formulare (Arbeitsgang, Rüstblatt/Einrichteblatt, Spannmittel, Vorrichtung, Wiki, Wartungsplan) bieten nur aktive Maschinen plus die bereits zugeordnete an (markiert „(inaktiv)“, vorher verschwand sie aus der Anzeige bzw. Rüstblatt/Wartungsplan zeigten alle); Listenfilter zeigen weiter alle, inaktive markiert (`utils/machineOptions.js`, Branch `fix/deaktivierte-maschinen-auswahl`). In der Oberfläche gibt es nur Deaktivieren – alte Testmaschinen auf dem Pi deaktivieren statt löschen
+- [ ] **Bauteilseite auf Handybreite zu breit:** bei 390 px Fensterbreite ist die Seite 443 px breit (waagrechtes Scrollen), gesehen am 30.10.2026 auf `/parts/:id` – Ursache noch nicht gesucht
 - [ ] **Wartungspläne kopieren:** Plan (inkl. Checkliste, Intervalle, Skill-Level) auf eine andere Maschine übernehmen – viele Maschinen haben gleiche Pläne; aktuell keine Kopierfunktion
 - [x] **Standardrollen umbenennen/löschen:** Sperre galt fest für alle sechs Standardrollen (Frontend + Backend), jetzt nur noch für `admin` (Code prüft den Namen). Voraussetzung: Programm-Workflow prüft `program.release` statt der Rolle `programmer` (Backend + Buttons, vorher Buttons per `part.update`) (Branch `fix/rollen-workflow-rechte`)
 - [x] **Rollen:** Farbe je Rolle wählbar und gespeichert (feste Palette, Migration `1737000118000`; Branch `feat/rollen-farben`). „Rollen deaktivieren“ **entfällt** – war als Ausweg gedacht, solange die Standardrollen weder umbenannt noch gelöscht werden konnten; das geht seit dem Fix „Standardrollen umbenennen/löschen“
@@ -587,7 +588,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
+Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
 
 0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – danach Schritt 4 (MDS-Agent) planen: Konzept gegen Code prüfen, Spec, offene Punkte klären
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
