@@ -20,7 +20,10 @@ function test(name, fn) {
   }
 }
 
-const f = (name, hash = 'h-' + name) => ({ name, hash, ...classifyFile(name) });
+// Upload-Bereich wie im Formular: Excel-Vorlage im eigenen Bereich, sonst Messprogramm
+const f = (name, area = /\.(xlsx|layout\.xml)$/i.test(name) ? 'template' : 'program') =>
+  ({ name, hash: 'h-' + name, ...classifyFile(name, area) });
+const cal = (name) => f(name, 'calibration');
 const GROUP = [
   f('TEIL-0001_OP30.prg'),
   f('TEIL-0001_OP30.cad'),
@@ -35,8 +38,24 @@ test('Rollen und Zielordner nach Endung, ohne Groß-/Kleinschreibung', () => {
   assert.deepEqual(classifyFile('A.PRG'), { kind: 'file', role: 'main', target: 'program_dir' });
   assert.equal(classifyFile('a.CAD').role, 'cad');
   assert.equal(classifyFile('a.pdf').role, 'drawing');
-  assert.deepEqual(classifyFile('a.xlsx'), { kind: 'file', role: 'report_xlsx', target: 'template_dir' });
-  assert.deepEqual(classifyFile('a.Layout.XML'), { kind: 'file', role: 'report_layout', target: 'template_dir' });
+  assert.deepEqual(classifyFile('a.xlsx', 'template'), { kind: 'file', role: 'report_xlsx', target: 'template_dir' });
+  assert.deepEqual(classifyFile('a.Layout.XML', 'template'), { kind: 'file', role: 'report_layout', target: 'template_dir' });
+});
+
+test('Upload-Bereiche: jeder mit eigenem Filter', () => {
+  // Messprogramm-Bereich: Excel-Vorlage gehört in ihren Bereich
+  assert.equal(classifyFile('a.xlsx').kind, 'ignored');
+  assert.ok(classifyFile('a.layout.xml').reason.includes('Excel-Protokoll'));
+  // Vorlagen-Bereich: nur .xlsx + .layout.xml
+  assert.equal(classifyFile('a.prg', 'template').kind, 'ignored');
+  assert.equal(classifyFile('a.MiniRoutines.xml', 'template').kind, 'ignored');
+  assert.equal(classifyFile('a.docx', 'template').kind, 'unknown');
+  // Kalibrier-Bereich: nur die .prg, PDF = Kalibrierprotokoll
+  assert.deepEqual(classifyFile('KAL.PRG', 'calibration'), { kind: 'file', role: 'calibration', target: 'program_dir' });
+  assert.ok(classifyFile('KAL_Protokoll.pdf', 'calibration').reason.startsWith('Kalibrierprotokoll'));
+  assert.equal(classifyFile('KAL.cad', 'calibration').kind, 'ignored');
+  assert.equal(classifyFile('KAL.MiniRoutines.xml', 'calibration').kind, 'ignored');
+  assert.equal(classifyFile('KAL.PRG~', 'calibration').kind, 'sidecar');
 });
 
 test('PC-DMIS-Nebendateien, Wiederherstellung und Unbekanntes', () => {
@@ -177,6 +196,64 @@ test('excel_report=false entfernt beide Vorlagendateien', () => {
   assert.equal(plan.templateName, null);
   assert.ok(planRevision({ uploaded: [GROUP[3]], previous: GROUP, excelReport: false })
     .errors.some(e => e.includes('ausgeschaltet')));
+});
+
+// --- Kalibrierprogramm ---
+
+const CAL = cal('TEIL-0001_OP30_KAL.prg');
+
+test('Neues Programm mit Kalibrierprogramm', () => {
+  const plan = planRevision({ uploaded: [...GROUP, CAL], previous: null, calibration: true });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.length, 6);
+  assert.equal(plan.files.filter(x => x.role === 'main').length, 1);
+  assert.equal(plan.files.find(x => x.role === 'calibration').name, 'TEIL-0001_OP30_KAL.prg');
+});
+
+test('calibration=true ohne .prg abgelehnt, zwei Kalibrierprogramme abgelehnt', () => {
+  assert.ok(planRevision({ uploaded: GROUP, previous: null, calibration: true })
+    .errors.some(e => e.startsWith('Kalibrierprogramm eingeschaltet')));
+  assert.ok(planRevision({ uploaded: [...GROUP, CAL, cal('ZWEI.prg')], previous: null })
+    .errors.some(e => e.includes('Kalibrierprogramm (.prg)')));
+});
+
+test('Kalibrierprogramm darf nicht wie das Messprogramm heißen', () => {
+  const same = cal('TEIL-0001_OP30.prg');
+  let plan = planRevision({ uploaded: [GROUP[0], same], previous: null });
+  assert.ok(plan.errors.some(e => e.startsWith('Datei doppelt')));
+  // Neue Version: gleichnamige Kalibrierung ersetzt nicht das übernommene Messprogramm
+  plan = planRevision({ uploaded: [same], previous: GROUP });
+  assert.ok(plan.errors.some(e => e.includes('muss anders heißen')));
+  assert.equal(plan.files.find(x => x.role === 'main').status, 'carried');
+});
+
+test('Neue Version: Kalibrierung wird übernommen, geändert oder ersetzt', () => {
+  const prev = [...GROUP, CAL];
+  let plan = planRevision({ uploaded: [{ ...GROUP[0], hash: 'neu' }], previous: prev });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.find(x => x.role === 'calibration').status, 'carried');
+  plan = planRevision({ uploaded: [{ ...CAL, hash: 'neu' }], previous: prev, calibration: true });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.find(x => x.role === 'calibration').status, 'changed');
+  plan = planRevision({ uploaded: [cal('TEIL-0001_OP30_KAL2.prg')], previous: prev });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.removed[0].name, 'TEIL-0001_OP30_KAL.prg');
+  assert.equal(plan.files.filter(x => x.role === 'calibration').length, 1);
+});
+
+test('Kalibrierung nur über calibration=false entfernen', () => {
+  const prev = [...GROUP, CAL];
+  let plan = planRevision({ uploaded: [], previous: prev, remove: ['TEIL-0001_OP30_KAL.prg'] });
+  assert.ok(plan.errors.some(e => e.includes('calibration=false')));
+  plan = planRevision({ uploaded: [], previous: prev, calibration: false });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.removed[0].reason, 'ohne Kalibrierprogramm');
+  assert.equal(plan.files.length, 5);
+  assert.ok(planRevision({ uploaded: [CAL], previous: GROUP, calibration: false })
+    .errors.some(e => e.includes('ausgeschaltet')));
+  // Ohne Kalibrierung in der Vorversion ändert calibration=false nichts
+  assert.ok(planRevision({ uploaded: [], previous: GROUP, calibration: false })
+    .errors.includes('Keine Änderung gegenüber der Vorversion'));
 });
 
 console.log(`\n${passed} Tests bestanden`);
