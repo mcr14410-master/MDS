@@ -98,7 +98,7 @@ export default function CmmProgramsList({ operationId }) {
             Noch keine Messprogramme
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Den PC-DMIS-Ordner des Programms hochladen – .prg, .cad, Prüfzeichnung und ggf. Excel-Vorlage.
+            Den PC-DMIS-Ordner des Programms hochladen – .prg, .cad, Prüfzeichnung; Excel-Vorlage und Kalibrierprogramm im eigenen Bereich.
           </p>
           {hasPermission('part.update') && uploadButton('Erstes Messprogramm hochladen')}
         </div>

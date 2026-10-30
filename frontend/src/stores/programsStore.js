@@ -88,13 +88,16 @@ export const useProgramsStore = create((set, get) => ({
 
   // Messprogramme (KMG): Dateigruppe hochladen. programId = null → neues Programm.
   // dryRun → nur prüfen, Antwort ist die Vorschau ({ valid, errors, files, removed, ... })
-  uploadCmm: async ({ programId = null, fields, files, remove = [], dryRun = false }) => {
+  // Drei Upload-Bereiche: files (Messprogramm), templateFiles (Excel-Vorlage), calibrationFiles
+  uploadCmm: async ({ programId = null, fields, files, templateFiles = [], calibrationFiles = [], remove = [], dryRun = false }) => {
     const formData = new FormData();
     Object.entries(fields).forEach(([key, value]) => {
       if (value !== '' && value !== null && value !== undefined) formData.append(key, value);
     });
     remove.forEach((name) => formData.append('remove', name));
     files.forEach((file) => formData.append('files', file, file.name));
+    templateFiles.forEach((file) => formData.append('template_files', file, file.name));
+    calibrationFiles.forEach((file) => formData.append('calibration_files', file, file.name));
     const url = programId
       ? `${API_ENDPOINTS.PROGRAMS}/${programId}/cmm-revisions`
       : `${API_ENDPOINTS.PROGRAMS}/cmm`;
