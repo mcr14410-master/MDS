@@ -156,6 +156,11 @@ function planRevision({ uploaded, previous, remove = [], excelReport, calibratio
       errors.push('Das Messprogramm (.prg) kann nicht entfernt, nur ersetzt werden');
       continue;
     }
+    // .prg findet die .cad über den Namen – ohne sie fehlt das Bauteil im Programm
+    if (file.role === 'cad') {
+      errors.push('Die CAD-Datei (.cad) kann nicht entfernt, nur ersetzt werden');
+      continue;
+    }
     if (file.role === 'report_xlsx' || file.role === 'report_layout') {
       errors.push('Excel-Vorlage nur zusammen entfernen: „ohne Excel-Protokoll“ (excel_report=false)');
       continue;
