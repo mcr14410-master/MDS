@@ -298,6 +298,7 @@ exports.getPrograms = async (req, res) => {
         p.*,
         pr.version_string as current_version,
         pr.version_string as version,
+        rel.version_string as released_version,
         pr.filename,
         pr.filesize as file_size,
         pr.file_hash,
@@ -315,6 +316,7 @@ exports.getPrograms = async (req, res) => {
     const fromClause = `
       FROM programs p
       LEFT JOIN program_revisions pr ON p.current_revision_id = pr.id
+      LEFT JOIN program_revisions rel ON p.released_revision_id = rel.id
       LEFT JOIN workflow_states ws ON p.workflow_state_id = ws.id
       LEFT JOIN operations o ON p.operation_id = o.id
       LEFT JOIN parts pt ON o.part_id = pt.id
@@ -432,6 +434,7 @@ exports.getProgramById = async (req, res) => {
         p.*,
         ws.name as workflow_state,
         ws.color as workflow_color,
+        rel.version_string as released_version,
         o.op_number as operation_number,
         o.op_name as operation_name,
         pt.part_number,
@@ -440,6 +443,7 @@ exports.getProgramById = async (req, res) => {
         u.username as created_by_username
       FROM programs p
       LEFT JOIN workflow_states ws ON p.workflow_state_id = ws.id
+      LEFT JOIN program_revisions rel ON p.released_revision_id = rel.id
       LEFT JOIN operations o ON p.operation_id = o.id
       LEFT JOIN parts pt ON o.part_id = pt.id
       LEFT JOIN machines m ON o.machine_id = m.id
@@ -791,7 +795,8 @@ exports.getProgramRevisions = async (req, res) => {
         u_created.username as created_by_username,
         u_optimized.username as optimized_by_username,
         u_released.username as released_by_username,
-        p.current_revision_id = pr.id as is_current
+        p.current_revision_id = pr.id as is_current,
+        p.released_revision_id IS NOT DISTINCT FROM pr.id as is_released
       FROM program_revisions pr
       LEFT JOIN workflow_states ws ON pr.workflow_state_id = ws.id
       LEFT JOIN users u_created ON pr.created_by = u_created.id

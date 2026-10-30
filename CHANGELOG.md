@@ -17,6 +17,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Messprogramme, neue Version: In der Vorschau lässt sich jetzt jede optionale Datei gleich behandeln. „entfernen“ bei Excel-Vorlage oder Kalibrierprogramm schaltet den passenden Haken aus, „behalten“ wieder ein. Messprogramm und CAD-Datei lassen sich nur ersetzen, nicht entfernen – PC-DMIS braucht die CAD-Datei passend zum Programm.
+- NC- und Messprogramme merken sich jetzt, welche Version freigegeben ist. Lädt jemand eine neue Version hoch, steht bei der Version „freigegeben: 1.1.0“, bis die neue Version freigegeben ist; im Versionsverlauf ist die freigegebene Version markiert. Programme, die beim Update schon freigegeben sind, werden übernommen.
+
+### Added
+- Freigabe-Zeiger `programs.released_revision_id` (Migration 1737000123000, Bestand: freigegebene Programme → aktuelle Version): wird beim Wechsel auf „released“ gesetzt, neue Version, Rollback und Archivieren lassen ihn stehen. API: `released_version` in `GET /api/programs`, `GET /api/programs/:id` und `GET /api/programs/:id/files`, `is_released` in `GET /api/programs/:id/revisions`; REST-Szenarien `tests/test-programs-released.http`. Grundlage für den MDS-Agenten (Spec MESSPROGRAMME_AGENT_SPEC.md, PR 4.1)
 
 ### Changed
 - Messprogramm-Vorschau (neue Version): „entfernen“/„behalten“ auch für Excel-Vorlage und Kalibrierprogramm, wirkt über den Schalter des Bereichs (`excel_report`/`calibration` = false); Messprogramm und `.cad` zeigen „nur ersetzen“. Backend: `remove` der `.cad` → Fehler „kann nicht entfernt, nur ersetzt werden“ (die `.prg` findet sie über den Namen); REST-Szenario K9

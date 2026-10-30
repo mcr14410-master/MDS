@@ -7,6 +7,7 @@ import { toast } from './Toaster';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowActions from './WorkflowActions';
 import ToolListReadOnly from './ToolListReadOnly';
+import ReleasedVersionNote from './ReleasedVersionNote';
 
 export default function ProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision, onStatusChange }) {
   const { hasPermission } = useAuthStore();
@@ -78,7 +79,10 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
         {/* Version & Size */}
         <div className="flex items-center justify-between">
           <span className="text-gray-600 dark:text-gray-400">Version:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>
+          <span className="text-right">
+            <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>
+            <ReleasedVersionNote version={program.version} releasedVersion={program.released_version} className="block" />
+          </span>
         </div>
 
         <div className="flex items-center justify-between">
