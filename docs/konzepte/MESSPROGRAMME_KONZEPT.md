@@ -195,14 +195,15 @@ Was davon das MDS übernimmt:
 verwendet → gehört zur Dateigruppe und wird **mit dem Hauptprogramm versioniert** (ändert sich die
 Tasterkonfiguration, kommt die passende Kalibrierung in derselben Version mit). Im Ordner liegt sonst nur
 das Kalibrierprotokoll (PDF) – ein Ergebnis, kein Programmbestandteil.
-- neue Rolle `calibration` (höchstens eine je Revision), Ziel `program_dir`; im ZIP eigener Unterordner
-  (analog `PC-DMIS-Vorlagen/`)
-- Erkennung beim Upload: Unterordner mit „kalibrier“ im Namen (heute übergeht der Ordner-Upload alle
-  Unterordner), sonst Auswahl im Formular
-- im Kalibrierordner zählt **nur die `.prg`**; PDFs dort sind Protokolle und werden mit Hinweis aussortiert –
-  sonst ordnet der Upload sie als Prüfzeichnung ein
-- Name: Vorschlag `KD00000-00004-M1_KAL.prg` (offen)
-- Bis zur Umsetzung: Kalibrierprogramm als eigenes Messprogramm im selben Arbeitsgang hochladen (lose verknüpft)
+- Rolle `calibration` (höchstens eine je Revision), Ziel `program_dir`; im ZIP Unterordner `Kalibrierung/`
+  (analog `PC-DMIS-Vorlagen/`) – wird nicht vom Hauptprogramm aufgerufen, Lage daher frei
+- **Umgesetzt (30.10.2026):** Upload in drei Bereichen mit eigenem Filter – Messprogramm, Excel-Vorlage
+  und Kalibrierprogramm je mit Schalter und eigener Ablagefläche. Der Bereich bestimmt die Rolle, nicht
+  Ordner- oder Dateiname (`04_Taster kalibrieren` liegt heute neben dem Programmordner, nicht darin) –
+  das passt auch für Betriebe ohne diese Ablage
+- im Kalibrierbereich zählt **nur die `.prg`**; PDFs sind Protokolle und werden mit Hinweis aussortiert;
+  `.cad`/`.MiniRoutines.xml` gibt es heute nicht – bei Bedarf nachrüsten
+- Name darf nicht dem Messprogramm entsprechen; Schema-Vorschlag `KD00000-00004-M1_KAL.prg` → Programmnummern-Konzept
 
 **Überwachungsfelder:** Die Kopfwerte stehen nicht im PC-DMIS-„Teilenamen“, sondern in
 Überwachungsfeldern mit Abfrage am Laufbeginn (Vorgabewerte im Programm, von Hand gepflegt): Kunde,
@@ -752,7 +753,7 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
 - [ ] Übertragungswege der Steuerungen (Heidenhain, Siemens, Mazatrol 640M) – erst für Schritt 8
 - [x] Gehören noch weitere Dateien zu einem Programm? Tasterdateien sind global, aber das
       **Kalibrierprogramm** je Bauteil gehört dazu (30.10.2026) → 4.2a
-- [ ] Kalibrierprogramm umsetzen: Rolle `calibration`, Erkennung beim Upload, Name (4.2a)
+- [x] Kalibrierprogramm umsetzen: Rolle `calibration`, eigener Upload-Bereich (30.10.2026) → 4.2a; Name offen (Programmnummern)
 - [ ] Ausgabepfade unabhängig von der Ordnerablage (fester Messdaten-Stamm, Pfad aus Überwachungsfeldern) (4.2a)
 - [ ] Überwachungsfelder aus dem MDS vorbelegen (Textdatei oder Automation) – nach Schritt 5 (4.2a)
 - [x] `.prg` wird von PC-DMIS regelmäßig gespeichert, vermutlich bei jedem Lauf (19.10.2026) → 4.4

@@ -42,18 +42,21 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** – noch keine Änderungen.
+**Nächstes Release**
+
+- [ ] Migration `1737000122000_add-cmm-calibration-role` (nur Prüfregel, keine Daten) läuft im Deploy mit
+- [ ] Klicktest Messprogramm: neue Version mit Kalibrierprogramm (Schalter, Ordner `04_…` hineinziehen → Protokoll-PDF aussortiert), ZIP enthält `Kalibrierung/`
+- [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
 
 **Noch offen aus 2.16.0** (kein neuer Deploy nötig):
 
-- [ ] ZIP eines Messprogramms in PC-DMIS öffnen (Programm, CAD, ggf. Excel-Vorlage im Vorlagenverzeichnis)
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
 
 ---
 
 ## Erledigt: Release 2.16.0 (29.10.2026)
 
-Messprogramme im eigenen Reiter (#225), Ordner-Upload ohne Zusatzdateien/Unterordner (#224), Programm bearbeiten und Nummernvergabe (#226), PDF-Worker vom eigenen Server (#222). Keine Migration. Deploy grün, Tag `v2.16.0`. Bereich „Messprogramme“ beim Operationstyp „CNC-Messen“ und an den betroffenen Arbeitsgängen eingeschaltet, Arbeitsgang anlegen/bearbeiten geprüft. Restprüfung 30.10.: Programm umbenennen, getrennte Reiter NC-/Messprogramme, PDF-Vorschau und Ordner-Upload eines echten PC-DMIS-Ordners in Ordnung.
+Messprogramme im eigenen Reiter (#225), Ordner-Upload ohne Zusatzdateien/Unterordner (#224), Programm bearbeiten und Nummernvergabe (#226), PDF-Worker vom eigenen Server (#222). Keine Migration. Deploy grün, Tag `v2.16.0`. Bereich „Messprogramme“ beim Operationstyp „CNC-Messen“ und an den betroffenen Arbeitsgängen eingeschaltet, Arbeitsgang anlegen/bearbeiten geprüft. Restprüfung 30.10.: Programm umbenennen, getrennte Reiter NC-/Messprogramme, PDF-Vorschau und Ordner-Upload eines echten PC-DMIS-Ordners in Ordnung. Funktionstest am Mess-PC 30.10.: Testprogramm mit Excel-Protokollvorlage ins MDS, am Mess-PC samt Vorlage gelöscht, ZIP aus dem MDS geladen, Vorlage ins Vorlagenverzeichnis – PC-DMIS erkennt und verwendet sie sofort.
 
 ---
 
