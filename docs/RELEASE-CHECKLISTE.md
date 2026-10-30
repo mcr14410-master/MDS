@@ -42,7 +42,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release**
+**Release 2.17.0** – Kalibrierprogramm und eigene Upload-Bereiche für Messprogramme (#236). Eine Migration.
 
 - [ ] Migration `1737000122000_add-cmm-calibration-role` (nur Prüfregel, keine Daten) läuft im Deploy mit
 - [ ] Klicktest Messprogramm: neue Version mit Kalibrierprogramm (Schalter, Ordner `04_…` hineinziehen → Protokoll-PDF aussortiert), ZIP enthält `Kalibrierung/`
