@@ -17,9 +17,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Der Download-Knopf an NC- und Messprogrammen lädt jetzt die freigegebene Version. Ist schon eine neuere Version in Arbeit, gibt es daneben einen eigenen Knopf „Entwurf …“ zum Bearbeiten. Programme ohne Freigabe werden wie bisher geladen, mit dem Hinweis „nicht freigegeben“.
+- Rollen & Berechtigungen: Die Rechte sind jetzt deutsch beschriftet und alphabetisch gruppiert; Urlaub und Zeiterfassung erscheinen je nur noch einmal.
 
 ### Fixed
 - Download lud immer die aktuelle Version, auch wenn sie noch Entwurf war (Befund nach 2.18.0): Karten (NC und Messprogramm) und Übersichten laden die freigegebene Version (`released_version`), ein neuerer Entwurf hat einen eigenen Knopf; die Dateiliste zeigt beim Entwurf einen Hinweis und lädt die angezeigte Version ausdrücklich. `GET /api/programs/:id/download` versteht `?version=x.y.z` (400 bei ungültiger, 404 bei unbekannter Version); ohne `version` unverändert die aktuelle. Knopfleiste der Karten bricht um
+- Rechte-Kategorie „Urlaub“ doppelt (Befund nach 2.18.0): Migration 1737000125000 vereinheitlicht `permissions.category` (`Urlaub` → `vacations`, `Zeiterfassung` → `time_tracking`; nur das Feld, Rechte und Zuordnungen unverändert). Die Rollenverwaltung zeigt deutsche Namen aus `utils/permissionCategories.js`, sortiert, unbekannte Schlüssel unverändert
 
 ---
 
