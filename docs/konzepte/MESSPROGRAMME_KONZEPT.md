@@ -1,6 +1,6 @@
 # Messprogramm-Verwaltung (KMG / PC-DMIS) + MDS-Agent
 
-**Erstellt:** 2026-10-13 · **Aktualisiert:** 2026-10-14 (sauberes Arbeitsverzeichnis, CNC, Vorlagenpfad, `.layout.xml`, Abschließen nur durch User, mehrere Bereitstellungen, eine Vorlage je Programm) · 2026-10-19 (`.prg` wird beim Laufstart gespeichert, PC-DMIS-Nebendateien, DocumentRecovery, MiniRoutines.xml, PC-DMIS-Automation; Testergebnisse: Laufdaten im Programm, Bereinigung, Vorlagenname, Ausgabepfade, Mini-Routinen) · 2026-10-30 (Praxis: Kalibrierprogramm, Überwachungsfelder, Ordnerablage, Vorlagenname = Programmnummer)
+**Erstellt:** 2026-10-13 · **Aktualisiert:** 2026-10-14 (sauberes Arbeitsverzeichnis, CNC, Vorlagenpfad, `.layout.xml`, Abschließen nur durch User, mehrere Bereitstellungen, eine Vorlage je Programm) · 2026-10-19 (`.prg` wird beim Laufstart gespeichert, PC-DMIS-Nebendateien, DocumentRecovery, MiniRoutines.xml, PC-DMIS-Automation; Testergebnisse: Laufdaten im Programm, Bereinigung, Vorlagenname, Ausgabepfade, Mini-Routinen) · 2026-10-30 (Praxis: Kalibrierprogramm, Überwachungsfelder, Ordnerablage, Vorlagenname = Programmnummer; Spec Schritt 4 → [MESSPROGRAMME_AGENT_SPEC.md](MESSPROGRAMME_AGENT_SPEC.md))
 **Status:** Konzept / Diskussionsgrundlage – Umsetzung später durch Claude Code nach `CLAUDE.md`
 (Diagnose-First, Branch je Schritt, Migrationen nur über `pgm`, Rechte nur für `admin`).
 SQL hier ist **Entwurf** zur Verständigung, keine fertige Migration.
@@ -220,6 +220,11 @@ aus den Überwachungsfeldern zusammengesetzt; dann hängt das Programm nicht meh
 Rückweg der Ergebnisse (PDF/Excel) ins MDS, verknüpft mit Auftrag und Seriennummer = Stufe 3.
 
 ### 4.3 Agent, Zustände, Transfers
+
+> **Ab Schritt 4 gilt die [Spec](MESSPROGRAMME_AGENT_SPEC.md) (30.10.2026):** Freigabe-Zeiger
+> `programs.released_revision_id`, festgehaltene Version je Bereitstellung (`agent_deployment_programs`),
+> `timestamptz`, Schlüssel nur als Hash, Dateizustand über `target` + relativen Pfad. Der Entwurf unten
+> bleibt als Begründung stehen.
 
 ```sql
 CREATE TABLE agents (
@@ -709,9 +714,9 @@ Quellen: PC-DMIS Object Library – [ApplicationObjectEvents](https://docs.hexag
 | 1 | Migration: `programs.kind`, `program_revision_files`, Maschinentyp „Messmaschine“, Rechte | Datenmodell steht |
 | 2 | Backend: Upload mit mehreren Dateien, Download einzeln/als ZIP, `.http`-Tests | Messprogramme manuell im MDS pflegbar |
 | 3 | Frontend: Menüpunkt „Messprogramme“ | **Nutzbar ohne Agent** (manuell hoch/runter) |
-| 4 | `agents`, `agent_deployments`, Manifest-/Report-API, Agent v1: Bereitstellen | Mess-PC arbeitet lokal auf `D:\` |
-| 5 | Abschließen + Eingang (unverändert löschen, geändert hochladen) | sauberes Arbeitsverzeichnis, Kreislauf geschlossen |
-| 6 | Protokollvorlage als Teil der Programmgruppe (Vorlagenverzeichnis, Pflicht-Layout, Gesundheitscheck) | Protokolle zuverlässig mit Messwerten |
+| 4 | Freigabe-Zeiger, `agents`, `agent_deployments`, Manifest-/Report-API, Agent v1: Bereitstellen **und Abschließen ohne Eingang**, Vorlagenverzeichnis mit Reihenfolge und Gesundheitscheck (Plan: [Spec](MESSPROGRAMME_AGENT_SPEC.md) 9) | Mess-PC arbeitet lokal auf `D:\`, nach „Fertig“ leer |
+| 5 | Eingang (geändert hochladen statt von Hand), „Änderung melden“, Nachfrage-Frist | Kreislauf geschlossen |
+| 6 | Protokollvorlage als Teil der Programmgruppe – MDS-Seite mit Schritt 2, Agent-Seite mit Schritt 4; offen nur Vorlagenname aus dem `.prg` (Automation) | Protokolle zuverlässig mit Messwerten |
 | 7 | Erstimport vom Netzlaufwerk | Altbestand übernommen, Netzlaufwerk nur noch Archiv |
 | 8 | Agent-Modul NC-Transfer (Steuerungs-Adapter, Rüsten/Abschließen an der CNC) | siehe 5.4, Roadmap Maschinen-Terminal |
 | 9 | Agent-Modul TopSolid | siehe Roadmap TopSolid |
@@ -726,7 +731,7 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
 - [x] Erreicht der Mess-PC den Pi? → **Ja**, MDS im Browser auf dem Mess-PC erreichbar (14.10.2026)
 - [x] Pfad Vorlagenverzeichnis → `C:\Users\Public\Documents\Hexagon\PC-DMIS\2024.1\ExcelFormReport\Templates`
 - [ ] Schreibrecht des Agenten im Vorlagenverzeichnis prüfen (`Public` ist normalerweise für alle
-      Benutzer beschreibbar – beim ersten Test bestätigen)
+      Benutzer beschreibbar – beim ersten Test bestätigen) → prüft der Selbsttest des Agenten (Spec 6.1)
 - [x] Je Programm eine eigene Protokollvorlage, Name `KdNr_TeilNr_Rev.xlsx` / `.layout.xml` (14.10.2026)
 - [x] Vorlagenname steht im `.prg` (`EXCELFORMREPORT/TEMPLATE=KUNDE_TEIL-0001`, ohne Endung) →
       MDS benennt Vorlagen nie um; Agent kann prüfen, ob die referenzierte Vorlage bereitliegt (19.10.2026)
@@ -747,8 +752,8 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
       ins MDS als Fehler auffallen.
 - [x] Abschließen nur durch den User; nach einer gewissen Zeit Nachfrage (14.10.2026)
 - [x] Mehrere Bereitstellungen gleichzeitig; ein Bauteil kann mehrere Wochen in Arbeit sein (14.10.2026)
-- [ ] Neue Freigabe während einer laufenden Bereitstellung: automatisch austauschen oder erst nach
-      Bestätigung am Mess-PC? (Vorschlag siehe 5.1 „Neue Freigabe während der Bereitstellung“)
+- [x] Neue Freigabe während einer laufenden Bereitstellung → Version je Bereitstellung festgehalten,
+      Hinweis „neue Version verfügbar“, Tausch nur per „Aktualisieren“ (30.10.2026, Spec E3)
 - [ ] Nachfrage-Frist: 14 Tage ohne Aktivität passend?
 - [ ] Übertragungswege der Steuerungen (Heidenhain, Siemens, Mazatrol 640M) – erst für Schritt 8
 - [x] Gehören noch weitere Dateien zu einem Programm? Tasterdateien sind global, aber das
@@ -779,4 +784,4 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
       Messdaten-Verzeichnis zeigen → Pfad-Prüfung mit Warnung (4.4) (19.10.2026)
 - [x] Freigaberecht → `program.release` mitbenutzen, kein eigenes Recht (28.10.2026) → 4.6
 - [ ] Menüpunkt eigenständig oder unter „NC-Programme“ (Oberfläche, nicht Datenmodell)
-- [ ] Agent als Tray-Programm genügt, oder von Anfang an Dienst (Mess-PC ohne Anmeldung)?
+- [x] Agent als Tray-Programm, .NET Framework 4.8, Autostart-Ordner – kein Dienst (30.10.2026, Spec E6)
