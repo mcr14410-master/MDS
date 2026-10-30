@@ -618,7 +618,7 @@ bestätigt → Programm 1.0.0 angelegt. Danach Netzlaufwerk nur noch lesend/Arch
 - **Auth:** API-Key je Agent, im MDS nur als Hash; Endpoints unter `/api/agent/*` mit eigener
   Middleware (nicht JWT). Agent darf nur lesen, was im Manifest steht, und nur in den Eingang
   schreiben.
-- **Ablage im Repo:** `tools/mds-agent/`.
+- **Ablage:** eigenes privates Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent) (30.10.2026, Spec E9).
 
 ### 6.1 PC-DMIS-Automation (optional, Ausbaustufe)
 

@@ -332,7 +332,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
   - [ ] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP)
   - [ ] 4.5 Backend Agent-API (Manifest, Dateien, Bericht, Fertig) + Integrationstest mit simuliertem Agenten
   - [ ] 4.6 Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen/Aktualisieren/Fertig/Verwerfen
-  - [ ] 4.7 Agent (C#, Tray, .NET 4.8): Grundgerüst + Bereitstellen, Gesundheitscheck, Offline
+  - [ ] 4.7 Agent (C#, Tray, .NET 4.8, eigenes privates Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent)): Grundgerüst + Bereitstellen, Gesundheitscheck, Offline
   - [ ] 4.8 Agent: Abschließen + Aktualisieren (Nachfrage „nur gemessen?“, Nebendateien), Checkliste am Mess-PC
 - [ ] 5 – Eingang (statt Hochladen von Hand), „Änderung melden“, Nachfrage-Frist
 - [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig), Rundlauf MDS → ZIP → Mess-PC am 30.10. geprüft; Agent-Seite (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck) kommt mit Schritt 4
