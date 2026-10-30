@@ -173,6 +173,7 @@ Offen:
 Ideensammlung: [docs/konzepte/SETTINGS-WISHLIST.md](docs/konzepte/SETTINGS-WISHLIST.md)
 - [ ] `system_settings` (key/value/category) + Admin-API mit Cache
 - [ ] Admin → Einstellungen: Firmenname/Logo, Standardwerte, Intervalle, Schwellwerte
+- [ ] **Module ein-/ausschalten** (MDS betriebsneutral): Schalter je Modul in den Systemeinstellungen, Daten bleiben erhalten, Abhängigkeiten; zuerst Messprogramme/PC-DMIS und Agent, bestehende Module bei Bedarf. Agent-Module zentral je Gerät im MDS. Konzept: [MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md)
 
 ---
 
@@ -330,7 +331,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [ ] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, Erkennung über Unterordner, Protokoll-PDFs dort aussortieren (Konzept 4.2a, 30.10.2026); bis dahin als eigenes Messprogramm hochladen
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
-Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.
+Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: `agents` bekommt von Anfang an eine Modulliste ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4). Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.
 
 ---
 
