@@ -5,6 +5,7 @@
 const assert = require('node:assert/strict');
 const {
   decodeOriginalName, classifyFile, hasCustomMiniRoutines, templateBaseName, planRevision,
+  windowsSafeName, localDirFor, deviceLocation, zipEntryName,
 } = require('../src/services/cmmProgramFiles');
 
 let passed = 0;
@@ -256,6 +257,48 @@ test('Kalibrierung nur über calibration=false entfernen', () => {
   // Ohne Kalibrierung in der Vorversion ändert calibration=false nichts
   assert.ok(planRevision({ uploaded: [], previous: GROUP, calibration: false })
     .errors.includes('Keine Änderung gegenüber der Vorversion'));
+});
+
+// --- Ablage am Gerät und im ZIP (Spec MESSPROGRAMME_AGENT_SPEC.md 5.3) ---
+
+test('Ordnername: Windows-verbotene Zeichen und Rand', () => {
+  assert.equal(windowsSafeName('TEIL-0001'), 'TEIL-0001');
+  assert.equal(windowsSafeName('A/B:C*D?"<>|'), 'A_B_C_D_____');
+  assert.equal(windowsSafeName('  Teil. . '), 'Teil');
+  assert.equal(windowsSafeName('Prüfteil Ä'), 'Prüfteil Ä');
+  assert.equal(windowsSafeName('..'), '_');
+  assert.equal(windowsSafeName(''), '_');
+  assert.equal(windowsSafeName(null), '_');
+  assert.equal(windowsSafeName('x'.repeat(100)).length, 80);
+});
+
+test('Ordnername: reservierte Windows-Namen', () => {
+  assert.equal(windowsSafeName('CON'), 'CON_');
+  assert.equal(windowsSafeName('nul'), 'nul_');
+  assert.equal(windowsSafeName('COM1'), 'COM1_');
+  assert.equal(windowsSafeName('con.5'), 'con_.5');
+  assert.equal(windowsSafeName('CONSOLE'), 'CONSOLE');
+});
+
+test('Programmordner: Teilenummer\\Programmnummer, ohne Teil eigener Ordner', () => {
+  assert.equal(localDirFor('TEIL-0001', 'KD00000-00004-M1'), 'TEIL-0001\\KD00000-00004-M1');
+  assert.equal(localDirFor(null, 'OP30-001'), '_ohne-Teil\\OP30-001');
+  assert.equal(localDirFor('A/B', 'X:1'), 'A_B\\X_1');
+});
+
+test('Gerät und ZIP: gleiche Struktur, Kalibrierung im Unterordner, Vorlage im Vorlagenverzeichnis', () => {
+  const dir = 'TEIL-0001\\KD00000-00004-M1';
+  const main = { role: 'main', target: 'program_dir', filename: 'KD00000-00004-M1.prg' };
+  const cad = { role: 'cad', target: 'program_dir', filename: 'KD00000-00004-M1.cad' };
+  const kal = { role: 'calibration', target: 'program_dir', filename: 'KD00000-00004-M1_KAL.prg' };
+  const xlsx = { role: 'report_xlsx', target: 'template_dir', filename: 'KD00000-00004-M1.xlsx' };
+  assert.deepEqual(deviceLocation(main, dir), { target: 'program_dir', rel_path: `${dir}\\KD00000-00004-M1.prg` });
+  assert.deepEqual(deviceLocation(cad, dir), { target: 'program_dir', rel_path: `${dir}\\KD00000-00004-M1.cad` });
+  assert.deepEqual(deviceLocation(kal, dir), { target: 'program_dir', rel_path: `${dir}\\Kalibrierung\\KD00000-00004-M1_KAL.prg` });
+  assert.deepEqual(deviceLocation(xlsx, dir), { target: 'template_dir', rel_path: 'KD00000-00004-M1.xlsx' });
+  assert.equal(zipEntryName(main), 'KD00000-00004-M1.prg');
+  assert.equal(zipEntryName(kal), 'Kalibrierung/KD00000-00004-M1_KAL.prg');
+  assert.equal(zipEntryName(xlsx), 'PC-DMIS-Vorlagen/KD00000-00004-M1.xlsx');
 });
 
 console.log(`\n${passed} Tests bestanden`);

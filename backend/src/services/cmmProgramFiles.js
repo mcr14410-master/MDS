@@ -246,6 +246,50 @@ function planRevision({ uploaded, previous, remove = [], excelReport, calibratio
   return { files, removed, errors, warnings, templateName };
 }
 
+// --- Ablage am Gerät und im ZIP (Spec MESSPROGRAMME_AGENT_SPEC.md 5.3) ---
+
+const CALIBRATION_FOLDER = 'Kalibrierung';
+const TEMPLATE_ZIP_FOLDER = 'PC-DMIS-Vorlagen';
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+
+/**
+ * Ordnername für Windows: verbotene Zeichen → '_', keine Punkte/Leerzeichen am Rand,
+ * reservierte Namen (CON, NUL, COM1 …) bekommen ein '_' hinter den Namensteil, höchstens 80 Zeichen.
+ */
+function windowsSafeName(name, maxLength = 80) {
+  let safe = String(name ?? '').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim();
+  safe = safe.slice(0, maxLength).replace(/[. ]+$/, '');
+  if (!safe) return '_';
+  const dot = safe.indexOf('.');
+  const base = dot === -1 ? safe : safe.slice(0, dot);
+  if (WINDOWS_RESERVED.test(base)) safe = `${base}_${safe.slice(base.length)}`;
+  return safe;
+}
+
+/** Programmordner am Gerät, relativ zum Programmordner aus der Agent-ini: <Teilenummer>\<Programmnummer> */
+function localDirFor(partNumber, programNumber) {
+  const part = partNumber ? windowsSafeName(partNumber) : '_ohne-Teil';
+  return `${part}\\${windowsSafeName(programNumber)}`;
+}
+
+// Pfadteile einer Datei unterhalb ihres Zielordners (Programmordner bzw. Vorlagenverzeichnis)
+function pathParts({ role, target, filename }) {
+  if (target === 'template_dir') return [filename];
+  return role === 'calibration' ? [CALIBRATION_FOLDER, filename] : [filename];
+}
+
+/** Ziel einer Datei am Gerät: { target, rel_path } – rel_path relativ zum Ordner aus der Agent-ini */
+function deviceLocation(file, localDir) {
+  const parts = file.target === 'template_dir' ? pathParts(file) : [localDir, ...pathParts(file)];
+  return { target: file.target, rel_path: parts.join('\\') };
+}
+
+/** Name im ZIP-Download: Vorlagen unter PC-DMIS-Vorlagen/, Kalibrierprogramm unter Kalibrierung/ */
+function zipEntryName(file) {
+  const parts = file.target === 'template_dir' ? [TEMPLATE_ZIP_FOLDER, ...pathParts(file)] : pathParts(file);
+  return parts.join('/');
+}
+
 module.exports = {
   ROLE_LABELS,
   UPLOAD_AREAS,
@@ -254,4 +298,8 @@ module.exports = {
   hasCustomMiniRoutines,
   templateBaseName,
   planRevision,
+  windowsSafeName,
+  localDirFor,
+  deviceLocation,
+  zipEntryName,
 };

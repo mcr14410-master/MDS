@@ -119,6 +119,7 @@ const timeTrackingRoutes = require('./routes/timeTrackingRoutes');
 const terminalRoutes = require('./routes/terminalRoutes');
 const agentsRoutes = require('./routes/agentsRoutes');
 const agentApiRoutes = require('./routes/agentApiRoutes');
+const deploymentsRoutes = require('./routes/deploymentsRoutes');
 const cronRoutes = require('./routes/cronRoutes');
 const cronService = require('./services/cronService');
 
@@ -153,6 +154,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/terminal', terminalRoutes);
 app.use('/api/agents', agentsRoutes);     // Agenten verwalten (JWT)
 app.use('/api/agent', agentApiRoutes);     // Agent selbst (X-Agent-Key)
+app.use('/api/deployments', deploymentsRoutes);
 app.use('/api/parts', partsRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/programs', programsRoutes);
