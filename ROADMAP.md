@@ -325,14 +325,22 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [x] 1 – Migration: `programs.kind`, `program_revision_files`, `machines.measuring_equipment_id` (Freigabe über `program.release`, Maschinentyp „Messmaschine“ per Oberfläche)
 - [x] 2 – Backend: Upload mehrerer Dateien je Revision (Änderungen per Hash erkannt, Rest aus der Vorversion übernommen), Download einzeln/ZIP, `.http`-Tests
 - [x] 3 – Frontend: Menüpunkt „Messprogramme“ (mit „NC-Programme“), Messprogramme am Arbeitsgang (Hochladen mit Vorschau, Dateiliste, ZIP) → nutzbar ohne Agent; Test mit echten PC-DMIS-Dateien am Arbeitsplatz offen
-- [ ] 4 – Agent v1 + Manifest-/Report-API: Bereitstellen
-- [ ] 5 – Abschließen + Eingang
-- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig), Rundlauf MDS → ZIP → Mess-PC am 30.10. geprüft; offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
+- [ ] 4 – Agent v1: Bereitstellen + Abschließen ohne Eingang – Spec und PR-Plan: [MESSPROGRAMME_AGENT_SPEC.md](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md) (30.10.2026)
+  - [ ] 4.1 Freigabe-Zeiger `programs.released_revision_id` (freigegebene Version bleibt bereitstellbar, während eine neue in Arbeit ist; Prüfabfrage rpi01 vor dem Merge)
+  - [ ] 4.2 Migration Agent-Schema + Rechte `agent.manage`, `program.deploy`
+  - [ ] 4.3 Backend Agentenverwaltung, API-Schlüssel (nur Hash), `authenticateAgent`
+  - [ ] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP)
+  - [ ] 4.5 Backend Agent-API (Manifest, Dateien, Bericht, Fertig) + Integrationstest mit simuliertem Agenten
+  - [ ] 4.6 Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen/Aktualisieren/Fertig/Verwerfen
+  - [ ] 4.7 Agent (C#, Tray, .NET 4.8): Grundgerüst + Bereitstellen, Gesundheitscheck, Offline
+  - [ ] 4.8 Agent: Abschließen + Aktualisieren (Nachfrage „nur gemessen?“, Nebendateien), Checkliste am Mess-PC
+- [ ] 5 – Eingang (statt Hochladen von Hand), „Änderung melden“, Nachfrage-Frist
+- [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig), Rundlauf MDS → ZIP → Mess-PC am 30.10. geprüft; Agent-Seite (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck) kommt mit Schritt 4
 - [ ] 7 – Erstimport vom Netzlaufwerk
 - [x] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, eigener Upload-Bereich (Excel-Vorlage ebenso), Protokoll-PDFs aussortiert, ZIP-Unterordner `Kalibrierung/` (Konzept 4.2a, 30.10.2026); offen: `.MiniRoutines.xml` zur Kalibrierung, falls nötig
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
-Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: `agents` bekommt von Anfang an eine Modulliste ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4). Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.
+Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 berücksichtigt (Spec): Modulliste in `agents` ([MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md) 4), Vorlagenname-Prüfung beim Bereitstellen (Rollback-Fall). Nebenbefund: Rollback setzt jedes Programm auf „Entwurf“, weil `program_revisions.workflow_state_id` nie aktualisiert wird – eigener Fix nach 4.1.
 
 ---
 
@@ -590,7 +598,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
 
-0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – danach Schritt 4 (MDS-Agent) planen: Konzept gegen Code prüfen, Spec, offene Punkte klären
+0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) ist geplant: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), Start mit PR 4.1 (Freigabe-Zeiger)
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
@@ -599,7 +607,7 @@ Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.m
 6. **Verbrauchsmaterial** lokal testen und in Betrieb nehmen, Wartungs-Integration
 7. **Lager-Architektur** entscheiden (vor Rohmaterial/Normteile)
 8. **Handy-Tauglichkeit** (niedrige Priorität) – Befunde aus dem Handy-Test vom 28.10. in [docs/konzepte/HANDY-TEST.md](docs/konzepte/HANDY-TEST.md) (27 von 52 Seiten zu breit). Zuerst überall: Kopfzeile/Breadcrumbs inkl. doppelter Breadcrumbs auf fünf Admin-Seiten, Tab-Leisten der Detailseiten, drei abgeschnittene Tabellen (Benutzer, Verbrauchsmaterial, Operationstypen). Seitenkopf mit Knöpfen nur auf Seiten, die am Handy genutzt werden – vorher festlegen, welche; komplexe Seiten bleiben PC-Seiten
-9. **Messprogramme Schritt 4** (MDS-Agent auf dem Mess-PC, Bereitstellen) – nach dem Test mit echten Dateien; siehe Phase 10 „Messmaschinen-Terminal“
+9. **Messprogramme Schritt 4** (MDS-Agent auf dem Mess-PC, Bereitstellen + Abschließen) – Umsetzung nach [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md) Abschnitt 9, PR 4.1–4.8; siehe Phase 10 „Messmaschinen-Terminal“
 10. Kleinkram: Tags im Terminal-Repo nachtragen (bisher keine, z. B. `v0.2` auf PR #1), PI-SETUP.md im Terminal-Repo prüfen, NC-Viewer am Arbeitsplatz (Rechtsklick, G350-Programme mit `PLANE AXIAL` und QL-Parametern), auf dem Pi alten Stash (01.12.2025) sichern + entfernen und `~/mds-dist-2.6.0` löschen
 
 ---
