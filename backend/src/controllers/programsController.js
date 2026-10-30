@@ -588,22 +588,33 @@ exports.deleteProgram = async (req, res) => {
   }
 };
 
-// GET /api/programs/:id/download - Datei herunterladen
+// GET /api/programs/:id/download?version=1.2.0 - Datei herunterladen (ohne version: aktuelle Version)
 exports.downloadProgram = async (req, res) => {
   try {
     const { id } = req.params;
+    const { version } = req.query;
 
-    // Aktuelle Revision holen
-    const result = await pool.query(
-      `SELECT pr.filepath, pr.filename, pr.mime_type
-       FROM programs p
-       JOIN program_revisions pr ON p.current_revision_id = pr.id
-       WHERE p.id = $1`,
-      [id]
-    );
+    // ?version=1.2.0 → diese Version (z. B. die freigegebene), sonst die aktuelle
+    if (version !== undefined && !/^\d+\.\d+\.\d+$/.test(version)) {
+      return res.status(400).json({ error: 'Ungültige Version', example: '1.2.0' });
+    }
+    const result = version
+      ? await pool.query(
+        `SELECT pr.filepath, pr.filename, pr.mime_type
+         FROM program_revisions pr
+         WHERE pr.program_id = $1 AND pr.version_string = $2`,
+        [id, version]
+      )
+      : await pool.query(
+        `SELECT pr.filepath, pr.filename, pr.mime_type
+         FROM programs p
+         JOIN program_revisions pr ON p.current_revision_id = pr.id
+         WHERE p.id = $1`,
+        [id]
+      );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Programm nicht gefunden' });
+      return res.status(404).json({ error: version ? 'Version nicht gefunden' : 'Programm nicht gefunden' });
     }
 
     const { filepath, filename, mime_type } = result.rows[0];

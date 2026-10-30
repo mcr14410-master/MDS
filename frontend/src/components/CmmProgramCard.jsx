@@ -6,9 +6,8 @@ import { toast } from './Toaster';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowActions from './WorkflowActions';
 import CmmFilesModal from './CmmFilesModal';
+import ProgramDownloadButtons from './ProgramDownloadButtons';
 import ReleasedVersionNote from './ReleasedVersionNote';
-import { cmmZipName } from '../utils/cmmPrograms';
-import { downloadFileViaApi } from '../utils/fileDownload';
 
 const formatFileSize = (bytes) => {
   if (!bytes) return 'N/A';
@@ -20,11 +19,6 @@ const formatFileSize = (bytes) => {
 export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision, onStatusChange }) {
   const { hasPermission } = useAuthStore();
   const [showFiles, setShowFiles] = useState(false);
-
-  const handleDownloadZip = async () => {
-    const result = await downloadFileViaApi(`/api/programs/${program.id}/files/zip`, cmmZipName(program, program.version));
-    if (!result.success) toast.error(result.error);
-  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow p-4">
@@ -77,16 +71,8 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
       </div>
 
       {/* Actions Bar */}
-      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={handleDownloadZip}
-          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          title="Alle Dateien als ZIP herunterladen"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </button>
+      <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+        <ProgramDownloadButtons program={program} />
 
         <button
           onClick={() => setShowFiles(true)}
