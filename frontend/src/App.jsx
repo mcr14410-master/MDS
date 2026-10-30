@@ -43,6 +43,7 @@ import UserDetailPage from './pages/admin/UserDetailPage';
 import RolesPage from './pages/admin/RolesPage';
 import OperationTypesPage from './pages/admin/OperationTypesPage';
 import CronJobsPage from './pages/admin/CronJobsPage';
+import AgentsPage from './pages/admin/AgentsPage';
 
 // Maintenance Pages
 import MaintenanceDashboardPage from './pages/MaintenanceDashboardPage';
@@ -425,6 +426,14 @@ function App() {
 				         <CronJobsPage />
 				       </ProtectedRoute>
 				     } 
+				   />
+				   <Route
+				     path="/admin/agents"
+				     element={
+				       <ProtectedRoute requiredPermission="agent.manage">
+				         <AgentsPage />
+				       </ProtectedRoute>
+				     }
 				   />
 				   {/* Maintenance Routes */}
 				   <Route 

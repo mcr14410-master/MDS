@@ -11,6 +11,7 @@ import Pagination from '../components/Pagination';
 import { WORKFLOW_STATUS_LABELS as STATUS_LABELS } from '../utils/workflowLabels';
 import { cmmZipName } from '../utils/cmmPrograms';
 import ReleasedVersionNote from '../components/ReleasedVersionNote';
+import DeploymentsPanel from '../components/DeploymentsPanel';
 
 const KIND_CONFIG = {
   nc: {
@@ -150,6 +151,9 @@ export default function ProgramsOverviewPage({ kind }) {
           </button>
         </div>
       </div>
+
+      {/* Messprogramme: was gerade auf dem Mess-PC liegt */}
+      {kind === 'cmm' && <DeploymentsPanel />}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
