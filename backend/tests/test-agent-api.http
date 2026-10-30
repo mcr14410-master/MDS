@@ -1,0 +1,146 @@
+### ==============================================
+### AGENT-API (/api/agent, X-Agent-Key) – API TESTS
+### ==============================================
+### Spec docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md 5.4 (PR 4.5)
+### So arbeitet der MDS-Agent: Manifest holen → Dateien laden → Bericht schicken.
+### Voraussetzung: Agent mit cmm_sync (test-agents.http), Bereitstellung (test-deployments.http).
+### @fileId aus dem Manifest (Test 1), @deploymentId = id der Bereitstellung.
+### Den kompletten Ablauf mit Statuswechseln prüft tests/integration/test-agent-ablauf.js.
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@agentKey = mdsa_SCHLUESSEL
+@otherKey = mdsa_SCHLUESSEL_ZWEITER_AGENT
+@deploymentId = 1
+@fileId = 1
+@foreignFileId = 2
+
+### 1. Manifest: config + offene Bereitstellungen mit Dateien (target, rel_path, hash, size, url)
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{agentKey}}
+X-Agent-Version: 1.0.0
+
+### 2. Zweiter Agent: sieht fremde Bereitstellungen nicht (deployments [])
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{otherKey}}
+
+### 3. Datei laden → 200, X-File-Hash = hash aus dem Manifest
+GET {{baseUrl}}/api/agent/files/{{fileId}}
+X-Agent-Key: {{agentKey}}
+
+### 4. Gleiche Datei mit fremdem Agenten → 404
+GET {{baseUrl}}/api/agent/files/{{fileId}}
+X-Agent-Key: {{otherKey}}
+
+### 5. Datei, die nicht bereitgestellt ist (andere Version / anderes Programm) → 404
+GET {{baseUrl}}/api/agent/files/{{foreignFileId}}
+X-Agent-Key: {{agentKey}}
+
+### 6. Ungültige ID → 404
+GET {{baseUrl}}/api/agent/files/abc
+X-Agent-Key: {{agentKey}}
+
+### 7. Ohne Schlüssel → 401
+GET {{baseUrl}}/api/agent/files/{{fileId}}
+
+### 8. Bericht: Datei abgelegt (pending/locked → bleibt requested)
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "agent_version": "1.0.0",
+  "self_test": { "program_dir_ok": true, "template_dir_ok": true, "template_dir_writable": true },
+  "files": [
+    { "target": "program_dir", "rel_path": "TEIL-0001\\KD00000-00004-M1\\KD00000-00004-M1.prg",
+      "deployment_id": {{deploymentId}}, "file_id": {{fileId}}, "state": "locked" }
+  ],
+  "transfers": [],
+  "warnings": []
+}
+
+### 9. Bericht: alle Soll-Dateien current → status_changes [{ status: "active" }]
+###     (hier gekürzt – im echten Bericht stehen alle Dateien der Bereitstellung)
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "files": [
+    { "target": "program_dir", "rel_path": "TEIL-0001\\KD00000-00004-M1\\KD00000-00004-M1.prg",
+      "deployment_id": {{deploymentId}}, "file_id": {{fileId}}, "state": "current" }
+  ],
+  "transfers": [
+    { "client_id": "6f1c1f4e-3c0b-4c8e-9a5e-2d7b8f0a1c11", "deployment_id": {{deploymentId}}, "file_id": {{fileId}},
+      "filename": "KD00000-00004-M1.prg", "direction": "to_device", "result": "ok",
+      "occurred_at": "2026-11-02T08:15:00+01:00" }
+  ],
+  "deployments": [{ "id": {{deploymentId}}, "activity_at": "2026-11-02T08:15:00+01:00" }]
+}
+
+### 10. Gleicher Bericht nochmal → transfers_known 1, transfers_new 0
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "transfers": [
+    { "client_id": "6f1c1f4e-3c0b-4c8e-9a5e-2d7b8f0a1c11", "deployment_id": {{deploymentId}}, "file_id": {{fileId}},
+      "filename": "KD00000-00004-M1.prg", "direction": "to_device", "result": "ok",
+      "occurred_at": "2026-11-02T08:15:00+01:00" }
+  ]
+}
+
+### 11. Fehlerhafte Einträge → einzeln in ignored (Pfad mit .., unbekannter Zustand, fremde Bereitstellung)
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "files": [
+    { "target": "program_dir", "rel_path": "..\\..\\Windows\\x", "state": "current" },
+    { "target": "program_dir", "rel_path": "x.prg", "state": "kaputt" },
+    { "target": "program_dir", "rel_path": "y.prg", "state": "current", "deployment_id": 99999 }
+  ]
+}
+
+### 12. Warnungen und Selbsttest → erscheinen am Agenten (GET /api/agents/:id, last_warnings)
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "self_test": { "template_dir_writable": false },
+  "warnings": [{ "code": "conflict", "deployment_id": {{deploymentId}}, "text": "KD00000-00004-M1.xlsx liegt schon im Vorlagenverzeichnis (anderer Inhalt)" }]
+}
+
+### 13. „Fertig“ im Tray → closing
+POST {{baseUrl}}/api/agent/deployments/{{deploymentId}}/close
+X-Agent-Key: {{agentKey}}
+
+### 14. Nochmal → 409
+POST {{baseUrl}}/api/agent/deployments/{{deploymentId}}/close
+X-Agent-Key: {{agentKey}}
+
+### 15. Fremde Bereitstellung schließen → 404
+POST {{baseUrl}}/api/agent/deployments/{{deploymentId}}/close
+X-Agent-Key: {{otherKey}}
+
+### 16. Alles aufgeräumt → closed: true, keine verwalteten Dateien mehr → status_changes [{ status: "closed" }]
+POST {{baseUrl}}/api/agent/report
+X-Agent-Key: {{agentKey}}
+Content-Type: application/json
+
+{
+  "files": [],
+  "transfers": [
+    { "client_id": "0b6a7d3e-5f2a-4c1b-8e9d-3a4b5c6d7e8f", "deployment_id": {{deploymentId}}, "file_id": {{fileId}},
+      "filename": "KD00000-00004-M1.prg", "direction": "removed", "result": "ok",
+      "occurred_at": "2026-11-20T15:00:00+01:00" }
+  ],
+  "deployments": [{ "id": {{deploymentId}}, "closed": true }]
+}
+
+### 17. Nach dem Abschluss: Datei laden → 404, Manifest ohne die Bereitstellung
+GET {{baseUrl}}/api/agent/files/{{fileId}}
+X-Agent-Key: {{agentKey}}

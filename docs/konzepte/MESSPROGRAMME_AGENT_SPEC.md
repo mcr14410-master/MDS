@@ -279,7 +279,7 @@ Middleware `authenticateAgent`:
 | Methode | Pfad | Zweck |
 |---|---|---|
 | GET | `/api/agent/manifest` | Konfiguration + Soll-Stand aller offenen Bereitstellungen |
-| GET | `/api/agent/files/:fileId` | Datei laden – nur wenn sie zu einer festgehaltenen Version einer offenen Bereitstellung dieses Agenten gehört, sonst 404 |
+| GET | `/api/agent/files/:fileId` | Datei laden – nur wenn sie zu einer festgehaltenen Version einer offenen Bereitstellung dieses Agenten gehört, sonst 404. Header `X-File-Hash` (SHA-256) und `Content-Length` zum Prüfen vor dem Umbenennen |
 | POST | `/api/agent/report` | Ist-Zustand, Transfers, Warnungen |
 | POST | `/api/agent/deployments/:id/close` | „Fertig“ im Tray (nur eigene Bereitstellung) |
 
@@ -306,7 +306,7 @@ Middleware `authenticateAgent`:
   }]
 }
 ```
-Abgeschlossene Bereitstellungen tauchen nicht auf. Für den Agenten heißt das: Alles, was er nach `state.json` verwaltet und was nicht mehr im Manifest steht, gehört zu einer Bereitstellung, die im MDS ohne ihn erledigt wurde. Er meldet das als Warnung und **löscht nichts** (6.5).
+Abgeschlossene Bereitstellungen tauchen nicht auf, ebenso keine, solange das Modul `cmm_sync` am Agenten abgewählt ist. Für den Agenten heißt das: Alles, was er nach `state.json` verwaltet und was nicht mehr im Manifest steht, gehört zu einer Bereitstellung, die im MDS ohne ihn erledigt wurde. Er meldet das als Warnung und **löscht nichts** (6.5).
 
 **Report** (idempotent über `client_id`):
 ```json
@@ -324,8 +324,15 @@ Abgeschlossene Bereitstellungen tauchen nicht auf. Für den Agenten heißt das: 
 - `files` ist der **vollständige** Ist-Stand. Das MDS ersetzt alle `agent_file_states` des Agenten in einer Transaktion.
 - Transfers mit bekannter `client_id` werden übersprungen. `program_id`, `revision_id` und die Schnappschüsse ergänzt das MDS aus `file_id`.
 - `activity_at` setzt `last_activity_at`, wenn der Wert neuer ist.
-- `closed: true` ist nur bei `closing` gültig und setzt `closed`, `closed_at` und `close_reason`.
-- `warnings` landen in `agents.last_warnings` (ersetzt). Sie erscheinen in der Agentenliste und an der Bereitstellung.
+- `closed: true` ist nur bei `closing` gültig und setzt `closed`, `closed_at` und `close_reason`. Meldet der Bericht für die Bereitstellung noch verwaltete, bearbeitete (`modified`) oder beschädigte (`corrupt`) Dateien, bleibt sie `closing` und der Agent bekommt eine Warnung. Fremde Dateien (`unknown`) halten nicht auf.
+- `warnings` landen in `agents.last_warnings` (ersetzt). Sie erscheinen in der Agentenliste und an der Bereitstellung. Punkte aus `self_test`, die nicht `true` sind, werden zu Warnungen.
+- **Fehlerhafte Einträge** (Pfad mit `..` oder Laufwerk, unbekannter Zustand, fremde Bereitstellung, `client_id` keine UUID …) werden einzeln verworfen und in `ignored` zurückgemeldet. Der Rest des Berichts gilt. So bleibt ein Agent nicht an einem kaputten Eintrag hängen.
+- **Grenzen je Bericht:** 500 Dateien, 500 Transfers, 100 Warnungen. Was darüber hinausgeht, schickt der Agent beim nächsten Bericht aus der Outbox.
+- `triggered_by` im Protokoll setzt das MDS:
+  - Ablegen: wer die Version festgelegt hat (Bereitstellen bzw. Aktualisieren)
+  - Löschen und „nur gemessen“: wer „Fertig“ im MDS gedrückt hat, `NULL` bei „Fertig“ im Tray
+  - `discarded`: wer verworfen hat
+- Antwort: `{ files, transfers_new, transfers_known, status_changes: [{ id, status }], ignored }`.
 
 ### 5.5 Oberfläche
 
