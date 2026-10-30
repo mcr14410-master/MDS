@@ -326,7 +326,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [x] 2 – Backend: Upload mehrerer Dateien je Revision (Änderungen per Hash erkannt, Rest aus der Vorversion übernommen), Download einzeln/ZIP, `.http`-Tests
 - [x] 3 – Frontend: Menüpunkt „Messprogramme“ (mit „NC-Programme“), Messprogramme am Arbeitsgang (Hochladen mit Vorschau, Dateiliste, ZIP) → nutzbar ohne Agent; Test mit echten PC-DMIS-Dateien am Arbeitsplatz offen
 - [ ] 4 – Agent v1: Bereitstellen + Abschließen ohne Eingang – Spec und PR-Plan: [MESSPROGRAMME_AGENT_SPEC.md](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md) (30.10.2026)
-  - [ ] 4.1 Freigabe-Zeiger `programs.released_revision_id` (freigegebene Version bleibt bereitstellbar, während eine neue in Arbeit ist; Prüfabfrage rpi01 vor dem Merge)
+  - [x] 4.1 Freigabe-Zeiger `programs.released_revision_id` (freigegebene Version bleibt bereitstellbar, während eine neue in Arbeit ist) – PR #243; rpi01 am 30.10.: 3 Programme, alle Entwurf, keins je freigegeben → vor dem ersten Bereitstellen freigeben
   - [ ] 4.2 Migration Agent-Schema + Rechte `agent.manage`, `program.deploy`
   - [ ] 4.3 Backend Agentenverwaltung, API-Schlüssel (nur Hash), `authenticateAgent`
   - [ ] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP)
@@ -598,7 +598,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
 
-0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) ist geplant: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), Start mit PR 4.1 (Freigabe-Zeiger)
+0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) läuft: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), 4.1 (Freigabe-Zeiger) gemergt (`[Unreleased]`), weiter mit 4.2 (Migration Agent-Schema + Rechte)
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
