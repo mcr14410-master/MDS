@@ -21,7 +21,7 @@ const crypto = require('crypto');
 const archiver = require('archiver');
 const { XMLValidator } = require('fast-xml-parser');
 const pool = require('../config/db');
-const { CMM_UPLOAD_DIR } = require('../middleware/uploadMiddleware');
+const { CMM_UPLOAD_DIR, insideCmmDir } = require('../middleware/uploadMiddleware');
 const { suggestProgramNumber } = require('../utils/programNumber');
 const {
   ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
@@ -45,13 +45,6 @@ const UPLOAD_FIELDS = { files: 'program', template_files: 'template', calibratio
 const uploadedFiles = (req) => Object.entries(req.files || {})
   .flatMap(([field, list]) => list.map(file => ({ file, area: UPLOAD_FIELDS[field] })));
 const uploadedPaths = (req) => uploadedFiles(req).map(u => u.file.path);
-
-// Pfad muss im Messprogramm-Verzeichnis liegen (Path-Traversal-Schutz)
-function insideCmmDir(filepath) {
-  const resolved = path.resolve(filepath);
-  const dir = path.resolve(CMM_UPLOAD_DIR);
-  return resolved.startsWith(dir + path.sep);
-}
 
 const toList = (value) => {
   if (value === undefined || value === null || value === '') return [];

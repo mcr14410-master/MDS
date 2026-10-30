@@ -88,6 +88,12 @@ if (!fs.existsSync(CMM_UPLOAD_DIR)) {
   fs.mkdirSync(CMM_UPLOAD_DIR, { recursive: true });
 }
 
+// Pfad muss im Messprogramm-Verzeichnis liegen (Path-Traversal-Schutz für Anzeige, Download, ZIP, Agent)
+function insideCmmDir(filepath) {
+  const resolved = path.resolve(filepath);
+  return resolved.startsWith(path.resolve(CMM_UPLOAD_DIR) + path.sep);
+}
+
 const cmmStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, CMM_UPLOAD_DIR);
@@ -138,5 +144,6 @@ module.exports = {
   handleMulterError,
   ALLOWED_EXTENSIONS,
   UPLOAD_DIR,
-  CMM_UPLOAD_DIR
+  CMM_UPLOAD_DIR,
+  insideCmmDir
 };
