@@ -336,7 +336,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
   - [x] 4.3 Backend Agentenverwaltung, API-Schlüssel (nur Hash), `authenticateAgent` – PR #247 (Manifest liefert vorerst nur die Gerätekonfiguration)
   - [x] 4.4 Backend Bereitstellungen (Version festgehalten, Vorlagenname je Gerät eindeutig, Zielpfade gemeinsam mit ZIP, Löschschutz) – PR #249
   - [x] 4.5 Backend Agent-API (Manifest, Dateien, Bericht, Fertig) + Integrationstest mit simuliertem Agenten – PR #251 (Backend-Seite des Agenten komplett)
-  - [ ] 4.6 Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen/Aktualisieren/Fertig/Verwerfen
+  - [x] 4.6 Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen/Aktualisieren/Fertig/Verwerfen – PR #253 (Bereitstellen nur am Arbeitsgang)
   - [ ] 4.7 Agent (C#, Tray, .NET 4.8, eigenes privates Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent)): Grundgerüst + Bereitstellen, Gesundheitscheck, Offline
   - [ ] 4.8 Agent: Abschließen + Aktualisieren (Nachfrage „nur gemessen?“, Nebendateien), Checkliste am Mess-PC
 - [ ] 5 – Eingang (statt Hochladen von Hand), „Änderung melden“, Nachfrage-Frist
@@ -603,7 +603,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 Stand: [Session 30.10.2026](docs/sessions/SESSION-2026-10-30-kalibrierprogramm.md) – **v2.17.0 läuft auf dem Pi** (30.10.: Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]`: Entfernen in der Messprogramm-Vorschau einheitlich
 
-0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) läuft: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), 4.1–4.5 gemergt (`[Unreleased]`: Freigabe-Zeiger, Agent-Schema, Agentenverwaltung, Bereitstellungen, Agent-API – Backend komplett), weiter mit 4.6 (Frontend: Agenten, „Auf dem Mess-PC“, Bereitstellen-Dialog)
+0. **Messprogramme:** Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen, Verhalten ohne `.cad` an einer Kopie prüfen (Release-Checkliste „Noch offen aus 2.17.0“) – Schritt 4 (MDS-Agent) läuft: [Spec](docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md), 4.1–4.6 gemergt (`[Unreleased]`: MDS-Seite komplett – Freigabe-Zeiger, Agenten, Bereitstellungen, Agent-API, Oberfläche). Weiter mit 4.7 im Repo [`mds-agent`](https://github.com/mcr14410-master/mds-agent) (C#, braucht einen Windows-Rechner zum Bauen) – oder vorher ein Release, damit die MDS-Seite auf dem Pi steht
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
