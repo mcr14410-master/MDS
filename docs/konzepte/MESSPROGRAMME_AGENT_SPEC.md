@@ -516,7 +516,7 @@ Je Programm der Bereitstellung, die Gruppe zusammen:
 - **Agent:**
   - Unit-Tests in `MdsAgent.Core.Tests`: Abgleich-Tabelle 6.2/6.4 mit gespieltem Dateisystem
   - am Mess-PC nach Checkliste (9, PR 4.8)
-  - gebaut wird auf einem Windows-Rechner (`dotnet build`), auf homepi gibt es kein .NET
+  - gebaut wird mit dem .NET-SDK auf homepi (`~/.dotnet`, Tests unter net10.0, net48 über Referenz-Assemblies) und per GitHub Actions auf Windows (Tests zusätzlich unter net48, Release-ZIP)
 - **Frontend:** Playwright-Skript gegen Dev-MDS. Agent anlegen (Schlüssel-Dialog), Bereitstellen, Anzeige der Zustände aus einem simulierten Bericht.
 
 ---
@@ -556,7 +556,7 @@ Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agen
 
 - [ ] HTTPS für das MDS im LAN (Caddy mit interner CA oder eigenem Zertifikat). Betrifft Login, Terminal und Agent gleichermaßen. Eigenes Thema, nicht Voraussetzung für v1.
 - [ ] Speichert PC-DMIS auch das Kalibrier-`.prg` beim Lauf? Am Mess-PC prüfen (Checkliste 3). Bis dahin gilt `run_saved` sicherheitshalber.
-- [x] Versionierung und Verteilung des Agenten → eigenes privates Repo `mds-agent`, Tags `vX.Y.Z`, GitHub-Release mit ZIP (E9, 30.10.2026). Ob per GitHub Actions oder lokal gebaut wird, klären wir mit PR 4.7.
+- [x] Versionierung und Verteilung des Agenten → eigenes privates Repo `mds-agent`, Tags `vX.Y.Z`, GitHub-Release mit ZIP (E9, 30.10.2026). Gebaut wird lokal auf homepi und per GitHub Actions (Windows-Runner), entschieden am 31.10.2026 mit PR 4.7.
 - [ ] Rollback-Nebenbefund (Abschnitt 3): als eigener Fix in „Offene Fixes“ aufnehmen.
 - [ ] Mehrere Mess-PCs: Das Modell erlaubt sie. Die Oberfläche wählt das Gerät, sobald es mehr als eines gibt.
 - Schritt 5: Eingang, „Änderung ans MDS melden“, Nachfrage-Frist (Konzept 5.2, Vorschlag 14 Tage, einstellbar je Agent).
