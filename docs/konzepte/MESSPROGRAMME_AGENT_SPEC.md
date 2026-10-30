@@ -125,7 +125,7 @@ CREATE TABLE agents (
 CREATE TABLE agent_deployments (
   id               SERIAL PRIMARY KEY,
   agent_id         INTEGER NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  operation_id     INTEGER NOT NULL REFERENCES operations(id) ON DELETE RESTRICT,
+  operation_id     INTEGER NOT NULL REFERENCES operations(id) ON DELETE CASCADE, -- wie programs
   order_ref        VARCHAR(100),                          -- sobald es Aufträge gibt
   status           VARCHAR(15) NOT NULL DEFAULT 'requested'
     CHECK (status IN ('requested', 'active', 'closing', 'closed')),
@@ -200,7 +200,7 @@ Rechte in derselben Migration: `agent.manage` und `program.deploy` mit `ON CONFL
 
 **Löschregeln**
 - Ein Programm oder Arbeitsgang mit offener Bereitstellung lässt sich nicht löschen (409, Prüfung im Controller).
-- Abgeschlossene Bereitstellungen blockieren nichts: Die festgehaltenen Versionen verschwinden per CASCADE, das Protokoll behält seine Schnappschüsse.
+- Abgeschlossene Bereitstellungen blockieren nichts: Wird ein Arbeitsgang gelöscht, verschwinden seine Bereitstellungen per CASCADE wie seine Programme. Das Protokoll behält seine Schnappschüsse.
 - Agenten werden nie gelöscht, nur deaktiviert. Ein deaktivierter Schlüssel → 401.
 
 `program_inbox` kommt erst in Schritt 5.
