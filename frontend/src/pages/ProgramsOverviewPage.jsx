@@ -5,13 +5,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProgramsStore } from '../stores/programsStore';
 import { usePreferencesStore } from '../stores/preferencesStore';
-import { downloadFileViaApi } from '../utils/fileDownload';
 import { toast } from '../components/Toaster';
 import Pagination from '../components/Pagination';
 import { WORKFLOW_STATUS_LABELS as STATUS_LABELS } from '../utils/workflowLabels';
-import { cmmZipName } from '../utils/cmmPrograms';
 import ReleasedVersionNote from '../components/ReleasedVersionNote';
 import DeploymentsPanel from '../components/DeploymentsPanel';
+import { downloadProgramVersion, downloadVersions, downloadVersionLabel } from '../utils/programDownload';
 
 const KIND_CONFIG = {
   nc: {
@@ -101,12 +100,12 @@ export default function ProgramsOverviewPage({ kind }) {
     filters.search || filters.status ||
     filters.sort_by !== DEFAULT_FILTERS.sort_by || filters.sort_order !== DEFAULT_FILTERS.sort_order;
 
+  // Freigegebene Version; ohne Freigabe die aktuelle mit Hinweis (Entwurf gezielt über die Karte am Arbeitsgang)
   const handleDownload = async (p) => {
-    const result = kind === 'cmm'
-      ? await downloadFileViaApi(`/api/programs/${p.id}/files/zip`, cmmZipName(p, p.version))
-      // NC speichert nur den internen Ablagenamen (Zeitstempel-Zufallszahl-Name) → Präfix weglassen
-      : await downloadFileViaApi(`/api/programs/${p.id}/download`, (p.filename || '').replace(/^\d+-\d+-/, ''));
+    const { main, mainIsReleased } = downloadVersions(p);
+    const result = await downloadProgramVersion({ ...p, kind }, main);
     if (!result.success) toast.error(result.error);
+    else if (!mainIsReleased) toast.info(`Version ${main} ist nicht freigegeben`);
   };
 
   const byState = stats?.by_state || {};
@@ -346,7 +345,7 @@ function ProgramActions({ program, downloadTitle, onDownload }) {
         type="button"
         onClick={onDownload}
         className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-colors"
-        title={downloadTitle}
+        title={`${downloadTitle} (${downloadVersionLabel(program)})`}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

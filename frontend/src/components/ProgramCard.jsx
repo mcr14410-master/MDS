@@ -2,28 +2,18 @@
 // Karte eines NC-Programms (Messprogramme: CmmProgramCard)
 import { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowActions from './WorkflowActions';
 import ToolListReadOnly from './ToolListReadOnly';
 import ReleasedVersionNote from './ReleasedVersionNote';
+import ProgramDownloadButtons from './ProgramDownloadButtons';
 
 export default function ProgramCard({ program, onEdit, onDelete, onViewVersions, onNewRevision, onStatusChange }) {
   const { hasPermission } = useAuthStore();
-  const { downloadProgram } = useProgramsStore();
   const [showTools, setShowTools] = useState(false);
   // NC speichert nur den internen Ablagenamen (Zeitstempel-Zufallszahl-Name) → Präfix weglassen
   const displayFilename = (program.filename || '').replace(/^\d+-\d+-/, '');
-
-  const handleDownload = async () => {
-    try {
-      await downloadProgram(program.id, displayFilename);
-      toast.success('Download gestartet');
-    } catch (error) {
-      toast.error(error.message || 'Download fehlgeschlagen');
-    }
-  };
 
   const handleDelete = () => {
     onDelete(program);
@@ -124,16 +114,8 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
       </div>
 
       {/* Actions Bar */}
-      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={handleDownload}
-          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          title="Herunterladen"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </button>
+      <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+        <ProgramDownloadButtons program={program} />
 
         {/* Werkzeugliste Button */}
         <button

@@ -44,6 +44,11 @@ export default function CmmFilesModal({ program, onClose }) {
               {data && (data.excel_report ? ' · mit Excel-Protokoll' : ' · ohne Excel-Protokoll')}
               {data && <ReleasedVersionNote version={data.version} releasedVersion={data.released_version} className="ml-2" />}
             </p>
+            {data && data.version !== data.released_version && (
+              <p className="mt-2 inline-block px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                Diese Version ist nicht freigegeben – für die Maschine die freigegebene Version verwenden
+              </p>
+            )}
           </div>
           <button onClick={onClose} aria-label="Schließen"
             className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
@@ -105,7 +110,7 @@ export default function CmmFilesModal({ program, onClose }) {
           </button>
           {data && (
             <button type="button"
-              onClick={() => download(`/api/programs/${program.id}/files/zip`, cmmZipName(program, data.version))}
+              onClick={() => download(`/api/programs/${program.id}/files/zip?version=${encodeURIComponent(data.version)}`, cmmZipName(program, data.version))}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
               Alle als ZIP
             </button>
