@@ -1,6 +1,6 @@
 # Messprogramm-Verwaltung (KMG / PC-DMIS) + MDS-Agent
 
-**Erstellt:** 2026-10-13 · **Aktualisiert:** 2026-10-14 (sauberes Arbeitsverzeichnis, CNC, Vorlagenpfad, `.layout.xml`, Abschließen nur durch User, mehrere Bereitstellungen, eine Vorlage je Programm) · 2026-10-19 (`.prg` wird beim Laufstart gespeichert, PC-DMIS-Nebendateien, DocumentRecovery, MiniRoutines.xml, PC-DMIS-Automation; Testergebnisse: Laufdaten im Programm, Bereinigung, Vorlagenname, Ausgabepfade, Mini-Routinen)
+**Erstellt:** 2026-10-13 · **Aktualisiert:** 2026-10-14 (sauberes Arbeitsverzeichnis, CNC, Vorlagenpfad, `.layout.xml`, Abschließen nur durch User, mehrere Bereitstellungen, eine Vorlage je Programm) · 2026-10-19 (`.prg` wird beim Laufstart gespeichert, PC-DMIS-Nebendateien, DocumentRecovery, MiniRoutines.xml, PC-DMIS-Automation; Testergebnisse: Laufdaten im Programm, Bereinigung, Vorlagenname, Ausgabepfade, Mini-Routinen) · 2026-10-30 (Praxis: Kalibrierprogramm, Überwachungsfelder, Ordnerablage, Vorlagenname = Programmnummer)
 **Status:** Konzept / Diskussionsgrundlage – Umsetzung später durch Claude Code nach `CLAUDE.md`
 (Diagnose-First, Branch je Schritt, Migrationen nur über `pgm`, Rechte nur für `admin`).
 SQL hier ist **Entwurf** zur Verständigung, keine fertige Migration.
@@ -135,6 +135,9 @@ ALTER TABLE program_revision_files ADD COLUMN target varchar(20) NOT NULL DEFAUL
 
 **Namensschema:** `KdNr_TeilNr_Rev.xlsx` – PC-DMIS legt beim ersten Speichern im
 ExcelFormReport-Dialog `KdNr_TeilNr_Rev.layout.xml` mit demselben Basisnamen an.
+**Vorschlag 30.10.2026:** Vorlage heißt wie das Messprogramm nach der MDS-Programmnummer
+(`KD00000-00004-M1.xlsx`, PROGRAMMNUMMERN_KONZEPT.md 4.3) – eindeutig auch bei mehreren
+Messprogrammen je Bauteil, ohne Index im Namen (die Version führt das MDS).
 - Weil alle Vorlagen in **einem** Verzeichnis liegen, muss der Name eindeutig sein → das MDS prüft
   beim Upload, dass kein anderes Programm denselben Vorlagennamen benutzt.
 - Das MDS kann den erwarteten Namen aus Kundennummer, Teilenummer und Revision vorschlagen und
@@ -174,6 +177,46 @@ er verwaltet nur Dateien, die er selbst abgelegt hat (Liste in `state.json`).
   (z. B. von Hand gelöscht), sofort nachladen und im MDS als Warnung melden.
 - Allgemein behandelt der Agent ein Messprogramm als **eine Dateigruppe** (`.prg` + `.cad` +
   Prüfzeichnung, ggf. `.xlsx` + `.layout.xml`) – nie eine Datei ohne die anderen.
+
+### 4.2a Praxis am Mess-PC (30.10.2026)
+
+**Ablage heute:** `Kd.-Nr.\Bauteil\` auf dem Netzlaufwerk, vom Vorgänger begonnen, aufwendig zu pflegen.
+Was davon das MDS übernimmt:
+
+| Ordner heute | im MDS |
+|---|---|
+| `01_Messprogramm …_Index nn` | Messprogramm mit Versionen ✅ |
+| `03_Aufspannungs- und Teiledaten` | Bauteil, Arbeitsgang, Dokumente ✅ |
+| `05_Alte Daten` | Versionshistorie ✅ |
+| `04_Taster kalibrieren` | **fehlt** → Kalibrierprogramm (unten) |
+| `02_Messdaten` | **fehlt** → Ergebnisse, Stufe 3 (unten) |
+
+**Kalibrierprogramm (Taster):** eigenes `.prg`, kalibriert genau die Taster, die das Hauptprogramm
+verwendet → gehört zur Dateigruppe und wird **mit dem Hauptprogramm versioniert** (ändert sich die
+Tasterkonfiguration, kommt die passende Kalibrierung in derselben Version mit). Im Ordner liegt sonst nur
+das Kalibrierprotokoll (PDF) – ein Ergebnis, kein Programmbestandteil.
+- neue Rolle `calibration` (höchstens eine je Revision), Ziel `program_dir`; im ZIP eigener Unterordner
+  (analog `PC-DMIS-Vorlagen/`)
+- Erkennung beim Upload: Unterordner mit „kalibrier“ im Namen (heute übergeht der Ordner-Upload alle
+  Unterordner), sonst Auswahl im Formular
+- im Kalibrierordner zählt **nur die `.prg`**; PDFs dort sind Protokolle und werden mit Hinweis aussortiert –
+  sonst ordnet der Upload sie als Prüfzeichnung ein
+- Name: Vorschlag `KD00000-00004-M1_KAL.prg` (offen)
+- Bis zur Umsetzung: Kalibrierprogramm als eigenes Messprogramm im selben Arbeitsgang hochladen (lose verknüpft)
+
+**Überwachungsfelder:** Die Kopfwerte stehen nicht im PC-DMIS-„Teilenamen“, sondern in
+Überwachungsfeldern mit Abfrage am Laufbeginn (Vorgabewerte im Programm, von Hand gepflegt): Kunde,
+Zeichnungsnummer, Bezeichnung, Stand/Index, Prüfer, Allgemeintoleranzen, Auftragsnummer, Prüfplannummer,
+FAI-Nr., Seriennummer. Sie landen im Protokoll, und aus ihnen wird der Protokollname gebaut.
+- Fast alles davon kennt das MDS (Bauteil, Kunde, Index, Prüfplan; später Auftrag, Seriennummer, Prüfer = angemeldeter Benutzer)
+- Idee für später (nach Schritt 5): **A** – Agent legt beim Bereitstellen eine kleine Textdatei neben das
+  Programm, PC-DMIS liest sie beim Start (`FILE/OPEN`, `FILE/READLINE`) und belegt die Felder vor;
+  **B** – Agent setzt die Werte über die Automation-Schnittstelle (6.1). A ist einfacher und braucht keine API
+
+**Ausgabepfade:** zeigen heute fest auf `02_Messdaten` im Bauteilordner (4.4). Fällt die Ordnerstruktur
+weg, schreibt das Programm trotzdem weiter dorthin → Vorschlag: fester Messdaten-Stamm, Pfad im Programm
+aus den Überwachungsfeldern zusammengesetzt; dann hängt das Programm nicht mehr an der Ordnerablage.
+Rückweg der Ergebnisse (PDF/Excel) ins MDS, verknüpft mit Auftrag und Seriennummer = Stufe 3.
 
 ### 4.3 Agent, Zustände, Transfers
 
@@ -686,12 +729,12 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
 - [x] Je Programm eine eigene Protokollvorlage, Name `KdNr_TeilNr_Rev.xlsx` / `.layout.xml` (14.10.2026)
 - [x] Vorlagenname steht im `.prg` (`EXCELFORMREPORT/TEMPLATE=KUNDE_TEIL-0001`, ohne Endung) →
       MDS benennt Vorlagen nie um; Agent kann prüfen, ob die referenzierte Vorlage bereitliegt (19.10.2026)
-- [ ] Namenskonvention gegen die Praxis abgleichen: im Test `KUNDE_TEIL-0001` (Kundenkürzel_Teilnummer,
-      ohne Rev) statt `KdNr_TeilNr_Rev`
+- [x] Namenskonvention gegen die Praxis abgleichen: heute kein festes System → Vorschlag Vorlagenname =
+      MDS-Programmnummer (4.2, 30.10.2026); Entscheidung mit dem Programmnummern-Konzept
 - [x] Excel-Protokollvorlage ist optional (nicht jedes Bauteil braucht Excel-Ausgabe) → Schalter je Programm (14.10.2026)
 - [ ] **Zu durchdenken:** mehrere Messprogramme für dieselbe Teil-Revision (z. B. OP30 und OP50 auf
-      dem KMG) – `KdNr_TeilNr_Rev` ist dann nicht eindeutig. Mögliche Lösung `KdNr_TeilNr_Rev_OP30`;
-      betrifft ggf. auch die `.prg`-Namen. Bis zur Entscheidung: MDS lehnt doppelte Vorlagennamen ab.
+      dem KMG) – `KdNr_TeilNr_Rev` ist dann nicht eindeutig. Mit Vorlagenname = MDS-Programmnummer
+      (`-M1`, `-M2`) erledigt sich das (30.10.2026). Bis zur Entscheidung: MDS lehnt doppelte Vorlagennamen ab.
 - [ ] „Rev“ im Namen = Zeichnungsindex des Teils (nicht MDS-Programmversion)? Bei neuem Index:
       Vorlage in PC-DMIS unter neuem Namen speichern, damit auch die `.layout.xml` neu entsteht
 - [x] Zu jeder Vorlage gehört eine `.layout.xml` (gleicher Basisname, von PC-DMIS angelegt) → Dateigruppe (14.10.2026)
@@ -707,7 +750,11 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
       Bestätigung am Mess-PC? (Vorschlag siehe 5.1 „Neue Freigabe während der Bereitstellung“)
 - [ ] Nachfrage-Frist: 14 Tage ohne Aktivität passend?
 - [ ] Übertragungswege der Steuerungen (Heidenhain, Siemens, Mazatrol 640M) – erst für Schritt 8
-- [ ] Gehören noch weitere Dateien zu einem Programm (Tasterdateien sind global, eher nicht)?
+- [x] Gehören noch weitere Dateien zu einem Programm? Tasterdateien sind global, aber das
+      **Kalibrierprogramm** je Bauteil gehört dazu (30.10.2026) → 4.2a
+- [ ] Kalibrierprogramm umsetzen: Rolle `calibration`, Erkennung beim Upload, Name (4.2a)
+- [ ] Ausgabepfade unabhängig von der Ordnerablage (fester Messdaten-Stamm, Pfad aus Überwachungsfeldern) (4.2a)
+- [ ] Überwachungsfelder aus dem MDS vorbelegen (Textdatei oder Automation) – nach Schritt 5 (4.2a)
 - [x] `.prg` wird von PC-DMIS regelmäßig gespeichert, vermutlich bei jedem Lauf (19.10.2026) → 4.4
 - [x] `.prg` wird **beim Laufstart** gespeichert (vermutlich wegen Eingabefeldern wie Seriennummer);
       `.cad` bleibt unverändert (19.10.2026)

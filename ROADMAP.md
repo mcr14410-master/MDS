@@ -327,6 +327,7 @@ Oberfläche (Web im Kiosk oder eigene App) wird beim Start des Maschinen-Termina
 - [ ] 5 – Abschließen + Eingang
 - [ ] 6 – Excel-Protokollvorlage (`.xlsx` + `.layout.xml`) als Teil der Programmgruppe – MDS-Seite mit Schritt 2 erledigt (Paar Pflicht, gültiges XML, Name eindeutig); offen: Agent (Vorlagenverzeichnis, Reihenfolge, Gesundheitscheck)
 - [ ] 7 – Erstimport vom Netzlaufwerk
+- [ ] Kalibrierprogramm (Taster) als zweite `.prg` in der Dateigruppe, mit dem Hauptprogramm versioniert – Rolle `calibration`, Erkennung über Unterordner, Protokoll-PDFs dort aussortieren (Konzept 4.2a, 30.10.2026); bis dahin als eigenes Messprogramm hochladen
 - [ ] optional – PC-DMIS-Automation im Agenten (Ereignisse, Laufprotokoll, Inhalts-Hash ohne Laufdaten)
 
 Offene Punkte stehen im Konzept (Abschnitt 10). Für Schritt 4 merken: Rollback prüft den Vorlagennamen nicht – nach einem Rollback können zwei Programme dieselbe Vorlage aktiv haben; spätestens beim Bereitstellen prüfen.
@@ -579,7 +580,7 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 - Lager-Architektur: siehe „Offene Entscheidung“ unter Phase 8
 - [ ] **Workforce-Konsolidierung:** Urlaubs- und Zeitverwaltung zu einem System zusammenführen – [docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md](docs/konzepte/WORKFORCE-CONSOLIDATION-CONCEPT.md) (~20–30h). Dabei berücksichtigen: Zeitmodell ohne Historie (kein „gültig ab“), Teilzeit mit wechselndem freien Tag (aktuell Workaround). Release 2.8.0 hat gezeigt: Neuberechnungen nutzen das aktuelle Modell und verfälschen alte Urlaube (MA 13: 4-Tage-Woche ab 01.04.2026, freier Tag mal Montag, mal Freitag – Workaround Überstundenabbau)
 - [ ] **Operations-Zeiteinheiten:** `cycle_time_seconds` (Sekunden in DB, Minuten im Frontend) → `cycle_time_minutes` wie `setup_time_minutes` (~2h, niedrig)
-- [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ (OP-Code des Arbeitsgangs, nicht eindeutig) – Vorschlag: MDS vergibt `<Bauteil-Nr>-<n>` bzw. `-M<n>`, Nummer läuft unverändert bis an die Maschine, später auch nach TopSolid. Entwurf mit offenen Fragen (Namensgrenzen der Steuerungen, Bestandsprogramme): [PROGRAMMNUMMERN_KONZEPT.md](docs/konzepte/PROGRAMMNUMMERN_KONZEPT.md). Bearbeiten-Fehler und doppelte Nummern behoben (#226)
+- [ ] **Programmnummern-Format:** aktuell auto „OP10-001“ (OP-Code des Arbeitsgangs, nicht eindeutig) – Vorschlag: MDS vergibt `<Bauteil-Nr>-<n>` bzw. `-M<n>`, Nummer läuft unverändert bis an die Maschine, später auch nach TopSolid. Entwurf mit offenen Fragen (Namensgrenzen der Steuerungen am 30.10. geklärt; offen u. a. Bestandsprogramme, Rückweg von der Maschine): [PROGRAMMNUMMERN_KONZEPT.md](docs/konzepte/PROGRAMMNUMMERN_KONZEPT.md). Bearbeiten-Fehler und doppelte Nummern behoben (#226)
 
 ---
 
