@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.17.0] - 2026-10-30 - Kalibrierprogramm für Messprogramme
+
 ### Für Anwender
 - Messprogramme: Das Kalibrierprogramm für die Taster lässt sich jetzt mit dem Messprogramm zusammen ablegen. Es bekommt beim Hochladen einen eigenen Bereich, wird mit dem Messprogramm versioniert und liegt im heruntergeladenen ZIP im Ordner „Kalibrierung“. Kalibrierprotokolle (PDF) werden dabei aussortiert.
 - Die Excel-Protokollvorlage hat beim Hochladen ebenfalls einen eigenen Bereich mit Schalter. Der große Ablagebereich ist nur noch für das Messprogramm selbst.

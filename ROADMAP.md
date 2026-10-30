@@ -587,9 +587,9 @@ Heute sind alle Textfelder reiner Text (58 `textarea`, Anzeige nur mit Zeilenumb
 
 ## 🔧 Nächste Session
 
-Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.16.0 läuft auf dem Pi** (29.10.: Messprogramme im eigenen Reiter, Ordner-Upload ohne Zusatzdateien/Unterordner, Programm bearbeiten, PDF-Worker lokal), `[Unreleased]` leer
+Stand: [Session 28./29.10.2026](docs/sessions/SESSION-2026-10-28-messprogramme.md) – **v2.16.0 läuft auf dem Pi**, **v2.17.0 vorbereitet, Deploy offen** (Kalibrierprogramm, eigene Upload-Bereiche für Excel-Vorlage und Kalibrierung), `[Unreleased]` leer
 
-0. **Messprogramme:** ZIP am Mess-PC in PC-DMIS öffnen (letzter offener Prüfpunkt aus 2.16.0; Umbenennen, Reiter, PDF-Vorschau, Ordner-Upload am 30.10. geprüft) – danach Schritt 4 (MDS-Agent) planen: Konzept gegen Code prüfen, Spec, offene Punkte klären
+0. **Deploy 2.17.0** mit den Prüfpunkten aus `docs/RELEASE-CHECKLISTE.md`, danach Tag `v2.17.0` pushen; Up-/Download mit echten Daten am Mess-PC inkl. Kalibrierprogramm (2.16.0-Prüfpunkte am 30.10. alle erledigt) – danach Schritt 4 (MDS-Agent) planen: Konzept gegen Code prüfen, Spec, offene Punkte klären
 1. **Termine Zeiterfassung (2.9.5):** vor Weihnachten Mitarbeiter informieren (24.12./31.12. halber Urlaubstag, wer nicht kommt); am 24.12./31.12. bzw. Folgetag Tageswerte prüfen (ohne Stempel −halbes Soll als fehlende Buchung, mit halbem Urlaubstag ±0); nächste Krankmeldung nach Arbeitsbeginn ±0
 2. **Time-Terminal deployen** (Terminal-Pi, `deploy.sh` dort): Chip-Wechsel-Fix (mds-time-terminal#7)
 3. **Weitere Fixes** (siehe „Offene Fixes“) – DB-Pools/Zeitzonen: diagnostiziert, wird je Modul beim nächsten Umbau erledigt
