@@ -209,13 +209,15 @@ Rechte in derselben Migration: `agent.manage` und `program.deploy` mit `ON CONFL
 
 ## 5. MDS-Seite
 
-### 5.1 Agenten verwalten (`agent.manage`)
+### 5.1 Agenten verwalten (`agent.manage`, Lesen für alle Angemeldeten)
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/agents` | Liste: Name, Maschine, Module, zuletzt gesehen, Version, aktiv, offene Bereitstellungen, letzte Warnungen |
+| GET | `/api/agents?active=true` | Liste: Name, Maschine, Module, zuletzt gesehen, Version, aktiv, offene Bereitstellungen, letzte Warnungen. Auch ohne `agent.manage` lesbar (Gerätewahl beim Bereitstellen), Hash wird nie ausgeliefert |
+| GET | `/api/agents/:id` | Detail |
+| GET | `/api/agents/modules` | bekannte Agent-Module (Haken in der Oberfläche) |
 | POST | `/api/agents` | anlegen → Antwort enthält den **Schlüssel einmalig** |
-| PUT | `/api/agents/:id` | Name, Maschine, Module, Intervall, aktiv |
+| PUT | `/api/agents/:id` | Name, Maschine, Module, Intervall, aktiv – nur übergebene Felder, `machine_id: null` leert |
 | POST | `/api/agents/:id/regenerate-key` | neuer Schlüssel (einmalig angezeigt), der alte gilt sofort nicht mehr |
 
 - Schlüssel: `mdsa_` + 32 Zufallsbytes (base64url). Gespeichert werden `sha256(schlüssel)` und die ersten 12 Zeichen zur Anzeige.

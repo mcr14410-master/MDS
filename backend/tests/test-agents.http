@@ -1,0 +1,181 @@
+### ==============================================
+### MDS-AGENTEN – VERWALTUNG UND ANMELDUNG – API TESTS
+### ==============================================
+### Spec docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md 5.1 + 5.4 (PR 4.3)
+### /api/agents (JWT): Lesen alle Angemeldeten, Ändern mit agent.manage
+### /api/agent  (X-Agent-Key): Agent selbst; Stand 4.3 nur das Manifest (Bereitstellungen ab 4.5)
+###
+### Ablauf: Login → Token eintragen → Test 3 → @agentId und @agentKey aus der Antwort
+### übernehmen (der Schlüssel wird nur dieses eine Mal angezeigt).
+### ==============================================
+
+@baseUrl = http://localhost:5000
+@token = TOKEN_AUS_LOGIN
+@userToken = TOKEN_OHNE_AGENT_MANAGE
+@agentId = 1
+@agentKey = mdsa_SCHLUESSEL_AUS_TEST_3
+@oldKey = mdsa_SCHLUESSEL_VOR_TEST_17
+@machineId = 1
+
+### ==============================================
+### 0. LOGIN - Token holen
+### ==============================================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "PASSWORT"
+}
+
+### ==============================================
+### VERWALTUNG /api/agents
+### ==============================================
+
+### 1. Bekannte Module → [{ key: "cmm_sync", … }]
+GET {{baseUrl}}/api/agents/modules
+Authorization: Bearer {{token}}
+
+### 2. Liste (ohne Hash, mit api_key_prefix, open_deployments)
+GET {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+
+### 3. Anlegen → 201, api_key einmalig, modules ["cmm_sync"], Intervall 30
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Mess-PC", "modules": ["cmm_sync"], "machine_id": {{machineId}} }
+
+### 4. Gleicher Name → 409
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Mess-PC" }
+
+### 5. Ohne Name → 400 „Name fehlt“
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "modules": ["cmm_sync"] }
+
+### 6. Unbekanntes Modul → 400
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Programmier-PC", "modules": ["topsolid"] }
+
+### 7. Intervall 2 s → 400
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Programmier-PC", "poll_interval_sec": 2 }
+
+### 8. Maschine gibt es nicht → 400
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Programmier-PC", "machine_id": 999999 }
+
+### 9. Ohne agent.manage → 403
+POST {{baseUrl}}/api/agents
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{ "name": "Fremd-PC" }
+
+### 10. Lesen ohne agent.manage → 200 (Gerätewahl beim Bereitstellen)
+GET {{baseUrl}}/api/agents
+Authorization: Bearer {{userToken}}
+
+### 11. Ohne Login → 401
+GET {{baseUrl}}/api/agents
+
+### 12. Detail
+GET {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+
+### 13. Unbekannte / ungültige ID → 404
+GET {{baseUrl}}/api/agents/abc
+Authorization: Bearer {{token}}
+
+### 14. Ändern: nur Intervall
+PUT {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "poll_interval_sec": 15 }
+
+### 15. Maschine leeren (null)
+PUT {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "machine_id": null }
+
+### 16. Leerer Body → 400 „Keine Änderung übergeben“
+PUT {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 17. Schlüssel neu erzeugen → neuer api_key; vorher @oldKey = bisheriger Schlüssel setzen
+POST {{baseUrl}}/api/agents/{{agentId}}/regenerate-key
+Authorization: Bearer {{token}}
+
+### ==============================================
+### AGENT /api/agent (X-Agent-Key)
+### ==============================================
+
+### 18. Manifest mit gültigem Schlüssel → config, deployments []
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{agentKey}}
+X-Agent-Version: 1.0.0
+
+### 19. Danach in Test 12: last_seen_at, last_ip, agent_version 1.0.0 gesetzt
+GET {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+
+### 20. Ohne Schlüssel → 401
+GET {{baseUrl}}/api/agent/manifest
+
+### 21. Falscher Schlüssel → 401 (gleiche Meldung)
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: mdsa_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+### 22. JWT statt Schlüssel → 401
+GET {{baseUrl}}/api/agent/manifest
+Authorization: Bearer {{token}}
+
+### 23. Alter Schlüssel nach Test 17 → 401
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{oldKey}}
+
+### 24. Agent deaktivieren
+PUT {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "is_active": false }
+
+### 25. Deaktiviert → 401 (gleiche Meldung)
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{agentKey}}
+
+### 26. Wieder aktivieren, Modul abwählen → Manifest meldet modules []
+PUT {{baseUrl}}/api/agents/{{agentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "is_active": true, "modules": [] }
+
+### 27. Unsinnige Version wird ignoriert (agent_version bleibt)
+GET {{baseUrl}}/api/agent/manifest
+X-Agent-Key: {{agentKey}}
+X-Agent-Version: 1.0; DROP TABLE agents
