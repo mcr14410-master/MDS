@@ -7,6 +7,24 @@ Eigenentwickeltes Fertigungs-Managementsystem für CNC-/Aerospace-Fertigung (8 M
 **Deployment:** Raspberry Pi 5 (8GB RAM, ext. SSD), Docker-Container laufen in UTC
 **Repo:** github.com/mcr14410-master/MDS
 
+## Grundsätze für Konzepte und Umsetzung
+
+### Betriebsneutral bleiben
+Das MDS entsteht für unseren Betrieb, soll aber auch in einem anderen Betrieb laufen können.
+- Kernfunktionen (Bauteile, Arbeitsgänge, Programme, Versionen, Freigabe, Transfer) setzen keine
+  bestimmte Software voraus – keine Pflichtfelder, Abläufe oder Annahmen, die nur mit TopSolid,
+  PC-DMIS, Zerobot oder dem NFC-Terminal funktionieren
+- Systemspezifisches als **optionales Modul bzw. Adapter** (z. B. PC-DMIS-Dateirollen, TopSolid-Kopfprüfung,
+  Agent-Module) – abschaltbar, ohne dass der Rest leidet (Konzept: `docs/konzepte/MODULE_KONZEPT.md`)
+- Betriebsregeln in **Stammdaten/Einstellungen statt im Code** (z. B. Namensregel je Steuerung,
+  Programmnummern-Schema, Nummernbereiche)
+- Bei jedem Konzept prüfen: Geht das auch mit anderem CAM/KMG – oder ganz ohne?
+
+### Alte Strukturen nicht nachbauen
+Bestehende Abläufe (Ordnerablage, Namensschemata, von Hand gepflegte Werte) sind aus den damaligen
+Gegebenheiten entstanden. Sie zeigen, *was* gebraucht wird – nicht, *wie* es im MDS aussehen muss.
+Zweck verstehen, im MDS einfacher lösen; Übergang (Altbestand, Startwerte) trotzdem sauber einplanen.
+
 ## Arbeitsweise – STRIKT EINHALTEN
 
 ### Diagnose-First-Prinzip
