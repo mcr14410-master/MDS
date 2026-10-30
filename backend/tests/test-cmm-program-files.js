@@ -177,12 +177,14 @@ test('Nur .xlsx mit neuem Namen → altes Layout passt nicht mehr', () => {
   assert.ok(plan.errors.some(e => e.includes('nicht denselben Namen')));
 });
 
-test('Entfernen: Zeichnung ja, .prg nein, Vorlage nur über excel_report=false', () => {
+test('Entfernen: Zeichnung ja, .prg und .cad nein, Vorlage nur über excel_report=false', () => {
   let plan = planRevision({ uploaded: [], previous: GROUP, remove: ['teil-0001_op30_pruefzeichnung.PDF'] });
   assert.deepEqual(plan.errors, []);
   assert.equal(plan.files.length, 4);
   plan = planRevision({ uploaded: [], previous: GROUP, remove: ['TEIL-0001_OP30.prg'] });
   assert.ok(plan.errors.some(e => e.includes('nicht entfernt')));
+  plan = planRevision({ uploaded: [], previous: GROUP, remove: ['TEIL-0001_OP30.cad'] });
+  assert.ok(plan.errors.some(e => e.startsWith('Die CAD-Datei (.cad) kann nicht entfernt')));
   plan = planRevision({ uploaded: [], previous: GROUP, remove: ['KD00000_TEIL-0001_C.xlsx'] });
   assert.ok(plan.errors.some(e => e.includes('excel_report=false')));
   plan = planRevision({ uploaded: [], previous: GROUP, remove: ['gibtsnicht.pdf'] });

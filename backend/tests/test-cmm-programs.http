@@ -641,6 +641,20 @@ false
 --{{boundary}}--
 
 ### ==============================================
+### K9. NEUE VERSION - CAD-Datei entfernen (Error)
+### Erwartung: 400 - CAD-Datei kann nicht entfernt, nur ersetzt werden
+### ==============================================
+POST {{baseUrl}}/api/programs/{{programId}}/cmm-revisions
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary={{boundary}}
+
+--{{boundary}}
+Content-Disposition: form-data; name="remove"
+
+TEIL-0001_OP30.cad
+--{{boundary}}--
+
+### ==============================================
 ### 28. LÖSCHEN - Messprogramm mit allen Dateien
 ### Erwartung: 200, deleted_files = alle Dateien aller Versionen
 ### ==============================================

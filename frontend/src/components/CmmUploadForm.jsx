@@ -14,8 +14,10 @@ const FILE_STATUS = {
   carried:   { label: 'Übernommen',  className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
 };
 
-// Übernommene Dateien dieser Rollen lassen sich nicht einzeln entfernen (Backend-Regel)
-const NOT_REMOVABLE = ['main', 'report_xlsx', 'report_layout', 'calibration'];
+// Übernommene Dateien dieser Rollen lassen sich nur ersetzen, nicht entfernen (Backend-Regel)
+const REPLACE_ONLY = ['main', 'cad'];
+// Diese Rollen entfernt der Schalter ihres Bereichs (Backend: excel_report / calibration = false)
+const SWITCH_AREA = { report_xlsx: 'template', report_layout: 'template', calibration: 'calibration' };
 
 // Upload-Bereiche mit eigenem Filter im Backend: Messprogramm, Excel-Vorlage, Kalibrierprogramm
 const EMPTY_AREAS = { program: [], template: [], calibration: [] };
@@ -199,6 +201,22 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     setRemove((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
 
+  // Entfernen/Behalten in der Vorschau: Vorlage und Kalibrierung über ihren Schalter, sonst je Datei
+  const setSwitch = (area, on) => (area === 'template'
+    ? toggleOption('template', setExcelReport, on)
+    : toggleOption('calibration', setCalibration, on));
+  const removal = {
+    canRemove: (f) => f.status === 'carried' && !REPLACE_ONLY.includes(f.role),
+    canKeep: (f) => {
+      const area = SWITCH_AREA[f.role];
+      if (area === 'template') return hadExcel && !excelReport;
+      if (area === 'calibration') return hadCalibration && !calibration;
+      return remove.some((n) => n.toLowerCase() === f.filename.toLowerCase());
+    },
+    onRemove: (f) => (SWITCH_AREA[f.role] ? setSwitch(SWITCH_AREA[f.role], false) : toggleRemove(f.filename)),
+    onKeep: (f) => (SWITCH_AREA[f.role] ? setSwitch(SWITCH_AREA[f.role], true) : toggleRemove(f.filename)),
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -220,7 +238,6 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
   };
 
   const canSave = preview?.valid && !previewing && !saving && (isRevision || fields.program_name.trim());
-  const userRemoved = new Set(remove.map((n) => n.toLowerCase()));
   const skippedRows = skipped.map((s) => ({
     ...s,
     status: 'ignored',
@@ -391,8 +408,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
                     ...preview.ignored.map((f) => ({ filename: f.name, status: 'ignored', reason: f.reason })),
                     ...skippedRows,
                   ]}
-                  onToggleRemove={isRevision ? toggleRemove : null}
-                  userRemoved={userRemoved}
+                  removal={isRevision ? removal : null}
                 />
                 {preview.base_version && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">Verglichen mit Version {preview.base_version}.</p>
@@ -514,7 +530,8 @@ function OptionArea({ title, description, checked, onChange, files, onItems, onC
   );
 }
 
-function FileTable({ rows, onToggleRemove = null, userRemoved = new Set() }) {
+// removal: { canRemove, canKeep, onRemove, onKeep } je Datei – nur bei neuer Version
+function FileTable({ rows, removal = null }) {
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <table className="w-full text-sm">
@@ -522,8 +539,9 @@ function FileTable({ rows, onToggleRemove = null, userRemoved = new Set() }) {
           {rows.map((f) => {
             const isRemoved = f.status === 'removed';
             const isIgnored = f.status === 'ignored';
-            const removable = onToggleRemove && f.status === 'carried' && !NOT_REMOVABLE.includes(f.role);
-            const restorable = onToggleRemove && isRemoved && userRemoved.has(f.filename.toLowerCase());
+            const removable = removal && removal.canRemove(f);
+            const replaceOnly = removal && f.status === 'carried' && REPLACE_ONLY.includes(f.role);
+            const restorable = removal && isRemoved && removal.canKeep(f);
             return (
               <tr key={`${f.status}-${f.filename}`} className={isRemoved || isIgnored ? 'opacity-60' : ''}>
                 <td className="px-3 py-2">
@@ -550,14 +568,19 @@ function FileTable({ rows, onToggleRemove = null, userRemoved = new Set() }) {
                       Aussortiert
                     </span>
                   )}
+                  {replaceOnly && (
+                    <span className="ml-2 text-xs text-gray-400 dark:text-gray-500" title="Neue Datei hochladen, um sie zu ersetzen">
+                      nur ersetzen
+                    </span>
+                  )}
                   {removable && (
-                    <button type="button" onClick={() => onToggleRemove(f.filename)}
+                    <button type="button" onClick={() => removal.onRemove(f)}
                       className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline">
                       entfernen
                     </button>
                   )}
                   {restorable && (
-                    <button type="button" onClick={() => onToggleRemove(f.filename)}
+                    <button type="button" onClick={() => removal.onKeep(f)}
                       className="ml-2 text-xs text-blue-600 dark:text-blue-400 hover:underline">
                       behalten
                     </button>

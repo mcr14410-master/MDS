@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Messprogramme, neue Version: In der Vorschau lässt sich jetzt jede optionale Datei gleich behandeln. „entfernen“ bei Excel-Vorlage oder Kalibrierprogramm schaltet den passenden Haken aus, „behalten“ wieder ein. Messprogramm und CAD-Datei lassen sich nur ersetzen, nicht entfernen – PC-DMIS braucht die CAD-Datei passend zum Programm.
+
+### Changed
+- Messprogramm-Vorschau (neue Version): „entfernen“/„behalten“ auch für Excel-Vorlage und Kalibrierprogramm, wirkt über den Schalter des Bereichs (`excel_report`/`calibration` = false); Messprogramm und `.cad` zeigen „nur ersetzen“. Backend: `remove` der `.cad` → Fehler „kann nicht entfernt, nur ersetzt werden“ (die `.prg` findet sie über den Namen); REST-Szenario K9
+
 ---
 
 ## [2.17.0] - 2026-10-30 - Kalibrierprogramm für Messprogramme

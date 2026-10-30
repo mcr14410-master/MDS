@@ -42,15 +42,24 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.17.0** – Kalibrierprogramm und eigene Upload-Bereiche für Messprogramme (#236). Eine Migration.
+**Nächstes Release** – Entfernen in der Messprogramm-Vorschau einheitlich. Keine Migration.
 
-- [ ] Migration `1737000122000_add-cmm-calibration-role` (nur Prüfregel, keine Daten) läuft im Deploy mit
-- [ ] Klicktest Messprogramm: neue Version mit Kalibrierprogramm (Schalter, Ordner `04_…` hineinziehen → Protokoll-PDF aussortiert), ZIP enthält `Kalibrierung/`
+- [ ] Klicktest neue Version eines Messprogramms: bei Vorlage/Kalibrierung „entfernen“ schaltet den Haken aus, „behalten“ wieder ein; Messprogramm und CAD zeigen „nur ersetzen“
+
+**Noch offen aus 2.17.0** (kein neuer Deploy nötig):
+
 - [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
+- [ ] Am Mess-PC mit einer **Kopie** des Programmordners: `.cad` umbenennen, `.prg` öffnen – was passiert ohne CAD?
 
 **Noch offen aus 2.16.0** (kein neuer Deploy nötig):
 
 - [ ] Optional: Maschinentyp „Messmaschine“ anlegen, KMG als Maschine erfassen
+
+---
+
+## Erledigt: Release 2.17.0 (30.10.2026)
+
+Kalibrierprogramm und eigene Upload-Bereiche für Messprogramme (#236). Migration `1737000122000_add-cmm-calibration-role` im Deploy grün, Tag `v2.17.0`. Up-/Download mit echten Daten geprüft: neue Version eines Testprogramms nur mit Kalibrierprogramm, Messprogramm und Vorlage aus der Vorversion übernommen – in Ordnung. Dabei aufgefallen: „entfernen“ nur bei der `.cad` → vereinheitlicht (nächstes Release).
 
 ---
 
