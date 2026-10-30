@@ -42,13 +42,6 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Release 2.18.1** – Fixes für die Befunde nach 2.18.0: Download lädt die freigegebene Version (#257), Rechte-Kategorien vereinheitlicht (#258). **Eine Migration.**
-
-- [ ] Migration `1737000125000_unify-permission-categories` läuft im Deploy mit – ändert nur `permissions.category` (`Urlaub` → `vacations`, `Zeiterfassung` → `time_tracking`), Rechte und Rollen-Zuordnungen bleiben gleich
-- [ ] Benutzerverwaltung → Rollen & Berechtigungen: Gruppen deutsch und alphabetisch, Urlaub und Zeiterfassung je nur einmal, bei einer Rolle die Haken wie vorher
-- [ ] Klicktest Download: Messprogramm mit freigegebener Version und neuerem Entwurf → Hauptknopf lädt das ZIP der freigegebenen Version (Dateiname `…_vX.Y.Z.zip`), daneben Knopf „Entwurf …“; dasselbe an einer NC-Programmkarte
-- [ ] „Was ist neu“ zeigt 2.18.1 mit zwei Punkten für Anwender
-
 **Nächstes Release**
 
 - (noch nichts)
@@ -57,6 +50,12 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 - [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
 - [ ] Am Mess-PC mit einer **Kopie** des Programmordners: `.cad` umbenennen, `.prg` öffnen – was passiert ohne CAD?
+
+---
+
+## Erledigt: Release 2.18.1 (31.10.2026)
+
+Fixes für die Befunde nach 2.18.0: Download lädt die freigegebene Version (#257), Rechte-Kategorien vereinheitlicht (#258). Deploy und Migration `1737000125000_unify-permission-categories` grün, Tag `v2.18.1`. Prüfpunkte grün: Rollenverwaltung (Gruppen deutsch, Urlaub und Zeiterfassung je einmal, Haken unverändert), Klicktest Download (freigegebene Version, Knopf „Entwurf …“), „Was ist neu“.
 
 ---
 
