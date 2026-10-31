@@ -16,6 +16,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Fixed
+- Messprogramme → „Auf dem Mess-PC“: Beim Abschließen stand schon „Vor Ort bearbeitet … als neue Version hochladen“, während der Agent am Mess-PC noch fragt, ob das nach dem Messen gespeicherte Programm bearbeitet wurde (Befund Nutzer 31.10.2026, Tray-Test Agent 4.8). Jetzt: nur `run_saved` → „Wartet auf Antwort am Mess-PC“ (Verwerfen bleibt als Notausgang); `modified` → bisheriger Hinweis; `.corrupt` → eigener Satz „löscht der Agent nie – von Hand löschen“
 - Administration → Agenten: Der ini-Ausschnitt im Schlüssel-Dialog nahm als `Url` die Adresse der Seite. Im Dev-Betrieb ist das der Vite-Server (`localhost:5173`), der `/api/agent/...` mit der HTML-Startseite beantwortet; der Agent meldete dann einen Lesefehler (Befund Nutzer 31.10.2026, Vortest Agent 4.7). Die `Url` kommt jetzt aus derselben Quelle wie die API-Aufrufe (`config/api.js`: Produktion Seitenadresse, Dev `VITE_API_URL` bzw. `:5000`). Bei `localhost`/`127.0.0.1` zeigt der Dialog den Hinweis, dass die Adresse nur auf diesem PC gilt
 
 ---
