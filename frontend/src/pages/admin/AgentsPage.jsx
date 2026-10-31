@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from '../../utils/axios';
 import { toast } from '../../components/Toaster';
 import { copyText } from '../../utils/clipboard';
-import { agentOnline, formatDateTime, iniSnippet, timeAgo } from '../../utils/agentLabels';
+import { agentOnline, agentServerUrl, formatDateTime, iniSnippet, isLocalUrl, timeAgo } from '../../utils/agentLabels';
 
 const errorText = (err, fallback) => {
   const d = err.response?.data;
@@ -336,6 +336,11 @@ function KeyDialog({ agent, apiKey, onClose }) {
           </div>
           <pre className="p-3 rounded bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono text-xs overflow-x-auto select-all">{ini}</pre>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Pfade sind Vorgaben für PC-DMIS 2024.1 – auf dem Gerät prüfen.</p>
+          {isLocalUrl(agentServerUrl()) && (
+            <p data-testid="agent-url-local-hint" className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              Die Adresse {agentServerUrl()} gilt nur auf diesem PC. Für ein anderes Gerät (z. B. den Mess-PC) bei Url die Adresse des MDS-Servers eintragen.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end">

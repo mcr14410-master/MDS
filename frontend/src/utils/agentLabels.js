@@ -2,6 +2,8 @@
 // Texte und Farben für MDS-Agent und Bereitstellungen (Spec docs/konzepte/MESSPROGRAMME_AGENT_SPEC.md)
 // Klassen stehen ausgeschrieben, damit Tailwind sie beim Build findet.
 
+import API_BASE_URL from '../config/api';
+
 export const DEPLOYMENT_STATUS = {
   requested: { label: 'Wird übertragen', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
   active: { label: 'Auf dem Gerät', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
@@ -64,11 +66,21 @@ export const formatDateTime = (dateStr) => (dateStr
 export const agentOnline = (agent) => Boolean(agent.last_seen_at)
   && Date.now() - new Date(agent.last_seen_at).getTime() < 3 * (agent.poll_interval_sec || 30) * 1000;
 
+/**
+ * Adresse, unter der der Agent das MDS erreicht: dieselbe wie für die API-Aufrufe der Oberfläche.
+ * Produktion: Seitenadresse (Caddy liefert Oberfläche und API). Dev: Backend (VITE_API_URL bzw. :5000),
+ * nicht der Vite-Server – der beantwortet /api/... mit der HTML-Startseite.
+ */
+export const agentServerUrl = () => (API_BASE_URL || window.location.origin).replace(/\/+$/, '');
+
+/** localhost/127.0.0.1 gilt nur auf dem PC, an dem der Browser läuft */
+export const isLocalUrl = (url) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i.test(url);
+
 /** ini-Ausschnitt zum Kopieren auf den Mess-PC (Pfade sind Beispiele, gelten für PC-DMIS 2024.1) */
 export function iniSnippet(agent, apiKey) {
   const lines = [
     '[MDS]',
-    `Url=${window.location.origin}`,
+    `Url=${agentServerUrl()}`,
     `ApiKey=${apiKey}`,
   ];
   if ((agent.modules || []).includes('cmm_sync')) {
