@@ -83,7 +83,13 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
       {deployments.map((d) => {
         const status = DEPLOYMENT_STATUS[d.status];
         const allFiles = d.programs.flatMap((p) => p.files);
-        const kept = d.status === 'closing' && (allFiles.some((f) => KEPT_STATES.includes(f.state)) || d.other_files.some((f) => KEPT_STATES.includes(f.state)));
+        const deviceFiles = allFiles.concat(d.other_files);
+        const kept = d.status === 'closing' && deviceFiles.some((f) => KEPT_STATES.includes(f.state));
+        // Nur nach dem Messen gespeichert: Der Agent fragt am Mess-PC „nur gemessen oder bearbeitet?“ – noch nichts entschieden
+        const awaitingAnswer = kept && !deviceFiles.some((f) => f.state === 'modified' || f.state === 'corrupt');
+        // .prg.corrupt fasst der Agent nie an, auch nicht beim Verwerfen (Agent 4.8a, Entscheidung 31.10.2026)
+        const corrupt = kept && deviceFiles.some((f) => f.state === 'corrupt');
+        const edited = kept && deviceFiles.some((f) => f.state === 'modified');
         return (
           <div key={d.id} data-testid={`deployment-${d.id}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -122,11 +128,18 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
               )}
             </div>
 
-            {kept && (
-              <p className="mt-3 p-2 rounded bg-orange-50 dark:bg-orange-900/20 text-sm text-orange-800 dark:text-orange-200">
+            {kept && (d.discard_local_at || !awaitingAnswer) && (
+              <p data-testid="deployment-kept-hint" className="mt-3 p-2 rounded bg-orange-50 dark:bg-orange-900/20 text-sm text-orange-800 dark:text-orange-200">
                 {d.discard_local_at
                   ? `Verwerfen angefordert von ${d.discard_local_by_username || '–'} – der Agent löscht beim nächsten Abgleich.`
-                  : 'Vor Ort bearbeitet oder nach dem Messen gespeichert – liegt noch auf dem Gerät. Änderung als neue Version hochladen, danach „Lokale Dateien verwerfen“.'}
+                  : edited && 'Vor Ort bearbeitet – liegt noch auf dem Gerät. Änderung als neue Version hochladen, danach „Lokale Dateien verwerfen“.'}
+                {corrupt && `${edited || d.discard_local_at ? ' ' : ''}Eine von PC-DMIS wiederhergestellte Datei (.corrupt) liegt im Programmordner. Der Agent löscht sie nie – am Mess-PC prüfen und von Hand löschen.`}
+              </p>
+            )}
+            {awaitingAnswer && !d.discard_local_at && (
+              <p data-testid="deployment-awaiting-hint" className="mt-3 p-2 rounded bg-sky-50 dark:bg-sky-900/20 text-sm text-sky-800 dark:text-sky-200">
+                Wartet auf Antwort am Mess-PC: Das Programm wurde nach dem Messen gespeichert – nur gemessen oder bearbeitet?
+                Antwortet dort niemand, lassen sich die Dateien hier mit „Lokale Dateien verwerfen“ entfernen.
               </p>
             )}
 
