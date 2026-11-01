@@ -198,7 +198,8 @@ exports.postReport = async (req, res) => {
     for (const t of report.transfers) {
       const info = t.file_id ? fileInfo.get(t.file_id) : null;
       const deployment = t.deployment_id ? deploymentsById.get(t.deployment_id) : null;
-      const pin = pinned.rows.find(p => p.deployment_id === t.deployment_id && p.file_id === t.file_id);
+      // je Programm statt je Datei: entfallene oder blockierte Dateien gehören zur Vorversion
+      const pin = info && pinned.rows.find(p => p.deployment_id === t.deployment_id && p.program_id === info.program_id);
       const inserted = await client.query(
         `INSERT INTO program_transfers
            (client_id, agent_id, deployment_id, program_id, revision_id, file_id, program_number, version_string,
