@@ -26,6 +26,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+// Agent-Bericht: bis zu 500 Dateien + 500 Transfers (services/agentReport.js LIMITS) passen nicht in 100 KB
+app.use('/api/agent/report', express.json({ limit: '1mb' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
