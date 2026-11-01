@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.18.2] - 2026-11-01 - Vorbereitung Mess-PC
+
+### Für Anwender
+- Messprogramme → „Auf dem Mess-PC“: Wartet der Agent beim Abschließen noch auf eine Antwort am Mess-PC, steht das jetzt dort, statt schon zum Hochladen einer neuen Version aufzufordern.
+- Im Protokoll steht jetzt auch beim Aktualisieren, wer es ausgelöst hat.
+- Administration → Agenten: Der Ausschnitt zum Einrichten des Mess-PCs enthält die richtige Serveradresse.
+
 ### Fixed
 - MDS-Agent → Bericht: Das Backend nahm JSON nur bis 100 KB an, ein Bericht darf aber bis zu 500 Dateien und 500 Transfers enthalten (ab rund 300 Einträgen 413, der Agent hätte denselben Bericht immer wieder geschickt; Befund 31.10.2026, Agent 4.7). `/api/agent/report` nimmt jetzt bis 1 MB an (500 + 500 Einträge ≈ 250 KB), alle anderen Endpunkte bleiben bei 100 KB
 - Messprogramme → Protokoll: Beim Aktualisieren stand bei „nach dem Lauf gespeichert, nur gemessen – ersetzt“ sowie bei entfallenen oder wegen Bearbeitung blockierten Dateien kein Auslöser (genommen wurde, wer „Fertig“ gegeben hat – beim Aktualisieren leer; Befund 31.10.2026, Agent 4.8b). Jetzt: beim Abschließen wie bisher, sonst wer die Version festgelegt hat. Gesucht wird dafür je Programm statt je Datei, damit auch Dateien der Vorversion den Auslöser finden

@@ -42,6 +42,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
+**Release 2.18.2** – Vorbereitung für den Mess-PC: ini-Ausschnitt mit API-Adresse (#262), Hinweis „wartet auf Antwort am Mess-PC“ (#265), Agent-Bericht bis 1 MB und Auslöser beim Aktualisieren (#268). **Keine Migration.**
+
+- [ ] Administration → Agenten → Schlüssel neu erzeugen (oder neuen Agenten anlegen): `Url=` im ini-Ausschnitt ist die Adresse des Pi, kein Hinweis „nur auf diesem PC“
+- [ ] „Was ist neu“ zeigt 2.18.2 mit drei Punkten für Anwender
+- Hinweis „wartet auf Antwort“ und Auslöser im Protokoll lassen sich erst mit dem Agenten am Mess-PC prüfen – kommt mit der Checkliste Spec 9
+
 **Nächstes Release**
 
 - (noch nichts)
