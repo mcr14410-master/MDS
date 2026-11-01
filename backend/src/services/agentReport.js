@@ -165,11 +165,14 @@ function nextStatus(deployment, expectedFileIds, reportedFiles, closedReported) 
 /**
  * Wer hat im MDS ausgelöst, was der Agent gerade gemeldet hat? (program_transfers.triggered_by)
  * Ablegen: wer die Version festgelegt hat (Bereitstellen bzw. Aktualisieren), sonst wer bereitgestellt hat.
+ * Entfernen, „nur gemessen“ ersetzen, bearbeitet behalten: beim Abschließen wer „Fertig“ gegeben hat,
+ * sonst kam es vom Aktualisieren – wie Ablegen.
  */
 function triggeredBy(direction, deployment, pinnedBy = null) {
   if (!deployment) return null;
-  if (direction === 'to_device' || direction === 'adopted') return pinnedBy ?? deployment.requested_by ?? null;
   if (direction === 'discarded') return deployment.discard_local_by ?? null;
+  const closing = deployment.status === 'closing' || deployment.status === 'closed';
+  if (direction === 'to_device' || direction === 'adopted' || !closing) return pinnedBy ?? deployment.requested_by ?? null;
   return deployment.close_requested_by ?? null;
 }
 

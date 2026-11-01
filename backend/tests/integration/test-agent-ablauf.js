@@ -216,6 +216,23 @@ async function asAgent(key, fn, { params = {}, body = {} } = {}) {
     assert.equal(p.files.find(f => f.role === 'main').file_id, v2.files.main.id);
   });
 
+  await test('Beim Aktualisieren ersetzt („nur gemessen“) oder entfallen → Auslöser = wer aktualisiert hat', async () => {
+    const replaced = uuid(); const dropped = uuid();
+    const at = new Date().toISOString();
+    const res = await asAgent(key, agentApi.postReport, {
+      body: {
+        transfers: [
+          { client_id: replaced, deployment_id: depId, file_id: v2.files.main.id, filename: 'KD00000-00004-M1.prg', direction: 'discarded_run_save', result: 'ok', occurred_at: at },
+          // Datei der Vorversion (hier: .cad aus 1.0.0) – Auslöser über das Programm, nicht über die Datei
+          { client_id: dropped, deployment_id: depId, file_id: v1.files.cad.id, filename: 'KD00000-00004-M1.cad', direction: 'removed', result: 'ok', occurred_at: at },
+        ],
+      },
+    });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    const t = (await pool.query('SELECT client_id, triggered_by FROM program_transfers WHERE client_id = ANY($1)', [[replaced, dropped]])).rows;
+    assert.deepEqual(t.map(x => x.triggered_by), [adminId, adminId]);
+  });
+
   // --- Abschließen ---
   console.log('Abschließen');
   await test('Fertig im Tray → closing; nochmal → 409', async () => {

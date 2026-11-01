@@ -135,14 +135,21 @@ test('Status: closed gemeldet, aber nicht beim Abschließen → ignoriert mit Wa
 });
 
 test('Auslöser im Protokoll', () => {
-  const d = { requested_by: 1, close_requested_by: 2, discard_local_by: 3 };
+  const d = { status: 'closing', requested_by: 1, close_requested_by: 2, discard_local_by: 3 };
   assert.equal(triggeredBy('to_device', d), 1);
   assert.equal(triggeredBy('to_device', d, 7), 7);
   assert.equal(triggeredBy('removed', d), 2);
-  assert.equal(triggeredBy('discarded_run_save', d), 2);
+  assert.equal(triggeredBy('discarded_run_save', d, 7), 2);
+  assert.equal(triggeredBy('kept_modified', d, 7), 2);
   assert.equal(triggeredBy('discarded', d), 3);
   assert.equal(triggeredBy('removed', { ...d, close_requested_by: null }), null);
   assert.equal(triggeredBy('to_device', null), null);
+  // Aktualisieren (offen, nicht beim Abschließen): wer die Version festgelegt hat
+  const active = { ...d, status: 'active', close_requested_by: null };
+  assert.equal(triggeredBy('discarded_run_save', active, 7), 7);
+  assert.equal(triggeredBy('removed', active, 7), 7);
+  assert.equal(triggeredBy('kept_modified', active), 1);
+  assert.equal(triggeredBy('discarded', active), 3);
 });
 
 console.log(`\n${passed} Tests bestanden`);
