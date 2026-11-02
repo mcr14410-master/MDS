@@ -558,6 +558,7 @@ Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agen
 - [ ] HTTPS für das MDS im LAN (Caddy mit interner CA oder eigenem Zertifikat). Betrifft Login, Terminal und Agent gleichermaßen. Eigenes Thema, nicht Voraussetzung für v1.
 - [x] Speichert PC-DMIS auch das Kalibrier-`.prg` beim Lauf? Ja, am Mess-PC bestätigt (02.11.2026, Checkliste 3) – `run_saved` gilt.
 - [x] Versionierung und Verteilung des Agenten → eigenes privates Repo `mds-agent`, Tags `vX.Y.Z`, GitHub-Release mit ZIP (E9, 30.10.2026). Gebaut wird lokal auf homepi und per GitHub Actions (Windows-Runner), entschieden am 31.10.2026 mit PR 4.7.
+- [ ] Offene Programme erkennen: PC-DMIS sperrt geöffnete `.PRG` nicht und schreibt sie bei Ausführen/Schließen zurück (Test 02.11.2026). Entschieden: PC-DMIS-Modul fragt per COM die offenen Programme ab, ohne Modul Nachfrage im Tray. Details und Testergebnisse: ROADMAP „Offene Fixes“.
 - [ ] Rollback-Nebenbefund (Abschnitt 3): als eigener Fix in „Offene Fixes“ aufnehmen.
 - [ ] Mehrere Mess-PCs: Das Modell erlaubt sie. Die Oberfläche wählt das Gerät, sobald es mehr als eines gibt.
 - Schritt 5: Eingang, „Änderung ans MDS melden“, Nachfrage-Frist (Konzept 5.2, Vorschlag 14 Tage, einstellbar je Agent).
