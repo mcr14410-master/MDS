@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Die Knöpfe im Freigabe-Ablauf sagen jetzt, was passiert: „Zur Prüfung geben“, „Als geprüft markieren“, „Freigeben“, „Ablehnen“, „Archivieren“, „Zurück in Entwurf“ (Einrichteblätter: „Aktivieren“). Bisher stand dort der Zielstatus mit Pfeil, z. B. „→ Archiviert“.
+- Im Versionsverlauf von NC- und Messprogrammen gibt es keinen Papierkorb mehr. Er hat nie funktioniert (nur eine Fehlermeldung); alte Versionen bleiben als Nachweis erhalten.
+
+### Changed
+- `WorkflowActions` und `SetupSheetStatusActions`: Knopf-Beschriftung aus `WORKFLOW_ACTION_LABELS` (`utils/workflowLabels.js`) statt `→ <Zielstatus>`
+
+### Removed
+- Löschen-Knopf im Versionsverlauf (`RevisionsList.jsx`) und `deleteRevision` im `programsStore` – der Endpunkt `DELETE /api/programs/:id/revisions/:revisionId` existiert nicht (404)
+
 ---
 
 ## [2.18.2] - 2026-11-01 - Vorbereitung Mess-PC

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useWorkflowStore } from '../stores/workflowStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
+import { WORKFLOW_ACTION_LABELS } from '../utils/workflowLabels';
 
 export default function WorkflowActions({ 
   entityType, 
@@ -144,7 +145,7 @@ export default function WorkflowActions({
               ${getButtonClass(transition.to_state)}
             `}
           >
-            → {transition.to_state_name}
+            {WORKFLOW_ACTION_LABELS[transition.to_state] || transition.to_state_name}
           </button>
         ))}
       </div>
