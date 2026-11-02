@@ -366,23 +366,4 @@ export const useProgramsStore = create((set, get) => ({
       throw new Error(errorMessage);
     }
   },
-
-  // Delete a specific revision (requires backend endpoint)
-  deleteRevision: async (programId, revisionId) => {
-    try {
-      set({ loading: true, error: null });
-      
-      await axios.delete(
-        `${API_ENDPOINTS.PROGRAMS}/${programId}/revisions/${revisionId}`
-      );
-      
-      set({ loading: false });
-      return { success: true };
-    } catch (error) {
-      console.error('deleteRevision error:', error);
-      const errorMessage = error.response?.data?.message || 'Fehler beim Löschen der Revision';
-      set({ loading: false, error: errorMessage });
-      throw new Error(errorMessage);
-    }
-  },
 }));

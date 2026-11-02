@@ -8,3 +8,14 @@ export const WORKFLOW_STATUS_LABELS = {
   rejected: 'Abgelehnt',
   archived: 'Archiviert',
 };
+
+// Beschriftung der Knöpfe je Zielstatus (Aktion statt Zustand)
+export const WORKFLOW_ACTION_LABELS = {
+  draft: 'Zurück in Entwurf',
+  review: 'Zur Prüfung geben',
+  approved: 'Als geprüft markieren',
+  released: 'Freigeben',
+  rejected: 'Ablehnen',
+  archived: 'Archivieren',
+  active: 'Aktivieren',
+};

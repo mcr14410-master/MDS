@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useSetupSheetsStore } from '../stores/setupSheetsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
+import { WORKFLOW_ACTION_LABELS } from '../utils/workflowLabels';
 
 // Status-Übergänge definieren
 const STATUS_TRANSITIONS = {
@@ -142,7 +143,7 @@ export default function SetupSheetStatusActions({
               ${getButtonClass(status)}
             `}
           >
-            → {STATUS_LABELS[status]}
+            {WORKFLOW_ACTION_LABELS[status] || STATUS_LABELS[status]}
           </button>
         ))}
       </div>
