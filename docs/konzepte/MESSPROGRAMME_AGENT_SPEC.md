@@ -538,12 +538,13 @@ Je Programm der Bereitstellung, die Gruppe zusammen:
 
 Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agent testbar. 4.7 und 4.8 liegen im Repo `mds-agent`. Sie brauchen einen Windows-Rechner oder GitHub Actions zum Bauen und den Mess-PC zum Testen.
 
-**Checkliste am Mess-PC** (für 4.7/4.8, an einer Kopie, nie an Produktionsprogrammen):
+**Checkliste am Mess-PC** (für 4.7/4.8, an einer Kopie, nie an Produktionsprogrammen; Stand 02.11.2026: 1–5 durchlaufen, 6–10 offen):
 1. Selbsttest grün, Schreibrecht im Vorlagenverzeichnis bestätigt
 2. Bereitstellen: Ordner und Vorlage liegen da. PC-DMIS öffnet das Programm mit CAD, das Excel-Protokoll hat Messwerte.
 3. Kalibrierprogramm aus `Kalibrierung\` öffnen und ausführen. Wird es dabei gespeichert? Dann gilt `run_saved`.
 4. Messlauf → `run_saved` im MDS, `last_activity_at` steigt
 5. Programm offen lassen + „Fertig“ → `locked`. PC-DMIS schließen → Nachfrage „nur gemessen“ → alles weg, Nebendateien inklusive
+   *(02.11.2026: Annahme stimmt nicht – PC-DMIS sperrt die offene `.PRG` nicht, siehe ROADMAP „Offene Fixes“)*
 6. Zweiter Durchgang mit „Bearbeitet – behalten“ → MDS-Hinweis, von Hand hochladen, „Lokale Dateien verwerfen“ → `closed`
 7. Neue Version freigeben während der Bereitstellung → Hinweis, Aktualisieren, Nachfrage
 8. Netzwerk trennen während der Bereitstellung → Messen geht weiter, nach Wiederkehr Bericht nachgeholt
@@ -555,7 +556,7 @@ Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agen
 ## 10. Offene Punkte
 
 - [ ] HTTPS für das MDS im LAN (Caddy mit interner CA oder eigenem Zertifikat). Betrifft Login, Terminal und Agent gleichermaßen. Eigenes Thema, nicht Voraussetzung für v1.
-- [ ] Speichert PC-DMIS auch das Kalibrier-`.prg` beim Lauf? Am Mess-PC prüfen (Checkliste 3). Bis dahin gilt `run_saved` sicherheitshalber.
+- [x] Speichert PC-DMIS auch das Kalibrier-`.prg` beim Lauf? Ja, am Mess-PC bestätigt (02.11.2026, Checkliste 3) – `run_saved` gilt.
 - [x] Versionierung und Verteilung des Agenten → eigenes privates Repo `mds-agent`, Tags `vX.Y.Z`, GitHub-Release mit ZIP (E9, 30.10.2026). Gebaut wird lokal auf homepi und per GitHub Actions (Windows-Runner), entschieden am 31.10.2026 mit PR 4.7.
 - [ ] Rollback-Nebenbefund (Abschnitt 3): als eigener Fix in „Offene Fixes“ aufnehmen.
 - [ ] Mehrere Mess-PCs: Das Modell erlaubt sie. Die Oberfläche wählt das Gerät, sobald es mehr als eines gibt.
