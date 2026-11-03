@@ -18,9 +18,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Die Knöpfe im Freigabe-Ablauf sagen jetzt, was passiert: „Zur Prüfung geben“, „Als geprüft markieren“, „Freigeben“, „Ablehnen“, „Archivieren“, „Zurück in Entwurf“ (Einrichteblätter: „Aktivieren“). Bisher stand dort der Zielstatus mit Pfeil, z. B. „→ Archiviert“.
 - Im Versionsverlauf von NC- und Messprogrammen gibt es keinen Papierkorb mehr. Er hat nie funktioniert (nur eine Fehlermeldung); alte Versionen bleiben als Nachweis erhalten.
+- „Auf dem Mess-PC“: „Lokale Dateien verwerfen“ erscheint erst, wenn es gebraucht wird – sofort, wenn ein Programm vor Ort bearbeitet wurde, sonst erst nach 15 Minuten ohne Antwort am Mess-PC.
+- Agenten: neues Modul „PC-DMIS-Anbindung“. Damit lässt der Agent Programme liegen, die gerade in PC-DMIS geöffnet sind (braucht MDS-Agent ab 1.1.0).
+
+### Added
+- Agent-Modul `pcdmis` in `AGENT_MODULES` (`services/agentKeys.js`), Haken in der Agentenverwaltung
 
 ### Changed
 - `WorkflowActions` und `SetupSheetStatusActions`: Knopf-Beschriftung aus `WORKFLOW_ACTION_LABELS` (`utils/workflowLabels.js`) statt `→ <Zielstatus>`
+- `DeploymentsPanel`: „Lokale Dateien verwerfen“ bei offener Nachfrage („nur gemessen?“) erst `DISCARD_AFTER_MIN` (15) Minuten nach `close_requested_at`, bei bearbeiteten Dateien sofort
 
 ### Removed
 - Löschen-Knopf im Versionsverlauf (`RevisionsList.jsx`) und `deleteRevision` im `programsStore` – der Endpunkt `DELETE /api/programs/:id/revisions/:revisionId` existiert nicht (404)

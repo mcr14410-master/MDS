@@ -10,6 +10,9 @@ import {
   DEPLOYMENT_STATUS, KEPT_STATES, ROLE_SHORT, fileState, formatDateTime, timeAgo, worstState,
 } from '../utils/agentLabels';
 
+// „Lokale Dateien verwerfen“ bei offener Nachfrage am Mess-PC erst nach dieser Wartezeit (Entscheidung 02.11.2026)
+const DISCARD_AFTER_MIN = 15;
+
 const errorText = (err, fallback) => {
   const d = err.response?.data;
   return [d?.error || fallback, ...(d?.details || [])].join(' – ');
@@ -90,6 +93,10 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
         // .prg.corrupt fasst der Agent nie an, auch nicht beim Verwerfen (Agent 4.8a, Entscheidung 31.10.2026)
         const corrupt = kept && deviceFiles.some((f) => f.state === 'corrupt');
         const edited = kept && deviceFiles.some((f) => f.state === 'modified');
+        // Der Knopf ist ein Notausgang: sofort bei Bearbeitetem, bei offener Nachfrage erst nach DISCARD_AFTER_MIN ohne Antwort
+        const waitingLong = awaitingAnswer && d.close_requested_at
+          && Date.now() - new Date(d.close_requested_at).getTime() >= DISCARD_AFTER_MIN * 60000;
+        const canDiscard = kept && !d.discard_local_at && (!awaitingAnswer || waitingLong);
         return (
           <div key={d.id} data-testid={`deployment-${d.id}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -112,7 +119,7 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
               </div>
               {canDeploy && (
                 <div className="flex gap-2">
-                  {kept && !d.discard_local_at && (
+                  {canDiscard && (
                     <button onClick={() => discard(d)} disabled={busy !== null}
                       className="px-3 py-1.5 text-sm rounded-lg border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50">
                       Lokale Dateien verwerfen
@@ -138,8 +145,10 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
             )}
             {awaitingAnswer && !d.discard_local_at && (
               <p data-testid="deployment-awaiting-hint" className="mt-3 p-2 rounded bg-sky-50 dark:bg-sky-900/20 text-sm text-sky-800 dark:text-sky-200">
-                Wartet auf Antwort am Mess-PC: Das Programm wurde nach dem Messen gespeichert – nur gemessen oder bearbeitet?
-                Antwortet dort niemand, lassen sich die Dateien hier mit „Lokale Dateien verwerfen“ entfernen.
+                Wartet auf Antwort am Mess-PC: Das Programm wurde nach dem Messen gespeichert – nur gemessen oder bearbeitet?{' '}
+                {waitingLong
+                  ? 'Antwortet dort niemand, lassen sich die Dateien hier mit „Lokale Dateien verwerfen“ entfernen.'
+                  : `Kommt ${DISCARD_AFTER_MIN} Minuten keine Antwort, lassen sich die Dateien hier entfernen.`}
               </p>
             )}
 
