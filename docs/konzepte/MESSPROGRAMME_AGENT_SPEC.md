@@ -538,7 +538,7 @@ Je Programm der Bereitstellung, die Gruppe zusammen:
 
 Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agent testbar. 4.7 und 4.8 liegen im Repo `mds-agent`. Sie brauchen einen Windows-Rechner oder GitHub Actions zum Bauen und den Mess-PC zum Testen.
 
-**Checkliste am Mess-PC** (für 4.7/4.8, an einer Kopie, nie an Produktionsprogrammen; Stand 02.11.2026: 1–5 durchlaufen, 6–10 offen):
+**Checkliste am Mess-PC** (für 4.7/4.8, an einer Kopie, nie an Produktionsprogrammen; Stand 03.11.2026: 1–6 und 8–10 durchlaufen, 7 nach dem Umbau „offene Programme erkennen“):
 1. Selbsttest grün, Schreibrecht im Vorlagenverzeichnis bestätigt
 2. Bereitstellen: Ordner und Vorlage liegen da. PC-DMIS öffnet das Programm mit CAD, das Excel-Protokoll hat Messwerte.
 3. Kalibrierprogramm aus `Kalibrierung\` öffnen und ausführen. Wird es dabei gespeichert? Dann gilt `run_saved`.
@@ -548,7 +548,7 @@ Die PRs 4.1 bis 4.6 liegen im MDS-Repo, bauen aufeinander auf und sind ohne Agen
 6. Zweiter Durchgang mit „Bearbeitet – behalten“ → MDS-Hinweis, von Hand hochladen, „Lokale Dateien verwerfen“ → `closed`
 7. Neue Version freigeben während der Bereitstellung → Hinweis, Aktualisieren, Nachfrage
 8. Netzwerk trennen während der Bereitstellung → Messen geht weiter, nach Wiederkehr Bericht nachgeholt
-9. Vorlage von Hand gelöscht → nachgeladen + Warnung
+9. Vorlage von Hand gelöscht → nachgeladen + Warnung *(03.11.2026: nachgeladen ja, Warnung fehlt – siehe ROADMAP „Offene Fixes“)*
 10. Gleichnamige Vorlage mit anderem Inhalt vorher abgelegt → Konflikt, nichts abgelegt
 
 ---
