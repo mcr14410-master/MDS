@@ -32,7 +32,7 @@ Content-Type: application/json
 ### VERWALTUNG /api/agents
 ### ==============================================
 
-### 1. Bekannte Module → [{ key: "cmm_sync", … }]
+### 1. Bekannte Module → [{ key: "cmm_sync", … }, { key: "pcdmis", … }]
 GET {{baseUrl}}/api/agents/modules
 Authorization: Bearer {{token}}
 

@@ -18,6 +18,10 @@ const AGENT_MODULES = {
     name: 'Messprogramme (PC-DMIS)',
     description: 'Messprogramme bereitstellen und abschließen, Excel-Vorlagen im Vorlagenverzeichnis',
   },
+  pcdmis: {
+    name: 'PC-DMIS-Anbindung',
+    description: 'Fragt PC-DMIS, welche Programme geöffnet sind – die löscht oder ersetzt der Agent nicht. Ohne dieses Modul fragt er vorher am Gerät nach',
+  },
 };
 
 const generateApiKey = () => KEY_PREFIX + crypto.randomBytes(32).toString('base64url');
