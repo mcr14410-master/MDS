@@ -42,6 +42,14 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
+**Release 2.19.0** – Freigabe-Knöpfe mit Aktion (#279), Papierkorb im Versionsverlauf entfernt (#279), Modul „PC-DMIS-Anbindung“ und „Lokale Dateien verwerfen“ erst bei Bedarf (#282). Dazu Agent 1.1.0 (mds-agent#7). **Keine Migration.**
+
+- [ ] Programm-Karte: Knöpfe heißen „Archivieren“, „Zur Prüfung geben“ usw., kein „→ …“ mehr
+- [ ] Versionsverlauf: kein Papierkorb
+- [ ] Administration → Agenten → Mess-PC bearbeiten: Haken „PC-DMIS-Anbindung“ vorhanden – **erst setzen, wenn Agent 1.1.0 am Mess-PC läuft** (Agent 1.0.0 ignoriert ihn, schadet aber nicht)
+- [ ] „Was ist neu“ zeigt 2.19.0 mit vier Punkten für Anwender
+- Agent 1.1.0 am Mess-PC: ZIP aus dem GitHub-Release, `MDS-Agent.exe` beenden, ersetzen, starten (ini und `.mds-agent\` bleiben); Test mit eigenem Spickzettel
+
 **Nächstes Release**
 
 - (noch nichts)

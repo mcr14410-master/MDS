@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.19.0] - 2026-11-03 - Freigabe-Knöpfe, PC-DMIS-Anbindung
+
 ### Für Anwender
 - Die Knöpfe im Freigabe-Ablauf sagen jetzt, was passiert: „Zur Prüfung geben“, „Als geprüft markieren“, „Freigeben“, „Ablehnen“, „Archivieren“, „Zurück in Entwurf“ (Einrichteblätter: „Aktivieren“). Bisher stand dort der Zielstatus mit Pfeil, z. B. „→ Archiviert“.
 - Im Versionsverlauf von NC- und Messprogrammen gibt es keinen Papierkorb mehr. Er hat nie funktioniert (nur eine Fehlermeldung); alte Versionen bleiben als Nachweis erhalten.
