@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- „Auf dem Mess-PC“: Bei einem Ladefehler (z. B. Netz weg) verschwand die Liste der Bereitstellungen bzw. zeigte „nichts bereitgestellt“. Jetzt bleibt der letzte Stand stehen mit Hinweis „MDS nicht erreichbar – Stand hh:mm“, bis das Laden wieder klappt (Mess-PC-Test 04.11.2026)
+
 ---
 
 ## [2.19.0] - 2026-11-03 - Freigabe-Knöpfe, PC-DMIS-Anbindung
