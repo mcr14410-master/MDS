@@ -24,13 +24,18 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
   const [deployments, setDeployments] = useState(null);
   const [busy, setBusy] = useState(null);
   const [expanded, setExpanded] = useState({});
+  // Ladefehler (z. B. Netz weg): letzten Stand stehen lassen statt „nichts bereitgestellt“ (Mess-PC 04.11.2026)
+  const [loadedAt, setLoadedAt] = useState(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const res = await axios.get(`/api/deployments?status=open${operationId ? `&operation_id=${operationId}` : ''}`);
       setDeployments(res.data.data);
+      setLoadedAt(new Date());
+      setLoadFailed(false);
     } catch {
-      setDeployments([]);
+      setLoadFailed(true);
     }
   }, [operationId]);
 
@@ -68,8 +73,17 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
     act(`update-${d.id}-${p.program_id}`, () => axios.post(`/api/deployments/${d.id}/programs/${p.program_id}/update`), 'Aktualisiert');
   };
 
-  if (deployments === null) return null;
+  const staleHint = loadFailed && (
+    <div role="status" className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+      {loadedAt
+        ? `MDS nicht erreichbar – Stand ${loadedAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}, wird alle 30 s erneut versucht`
+        : 'Bereitstellungen konnten nicht geladen werden – wird alle 30 s erneut versucht'}
+    </div>
+  );
+
+  if (deployments === null) return staleHint || null;
   if (deployments.length === 0) {
+    if (staleHint) return staleHint;
     return operationId ? null : (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-600 dark:text-gray-400">
         <span className="font-semibold text-gray-900 dark:text-white">Auf dem Mess-PC:</span> nichts bereitgestellt.
@@ -83,6 +97,7 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
         Auf dem Mess-PC <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({deployments.length})</span>
       </h2>
+      {staleHint}
       {deployments.map((d) => {
         const status = DEPLOYMENT_STATUS[d.status];
         const allFiles = d.programs.flatMap((p) => p.files);
