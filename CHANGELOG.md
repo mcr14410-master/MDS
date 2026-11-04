@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.19.1] - 2026-11-04 - Bereitstellungen offline
+
+### Für Anwender
+- „Auf dem Mess-PC“: Ist das MDS kurz nicht erreichbar, verschwindet die Liste der Bereitstellungen nicht mehr. Der letzte Stand bleibt stehen, darüber der Hinweis „MDS nicht erreichbar – Stand hh:mm“.
+- Für den Mess-PC gibt es den MDS-Agenten 1.1.1: Ein Ordner, in den PC-DMIS ein schon gelöschtes Programm zurückgeschrieben hat, wird jetzt aufgeräumt, sobald das Programm von Hand gelöscht ist.
+
 ### Fixed
 - „Auf dem Mess-PC“: Bei einem Ladefehler (z. B. Netz weg) verschwand die Liste der Bereitstellungen bzw. zeigte „nichts bereitgestellt“. Jetzt bleibt der letzte Stand stehen mit Hinweis „MDS nicht erreichbar – Stand hh:mm“, bis das Laden wieder klappt (Mess-PC-Test 04.11.2026)
 
