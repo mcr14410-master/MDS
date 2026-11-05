@@ -49,7 +49,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 **Noch offen aus 2.17.0** (kein neuer Deploy nötig):
 
 - [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
-- [ ] Am Mess-PC mit einer **Kopie** des Programmordners: `.cad` umbenennen, `.prg` öffnen – was passiert ohne CAD?
+- [x] `.cad` ist optional (05.11.2026): Nur nötig, wenn in PC-DMIS über CAD-Daten programmiert wird; Kalibrierprogramme meist ohne
 
 ---
 
