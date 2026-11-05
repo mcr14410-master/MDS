@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- Agentenverwaltung: Selbsttest-Warnungen in Klartext (z. B. „Programmordner nicht gefunden – Pfad in der Logdatei des Agenten und unter ‚Über‘“) statt `program_dir_ok nicht in Ordnung`; „nicht beschreibbar“ entfällt, wenn das Vorlagenverzeichnis ganz fehlt (`services/agentReport.js`). Gegenstück im Agenten: Meldung mit Pfad (mds-agent#12)
+
 ---
 
 ## [2.19.1] - 2026-11-04 - Bereitstellungen offline

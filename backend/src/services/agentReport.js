@@ -10,6 +10,13 @@ const FILE_STATES = ['current', 'pending', 'locked', 'run_saved', 'modified', 'm
 const DIRECTIONS = ['to_device', 'adopted', 'removed', 'discarded_run_save', 'discarded', 'kept_modified'];
 const RESULTS = ['ok', 'skipped_locked', 'skipped_conflict', 'error'];
 const TARGETS = ['program_dir', 'template_dir'];
+const SELF_TEST_PATH = ' – Pfad in der Logdatei des Agenten und unter ‚Über‘';
+const SELF_TEST_TEXTS = {
+  ini_ok: 'MDS-Agent.ini unvollständig – Details in der Logdatei des Agenten',
+  program_dir_ok: 'Programmordner nicht gefunden' + SELF_TEST_PATH,
+  template_dir_ok: 'Vorlagenverzeichnis nicht gefunden' + SELF_TEST_PATH,
+  template_dir_writable: 'Vorlagenverzeichnis nicht beschreibbar' + SELF_TEST_PATH,
+};
 const LIMITS = { files: 500, transfers: 500, warnings: 100, deployments: 200 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HASH = /^[0-9a-f]{64}$/i;
@@ -125,10 +132,14 @@ function validateReport(body, ownDeploymentIds, now = new Date()) {
       text: t,
     });
   });
-  // Selbsttest: jeder Punkt, der nicht true ist, wird zur Warnung
+  // Selbsttest: jeder Punkt, der nicht true ist, wird zur Warnung (Pfad kennt nur der Agent)
   if (body?.self_test && typeof body.self_test === 'object') {
-    for (const [k, v] of Object.entries(body.self_test).slice(0, 20)) {
-      if (v !== true) warnings.push({ code: 'self_test', deployment_id: null, text: `Selbsttest: ${String(k).slice(0, 60)} nicht in Ordnung` });
+    const st = body.self_test;
+    for (const [k, v] of Object.entries(st).slice(0, 20)) {
+      if (v === true) continue;
+      if (k === 'template_dir_writable' && st.template_dir_ok === false) continue;   // folgt aus „nicht gefunden“
+      const t = SELF_TEST_TEXTS[k] || `${String(k).slice(0, 60)} nicht in Ordnung`;
+      warnings.push({ code: 'self_test', deployment_id: null, text: `Selbsttest: ${t}` });
     }
   }
 
