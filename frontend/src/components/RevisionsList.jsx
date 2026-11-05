@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
 import DiffViewer from './DiffViewer';
+import { WORKFLOW_STATUS_LABELS } from '../utils/workflowLabels';
 
 export default function RevisionsList({ program, onClose }) {
   const { fetchRevisions, rollbackProgram, loading } = useProgramsStore();
@@ -183,10 +184,17 @@ export default function RevisionsList({ program, onClose }) {
                             </span>
                           )}
 
-                          {/* Workflow State */}
-                          <span className={`px-2 py-1 text-xs font-semibold rounded ${getWorkflowBadgeColor(revision.workflow_state)}`}>
-                            {revision.workflow_state}
-                          </span>
+                          {/* Status der Version – bei der freigegebenen reicht „Freigegeben“; eine früher freigegebene ist abgelöst */}
+                          {!revision.is_released && (revision.workflow_state === 'released' ? (
+                            <span className="px-2 py-1 text-xs font-semibold rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                              title="War freigegeben, inzwischen durch eine neuere Freigabe ersetzt">
+                              Abgelöst
+                            </span>
+                          ) : (
+                            <span className={`px-2 py-1 text-xs font-semibold rounded ${getWorkflowBadgeColor(revision.workflow_state)}`}>
+                              {WORKFLOW_STATUS_LABELS[revision.workflow_state] || revision.workflow_state}
+                            </span>
+                          ))}
                         </div>
 
                         {/* Change Log */}

@@ -110,6 +110,15 @@ const changeWorkflowState = async (req, res) => {
       [toStateId, entityId]
     );
 
+    // Status gilt für die aktuelle Version des Programms (Versionsverlauf zeigt ihn je Version)
+    if (entityType === 'program') {
+      await client.query(
+        `UPDATE program_revisions SET workflow_state_id = $1
+         WHERE id = (SELECT current_revision_id FROM programs WHERE id = $2)`,
+        [toStateId, entityId]
+      );
+    }
+
     // Freigegebene Version merken – bleibt stehen, während eine neue Version in Arbeit ist
     if (entityType === 'program' && toState.name === 'released') {
       await client.query(
