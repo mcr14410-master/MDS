@@ -1,6 +1,6 @@
 # Konzept: Programmnummern (NC- und Messprogramme)
 
-**Stand:** 30.10.2026 (Steuerungsgrenzen, TopSolid-Zuordnung, PC-DMIS) · Entwurf zur Abstimmung, noch nichts umgesetzt
+**Stand:** 05.11.2026 (offene Fragen 2–7 entschieden) · 30.10.2026 (Steuerungsgrenzen, TopSolid-Zuordnung, PC-DMIS) · abgestimmt, noch nichts umgesetzt
 **Bezug:** ROADMAP „Programmnummern-Format“, [TOPSOLID_INTEGRATION_IDEEN.md](TOPSOLID_INTEGRATION_IDEEN.md),
 [MESSPROGRAMME_KONZEPT.md](MESSPROGRAMME_KONZEPT.md)
 
@@ -202,7 +202,7 @@ Im NC-Kopf stehen heute (Beispiel Mazatrol-Postprozessor):
 - In TopSolid das NC-Dokument von Hand nach der MDS-Nummer benennen (Abschnitt 5) – Mazatrol-Dateiname
   weiter von Hand, bis Stufe 2 die Ziffern vergibt
 - Sperre ab Freigabe, Eindeutigkeit per DB-Index
-- Bestehende Programme behalten ihre Nummer (siehe offene Fragen)
+- Bestehende Programme behalten ihre Nummer (Abschnitt 8, Punkt 3)
 
 **Stufe 2 – MDS → Maschine**
 - Namensregel je Steuerung in den Stammdaten (4.1), Ziffernvergabe für Mazatrol (4.2)
@@ -240,21 +240,27 @@ Im NC-Kopf stehen heute (Beispiel Mazatrol-Postprozessor):
 
 ---
 
-## 8. Offene Fragen
+## 8. Entscheidungen (ehemals offene Fragen)
 
 1. ~~**Namensgrenzen der Steuerungen**~~ – geklärt 30.10.2026 (Abschnitt 4: Heidenhain, Siemens,
    Mazatrol 640M, PC-DMIS; Startwert und reservierter Bereich Mazatrol in 4.2)
-2. **Mehrere Programme je Aufspannung** (z. B. Hauptprogramm mit Unterprogrammen, Schruppen/Schlichten
-   getrennt): eigene Nummern (`-1`, `-2`) oder Zusatz (`-1A`, `-1B`)?
-3. **Bestehende Programme:** alte Nummern behalten und nur neue nach Schema vergeben, oder einmalig
-   umnummern (nur Entwürfe? auch freigegebene, mit Vermerk im Audit-Trail)? Vorher in Produktion
-   zählen, wie viele es sind.
-4. **Maschinen-Varianten:** gleiche Nummer (Vorschlag) oder eigener Zusatz je Maschine?
-5. **Messprogramme:** `M` als Kennung ok? Gleicher Zähler wie NC (`-1`, `-2`, `-M3`) oder getrennt
-   (Vorschlag: getrennt)?
-6. **Revision im Namen:** Zeichnungsindex gehört zum Bauteil, Programmversion zum MDS – beides nicht
-   in die Nummer (Vorschlag). Heute steht der Index im Kopf (INDEX), nicht im Dateinamen → bestätigt
-   für NC; bei PC-DMIS steckt er heute meist im `.prg`-Namen, künftig nicht mehr (4.3)
-7. **Rückweg von der Maschine:** Heute gibt es nur den Hinweg (Transferverzeichnis). An der Maschine
-   geänderte Programme kommen nicht ins MDS zurück. Soll das MDS sie zurückholen (Vergleich, Eingang
-   als neue Version wie bei den Messprogrammen, MESSPROGRAMME_KONZEPT.md 5.3/5.4)?
+
+Entschieden am 05.11.2026:
+
+2. **Mehrere Programme je Aufspannung** (Hauptprogramm mit Unterprogrammen, Schruppen/Schlichten
+   getrennt): **eigene Nummern** (`-1`, `-2`, `-3`), kein Buchstabenzusatz. Die Zuordnung zur
+   Aufspannung zeigt das MDS über den Arbeitsgang.
+3. **Bestehende Programme:** behalten ihre Nummer (z. B. `CNC-M-001`), im Entwurf von Hand änderbar.
+   **Neue Programme und der Erstimport** (MESSPROGRAMME_KONZEPT.md 5.5) bekommen das Schema. Es wird
+   nichts nachträglich umbenannt, was schon an einer Maschine oder im PC-DMIS-Vorlagenverzeichnis liegt.
+4. **Maschinen-Varianten:** **gleiche Nummer**, unterschieden über die Maschine; eindeutig ist
+   (Bauteil, Art, `n`, Maschine).
+5. **Messprogramme:** Kennung `M`, **eigener Zähler** getrennt von NC (`-M1`, `-M2` neben `-1`, `-2`).
+   Kalibrierprogramm: `<Nummer>_KAL.prg`, z. B. `KD00000-00004-M1_KAL.prg` (Vorschlag beim Anlegen,
+   Altbestand wie „Alle Taster kalibrieren.PRG“ bleibt zulässig).
+6. **Revision im Namen:** weder Zeichnungsindex noch Programmversion. Der Index steht bei NC weiter
+   im Kopf (INDEX), die Version führt das MDS. Der Name bleibt über alle Versionen gleich, die
+   PC-DMIS-Vorlage muss also nie umbenannt werden.
+7. **Rückweg von der Maschine (NC):** **später** – zuerst der Eingang für Messprogramme (Schritt 5,
+   MESSPROGRAMME_KONZEPT.md 5.3/5.4); was sich dort bewährt, wird auf NC übertragen. Bis dahin bleibt
+   NC ein reiner Hinweg.
