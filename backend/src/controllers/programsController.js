@@ -1047,7 +1047,7 @@ exports.rollbackToRevision = async (req, res) => {
 
     // Prüfe ob Programm existiert
     const programCheck = await pool.query(
-      'SELECT id, program_number, program_name, current_revision_id FROM programs WHERE id = $1',
+      'SELECT id, program_number, program_name, current_revision_id, released_revision_id FROM programs WHERE id = $1',
       [id]
     );
     
@@ -1088,17 +1088,22 @@ exports.rollbackToRevision = async (req, res) => {
     );
     const currentVersion = currentRevisionResult.rows[0]?.version_string || 'unknown';
 
+    // Zurück auf die freigegebene Version → wieder „Freigegeben“; jede andere (auch eine abgelöste) → „Entwurf“,
+    // sie muss neu freigegeben werden. Der Status der Version selbst bleibt als Verlauf stehen.
+    const isReleased = targetRevision.id === program.released_revision_id;
+    const stateId = (await pool.query(
+      'SELECT id FROM workflow_states WHERE name = $1', [isReleased ? 'released' : 'draft']
+    )).rows[0].id;
+
     await client.query('BEGIN');
 
-    // WICHTIG: Workflow-State der Ziel-Revision beibehalten
-    // Program mit neuer current_revision_id aktualisieren
     await client.query(
       `UPDATE programs 
        SET current_revision_id = $1, 
            workflow_state_id = $2,
            updated_at = CURRENT_TIMESTAMP 
        WHERE id = $3`,
-      [targetRevision.id, targetRevision.workflow_state_id, id]
+      [targetRevision.id, stateId, id]
     );
 
     await client.query('COMMIT');
@@ -1116,7 +1121,7 @@ exports.rollbackToRevision = async (req, res) => {
           version: targetRevision.version_string,
           filename: targetRevision.filename,
           comment: targetRevision.comment,
-          workflow_state_id: targetRevision.workflow_state_id
+          workflow_state_id: stateId
         }
       }
     });
