@@ -107,7 +107,19 @@ test('Bereitstellungen: nur eigene, activity_at gekappt; Warnungen und Selbsttes
   assert.deepEqual(report.deployments.map(d => [d.id, d.closed]), [[1, false], [2, true]]);
   assert.equal(ignored.filter(i => i.kind === 'deployments').length, 1);
   assert.deepEqual(report.warnings.map(w => w.code), ['conflict', 'self_test']);
-  assert.match(report.warnings[1].text, /template_dir_writable/);
+  assert.equal(report.warnings[1].text, 'Selbsttest: Vorlagenverzeichnis nicht beschreibbar – Pfad in der Logdatei des Agenten und unter ‚Über‘');
+});
+
+test('Selbsttest: verständliche Texte, „nicht beschreibbar“ entfällt bei fehlendem Ordner, Unbekanntes mit Schlüssel', () => {
+  const { report } = validateReport({
+    self_test: { ini_ok: false, program_dir_ok: false, template_dir_ok: false, template_dir_writable: false, neu_ok: false },
+  }, OWN, NOW);
+  assert.deepEqual(report.warnings.map(w => w.text), [
+    'Selbsttest: MDS-Agent.ini unvollständig – Details in der Logdatei des Agenten',
+    'Selbsttest: Programmordner nicht gefunden – Pfad in der Logdatei des Agenten und unter ‚Über‘',
+    'Selbsttest: Vorlagenverzeichnis nicht gefunden – Pfad in der Logdatei des Agenten und unter ‚Über‘',
+    'Selbsttest: neu_ok nicht in Ordnung',
+  ]);
 });
 
 test('Status: requested → active erst, wenn alle Soll-Dateien current oder run_saved', () => {
