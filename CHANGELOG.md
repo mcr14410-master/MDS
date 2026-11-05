@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.19.2] - 2026-11-05 - Versionsstatus, Selbsttest
+
+### Für Anwender
+- Im Versionsverlauf von NC- und Messprogrammen steht bei jeder Version ihr Status auf Deutsch. Eine früher freigegebene, inzwischen ersetzte Version heißt „Abgelöst“.
+- Wer auf die freigegebene Version zurückgeht, hat das Programm wieder „Freigegeben“ – bei jeder anderen Version muss neu freigegeben werden.
+- Agentenverwaltung: Findet der Agent am Mess-PC seinen Ordner nicht, steht das jetzt verständlich da (mit Hinweis, wo der Pfad zu sehen ist).
+
 ### Fixed
 - Versionsverlauf (NC- und Messprogramme): Jede Version zeigt ihren Status auf Deutsch („Entwurf“, „In Prüfung“ …) statt immer `draft`. Ein Statuswechsel am Programm gilt jetzt auch für die aktuelle Version (`workflowController`), eine früher freigegebene Version heißt „Abgelöst“, bei der freigegebenen steht nur „Freigegeben“. Rollback auf die freigegebene Version setzt das Programm wieder auf „Freigegeben“, auf jede andere auf „Entwurf“ (vorher immer „Entwurf“). Bestehende Versionen behalten ihren Status (bisher alle Entwurf) – keine Migration
 - Agentenverwaltung: Selbsttest-Warnungen in Klartext (z. B. „Programmordner nicht gefunden – Pfad in der Logdatei des Agenten und unter ‚Über‘“) statt `program_dir_ok nicht in Ordnung`; „nicht beschreibbar“ entfällt, wenn das Vorlagenverzeichnis ganz fehlt (`services/agentReport.js`). Gegenstück im Agenten: Meldung mit Pfad (mds-agent#12)

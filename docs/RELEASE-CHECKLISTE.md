@@ -42,9 +42,11 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release**
+**Nächstes Release** (2.19.2)
 
-- (noch nichts)
+- Keine Migration
+- Nach dem Deploy: Versionshistorie eines freigegebenen Programms öffnen → aktuelle Freigabe „Freigegeben“, ältere „Entwurf“ (alte Versionen ohne Status-Verlauf)
+- Agent 1.1.2 (mds-agent#13, Release `v1.1.2`) am Mess-PC einspielen, „Über“ zeigt 1.1.2
 
 **Noch offen aus 2.17.0** (kein neuer Deploy nötig):
 
