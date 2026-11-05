@@ -46,11 +46,6 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 - (noch nichts)
 
-**Noch offen aus 2.19.1** (kein neuer Deploy nötig, am Mess-PC):
-
-- [ ] „Auf dem Mess-PC“ öffnen, Netz kurz trennen (z. B. WLAN aus) → Liste bleibt mit Hinweis „MDS nicht erreichbar – Stand hh:mm“
-- [ ] Agent 1.1.1 (mds-agent#11, Release `v1.1.1`) am Mess-PC einspielen, „Über“ zeigt 1.1.1
-
 **Noch offen aus 2.17.0** (kein neuer Deploy nötig):
 
 - [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
@@ -60,7 +55,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 ## Erledigt: Release 2.19.1 (04.11.2026)
 
-Bereitstellungsliste behält offline den letzten Stand (#285). Keine Migration. Deploy grün, Tag `v2.19.1`. Dazu Agent 1.1.1 (mds-agent#9, #11, Release `v1.1.1` mit ZIP). Offen: Prüfpunkte am Mess-PC (siehe „Noch offen aus 2.19.1“).
+Bereitstellungsliste behält offline den letzten Stand (#285). Keine Migration. Deploy grün, Tag `v2.19.1`. Dazu Agent 1.1.1 (mds-agent#9, #11, Release `v1.1.1` mit ZIP). Am Mess-PC am 05.11. geprüft: Agent 1.1.1 läuft, Offline-Liste bleibt mit Hinweis stehen, belegter Ordner wird nach dem Löschen von Hand entfernt.
 
 ---
 
