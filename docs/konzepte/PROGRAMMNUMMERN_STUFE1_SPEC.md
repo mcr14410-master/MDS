@@ -1,6 +1,6 @@
 # Spec: Programmnummern Stufe 1 – Schema im MDS
 
-**Stand:** 05.11.2026 · Entwurf zur Abstimmung
+**Stand:** 05.11.2026 · Vorschläge S1–S7 vom Nutzer angenommen, Bewertung am Ergebnis im Dev-MDS
 **Bezug:** [PROGRAMMNUMMERN_KONZEPT.md](PROGRAMMNUMMERN_KONZEPT.md) (Abschnitte 3, 6 und 8), ROADMAP „Programmnummern-Format“
 
 ---
@@ -163,14 +163,9 @@ Release danach als Minor. Vorher kein Prod-Check nötig, weil der Altbestand nic
 
 ## 9. Offene Punkte
 
-1. **Bauteilnummern in Produktion:** Wie viele folgen `<Kundennummer>-<5-stellig>`, wie lang ist die längste? Davon hängt ab,
-   wie oft S7 greift. Abfrage auf rpi01 (nur lesen):
-   ```sql
-   SELECT count(*) AS gesamt,
-          count(*) FILTER (WHERE part_number ~ '^[^-]+-\d{5}$') AS nach_schema,
-          max(length(part_number)) AS laengste
-   FROM parts WHERE status <> 'deleted';
-   ```
+1. ~~**Bauteilnummern in Produktion**~~ – entfällt (05.11.2026): Im Betrieb sind noch keine echten Bauteile,
+   Arbeitsgänge oder Programme im MDS angelegt, nur Tests. Es gibt keinen Altbestand, der Start ist frisch.
+   Startwerte in der Migration bleiben trotzdem drin, damit eine DB mit Testdaten nicht stolpert.
 2. **Rechte:** Nummer ändern im Entwurf – reicht das Recht „Programm bearbeiten“, oder nur für bestimmte Rollen?
    Vorschlag: gleiches Recht wie Bearbeiten.
 3. **Messprogramm-Dateinamen:** Hinweis beim Upload, wenn `.prg`, `.cad` oder Vorlage nicht nach der Nummer heißen
