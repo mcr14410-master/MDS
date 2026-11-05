@@ -44,7 +44,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 **Noch offen aus 2.19.2** (kein neuer Deploy nötig):
 
-- [ ] Versionshistorie eines freigegebenen Programms öffnen → aktuelle Freigabe „Freigegeben“, ältere „Entwurf“ (alte Versionen ohne Status-Verlauf)
+- [x] Versionshistorie eines freigegebenen Programms öffnen → aktuelle Freigabe „Freigegeben“, ältere „Entwurf“ (alte Versionen ohne Status-Verlauf) – geprüft 05.11.2026
 - [ ] Agent 1.1.2 (mds-agent#13, Release `v1.1.2`) am Mess-PC einspielen, „Über“ zeigt 1.1.2
 
 **Noch offen aus 2.17.0** (kein neuer Deploy nötig):
