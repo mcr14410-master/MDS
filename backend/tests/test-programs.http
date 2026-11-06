@@ -526,6 +526,60 @@ Content-Type: application/json
 }
 
 ### ==============================================
+### 27. VORSCHLAG - Programmnummer für einen Arbeitsgang (NC)
+### Erwartung: 200 - <Bauteilnummer>-<n>, z. B. KD00000-00004-1; verbraucht keine Nummer
+### ==============================================
+GET {{baseUrl}}/api/programs/suggest-number?operation_id=1&kind=nc
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 28. VORSCHLAG - Messprogramm
+### Erwartung: 200 - <Bauteilnummer>-M<n>
+### ==============================================
+GET {{baseUrl}}/api/programs/suggest-number?operation_id=1&kind=cmm
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 29. VORSCHLAG - ohne operation_id (Error)
+### Erwartung: 400 - operation_id fehlt
+### ==============================================
+GET {{baseUrl}}/api/programs/suggest-number?kind=nc
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 30. VORSCHLAG - unbekannter Arbeitsgang (Error)
+### Erwartung: 404 - Arbeitsgang nicht gefunden
+### ==============================================
+GET {{baseUrl}}/api/programs/suggest-number?operation_id=999999&kind=nc
+Authorization: Bearer {{token}}
+
+### ==============================================
+### 31. UPDATE - Nummer im Entwurf ändern
+### Erwartung: 200 (Programm nie freigegeben) bzw. 409 „seit der ersten Freigabe fest“
+### ==============================================
+PUT {{baseUrl}}/api/programs/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "KD00000-00004-9",
+  "program_name": "FRÄSEN RECHTECK"
+}
+
+### ==============================================
+### 32. UPDATE - Nummer eines anderen Programms (Error)
+### Erwartung: 409 - „… ist schon vergeben (Bauteil OP)“, auch bei anderer Groß-/Kleinschreibung
+### ==============================================
+PUT {{baseUrl}}/api/programs/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "program_number": "kd00000-00004-9",
+  "program_name": "FRÄSEN RECHTECK"
+}
+
+### ==============================================
 ### NOTES:
 ### ==============================================
 ### API Endpoints:

@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { suggestProgramNumber } = require('../utils/programNumber');
+const { suggestProgramNumber, assignProgramNumber, ProgramNumberError } = require('../utils/programNumber');
 const { openDeploymentFor } = require('../services/deploymentGuards');
 
 const pool = new Pool({
@@ -181,12 +181,10 @@ exports.createProgram = async (req, res) => {
 
     const operation = opCheck.rows[0];
 
-    // Auto-Generierung von program_number wenn nicht vorhanden (Format: OP10-001, …)
-    if (!program_number) {
-      program_number = await suggestProgramNumber(pool, operation_id, operation.op_number);
-    }
-
     await client.query('BEGIN');
+
+    // Programmnummer nach Schema vergeben bzw. eingegebene prüfen (Spec Programmnummern Stufe 1)
+    program_number = await assignProgramNumber(client, { operationId: operation.id, kind: 'nc', requested: program_number });
 
     // File-Hash berechnen
     const fileHash = await calculateFileHash(req.file.path);
@@ -272,13 +270,16 @@ exports.createProgram = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error creating program:', error);
-    
+
     // Cleanup: Datei löschen bei Fehler
     if (req.file) {
       await fs.unlink(req.file.path).catch(() => {});
     }
-    
+    if (error instanceof ProgramNumberError) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    console.error('Error creating program:', error);
+
     res.status(500).json({ error: 'Fehler beim Erstellen des Programms', details: error.message });
   } finally {
     client.release();
@@ -484,6 +485,25 @@ exports.getProgramById = async (req, res) => {
   }
 };
 
+// GET /api/programs/suggest-number?operation_id=&kind=nc|cmm – Vorschlag fürs Formular (verbraucht keine Nummer)
+exports.suggestNumber = async (req, res) => {
+  try {
+    const { operation_id } = req.query;
+    const kind = req.query.kind === 'cmm' ? 'cmm' : 'nc';
+    if (!operation_id || !/^\d+$/.test(String(operation_id))) {
+      return res.status(400).json({ error: 'operation_id fehlt' });
+    }
+    const data = await suggestProgramNumber(pool, Number(operation_id), kind);
+    res.json({ success: true, data });
+  } catch (error) {
+    if (error instanceof ProgramNumberError) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    console.error('Error suggesting program number:', error);
+    res.status(500).json({ error: 'Fehler beim Vorschlag der Programmnummer', details: error.message });
+  }
+};
+
 // PUT /api/programs/:id - Metadaten ändern (nicht File!)
 exports.updateProgram = async (req, res) => {
   try {
@@ -499,17 +519,45 @@ exports.updateProgram = async (req, res) => {
       });
     }
 
-    const result = await pool.query(
-      `UPDATE programs 
-       SET program_number = COALESCE($1, program_number), program_name = $2, description = $3,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4
-       RETURNING *`,
-      [program_number === undefined ? null : String(program_number).trim(), program_name, description || null, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Programm nicht gefunden' });
+    const client = await pool.connect();
+    let result;
+    try {
+      await client.query('BEGIN');
+      const current = await client.query(
+        'SELECT id, operation_id, kind, program_number, released_revision_id FROM programs WHERE id = $1 FOR UPDATE', [id]);
+      if (current.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Programm nicht gefunden' });
+      }
+      const program = current.rows[0];
+      let number = program.program_number;
+      if (program_number !== undefined && String(program_number).trim() !== program.program_number) {
+        // S3: ab der ersten Freigabe fest – Ordner am Mess-PC und Dateinamen hängen daran
+        if (program.released_revision_id) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: `Programmnummer ${program.program_number} ist seit der ersten Freigabe fest` });
+        }
+        number = await assignProgramNumber(client, {
+          operationId: program.operation_id, kind: program.kind, requested: program_number, programId: program.id,
+        });
+      }
+      result = await client.query(
+        `UPDATE programs
+         SET program_number = $1, program_name = $2, description = $3,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4
+         RETURNING *`,
+        [number, program_name, description || null, id]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      if (error instanceof ProgramNumberError) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      throw error;
+    } finally {
+      client.release();
     }
 
     res.json({
