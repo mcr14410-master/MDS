@@ -856,12 +856,17 @@ exports.getProgramRevisions = async (req, res) => {
         pr.optimized_by_user_id,
         pr.workflow_state_id,
         pr.released_by,
-        pr.released_at,
+        -- echte Zeitpunkte: released_at schreibt der Workflow-Controller (UTC), created_at bei
+        -- Messprogrammen der zentrale Pool (Europe/Berlin), bei NC-Programmen dieser Pool (UTC)
+        pr.released_at AT TIME ZONE 'UTC' as released_at,
         pr.created_by,
-        pr.created_at,
+        CASE WHEN p.kind = 'cmm' THEN pr.created_at AT TIME ZONE 'Europe/Berlin'
+             ELSE pr.created_at AT TIME ZONE 'UTC' END as created_at,
         ws.name as workflow_state,
         ws.color as workflow_color,
         u_created.username as created_by_username,
+        NULLIF(trim(concat_ws(' ', u_created.first_name, u_created.last_name)), '') as created_by_name,
+        NULLIF(trim(concat_ws(' ', u_released.first_name, u_released.last_name)), '') as released_by_name,
         u_optimized.username as optimized_by_username,
         u_released.username as released_by_username,
         p.current_revision_id = pr.id as is_current,
@@ -876,6 +881,28 @@ exports.getProgramRevisions = async (req, res) => {
       ORDER BY pr.created_at DESC`,
       [id]
     );
+
+    // Ablauf je Version: Statuswechsel mit Benutzer und Zeitpunkt (älteste zuerst).
+    // workflow_history.created_at schreibt der Workflow-Controller in UTC.
+    const historyResult = await pool.query(
+      `SELECT wh.id, wh.revision_id, wh.created_at AT TIME ZONE 'UTC' AS created_at, wh.change_reason,
+              fs.name AS from_state, ts.name AS to_state,
+              u.username AS changed_by_username,
+              NULLIF(trim(concat_ws(' ', u.first_name, u.last_name)), '') AS changed_by_name
+         FROM workflow_history wh
+         LEFT JOIN workflow_states fs ON fs.id = wh.from_state_id
+         JOIN workflow_states ts ON ts.id = wh.to_state_id
+         LEFT JOIN users u ON u.id = wh.changed_by
+        WHERE wh.entity_type = 'program' AND wh.entity_id = $1 AND wh.revision_id IS NOT NULL
+        ORDER BY wh.created_at, wh.id`,
+      [id]
+    );
+    const historyByRevision = new Map();
+    for (const h of historyResult.rows) {
+      if (!historyByRevision.has(h.revision_id)) historyByRevision.set(h.revision_id, []);
+      historyByRevision.get(h.revision_id).push(h);
+    }
+    for (const r of result.rows) r.history = historyByRevision.get(r.id) || [];
 
     res.json({
       success: true,

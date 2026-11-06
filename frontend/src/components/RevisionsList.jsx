@@ -5,6 +5,23 @@ import { toast } from './Toaster';
 import DiffViewer from './DiffViewer';
 import { WORKFLOW_STATUS_LABELS } from '../utils/workflowLabels';
 
+// Schritte im Ablauf einer Version (Zielstatus → Beschriftung)
+const STEP_LABELS = {
+  draft: 'Zurück in Entwurf',
+  review: 'Zur Prüfung gegeben',
+  approved: 'Geprüft',
+  released: 'Freigegeben',
+  rejected: 'Abgelehnt',
+  archived: 'Archiviert',
+};
+// Begründung nur zeigen, wo sie von Hand eingegeben wird
+const REASON_STATES = ['rejected', 'archived'];
+
+const formatDateTime = (value) => new Date(value).toLocaleString('de-DE', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+});
+const personName = (name, username) => name || username || 'System';
+
 export default function RevisionsList({ program, onClose }) {
   const { fetchRevisions, rollbackProgram, loading } = useProgramsStore();
   
@@ -12,6 +29,13 @@ export default function RevisionsList({ program, onClose }) {
   const [showDiff, setShowDiff] = useState(false);
   const [compareFrom, setCompareFrom] = useState(null);
   const [compareTo, setCompareTo] = useState(null);
+  const [openSteps, setOpenSteps] = useState(() => new Set());
+
+  const toggleSteps = (revisionId) => setOpenSteps((prev) => {
+    const next = new Set(prev);
+    if (next.has(revisionId)) next.delete(revisionId); else next.add(revisionId);
+    return next;
+  });
 
   useEffect(() => {
     loadRevisions();
@@ -145,6 +169,9 @@ export default function RevisionsList({ program, onClose }) {
                 const versionBadge = getVersionTypeBadge(revision.version_string);
                 const isActive = revision.is_current; // Backend gibt boolean is_current
                 const isSelected = compareFrom?.id === revision.id;
+                const steps = revision.history || [];
+                const stepsOpen = openSteps.has(revision.id);
+                const lastStep = steps[steps.length - 1];
 
                 return (
                   <div 
@@ -203,12 +230,57 @@ export default function RevisionsList({ program, onClose }) {
                         )}
 
                         {/* Metadata */}
-                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                           <span>📁 {revision.filename}</span>
                           <span>📊 {(revision.filesize / 1024).toFixed(1)} KB</span>
-                          <span>👤 {revision.created_by_username || 'System'}</span>
-                          <span>🕐 {new Date(revision.created_at).toLocaleString('de-DE')}</span>
+                          <span>👤 {personName(revision.created_by_name, revision.created_by_username)}</span>
+                          <span>🕐 {formatDateTime(revision.created_at)}</span>
                         </div>
+
+                        {/* Ablauf: wer hat wann hochgeladen, zur Prüfung gegeben, geprüft, freigegeben */}
+                        <button
+                          type="button"
+                          onClick={() => toggleSteps(revision.id)}
+                          aria-expanded={stepsOpen}
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        >
+                          <svg className={`w-3 h-3 transition-transform ${stepsOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                          <span className="font-medium">Ablauf</span>
+                          {!stepsOpen && lastStep && (
+                            <span>
+                              · zuletzt {STEP_LABELS[lastStep.to_state] || lastStep.to_state}
+                              {' '}von {personName(lastStep.changed_by_name, lastStep.changed_by_username)}
+                              {' '}am {formatDateTime(lastStep.created_at)}
+                            </span>
+                          )}
+                          {!stepsOpen && !lastStep && <span>· noch kein Statuswechsel</span>}
+                        </button>
+
+                        {stepsOpen && (
+                          <ol className="mt-2 ml-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3 space-y-1 text-xs">
+                            <li className="grid grid-cols-[10rem_14rem_auto] gap-x-3 text-gray-700 dark:text-gray-300">
+                              <span className="font-medium">Hochgeladen</span>
+                              <span>{personName(revision.created_by_name, revision.created_by_username)}</span>
+                              <span className="text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTime(revision.created_at)}</span>
+                            </li>
+                            {steps.map((step) => (
+                              <li key={step.id} className="text-gray-700 dark:text-gray-300">
+                                <div className="grid grid-cols-[10rem_14rem_auto] gap-x-3">
+                                  <span className={`font-medium ${step.to_state === 'rejected' ? 'text-red-700 dark:text-red-400' : step.to_state === 'released' ? 'text-emerald-700 dark:text-emerald-400' : ''}`}>
+                                    {STEP_LABELS[step.to_state] || step.to_state}
+                                  </span>
+                                  <span>{personName(step.changed_by_name, step.changed_by_username)}</span>
+                                  <span className="text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTime(step.created_at)}</span>
+                                </div>
+                                {REASON_STATES.includes(step.to_state) && step.change_reason && (
+                                  <p className="mt-0.5 text-gray-600 dark:text-gray-400 italic">„{step.change_reason}“</p>
+                                )}
+                              </li>
+                            ))}
+                          </ol>
+                        )}
                       </div>
 
                       {/* Right: Actions */}
