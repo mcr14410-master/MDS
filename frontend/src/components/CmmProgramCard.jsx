@@ -38,6 +38,10 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
       {/* Details */}
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
+          <span className="text-gray-600 dark:text-gray-400">Nummer:</span>
+          <span className="font-mono font-medium text-gray-900 dark:text-gray-100 break-all text-right">{program.program_number}</span>
+        </div>
+        <div className="flex items-center justify-between">
           <span className="text-gray-600 dark:text-gray-400">Version:</span>
           <span className="text-right">
             <span className="font-medium text-gray-900 dark:text-gray-100">{program.version || 'N/A'}</span>

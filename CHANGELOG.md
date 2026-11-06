@@ -21,6 +21,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 - Programmnummern nach Schema (Spec `docs/konzepte/PROGRAMMNUMMERN_STUFE1_SPEC.md`, PR 1 Backend): fester Zähler je Bauteil und Art (`part_program_counters`, Migration mit Startwerten aus Nummern, die schon im Schema vorliegen), Vergabe in derselben Transaktion wie das Anlegen (NC und Messprogramm), Varianten übernehmen die Nummer aus der Variantengruppe, Eindeutigkeit ohne Groß-/Kleinschreibung (409 mit Bauteil und Arbeitsgang). `GET /api/programs/suggest-number?operation_id=&kind=` liefert den Vorschlag fürs Formular, ohne eine Nummer zu verbrauchen
+- Feld „Programmnummer“ beim Hochladen (NC und Messprogramm, vorbelegt mit dem Vorschlag) und beim Bearbeiten (nach der ersten Freigabe schreibgeschützt mit Schloss); Programmkarten zeigen die Nummer (`ProgramNumberField`, PR 2)
 
 ### Changed
 - `PUT /api/programs/:id`: Programmnummer ändern nur, solange das Programm nie freigegeben war (sonst 409), mit derselben Prüfung wie beim Anlegen. Bestehende Nummern (z. B. `CNC-M-001`) bleiben unverändert

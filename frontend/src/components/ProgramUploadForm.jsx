@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
+import ProgramNumberField from './ProgramNumberField';
 
 export default function ProgramUploadForm({ operationId, program, isNewRevision, onClose, onSuccess }) {
   const { uploadProgram, uploadRevision, updateProgram, loading } = useProgramsStore();
@@ -13,6 +14,8 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
     change_log: '',        // NEU: Woche 7
   });
   
+  const [programNumber, setProgramNumber] = useState(program?.program_number || '');
+  const [suggestedNumber, setSuggestedNumber] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
@@ -21,6 +24,7 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
   const isEditMode = program && !isNewRevision;
   const isNewRevisionMode = program && isNewRevision;
   const isNewProgramMode = !program && !isNewRevision;
+  const numberLocked = Boolean(program?.released_revision_id);
 
   // Load existing program data for edit/revision mode
   useEffect(() => {
@@ -72,6 +76,13 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
       newErrors.program_name = 'Programm-Name ist erforderlich';
     }
 
+    if ((isNewProgramMode || isEditMode) && !numberLocked && !programNumber.trim() && suggestedNumber !== null) {
+      newErrors.program_number = 'Programmnummer darf nicht leer sein';
+    }
+    if (isEditMode && !programNumber.trim()) {
+      newErrors.program_number = 'Programmnummer darf nicht leer sein';
+    }
+
     // File erforderlich bei neuem Programm oder neuer Revision
     if ((isNewProgramMode || isNewRevisionMode) && !selectedFile) {
       newErrors.file = 'Bitte wählen Sie eine Datei aus';
@@ -92,7 +103,11 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
     try {
       if (isEditMode) {
         // Edit mode - only update metadata
-        await updateProgram(program.id, formData);
+        await updateProgram(program.id, {
+          program_name: formData.program_name,
+          description: formData.description,
+          ...(!numberLocked && programNumber.trim() !== program.program_number ? { program_number: programNumber.trim() } : {}),
+        });
         toast.success('Programm erfolgreich aktualisiert');
       } else if (isNewRevisionMode) {
         // New Revision mode - upload new version
@@ -113,6 +128,10 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
         data.append('file', selectedFile);
         data.append('operation_id', operationId);
         data.append('program_name', formData.program_name.trim());
+        // Nur mitschicken, wenn geändert – sonst vergibt das Backend beim Speichern frisch
+        if (programNumber.trim() && programNumber.trim() !== suggestedNumber) {
+          data.append('program_number', programNumber.trim());
+        }
         if (formData.description?.trim()) {
           data.append('description', formData.description.trim());
         }
@@ -217,6 +236,22 @@ export default function ProgramUploadForm({ operationId, program, isNewRevision,
                 <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.file}</p>
               )}
             </div>
+          )}
+
+          {/* Programmnummer (Anlegen und Bearbeiten) */}
+          {(isNewProgramMode || isEditMode) && (
+            <ProgramNumberField
+              operationId={isNewProgramMode ? operationId : undefined}
+              kind={program?.kind === 'cmm' ? 'cmm' : 'nc'}
+              value={programNumber}
+              onChange={(v) => {
+                setProgramNumber(v);
+                if (errors.program_number) setErrors(prev => ({ ...prev, program_number: null }));
+              }}
+              onSuggested={setSuggestedNumber}
+              locked={isEditMode && numberLocked}
+              error={errors.program_number}
+            />
           )}
 
           {/* Program Name */}
