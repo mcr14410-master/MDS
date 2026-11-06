@@ -55,11 +55,11 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
           {getFileIcon(program.filename)}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-all" title={displayFilename}>
-            {displayFilename}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={program.program_name}>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-words" title={program.program_name}>
             {program.program_name}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 break-all" title={displayFilename}>
+            {displayFilename}
           </p>
         </div>
       </div>

@@ -22,15 +22,15 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow p-4">
-      {/* Header: Name der .prg */}
+      {/* Header: Programm-Name, darunter Dateiname */}
       <div className="flex items-start gap-3 mb-3">
         <div className="text-3xl flex-shrink-0">📐</div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-all" title={program.filename}>
-            {program.filename}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={program.program_name}>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-words" title={program.program_name}>
             {program.program_name}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 break-all" title={program.filename}>
+            {program.filename}
           </p>
         </div>
       </div>
