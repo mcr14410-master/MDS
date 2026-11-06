@@ -37,16 +37,19 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
    } | sudo tee /srv/sd-rettung/bestand-$(date +%F).txt
    ```
    Für die Task-App dasselbe: Ordner, Einstellungsdatei und Start-Befehl notieren (siehe deren Repo).
-3. **Frische Backups**:
+3. **Frische Backups** (MDS automatisch; die Task-App hat kein Nacht-Backup → Dump von Hand):
    ```bash
    cd ~/mds && sudo ./scripts/backup.sh && sudo ./scripts/backup-offsite.sh
+   cd ~/task-app && docker compose exec -T db pg_dump -U task taskapp | sudo tee /srv/sd-rettung/taskapp-$(date +%F).sql > /dev/null
    ```
 4. **restic-Passwort** liegt am zweiten Ort (Passwort-Safe/Tresor)? Sonst jetzt: `sudo cat /root/.mds-restic-password`.
 
 ## Phase B – neue Karte vorbereiten (am PC)
 
-1. Raspberry Pi Imager → Raspberry Pi 5 → **Raspberry Pi OS (64-bit)**, Lite genügt, wenn am Pi kein
-   Bildschirm/Desktop genutzt wird.
+1. Raspberry Pi Imager → Raspberry Pi 5 → **dieselbe OS-Version wie bisher, mit Desktop** (nicht Lite):
+   rpi01 läuft auf Bookworm (Debian 12) – im Imager unter „Raspberry Pi OS (other)“ → „Raspberry Pi OS (Legacy,
+   64-bit)“, solange Trixie aktuell ist. Grund: Der Kiosk (Task-App-Dashboard am HDMI-Bildschirm) startet über den
+   LXDE-Autostart unter X11; ein neueres Image mit Wayland ignoriert diesen Autostart.
 2. In den Imager-Einstellungen: Hostname wie bisher, Benutzer wie bisher (Pfade in Crontab und Doku hängen
    daran), SSH an, Zeitzone Europe/Berlin, Tastatur de.
 
@@ -55,7 +58,7 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
 1. Altes System sauber stoppen (Postgres auf der SSD wird sauber beendet):
    ```bash
    cd ~/mds && docker compose down
-   # Task-App ebenso stoppen
+   cd ~/task-app && docker compose down
    sudo shutdown -h now
    ```
 2. Karte tauschen (alte beschriften, nicht wiederverwenden), Pi starten, per SSH anmelden.
@@ -89,8 +92,26 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
    chmod +x scripts/*.sh && ./scripts/deploy.sh 2>&1 | tee ~/deploy-neu.log
    ```
    Keine neuen Migrationen; `init.sh` **nicht** ausführen. Health-Check zeigt die aktuelle Version.
-8. **Task-App** nach demselben Muster (Repo klonen, Einstellungsdatei aus `/root/sd-alt`, starten).
-9. **Backups wieder einrichten** (Dateien aus `/root/sd-alt` übernehmen, Rechte wie in DEPLOYMENT.md):
+8. **Task-App** (Daten: DB `/srv/postgres` auf der SSD, Anhänge auf der Windows-Freigabe unter `/srv/taskapp/files`):
+   - Freigabe: Zugangsdaten `/etc/samba/credentials/taskapp.cred` (`chmod 600`) und fstab-Zeile für
+     `/srv/taskapp/files` aus `/root/sd-alt` übernehmen, `sudo mount -a`, `ls /srv/taskapp/files`
+   - Repo klonen nach `~/task-app` (Branch `main`, `git config pull.rebase true`), `.env` aus
+     `/root/sd-alt/home/$USER/task-app/.env`, dann `./scripts/deploy.sh` (Repo der Task-App,
+     `docs/deploy_main.md`); Health: `curl -s http://localhost/api/fs/health` (30–60 s nach dem Start)
+9. **Kiosk** (Task-App-Dashboard per HDMI):
+   ```bash
+   sudo raspi-config   # Advanced Options → Wayland → X11; System Options → Boot/Auto Login → Desktop Autologin
+   sudo apt install -y unclutter
+   mkdir -p ~/bin ~/.config/lxsession/LXDE-pi
+   sudo cp /root/sd-alt/home/$USER/bin/kiosk.sh ~/bin/ && sudo chown $USER: ~/bin/kiosk.sh && chmod +x ~/bin/kiosk.sh
+   sudo cp /root/sd-alt/home/$USER/.config/lxsession/LXDE-pi/autostart ~/.config/lxsession/LXDE-pi/
+   sudo chown $USER: ~/.config/lxsession/LXDE-pi/autostart
+   sudo mkdir -p /etc/X11/xorg.conf.d && sudo cp /root/sd-alt/etc/X11/xorg.conf.d/10-blanking.conf /etc/X11/xorg.conf.d/
+   ```
+   Prüfen: `grep -E 'autologin|session' /etc/lightdm/lightdm.conf` → Autologin des Benutzers, Session
+   `LXDE-pi-x`. Der Autostart setzt Bildschirmschoner aus und die Auflösung (`xrandr`, 4K an HDMI-1); `kiosk.sh`
+   wartet auf die Task-App und startet Chromium im Kiosk-Modus. Nach dem Neustart muss das Dashboard erscheinen.
+10. **Backups wieder einrichten** (Dateien aus `/root/sd-alt` übernehmen, Rechte wie in DEPLOYMENT.md):
    - `/etc/samba/creds/mds` (`root:root`, `chmod 600`), `/root/.mds-restic-password` (`chmod 600`)
    - `/mnt/mds-offsite` anlegen, fstab-Zeile der Freigabe übernehmen (`nosharesock`!), ebenso die
      Freigabe der Task-App samt deren Zugangsdaten
@@ -103,5 +124,5 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
 - [ ] Administration → Automatische Aufgaben: Backup-Status und Netzlaufwerk-Backup am nächsten Morgen grün
 - [ ] Zeiterfassungs-Terminal bucht (Karte auflegen)
 - [ ] Mess-PC: Agent meldet sich wieder (Tray-Status)
-- [ ] Task-App erreichbar
+- [ ] Task-App erreichbar, Dashboard läuft nach einem Neustart von selbst auf dem HDMI-Bildschirm
 - [ ] Nach ein paar Tagen: `sudo tune2fs -l $(findmnt -no SOURCE /) | grep -i error` → keine Fehler
