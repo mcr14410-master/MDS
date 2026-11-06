@@ -42,7 +42,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.20.0)
+
+- Zwei Migrationen: `1737000126000` (Zähler für Programmnummern, Startwerte aus Nummern im Schema) und `1737000127000` (Statuswechsel je Version, Altbestand über die Zeit zugeordnet)
+- Nach dem Deploy: an einem Test-Arbeitsgang „Programm hochladen“ → Feld Programmnummer ist mit `<Bauteilnummer>-1` vorbelegt (Messprogramm `-M1`); Testprogramm danach wieder löschen
+- Messprogramm mit `.p2x` hochladen → erscheint als „Excel-Export-Einstellung“, „nicht übernehmen“ funktioniert
+- Versionshistorie eines freigegebenen Programms → „Ablauf“ aufklappen: Schritte mit Name und plausibler Uhrzeit (nicht 1–2 h verschoben)
 
 ---
 

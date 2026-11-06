@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.20.0] - 2026-11-06 - Programmnummern, Ablauf je Version
+
 ### Für Anwender
 - Neue NC- und Messprogramme bekommen ihre Nummer nach festem Schema aus der Bauteilnummer: `KD00000-00004-1` für NC, `KD00000-00004-M1` für Messprogramme. Die Nummer bleibt bis an die Maschine gleich.
 - Eine vergebene Nummer wird nie ein zweites Mal vergeben. Bis zur ersten Freigabe lässt sie sich ändern, danach ist sie fest.
