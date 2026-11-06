@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Neue NC- und Messprogramme bekommen ihre Nummer nach festem Schema aus der Bauteilnummer: `KD00000-00004-1` für NC, `KD00000-00004-M1` für Messprogramme. Die Nummer bleibt bis an die Maschine gleich.
+- Eine vergebene Nummer wird nie ein zweites Mal vergeben. Bis zur ersten Freigabe lässt sie sich ändern, danach ist sie fest.
+
+### Added
+- Programmnummern nach Schema (Spec `docs/konzepte/PROGRAMMNUMMERN_STUFE1_SPEC.md`, PR 1 Backend): fester Zähler je Bauteil und Art (`part_program_counters`, Migration mit Startwerten aus Nummern, die schon im Schema vorliegen), Vergabe in derselben Transaktion wie das Anlegen (NC und Messprogramm), Varianten übernehmen die Nummer aus der Variantengruppe, Eindeutigkeit ohne Groß-/Kleinschreibung (409 mit Bauteil und Arbeitsgang). `GET /api/programs/suggest-number?operation_id=&kind=` liefert den Vorschlag fürs Formular, ohne eine Nummer zu verbrauchen
+
+### Changed
+- `PUT /api/programs/:id`: Programmnummer ändern nur, solange das Programm nie freigegeben war (sonst 409), mit derselben Prüfung wie beim Anlegen. Bestehende Nummern (z. B. `CNC-M-001`) bleiben unverändert
+
 ---
 
 ## [2.19.2] - 2026-11-05 - Versionsstatus, Selbsttest

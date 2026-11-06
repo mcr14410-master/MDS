@@ -33,6 +33,9 @@ router.post('/cmm',
 // mit ?page= zusätzlich search, status, sort_by, sort_order, page_size)
 router.get('/', programsController.getPrograms);
 
+// GET /api/programs/suggest-number?operation_id=&kind=nc|cmm - Nummernvorschlag (VOR /:id!)
+router.get('/suggest-number', programsController.suggestNumber);
+
 // GET /api/programs/stats?kind=nc|cmm - Anzahl je Status (VOR /:id!)
 router.get('/stats', programsController.getProgramStats);
 

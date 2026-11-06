@@ -22,7 +22,7 @@ const archiver = require('archiver');
 const { XMLValidator } = require('fast-xml-parser');
 const pool = require('../config/db');
 const { CMM_UPLOAD_DIR, insideCmmDir } = require('../middleware/uploadMiddleware');
-const { suggestProgramNumber } = require('../utils/programNumber');
+const { assignProgramNumber, ProgramNumberError } = require('../utils/programNumber');
 const {
   ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
 } = require('../services/cmmProgramFiles');
@@ -281,15 +281,13 @@ exports.createCmmProgram = async (req, res) => {
       return res.status(400).json({ error: 'Dateien unvollständig oder ungültig', details: errors, ignored });
     }
 
-    if (!program_number) {
-      program_number = await suggestProgramNumber(pool, operation_id, opResult.rows[0].op_number);
-    }
-
     const workflowStateId = await draftStateId(pool);
     const files = plan.files.map(f => ({ ...f, storedPath: f.path }));
 
     client = await pool.connect();
     await client.query('BEGIN');
+    // Programmnummer nach Schema vergeben bzw. eingegebene prüfen (Spec Programmnummern Stufe 1)
+    program_number = await assignProgramNumber(client, { operationId: opResult.rows[0].id, kind: 'cmm', requested: program_number });
     const programResult = await client.query(
       `INSERT INTO programs (operation_id, program_number, program_name, description, workflow_state_id, created_by, kind)
        VALUES ($1, $2, $3, $4, $5, $6, 'cmm') RETURNING *`,
@@ -322,6 +320,9 @@ exports.createCmmProgram = async (req, res) => {
   } catch (error) {
     if (client) await client.query('ROLLBACK').catch(() => {});
     await removeFiles(tempPaths);
+    if (error instanceof ProgramNumberError) {
+      return res.status(error.status).json({ error: error.message });
+    }
     console.error('Error creating cmm program:', error);
     res.status(500).json({ error: 'Fehler beim Anlegen des Messprogramms', details: error.message });
   } finally {

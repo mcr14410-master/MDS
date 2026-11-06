@@ -106,7 +106,7 @@ CREATE TABLE part_program_counters (
 | `PUT /api/programs/:id` | `program_number` geändert → 409, wenn gesperrt (S3): „Nummer ist seit der ersten Freigabe fest“. Sonst Prüfung S4 und S6 |
 | Variante anlegen mit „NC-Programme kopieren“ | siehe 5.3 |
 
-- Audit: Nummernänderung über `PUT` läuft schon durch die Audit-Middleware. Alte und neue Nummer stehen im Eintrag (prüfen, ob `old_values` gefüllt ist).
+- Audit: Nummernänderung über `PUT` läuft durch die Audit-Middleware. Im Eintrag steht nur der Request-Body, also die neue Nummer. Die alte Nummer steht nicht drin (gilt MDS-weit, siehe ROADMAP „Offene Fixes“). Ändern geht nur vor der ersten Freigabe, das ist für Stufe 1 vertretbar.
 - `rollback`, Workflow, Bereitstellung: unverändert.
 
 ### 5.3 Varianten-Kopie
