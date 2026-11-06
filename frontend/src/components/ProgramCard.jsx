@@ -66,6 +66,10 @@ export default function ProgramCard({ program, onEdit, onDelete, onViewVersions,
 
       {/* Details */}
       <div className="space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600 dark:text-gray-400">Nummer:</span>
+          <span className="font-mono font-medium text-gray-900 dark:text-gray-100 break-all text-right">{program.program_number}</span>
+        </div>
         {/* Version & Size */}
         <div className="flex items-center justify-between">
           <span className="text-gray-600 dark:text-gray-400">Version:</span>
