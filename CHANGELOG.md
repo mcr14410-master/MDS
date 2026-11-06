@@ -19,6 +19,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Neue NC- und Messprogramme bekommen ihre Nummer nach festem Schema aus der Bauteilnummer: `KD00000-00004-1` für NC, `KD00000-00004-M1` für Messprogramme. Die Nummer bleibt bis an die Maschine gleich.
 - Eine vergebene Nummer wird nie ein zweites Mal vergeben. Bis zur ersten Freigabe lässt sie sich ändern, danach ist sie fest.
 - Messprogramme: Die Einstellungsdatei des alten Excel-Exports (.p2x) wird jetzt mit übernommen. Begleitdateien wie .p2x, Mini-Routinen oder die Prüfzeichnung lassen sich beim Hochladen mit „nicht übernehmen“ weglassen – man kann also einfach den ganzen Ordner hochladen.
+- Auf den Programmkarten steht jetzt der Programm-Name oben, der Dateiname klein darunter.
 
 ### Added
 - Programmnummern nach Schema (Spec `docs/konzepte/PROGRAMMNUMMERN_STUFE1_SPEC.md`, PR 1 Backend): fester Zähler je Bauteil und Art (`part_program_counters`, Migration mit Startwerten aus Nummern, die schon im Schema vorliegen), Vergabe in derselben Transaktion wie das Anlegen (NC und Messprogramm), Varianten übernehmen die Nummer aus der Variantengruppe, Eindeutigkeit ohne Groß-/Kleinschreibung (409 mit Bauteil und Arbeitsgang). `GET /api/programs/suggest-number?operation_id=&kind=` liefert den Vorschlag fürs Formular, ohne eine Nummer zu verbrauchen
@@ -27,6 +28,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Changed
 - `PUT /api/programs/:id`: Programmnummer ändern nur, solange das Programm nie freigegeben war (sonst 409), mit derselben Prüfung wie beim Anlegen. Bestehende Nummern (z. B. `CNC-M-001`) bleiben unverändert
+- Programmkarten (NC und Messprogramm): Programm-Name als Überschrift, Dateiname darunter (vorher umgekehrt)
 
 ---
 
