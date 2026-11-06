@@ -44,6 +44,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 **Nächstes Release** (2.20.0)
 
+- **Stand 06.11.2026:** Deploy grün im zweiten Anlauf – im ersten stürzte `docker compose` ab, weil die SD-Karte beschädigte Daten liefert (`/usr/bin/docker` neu eingespielt, siehe ROADMAP „SD-Karte von rpi01 defekt“). Migrationen liefen im ersten Anlauf. Prüfpunkte unten noch offen
 - Zwei Migrationen: `1737000126000` (Zähler für Programmnummern, Startwerte aus Nummern im Schema) und `1737000127000` (Statuswechsel je Version, Altbestand über die Zeit zugeordnet)
 - Nach dem Deploy: an einem Test-Arbeitsgang „Programm hochladen“ → Feld Programmnummer ist mit `<Bauteilnummer>-1` vorbelegt (Messprogramm `-M1`); Testprogramm danach wieder löschen
 - Messprogramm mit `.p2x` hochladen → erscheint als „Excel-Export-Einstellung“, „nicht übernehmen“ funktioniert
