@@ -28,6 +28,15 @@ const ROLE_LABELS = {
   calibration: 'Kalibrierprogramm (.prg)',
 };
 
+// Rolle „other“ umfasst mehrere Begleitdateien – Bezeichnung nach Endung
+function roleLabel(role, name = '') {
+  if (role === 'other' && /\.p2x$/i.test(name)) return 'Excel-Export-Einstellung (.p2x)';
+  return ROLE_LABELS[role];
+}
+
+// Begleitdateien, die man beim Hochladen weglassen kann („nicht übernehmen“) – Prüfzeichnung, Mini-Routinen, .p2x
+const OPTIONAL_ROLES = ['drawing', 'other'];
+
 const UPLOAD_AREAS = ['program', 'template', 'calibration'];
 
 // Bereich, in dem eine Datei hochgeladen werden muss – für den Hinweis beim Aussortieren
@@ -82,6 +91,8 @@ function classifyByName(name) {
   if (lower.endsWith('.prg')) return { kind: 'file', role: 'main', target: 'program_dir' };
   if (lower.endsWith('.cad')) return { kind: 'file', role: 'cad', target: 'program_dir' };
   if (lower.endsWith('.pdf')) return { kind: 'file', role: 'drawing', target: 'program_dir' };
+  // Einstellung des alten Excel-Exports (Zielpfad, Kopfzeilen) – bei älteren Programmen noch in Gebrauch
+  if (lower.endsWith('.p2x')) return { kind: 'file', role: 'other', target: 'program_dir' };
   if (lower.endsWith('.stp') || lower.endsWith('.step')) return { kind: 'cad_import' };
   return { kind: 'unknown' };
 }
@@ -120,10 +131,23 @@ const stem = (name) => path.parse(name).name.toLowerCase();
  *   files: Einträge aus uploaded/previous mit `source` ('upload'|'previous') und
  *   `status` ('new'|'changed'|'unchanged'|'carried')
  */
-function planRevision({ uploaded, previous, remove = [], excelReport, calibration }) {
+function planRevision({ uploaded: allUploaded, previous, remove = [], excelReport, calibration }) {
   const errors = [];
   const warnings = [];
   const removed = [];
+
+  // „Nicht übernehmen“: hochgeladene Begleitdateien weglassen (gleicher Name in der Vorversion entfällt mit)
+  const removeKeys = new Set(remove.map(key));
+  const uploaded = [];
+  const skippedKeys = new Set();
+  for (const f of allUploaded) {
+    if (removeKeys.has(key(f.name)) && OPTIONAL_ROLES.includes(f.role)) {
+      removed.push({ ...f, source: 'upload', reason: 'nicht übernommen' });
+      skippedKeys.add(key(f.name));
+    } else {
+      uploaded.push(f);
+    }
+  }
 
   // Hochgeladene Dateien in sich prüfen
   const seen = new Set();
@@ -147,6 +171,11 @@ function planRevision({ uploaded, previous, remove = [], excelReport, calibratio
 
   for (const name of remove) {
     const idx = carried.findIndex(f => key(f.name) === key(name));
+    if (idx === -1 && skippedKeys.has(key(name))) continue;
+    if (idx === -1 && uploaded.some(f => key(f.name) === key(name))) {
+      errors.push(`${name} kann nicht weggelassen werden – nur Prüfzeichnung, Mini-Routinen und .p2x`);
+      continue;
+    }
     if (idx === -1) {
       errors.push(`Zu entfernende Datei nicht in der Vorversion: ${name}`);
       continue;
@@ -169,7 +198,9 @@ function planRevision({ uploaded, previous, remove = [], excelReport, calibratio
       errors.push('Kalibrierprogramm über „ohne Kalibrierprogramm“ entfernen (calibration=false)');
       continue;
     }
-    removed.push({ ...file, reason: 'entfernt' });
+    const skipped = removed.find(r => r.source === 'upload' && key(r.name) === key(file.name));
+    if (skipped) Object.assign(skipped, { ...file, reason: 'nicht übernommen' });   // eine Zeile, entfällt wirklich
+    else removed.push({ ...file, reason: 'entfernt' });
     carried.splice(idx, 1);
   }
 
@@ -239,7 +270,9 @@ function planRevision({ uploaded, previous, remove = [], excelReport, calibratio
     warnings.push(`CAD-Datei ${cad.name} heißt anders als ${mains[0].name} – PC-DMIS findet sie über den Namen`);
   }
 
-  if (previous && errors.length === 0 && removed.length === 0 && files.every(f => f.status === 'unchanged' || f.status === 'carried')) {
+  // Nur weggelassene neue Dateien sind keine Änderung
+  const realRemoved = removed.filter(r => r.source !== 'upload');
+  if (previous && errors.length === 0 && realRemoved.length === 0 && files.every(f => f.status === 'unchanged' || f.status === 'carried')) {
     errors.push('Keine Änderung gegenüber der Vorversion');
   }
 
@@ -292,6 +325,8 @@ function zipEntryName(file) {
 
 module.exports = {
   ROLE_LABELS,
+  OPTIONAL_ROLES,
+  roleLabel,
   UPLOAD_AREAS,
   decodeOriginalName,
   classifyFile,

@@ -17,6 +17,9 @@ const FILE_STATUS = {
 
 // Übernommene Dateien dieser Rollen lassen sich nur ersetzen, nicht entfernen (Backend-Regel)
 const REPLACE_ONLY = ['main', 'cad'];
+// Hochgeladene Begleitdateien dieser Rollen lassen sich weglassen („nicht übernehmen“) – Prüfzeichnung, Mini-Routinen, .p2x
+const OPTIONAL_ROLES = ['drawing', 'other'];
+const UPLOAD_STATUS = ['new', 'changed', 'unchanged'];
 // Diese Rollen entfernt der Schalter ihres Bereichs (Backend: excel_report / calibration = false)
 const SWITCH_AREA = { report_xlsx: 'template', report_layout: 'template', calibration: 'calibration' };
 
@@ -202,6 +205,15 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     if (!on) clearArea(area);
   };
 
+  // Weggelassene Dateien, die es nicht mehr gibt (Auswahl geleert), aus der Liste nehmen
+  useEffect(() => {
+    const names = new Set([
+      ...areaFiles.program, ...areaFiles.template, ...areaFiles.calibration,
+    ].map((file) => file.name.toLowerCase()));
+    (currentFiles?.files || []).forEach((file) => names.add(file.filename.toLowerCase()));
+    setRemove((prev) => (prev.every((n) => names.has(n.toLowerCase())) ? prev : prev.filter((n) => names.has(n.toLowerCase()))));
+  }, [areaFiles, currentFiles]);
+
   const toggleRemove = (name) => {
     setRemove((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
@@ -211,7 +223,8 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     ? toggleOption('template', setExcelReport, on)
     : toggleOption('calibration', setCalibration, on));
   const removal = {
-    canRemove: (f) => f.status === 'carried' && !REPLACE_ONLY.includes(f.role),
+    canRemove: (f) => (f.status === 'carried' && !REPLACE_ONLY.includes(f.role))
+      || (UPLOAD_STATUS.includes(f.status) && OPTIONAL_ROLES.includes(f.role)),
     canKeep: (f) => {
       const area = SWITCH_AREA[f.role];
       if (area === 'template') return hadExcel && !excelReport;
@@ -280,7 +293,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
           {/* Messprogramm */}
           <DropArea
             onItems={(items) => addItems('program', items)}
-            hint=".prg, .cad, Prüfzeichnung (.pdf), .MiniRoutines.xml – PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert"
+            hint=".prg, .cad, Prüfzeichnung (.pdf), .MiniRoutines.xml, .p2x (alter Excel-Export) – PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert"
           >
             {isRevision && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -417,7 +430,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
                     ...preview.ignored.map((f) => ({ filename: f.name, status: 'ignored', reason: f.reason })),
                     ...skippedRows,
                   ]}
-                  removal={isRevision ? removal : null}
+                  removal={removal}
                 />
                 {preview.base_version && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">Verglichen mit Version {preview.base_version}.</p>
@@ -539,7 +552,7 @@ function OptionArea({ title, description, checked, onChange, files, onItems, onC
   );
 }
 
-// removal: { canRemove, canKeep, onRemove, onKeep } je Datei – nur bei neuer Version
+// removal: { canRemove, canKeep, onRemove, onKeep } je Datei – entfernen (übernommen) bzw. nicht übernehmen (hochgeladen)
 function FileTable({ rows, removal = null }) {
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -585,7 +598,7 @@ function FileTable({ rows, removal = null }) {
                   {removable && (
                     <button type="button" onClick={() => removal.onRemove(f)}
                       className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline">
-                      entfernen
+                      {f.status === 'carried' ? 'entfernen' : 'nicht übernehmen'}
                     </button>
                   )}
                   {restorable && (

@@ -24,7 +24,7 @@ const pool = require('../config/db');
 const { CMM_UPLOAD_DIR, insideCmmDir } = require('../middleware/uploadMiddleware');
 const { assignProgramNumber, ProgramNumberError } = require('../utils/programNumber');
 const {
-  ROLE_LABELS, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
+  roleLabel, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
 } = require('../services/cmmProgramFiles');
 
 const VERSION_TYPES = ['patch', 'minor', 'major'];
@@ -38,6 +38,10 @@ const sha256 = (filepath) => new Promise((resolve, reject) => {
 });
 
 const removeFiles = (paths) => Promise.all(paths.map(p => fs.unlink(p).catch(() => {})));
+// Hochgeladen, aber nicht übernommen („nicht übernehmen“) – temporäre Datei wegräumen
+const unusedUploads = (uploaded, plan) => uploaded
+  .filter(u => !plan.files.some(f => f.source === 'upload' && f.path === u.path))
+  .map(u => u.path);
 // Multipart-Feld → Upload-Bereich
 const UPLOAD_FIELDS = { files: 'program', template_files: 'template', calibration_files: 'calibration' };
 
@@ -63,7 +67,7 @@ const parseFlag = (value) => {
  * gemeldet; unbekannte Dateien und ungültiges XML sind Fehler.
  */
 const UNKNOWN_REASON = {
-  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml)',
+  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml, .p2x)',
   template: 'Excel-Vorlage besteht nur aus .xlsx und .layout.xml',
   calibration: 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen',
 };
@@ -210,7 +214,7 @@ async function insertRevision(client, { programId, version, files, comment, work
 const fileSummary = (f) => ({
   filename: f.name,
   role: f.role,
-  role_label: ROLE_LABELS[f.role],
+  role_label: roleLabel(f.role, f.name),
   target: f.target,
   status: f.status,
   filesize: f.size,
@@ -264,7 +268,7 @@ exports.createCmmProgram = async (req, res) => {
     }
 
     const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(uploadedFiles(req));
-    const plan = planRevision({ uploaded, previous: null, excelReport, calibration });
+    const plan = planRevision({ uploaded, previous: null, remove: toList(req.body.remove), excelReport, calibration });
     const errors = [...classifyErrors, ...plan.errors];
     if (plan.templateName) {
       const conflict = await findTemplateConflict(pool, plan.templateName, null);
@@ -304,6 +308,7 @@ exports.createCmmProgram = async (req, res) => {
     });
     await client.query('UPDATE programs SET current_revision_id = $1 WHERE id = $2', [revision.id, program.id]);
     await client.query('COMMIT');
+    await removeFiles(unusedUploads(uploaded, plan));
 
     res.status(201).json({
       success: true,
@@ -413,6 +418,7 @@ exports.createCmmRevision = async (req, res) => {
       [revision.id, workflowStateId, program.id]
     );
     await client.query('COMMIT');
+    await removeFiles(unusedUploads(uploaded, plan));
 
     res.status(201).json({
       success: true,
@@ -484,7 +490,7 @@ exports.getCmmFiles = async (req, res) => {
         released_version: program.released_version,
         excel_report: result.rows.some(f => f.role === 'report_xlsx'),
         calibration: result.rows.some(f => f.role === 'calibration'),
-        files: result.rows.map(f => ({ ...f, role_label: ROLE_LABELS[f.role] })),
+        files: result.rows.map(f => ({ ...f, role_label: roleLabel(f.role, f.filename) })),
       },
     });
   } catch (error) {

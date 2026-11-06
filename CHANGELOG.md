@@ -18,10 +18,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Neue NC- und Messprogramme bekommen ihre Nummer nach festem Schema aus der Bauteilnummer: `KD00000-00004-1` für NC, `KD00000-00004-M1` für Messprogramme. Die Nummer bleibt bis an die Maschine gleich.
 - Eine vergebene Nummer wird nie ein zweites Mal vergeben. Bis zur ersten Freigabe lässt sie sich ändern, danach ist sie fest.
+- Messprogramme: Die Einstellungsdatei des alten Excel-Exports (.p2x) wird jetzt mit übernommen. Begleitdateien wie .p2x, Mini-Routinen oder die Prüfzeichnung lassen sich beim Hochladen mit „nicht übernehmen“ weglassen – man kann also einfach den ganzen Ordner hochladen.
 
 ### Added
 - Programmnummern nach Schema (Spec `docs/konzepte/PROGRAMMNUMMERN_STUFE1_SPEC.md`, PR 1 Backend): fester Zähler je Bauteil und Art (`part_program_counters`, Migration mit Startwerten aus Nummern, die schon im Schema vorliegen), Vergabe in derselben Transaktion wie das Anlegen (NC und Messprogramm), Varianten übernehmen die Nummer aus der Variantengruppe, Eindeutigkeit ohne Groß-/Kleinschreibung (409 mit Bauteil und Arbeitsgang). `GET /api/programs/suggest-number?operation_id=&kind=` liefert den Vorschlag fürs Formular, ohne eine Nummer zu verbrauchen
 - Feld „Programmnummer“ beim Hochladen (NC und Messprogramm, vorbelegt mit dem Vorschlag) und beim Bearbeiten (nach der ersten Freigabe schreibgeschützt mit Schloss); Programmkarten zeigen die Nummer (`ProgramNumberField`, PR 2)
+- Messprogramme: `.p2x` (Einstellung des alten Excel-Exports) als Begleitdatei (Rolle `other`, Programmordner, Bezeichnung „Excel-Export-Einstellung (.p2x)“). Hochgeladene Begleitdateien (Prüfzeichnung, Mini-Routinen, `.p2x`) lassen sich beim Anlegen und bei neuen Versionen über `remove` weglassen („nicht übernehmen“, auch im Formular); gleichnamige Datei der Vorversion entfällt mit, `.prg`/`.cad`/Vorlage nicht. Temporäre Dateien weggelassener Uploads werden aufgeräumt
 
 ### Changed
 - `PUT /api/programs/:id`: Programmnummer ändern nur, solange das Programm nie freigegeben war (sonst 409), mit derselben Prüfung wie beim Anlegen. Bestehende Nummern (z. B. `CNC-M-001`) bleiben unverändert
