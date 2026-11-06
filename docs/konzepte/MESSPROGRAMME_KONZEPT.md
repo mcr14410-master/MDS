@@ -395,6 +395,12 @@ Bedeutung laut Hexagon-Support-Artikel „What are the .PRG~ and .PRG^ files“)
 | `NAME.MiniRoutines.xml` | XML mit Laufzeit (`EntireRoutine Time`), Standard-Mini-Routinen und selbst angelegte Mini-Routinen (`<MiniRoutine>`) und `MarkSets`; wird mit dem `.prg` geschrieben |
 | `NAME.prg.corrupt` | entsteht nur bei **Wiederherstellung**: PC-DMIS benennt ein beschädigtes `.prg` so um und macht das `.PRG~` zum aktiven `.prg` |
 
+**`NAME.P2X`** (gefunden 06.11.2026 bei einem älteren Programm): Einstellung des **alten Excel-Exports**
+(Zieldatei `NAME=…`, Trennzeichen, Kopfzeilen, Startzeile/-spalte). Keine Nebendatei, PC-DMIS schreibt sie
+nicht beim Speichern. Das MDS übernimmt sie als Begleitdatei (Rolle `other`), weil ältere Programme oder
+andere Mitarbeiter den Export noch nutzen könnten. Nicht mehr gebrauchte `.p2x` beim Hochladen mit
+„nicht übernehmen“ weglassen (gilt ebenso für Prüfzeichnung und Mini-Routinen).
+
 **DocumentRecovery bleibt eingeschaltet** (PC-DMIS Settings Editor) – die Sicherungen sind während
 langer Bereitstellungen ein sinnvolles Sicherheitsnetz. Der Agent rührt `.PRG~`/`.PRG^` deshalb
 **während** der Bereitstellung nicht an, erst beim Abschließen.

@@ -5,7 +5,7 @@
 const assert = require('node:assert/strict');
 const {
   decodeOriginalName, classifyFile, hasCustomMiniRoutines, templateBaseName, planRevision,
-  windowsSafeName, localDirFor, deviceLocation, zipEntryName,
+  roleLabel, windowsSafeName, localDirFor, deviceLocation, zipEntryName,
 } = require('../src/services/cmmProgramFiles');
 
 let passed = 0;
@@ -299,6 +299,63 @@ test('Gerät und ZIP: gleiche Struktur, Kalibrierung im Unterordner, Vorlage im 
   assert.equal(zipEntryName(main), 'KD00000-00004-M1.prg');
   assert.equal(zipEntryName(kal), 'Kalibrierung/KD00000-00004-M1_KAL.prg');
   assert.equal(zipEntryName(xlsx), 'PC-DMIS-Vorlagen/KD00000-00004-M1.xlsx');
+});
+
+// --- .p2x und „nicht übernehmen“ ---
+
+test('.p2x (alter Excel-Export) ist Begleitdatei im Programmordner', () => {
+  assert.deepEqual(classifyFile('TEIL-0001_OP30.P2X'), { kind: 'file', role: 'other', target: 'program_dir' });
+  assert.equal(classifyFile('a.p2x', 'template').kind, 'ignored');
+  assert.equal(classifyFile('a.p2x', 'calibration').kind, 'ignored');
+  assert.equal(roleLabel('other', 'TEIL-0001_OP30.P2X'), 'Excel-Export-Einstellung (.p2x)');
+  assert.equal(roleLabel('other', 'TEIL-0001_OP30.MiniRoutines.xml'), 'Mini-Routinen (.MiniRoutines.xml)');
+  const plan = planRevision({ uploaded: [...GROUP, f('TEIL-0001_OP30.P2X')], previous: null });
+  assert.deepEqual(plan.errors, []);
+  assert.ok(plan.files.some(x => x.name === 'TEIL-0001_OP30.P2X' && x.role === 'other'));
+});
+
+test('Neues Programm: Begleitdateien „nicht übernehmen“', () => {
+  const plan = planRevision({
+    uploaded: [...GROUP, f('TEIL-0001_OP30.P2X')],
+    previous: null,
+    remove: ['teil-0001_op30.p2x', 'TEIL-0001_OP30_Pruefzeichnung.pdf'],
+  });
+  assert.deepEqual(plan.errors, []);
+  assert.deepEqual(plan.files.map(x => x.name).sort(), ['KD00000_TEIL-0001_C.layout.xml', 'KD00000_TEIL-0001_C.xlsx', 'TEIL-0001_OP30.cad', 'TEIL-0001_OP30.prg']);
+  assert.deepEqual(plan.removed.map(x => [x.name, x.reason]).sort(), [
+    ['TEIL-0001_OP30.P2X', 'nicht übernommen'], ['TEIL-0001_OP30_Pruefzeichnung.pdf', 'nicht übernommen'],
+  ]);
+});
+
+test('.prg, .cad und Vorlage lassen sich nicht weglassen', () => {
+  const plan = planRevision({ uploaded: GROUP, previous: null, remove: ['TEIL-0001_OP30.cad'] });
+  assert.ok(plan.errors.some(e => e.includes('kann nicht weggelassen werden')));
+});
+
+test('Neue Version: hochgeladene .p2x weglassen, die der Vorversion entfällt mit (eine Zeile)', () => {
+  const prev = [...GROUP, f('TEIL-0001_OP30.P2X')].map(x => ({ ...x }));
+  const plan = planRevision({
+    uploaded: [{ ...f('TEIL-0001_OP30.prg'), hash: 'neu' }, f('TEIL-0001_OP30.P2X')],
+    previous: prev,
+    remove: ['TEIL-0001_OP30.P2X'],
+  });
+  assert.deepEqual(plan.errors, []);
+  assert.ok(!plan.files.some(x => x.name === 'TEIL-0001_OP30.P2X'));
+  const rows = plan.removed.filter(x => x.name === 'TEIL-0001_OP30.P2X');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].reason, 'nicht übernommen');
+});
+
+test('Neue Version: nur eine neue Begleitdatei weggelassen = keine Änderung', () => {
+  const plan = planRevision({ uploaded: [f('NEU.P2X')], previous: GROUP.map(x => ({ ...x })), remove: ['NEU.P2X'] });
+  assert.ok(plan.errors.includes('Keine Änderung gegenüber der Vorversion'));
+});
+
+test('Neue Version: übernommene .p2x entfernen wie andere Begleitdateien', () => {
+  const prev = [...GROUP, f('TEIL-0001_OP30.P2X')].map(x => ({ ...x }));
+  const plan = planRevision({ uploaded: [], previous: prev, remove: ['TEIL-0001_OP30.P2X'] });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.removed[0].reason, 'entfernt');
 });
 
 console.log(`\n${passed} Tests bestanden`);
