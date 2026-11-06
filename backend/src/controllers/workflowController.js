@@ -125,13 +125,19 @@ const changeWorkflowState = async (req, res) => {
         'UPDATE programs SET released_revision_id = current_revision_id WHERE id = $1',
         [entityId]
       );
+      await client.query(
+        `UPDATE program_revisions SET released_by = $1, released_at = CURRENT_TIMESTAMP
+         WHERE id = (SELECT current_revision_id FROM programs WHERE id = $2)`,
+        [userId, entityId]
+      );
     }
 
-    // 4. History-Eintrag erstellen
+    // 4. History-Eintrag erstellen (bei Programmen mit der Version, für die der Status gilt)
     await client.query(
       `INSERT INTO workflow_history 
-       (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason, revision_id)
+       VALUES ($1, $2, $3, $4, $5, $6,
+               CASE WHEN $1::varchar = 'program' THEN (SELECT current_revision_id FROM programs WHERE id = $2) END)`,
       [entityType, entityId, fromStateId, toStateId, userId, changeReason || null]
     );
 
