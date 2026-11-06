@@ -277,6 +277,12 @@ github.com/restic/restic/releases) mit `-r "\\SERVER\MDS Backup\restic"` und dem
 
 ---
 
+## Systemdatenträger tauschen / Pi neu aufsetzen
+
+Siehe [docs/PI-NEU-AUFSETZEN.md](docs/PI-NEU-AUFSETZEN.md) – Daten auf der SSD bleiben, nur das System wird neu eingerichtet.
+
+---
+
 ## Troubleshooting
 
 ### Container startet nicht
