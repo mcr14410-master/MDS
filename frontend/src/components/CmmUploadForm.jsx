@@ -4,6 +4,7 @@
 // Probelauf und zeigt vor dem Speichern, was neu, geändert, unverändert oder übernommen ist.
 // Excel-Vorlage und Kalibrierprogramm haben je einen eigenen Schalter mit eigenem Upload.
 import { useEffect, useRef, useState } from 'react';
+import ProgramNumberField from './ProgramNumberField';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
 
@@ -85,6 +86,8 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
   const [previewError, setPreviewError] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [programNumber, setProgramNumber] = useState('');
+  const [suggestedNumber, setSuggestedNumber] = useState(null);
   const previewRun = useRef(0);
 
   useEffect(() => {
@@ -118,6 +121,8 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     : {
       operation_id: operationId,
       program_name: fields.program_name,
+      // Nur mitschicken, wenn geändert – sonst vergibt das Backend beim Speichern frisch
+      ...(programNumber.trim() && programNumber.trim() !== suggestedNumber ? { program_number: programNumber.trim() } : {}),
       description: fields.description,
       comment: fields.comment,
       excel_report: flag(excelReport, false),
@@ -237,7 +242,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
     }
   };
 
-  const canSave = preview?.valid && !previewing && !saving && (isRevision || fields.program_name.trim());
+  const canSave = preview?.valid && !previewing && !saving && (isRevision || (fields.program_name.trim() && programNumber.trim()));
   const skippedRows = skipped.map((s) => ({
     ...s,
     status: 'ignored',
@@ -299,6 +304,10 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
           {/* Felder */}
           {!isRevision ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <ProgramNumberField operationId={operationId} kind="cmm" value={programNumber}
+                  onChange={setProgramNumber} onSuggested={setSuggestedNumber} inputClass={inputClass} />
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Programm-Name <span className="text-red-500">*</span>
