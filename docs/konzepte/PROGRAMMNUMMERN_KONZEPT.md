@@ -208,6 +208,11 @@ Im NC-Kopf stehen heute (Beispiel Mazatrol-Postprozessor):
 - Namensregel je Steuerung in den Stammdaten (4.1), Ziffernvergabe für Mazatrol (4.2)
 - Download/Bereitstellung benennt die Datei nach der Namensregel der Ziel-Steuerung
 - Kopf-Prüfung beim Hochladen (Abschnitt 5)
+- **Idee (06.11.2026): Programm-Name im Ausgabeordner** – Ordner `<Programmnummer>_<Programm-Name>` statt nur der
+  Nummer, damit der Werker am Mess-PC bzw. an der Maschine sieht, worum es geht. Zu klären: Der Name ist jederzeit
+  änderbar → beim Bereitstellen festhalten (wie `local_dir` heute), eine Umbenennung erst bei der nächsten
+  Bereitstellung übernehmen; Windows-Zeichen und Länge bereinigen (wie `deviceLocation`, Agent-Spec 5.3);
+  bei offenen Bereitstellungen den Ordner nicht umbenennen. Dateinamen bleiben bei der Nummer
 
 **Stufe 3 – MDS → TopSolid**
 - Programm im MDS anlegen (Nummer reserviert, Status „geplant“), bevor programmiert wird
