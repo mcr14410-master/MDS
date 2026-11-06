@@ -42,21 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Noch offen aus 2.19.2** (kein neuer Deploy nötig):
-
-- [x] Versionshistorie eines freigegebenen Programms öffnen → aktuelle Freigabe „Freigegeben“, ältere „Entwurf“ (alte Versionen ohne Status-Verlauf) – geprüft 05.11.2026
-- [ ] Agent 1.1.2 (mds-agent#13, Release `v1.1.2`) am Mess-PC einspielen, „Über“ zeigt 1.1.2
-
-**Noch offen aus 2.17.0** (kein neuer Deploy nötig):
-
-- [ ] Am Mess-PC: Kalibrierprogramm aus dem ZIP in PC-DMIS öffnen
-- [x] `.cad` ist optional (05.11.2026): Nur nötig, wenn in PC-DMIS über CAD-Daten programmiert wird; Kalibrierprogramme meist ohne
+Derzeit keine.
 
 ---
 
 ## Erledigt: Release 2.19.2 (05.11.2026)
 
-Versionsstatus je Version, Rollback nach Freigabe (#294), Selbsttest-Warnungen in Klartext (#292). Keine Migration. Deploy grün, Tag `v2.19.2`. Dazu Agent 1.1.2 (mds-agent#12, #13, Release `v1.1.2` mit ZIP): Selbsttest nennt den geprüften Pfad.
+Versionsstatus je Version, Rollback nach Freigabe (#294), Selbsttest-Warnungen in Klartext (#292). Keine Migration. Deploy grün, Tag `v2.19.2`. Dazu Agent 1.1.2 (mds-agent#12, #13, Release `v1.1.2` mit ZIP): Selbsttest nennt den geprüften Pfad. Versionshistorie am 05.11. geprüft; am Mess-PC am 06.11.: Agent 1.1.2 läuft, Kalibrierprogramm aus dem ZIP öffnet in PC-DMIS (Punkt aus 2.17.0).
 
 ---
 
