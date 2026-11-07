@@ -58,6 +58,8 @@ sudo mkdir -p /srv/mds/postgres
 sudo mkdir -p /srv/mds/uploads
 sudo mkdir -p /srv/mds/backups
 sudo chown -R 1001:1001 /srv/mds/uploads 2>/dev/null || true
+# Vor der Caddyfile-Prüfung anlegen: Dort bindet Docker den Ordner ein und legt ihn sonst als root an – rsync scheitert dann
+mkdir -p "$FRONTEND_DIR/dist"
 
 # Compose-Befehle aus dem Repo-Root (dort liegt die .env mit DB_PASSWORD/JWT_SECRET)
 cd "$REPO_ROOT"
@@ -137,7 +139,6 @@ test -f "$BUILD_OUT/index.html" || { echo "[deploy] ❌ Frontend-Build ohne inde
 # Inhalt tauschen statt Ordner umbenennen: Caddy hat frontend/dist als Bind-Mount und sähe sonst weiter
 # den alten Ordner. --delay-updates/--delete-delay: neue Dateien kommen gesammelt am Ende, alte erst danach weg.
 echo "[deploy] 📦 Frontend übernehmen..."
-mkdir -p "$FRONTEND_DIR/dist"
 rsync -a --delete-delay --delay-updates "$BUILD_OUT/" "$FRONTEND_DIR/dist/"
 
 # --- Services starten/updaten (Backend geht jetzt live, Frontend seit dem rsync oben) ---

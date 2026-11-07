@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- `scripts/deploy.sh`: Auf einem frischen Klon legte die Caddyfile-Prüfung `frontend/dist` über den Docker-Mount als root an, der Deploy brach danach bei `rsync` ab. Der Ordner wird jetzt vorher angelegt.
+
 ---
 
 ## [2.20.0] - 2026-11-06 - Programmnummern, Ablauf je Version
