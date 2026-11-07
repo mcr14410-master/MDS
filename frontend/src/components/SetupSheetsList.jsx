@@ -7,7 +7,9 @@ import { useAuthStore } from '../stores/authStore';
 import SetupSheetCard from './SetupSheetCard';
 import SetupSheetForm from './SetupSheetForm';
 import SetupSheetPhotos from './SetupSheetPhotos';
-import SetupSheetStatusActions from './SetupSheetStatusActions';
+import WorkflowActions from './WorkflowActions';
+import WorkflowStatusBadge from './WorkflowStatusBadge';
+import WorkflowHistoryList from './WorkflowHistoryList';
 import SetupSheetClampingFixtures from './SetupSheetClampingFixtures';
 
 export default function SetupSheetsList({ operationId }) {
@@ -30,11 +32,13 @@ export default function SetupSheetsList({ operationId }) {
 
   const { currentOperation } = useOperationsStore();
   const { hasPermission } = useAuthStore();
+  const canEdit = hasPermission('setup_sheet.update');
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSetupSheet, setEditingSetupSheet] = useState(null);
   const [viewingSetupSheet, setViewingSetupSheet] = useState(null);
-  const [activeTab, setActiveTab] = useState('details'); // 'details', 'clamping', or 'photos'
+  const [activeTab, setActiveTab] = useState('details'); // 'details', 'clamping', 'photos', 'history'
+  const [historyKey, setHistoryKey] = useState(0);
 
   useEffect(() => {
     if (operationId) {
@@ -87,7 +91,8 @@ export default function SetupSheetsList({ operationId }) {
     }
   };
 
-  const handleStatusChange = async (setupSheetId, newStatus) => {
+  const handleStatusChange = async (setupSheetId) => {
+    setHistoryKey((k) => k + 1);
     // Refresh list to show updated status
     fetchSetupSheets({ operation_id: operationId });
     
@@ -115,6 +120,9 @@ export default function SetupSheetsList({ operationId }) {
   const handlePhotoChange = async () => {
     if (viewingSetupSheet) {
       await fetchSetupSheet(viewingSetupSheet.id);
+      // Änderung kann das Blatt auf Entwurf zurücksetzen
+      fetchSetupSheets({ operation_id: operationId });
+      setHistoryKey((k) => k + 1);
     }
   };
 
@@ -185,7 +193,9 @@ export default function SetupSheetsList({ operationId }) {
             Zurück zur Liste
           </button>
 
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
+            <WorkflowStatusBadge status={currentSetupSheet.workflow_state} />
+            {canEdit && currentSetupSheet.workflow_state !== 'archived' && (<>
             <button
               onClick={() => handleEdit(viewingSetupSheet)}
               className="px-4 py-2 text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
@@ -198,6 +208,7 @@ export default function SetupSheetsList({ operationId }) {
             >
               Löschen
             </button>
+            </>)}
           </div>
         </div>
 
@@ -239,6 +250,16 @@ export default function SetupSheetsList({ operationId }) {
                 }`}
               >
                 Fotos ({currentSetupSheet.photos?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'history'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                }`}
+              >
+                Ablauf
               </button>
             </nav>
           </div>
@@ -553,26 +574,23 @@ export default function SetupSheetsList({ operationId }) {
                   </div>
                 )}
 
-                {/* Status Actions */}
-                {hasPermission('part.update') && (
-                  <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                      Status ändern
-                    </h3>
-                    <SetupSheetStatusActions
-                      setupSheetId={currentSetupSheet.id}
-                      currentStatus={currentSetupSheet.status}
-                      onStatusChange={handleStatusChange}
-                    />
-                  </div>
-                )}
+                {/* Status-Knöpfe (nur mit program.release, regelt WorkflowActions) */}
+                <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                  <WorkflowActions
+                    entityType="setup_sheet"
+                    entityId={currentSetupSheet.id}
+                    currentState={currentSetupSheet.workflow_state}
+                    onStatusChange={() => handleStatusChange(currentSetupSheet.id)}
+                  />
+                </div>
               </div>
             )}
 
             {activeTab === 'clamping' && (
               <SetupSheetClampingFixtures
                 setupSheet={currentSetupSheet}
-                onUpdate={() => fetchSetupSheet(currentSetupSheet.id)}
+                onUpdate={handlePhotoChange}
+                readOnly={!canEdit || currentSetupSheet.workflow_state === 'archived'}
               />
             )}
 
@@ -581,7 +599,12 @@ export default function SetupSheetsList({ operationId }) {
                 setupSheetId={currentSetupSheet.id}
                 photos={currentSetupSheet.photos}
                 onPhotoChange={handlePhotoChange}
+                readOnly={!canEdit || currentSetupSheet.workflow_state === 'archived'}
               />
+            )}
+
+            {activeTab === 'history' && (
+              <WorkflowHistoryList entityType="setup_sheet" entityId={currentSetupSheet.id} refreshKey={historyKey} />
             )}
           </div>
         </div>
@@ -596,6 +619,7 @@ export default function SetupSheetsList({ operationId }) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Einrichteblätter
         </h3>
+        {canEdit && (
         <button
           onClick={() => setShowCreateForm(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
@@ -605,6 +629,7 @@ export default function SetupSheetsList({ operationId }) {
           </svg>
           Neues Einrichteblatt
         </button>
+        )}
       </div>
 
       {error && (
@@ -631,12 +656,14 @@ export default function SetupSheetsList({ operationId }) {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Noch keine Einrichteblätter vorhanden
           </p>
+          {canEdit && (
           <button
             onClick={() => setShowCreateForm(true)}
             className="mt-4 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
           >
             Erstes Einrichteblatt erstellen
           </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -648,14 +675,14 @@ export default function SetupSheetsList({ operationId }) {
                   e.stopPropagation();
                   handleView(sheet);
                 }}
-                onEdit={(sheet, e) => {
+                onEdit={canEdit && sheet.workflow_state !== 'archived' ? (sheet, e) => {
                   e.stopPropagation();
                   handleEdit(sheet);
-                }}
-                onDelete={(id, e) => {
+                } : undefined}
+                onDelete={canEdit && sheet.workflow_state !== 'archived' ? (id, e) => {
                   e.stopPropagation();
                   handleDelete(id);
-                }}
+                } : undefined}
                 onStatusChange={handleStatusChange}
               />
             </div>

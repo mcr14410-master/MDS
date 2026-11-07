@@ -1,28 +1,8 @@
 // frontend/src/components/SetupSheetCard.jsx
-import { Link } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
-import SetupSheetStatusActions from './SetupSheetStatusActions';
-
-const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-  review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  active: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  archived: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-};
-
-const STATUS_LABELS = {
-  draft: 'Entwurf',
-  review: 'In Prüfung',
-  approved: 'Geprüft',
-  active: 'Aktiv',
-  archived: 'Archiviert',
-};
+import WorkflowStatusBadge from './WorkflowStatusBadge';
+import WorkflowActions from './WorkflowActions';
 
 export default function SetupSheetCard({ setupSheet, onOpen, onEdit, onDelete, onStatusChange }) {
-  const { hasPermission } = useAuthStore();
-  const statusColor = STATUS_COLORS[setupSheet.status] || STATUS_COLORS.draft;
-  const statusLabel = STATUS_LABELS[setupSheet.status] || setupSheet.status;
   const photoCount = Number(setupSheet.photo_count || 0);
 
   const formatDate = (dateString) => {
@@ -47,9 +27,7 @@ export default function SetupSheetCard({ setupSheet, onOpen, onEdit, onDelete, o
           </p>
         </div>
         
-        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${statusColor}`}>
-          {statusLabel}
-        </span>
+        <WorkflowStatusBadge status={setupSheet.workflow_state} size="sm" />
       </div>
 
       {/* Machine & Program */}
@@ -149,24 +127,18 @@ export default function SetupSheetCard({ setupSheet, onOpen, onEdit, onDelete, o
         </div>
       </div>
 
-      {/* Status Actions */}
-      {hasPermission('part.update') && (
-        <div
-          className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <SetupSheetStatusActions
-            setupSheetId={setupSheet.id}
-            currentStatus={setupSheet.status}
-            onStatusChange={(newStatus) => {
-              // Callback to parent if provided
-              if (onStatusChange) {
-                onStatusChange(setupSheet.id, newStatus);
-              }
-            }}
-          />
-        </div>
-      )}
+      {/* Status-Knöpfe (nur mit program.release, regelt WorkflowActions) */}
+      <div
+        className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700 empty:hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <WorkflowActions
+          entityType="setup_sheet"
+          entityId={setupSheet.id}
+          currentState={setupSheet.workflow_state}
+          onStatusChange={(newState) => onStatusChange?.(setupSheet.id, newState)}
+        />
+      </div>
     </div>
   );
 }

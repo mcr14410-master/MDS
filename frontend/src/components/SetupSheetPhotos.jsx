@@ -12,7 +12,7 @@ const PHOTO_TYPES = [
   { value: 'tool_setup', label: 'Werkzeug-Setup' },
 ];
 
-export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoChange }) {
+export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoChange, readOnly = false }) {
   const { uploadPhoto, updatePhoto, deletePhoto, uploadProgress } = useSetupSheetsStore();
   const fileInputRef = useRef(null);
   
@@ -106,6 +106,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
   return (
     <div className="space-y-4">
       {/* Upload Section */}
+      {!readOnly && (
       <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
         <div className="text-center">
           <svg
@@ -156,6 +157,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
           )}
         </div>
       </div>
+      )}
 
       {/* Photos Grid */}
       {photos && photos.length > 0 ? (
@@ -277,6 +279,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
                         </span>
                       </div>
 
+                      {!readOnly && (
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditClick(photo)}
@@ -291,6 +294,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
                           Löschen
                         </button>
                       </div>
+                      )}
                     </>
                   )}
                 </div>

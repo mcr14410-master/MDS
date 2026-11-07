@@ -75,8 +75,7 @@ Content-Type: application/json
   "raw_material_dimensions": "Ø100 x 50",
   "material_specification": "AlMgSi1 F22",
   "setup_instructions": "1. Rohteil auf Planlage legen\n2. Zentrierstifte in Bohrungen einsetzen\n3. 3-Backen gleichmäßig anziehen (50 Nm)\n4. Nullpunkt mit 3D-Taster setzen\n5. Werkzeuge laden (siehe Werkzeugliste)\n6. Programm-Vorlauf im Einzelsatz",
-  "special_notes": "⚠️ ACHTUNG: Rohteile sind einseitig eloxiert!\n⚠️ Nur von uneloxierter Seite spannen!\n⚠️ Max. Spindeldrehzahl 8000 U/min wegen Unwucht",
-  "status": "draft"
+  "special_notes": "⚠️ ACHTUNG: Rohteile sind einseitig eloxiert!\n⚠️ Nur von uneloxierter Seite spannen!\n⚠️ Max. Spindeldrehzahl 8000 U/min wegen Unwucht"
 }
 
 ### ============================================================================
@@ -100,8 +99,7 @@ Content-Type: application/json
   "raw_material_dimensions": "150x75x30",
   "material_specification": "S235JR",
   "setup_instructions": "1. Parallelunterlagen auf 10mm prüfen\n2. Teil ausrichten (Winkelmesser)\n3. Schraubstock zudrehen\n4. Nullpunkt setzen (G54)",
-  "special_notes": "Material sehr weich - langsame Zustellung!",
-  "status": "draft"
+  "special_notes": "Material sehr weich - langsame Zustellung!"
 }
 
 ### ============================================================================
@@ -120,8 +118,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "setup_instructions": "1. Rohteil auf Planlage legen\n2. Zentrierstifte in Bohrungen einsetzen\n3. 3-Backen gleichmäßig anziehen (50 Nm)\n4. Nullpunkt mit 3D-Taster setzen\n5. Werkzeuge laden (siehe Werkzeugliste)\n6. Programm-Vorlauf im Einzelsatz\n7. GEÄNDERT: Erste 3 Teile mit reduzierter Geschwindigkeit fahren",
-  "status": "review"
+  "setup_instructions": "1. Rohteil auf Planlage legen\n2. Zentrierstifte in Bohrungen einsetzen\n3. 3-Backen gleichmäßig anziehen (50 Nm)\n4. Nullpunkt mit 3D-Taster setzen\n5. Werkzeuge laden (siehe Werkzeugliste)\n6. Programm-Vorlauf im Einzelsatz\n7. GEÄNDERT: Erste 3 Teile mit reduzierter Geschwindigkeit fahren"
 }
 
 ### ============================================================================
@@ -199,25 +196,31 @@ DELETE {{baseUrl}}/setup-sheets/{{setupSheetId}}/photos/{{photoId}}
 Authorization: Bearer {{token}}
 
 ### ============================================================================
-### 15. PUT - Status ändern (approved)
+### 15. POST - Status ändern über den Workflow (draft → review; Ids aus GET /workflow/states)
 ### ============================================================================
-PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}
+POST {{baseUrl}}/workflow/change
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "approved"
+  "entityType": "setup_sheet",
+  "entityId": {{setupSheetId}},
+  "toStateId": 2,
+  "changeReason": "Zur Prüfung"
 }
 
 ### ============================================================================
-### 16. PUT - Status ändern (active)
+### 16. POST - Ungültiger Schritt review → released (sollte 409 sein)
 ### ============================================================================
-PUT {{baseUrl}}/setup-sheets/{{setupSheetId}}
+POST {{baseUrl}}/workflow/change
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "active"
+  "entityType": "setup_sheet",
+  "entityId": {{setupSheetId}},
+  "toStateId": 4,
+  "changeReason": "Direkt freigeben"
 }
 
 ### ============================================================================
@@ -260,7 +263,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "approved"
+  "special_notes": "gibt es nicht"
 }
 
 ### 22. DELETE - Nicht existierendes Setup Sheet (sollte 404 sein)
@@ -272,7 +275,7 @@ Authorization: Bearer {{token}}
 ### REALISTISCHE TEST-SZENARIEN
 ### ============================================================================
 
-### 23. Workflow: Draft → Review → Approved → Active
+### 23. Workflow: Entwurf → Prüfung → Geprüft → Freigegeben (legt Stand 1 an)
 ### ============================================================================
 # @name workflowTest
 POST {{baseUrl}}/setup-sheets
@@ -283,35 +286,40 @@ Content-Type: application/json
   "operation_id": 1,
   "program_id": 1,
   "preset_number": 5,
-  "setup_instructions": "Test Workflow",
-  "status": "draft"
+  "setup_instructions": "Test Workflow"
 }
 
 ### Draft → Review
-PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+POST {{baseUrl}}/workflow/change
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "review"
+  "entityType": "setup_sheet",
+  "entityId": {{workflowTest.response.body.data.id}},
+  "toStateId": 2
 }
 
 ### Review → Approved
-PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+POST {{baseUrl}}/workflow/change
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "approved"
+  "entityType": "setup_sheet",
+  "entityId": {{workflowTest.response.body.data.id}},
+  "toStateId": 3
 }
 
-### Approved → Active
-PUT {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+### Approved → Released
+POST {{baseUrl}}/workflow/change
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "status": "active"
+  "entityType": "setup_sheet",
+  "entityId": {{workflowTest.response.body.data.id}},
+  "toStateId": 4
 }
 
 ### ============================================================================
@@ -324,7 +332,7 @@ Content-Type: application/json
 ### - GET Liste (alle, gefiltert nach operation/machine/status)
 ### - GET Details (mit Fotos)
 ### - POST Erstellen (minimal, komplett, verschiedene Steuerungen)
-### - PUT Aktualisieren (Felder, Status)
+### - PUT Aktualisieren (Felder; Status nur über /workflow/change)
 ### - DELETE Löschen
 ###
 ### Foto-Tests:
