@@ -66,6 +66,12 @@ export default function SetupSheetCard({ setupSheet, onOpen, onEdit, onDelete, o
         </div>
       </div>
 
+      {setupSheet.released_version_id && !['released', 'archived'].includes(setupSheet.workflow_state) && (
+        <p className="mb-3 text-xs text-orange-700 dark:text-orange-300">
+          In Bearbeitung · freigegeben ist Stand {setupSheet.released_version_number}
+        </p>
+      )}
+
       {/* Nullpunkt Info (kompakt) */}
       {(setupSheet.preset_number || setupSheet.wcs_number) && (
         <div className="bg-gray-50 dark:bg-gray-900/30 rounded p-2 mb-4 text-xs">

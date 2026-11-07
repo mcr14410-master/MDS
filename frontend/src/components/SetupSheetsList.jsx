@@ -10,6 +10,7 @@ import SetupSheetPhotos from './SetupSheetPhotos';
 import WorkflowActions from './WorkflowActions';
 import WorkflowStatusBadge from './WorkflowStatusBadge';
 import WorkflowHistoryList from './WorkflowHistoryList';
+import SetupSheetVersions from './SetupSheetVersions';
 import SetupSheetClampingFixtures from './SetupSheetClampingFixtures';
 
 export default function SetupSheetsList({ operationId }) {
@@ -39,6 +40,7 @@ export default function SetupSheetsList({ operationId }) {
   const [viewingSetupSheet, setViewingSetupSheet] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'clamping', 'photos', 'history'
   const [historyKey, setHistoryKey] = useState(0);
+  const [versionToShow, setVersionToShow] = useState(null);
 
   useEffect(() => {
     if (operationId) {
@@ -202,15 +204,31 @@ export default function SetupSheetsList({ operationId }) {
             >
               Bearbeiten
             </button>
+            {!currentSetupSheet.released_version_id && (
             <button
               onClick={() => handleDelete(viewingSetupSheet.id)}
               className="px-4 py-2 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               Löschen
             </button>
+            )}
             </>)}
           </div>
         </div>
+
+        {/* Hinweis: Inhalt ist gerade nicht der freigegebene */}
+        {currentSetupSheet.released_version_id && !['released', 'archived'].includes(currentSetupSheet.workflow_state) && (
+          <div className="mb-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-200">
+            In Bearbeitung. Letzter freigegebener Stand: Stand {currentSetupSheet.released_version_number} vom{' '}
+            {new Date(currentSetupSheet.released_version_at).toLocaleDateString('de-DE')}{' '}
+            <button
+              onClick={() => { setVersionToShow(currentSetupSheet.released_version_id); setActiveTab('versions'); }}
+              className="underline font-medium"
+            >
+              ansehen
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -260,6 +278,16 @@ export default function SetupSheetsList({ operationId }) {
                 }`}
               >
                 Ablauf
+              </button>
+              <button
+                onClick={() => { setVersionToShow(null); setActiveTab('versions'); }}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'versions'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                }`}
+              >
+                Stände
               </button>
             </nav>
           </div>
@@ -603,6 +631,14 @@ export default function SetupSheetsList({ operationId }) {
               />
             )}
 
+            {activeTab === 'versions' && (
+              <SetupSheetVersions
+                setupSheet={currentSetupSheet}
+                initialVersionId={versionToShow}
+                onRestored={handlePhotoChange}
+              />
+            )}
+
             {activeTab === 'history' && (
               <WorkflowHistoryList entityType="setup_sheet" entityId={currentSetupSheet.id} refreshKey={historyKey} />
             )}
@@ -679,7 +715,7 @@ export default function SetupSheetsList({ operationId }) {
                   e.stopPropagation();
                   handleEdit(sheet);
                 } : undefined}
-                onDelete={canEdit && sheet.workflow_state !== 'archived' ? (id, e) => {
+                onDelete={canEdit && sheet.workflow_state !== 'archived' && !sheet.released_version_id ? (id, e) => {
                   e.stopPropagation();
                   handleDelete(id);
                 } : undefined}

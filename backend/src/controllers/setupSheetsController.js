@@ -69,6 +69,8 @@ exports.getSetupSheets = async (req, res) => {
 		m.name as machine_name,
 		m.serial_number as machine_number,
 		ws.name as workflow_state,
+		rv.version_number as released_version_number,
+		rv.created_at as released_version_at,
 		prog.program_number,
 		prog.program_name,
 		rev.version_string as program_version,
@@ -81,6 +83,7 @@ exports.getSetupSheets = async (req, res) => {
 		JOIN parts p ON o.part_id = p.id
 		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
 		JOIN workflow_states ws ON ws.id = ss.workflow_state_id
+		LEFT JOIN setup_sheet_versions rv ON rv.id = ss.released_version_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id
@@ -146,6 +149,8 @@ exports.getSetupSheetById = async (req, res) => {
 		m.name as machine_name,
 		m.serial_number as machine_number,
 		ws.name as workflow_state,
+		rv.version_number as released_version_number,
+		rv.created_at as released_version_at,
 		ct.name as machine_control_type,
 		prog.program_number,
 		prog.program_name,
@@ -160,6 +165,7 @@ exports.getSetupSheetById = async (req, res) => {
 		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
 		LEFT JOIN control_types ct ON ct.id = m.control_type_id
 		JOIN workflow_states ws ON ws.id = ss.workflow_state_id
+		LEFT JOIN setup_sheet_versions rv ON rv.id = ss.released_version_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id

@@ -19,11 +19,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Einrichteblatt: Freigabe wie bei Programmen (Entwurf → In Prüfung → Geprüft → Freigegeben), mit Reiter „Ablauf“ (Name, Uhrzeit, Grund). Jede Freigabe sichert einen Stand in `setup_sheet_versions` (Formularfelder, Spannmittel, Vorrichtungen, Fotos)
 - Recht `setup_sheet.update` (Kategorie Programme) für Anlegen, Ändern, Fotos, Spannmittel und Vorrichtungen. Migration `1737000128000` gibt es nur `admin`
 - Server prüft beim Einrichteblatt die Statusschritte (ungültig → 409)
+- Einrichteblatt: Reiter „Stände“ mit Ansicht jedes Stands (inkl. Fotos) und „Auf diesen Stand zurück“ (`program.release`). Vorher wird der aktuelle Inhalt als Sicherung abgelegt; zurück auf den zuletzt freigegebenen Stand → wieder Freigegeben, auf einen älteren → Entwurf. Hinweis im Blatt und auf der Karte, solange der Inhalt nicht der freigegebene ist. Endpunkte `GET /api/setup-sheets/:id/versions[/:versionId]`, `…/photos/:index/view`, `POST …/restore`
 
 ### Changed
 - Einrichteblatt: Jede inhaltliche Änderung außerhalb des Entwurfs setzt das Blatt auf Entwurf zurück und steht im Ablauf. Speichern ohne Änderung lässt es, wie es ist. Archivierte Blätter sind schreibgeschützt
 - Einrichteblatt: `status` entfällt zugunsten von `workflow_state_id` (`active` → Freigegeben, mit Stand 1). Das Status-Feld im Formular entfällt, Status nur noch über `POST /api/workflow/change` (`program.release`)
 - Einrichteblatt: Ein gelöschtes Foto bleibt als Datei erhalten, solange ein Stand es nennt
+- Einrichteblatt: Ein Blatt mit Stand lässt sich nicht mehr löschen, nur archivieren (409)
 - Einrichteblatt: Die Maschine kommt aus dem Arbeitsgang und wird im Formular nur angezeigt; ohne Maschine am Arbeitsgang lässt sich kein Blatt anlegen. Anzeige und Filter folgen einer späteren Änderung am Arbeitsgang (`setup_sheets.machine_id` bleibt vorerst als Altspalte)
 - Einrichteblatt-Karte: Knopf „Öffnen“, Icons wie auf den Programmkarten, Fotoanzahl immer sichtbar. Nach dem Anlegen öffnet sich das neue Blatt direkt bei den Fotos
 - Einrichteblatt-Formular: Feld „Programm (optional)“ statt „NC-Programm“, weil auch Messprogramme zur Auswahl stehen

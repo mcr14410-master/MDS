@@ -91,6 +91,17 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
     assert.ok(v[0].created_by_name);
   });
 
+  await test('Blatt nennt Nummer und Datum des freigegebenen Stands', async () => {
+    const id = await neuesBlatt();
+    await freigeben(id);
+    await aendern(id, { reference_point: 'neu' });
+    const blatt = await holeBlatt(id);
+    assert.equal(blatt.released_version_number, 1);
+    assert.ok(blatt.released_version_at);
+    const inListe = (await call(sheets.getSetupSheets, { query: { operation_id: opId } })).body.data.find(s => s.id === id);
+    assert.equal(inListe.released_version_number, 1);
+  });
+
   await test('Zurück auf zuletzt freigegebenen Stand: wieder Freigegeben', async () => {
     const id = await neuesBlatt({ reference_point: 'A', special_notes: 'alt' });
     await freigeben(id);
