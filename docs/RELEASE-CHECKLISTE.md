@@ -42,14 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.21.0)
+Derzeit keine.
 
-- Migration `1737000128000` (Einrichteblatt-Freigabe): `active` → Freigegeben mit Stand 1, sonst gleicher Status. Stand 07.11.: 1 aktives, 6 Entwürfe
-- **Direkt nach dem Deploy:** In der Benutzerverwaltung das Recht „Einrichteblätter bearbeiten“ (`setup_sheet.update`, bei den Programmen) an `CNC-Fräser`, `CNC-Dreher`, `Werkstatt-Team`, `programmer`, `reviewer`, `supervisor` vergeben. Bis dahin können nur Admins Blätter pflegen
-- Klicktest: Blatt an einem Test-Arbeitsgang anlegen (Maschine kommt aus dem Arbeitsgang), zur Prüfung, prüfen, freigeben; Foto ergänzen → Entwurf, Reiter „Ablauf“ zeigt „Geändert nach Freigabe“ mit plausibler Uhrzeit
-- Mit einem Benutzer ohne das Recht: Blatt ansehen geht, keine Knöpfe zum Ändern
-- Am selben Blatt: Hinweis „In Bearbeitung. Letzter freigegebener Stand …“, „ansehen“ zeigt Stand 1 mit Foto, „Auf diesen Stand zurück“ → wieder Freigegeben, „Sicherung“ in der Liste. Testblatt danach archivieren (löschen geht nicht mehr)
-- Blatt 6 und 11 (Arbeitsgang ohne Maschine): lassen sich erst bearbeiten, wenn am Arbeitsgang die Maschine eingetragen ist
+---
+
+## Erledigt: Release 2.21.0 (08.11.2026)
+
+Einrichteblatt-Freigabe mit Ständen und eigenem Recht (#320), Karte und Formular für Messarbeitsgänge (#318), `deploy.sh` auf frischem Klon (#313). Migration `1737000128000` grün, Tag `v2.21.0`. Recht „Einrichteblätter bearbeiten“ in der Benutzerverwaltung an die Rollen vergeben. Prüfpunkte grün: Blatt anlegen mit Maschine aus dem Arbeitsgang, Freigabe, Rückfall auf Entwurf mit Ablauf, Stand ansehen und zurückgehen, Benutzer ohne Recht, „Was ist neu“.
 
 ---
 
