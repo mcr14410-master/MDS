@@ -1,7 +1,9 @@
 // frontend/src/components/SetupSheetForm.jsx
 import { useState, useEffect } from 'react';
 import { useMachinesStore } from '../stores/machinesStore';
-import { selectableMachines, inactiveSuffix } from '../utils/machineOptions';
+import { inactiveSuffix } from '../utils/machineOptions';
+import axios from '../utils/axios';
+import { API_ENDPOINTS } from '../config/api';
 import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
 
 export default function SetupSheetForm({ 
@@ -15,9 +17,11 @@ export default function SetupSheetForm({
   const { programsByOperation, fetchPrograms } = useProgramsStore();
   const programs = programsByOperation[operationId] || EMPTY_PROGRAMS;
 
+  const [operationMachineId, setOperationMachineId] = useState(undefined); // undefined = lädt, null = keine
+  const [loadError, setLoadError] = useState(null);
+
   const [formData, setFormData] = useState({
     operation_id: operationId || '',
-    machine_id: initialData?.machine_id || '',
     program_id: initialData?.program_id || '',
     
     // Asset Relations (temporär Freitext)
@@ -54,18 +58,32 @@ export default function SetupSheetForm({
     }
   }, [operationId, fetchMachines, fetchPrograms]);
 
-  // Update control_type when machine changes
+  // Maschine kommt aus dem Arbeitsgang
   useEffect(() => {
-    if (formData.machine_id) {
-      const selectedMachine = machines.find(m => m.id === parseInt(formData.machine_id));
-      if (selectedMachine && selectedMachine.control_type_name) {
-        setFormData(prev => ({
-          ...prev,
-          control_type: selectedMachine.control_type_name
-        }));
-      }
+    if (!operationId) return undefined;
+    let cancelled = false;
+    setOperationMachineId(undefined);
+    axios.get(`${API_ENDPOINTS.OPERATIONS}/${operationId}`)
+      .then((response) => {
+        if (!cancelled) setOperationMachineId(response.data?.data?.machine_id ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError('Arbeitsgang konnte nicht geladen werden');
+      });
+    return () => { cancelled = true; };
+  }, [operationId]);
+
+  const operationMachine = operationMachineId
+    ? machines.find(m => m.id === operationMachineId)
+    : null;
+  const machineMissing = operationMachineId === null;
+
+  // Steuerungstyp folgt der Maschine des Arbeitsgangs
+  useEffect(() => {
+    if (operationMachine) {
+      setFormData(prev => ({ ...prev, control_type: operationMachine.control_type_name || '' }));
     }
-  }, [formData.machine_id, machines]);
+  }, [operationMachine]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -86,10 +104,10 @@ export default function SetupSheetForm({
   const validate = () => {
     const newErrors = {};
     
-    if (!formData.machine_id) {
-      newErrors.machine_id = 'Maschine ist erforderlich';
+    if (!operationMachineId) {
+      newErrors.machine_id = 'Am Arbeitsgang ist keine Maschine eingetragen';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -105,7 +123,6 @@ export default function SetupSheetForm({
     const dataToSubmit = {
       ...formData,
       operation_id: operationId || formData.operation_id,
-      machine_id: parseInt(formData.machine_id),
       program_id: formData.program_id ? parseInt(formData.program_id) : null,
       preset_number: formData.preset_number ? parseInt(formData.preset_number) : null,
       wcs_x: formData.wcs_x ? parseFloat(formData.wcs_x) : null,
@@ -121,7 +138,6 @@ export default function SetupSheetForm({
   const isHeidenhain = controlTypeLower === 'heidenhain';
   const isSiemensOrFanuc = ['siemens', 'fanuc', 'haas'].includes(controlTypeLower);
   const isMazatrol = controlTypeLower === 'mazatrol';
-  const hasKnownControlType = isHeidenhain || isSiemensOrFanuc || isMazatrol;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -145,35 +161,31 @@ export default function SetupSheetForm({
           Basis-Informationen
         </h3>
         
-        {/* Maschine */}
+        {/* Maschine (aus dem Arbeitsgang) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Maschine <span className="text-red-500">*</span>
+            Maschine
           </label>
-          <select
-            name="machine_id"
-            value={formData.machine_id}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-              errors.machine_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-            }`}
-          >
-            <option value="">-- Maschine auswählen --</option>
-            {selectableMachines(machines, initialData?.machine_id).map(machine => (
-              <option key={machine.id} value={machine.id}>
-                {machine.name} ({machine.serial_number}){inactiveSuffix(machine)}
-              </option>
-            ))}
-          </select>
-          {errors.machine_id && (
-            <p className="mt-1 text-sm text-red-500">{errors.machine_id}</p>
+          {machineMissing ? (
+            <p className="px-3 py-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              Am Arbeitsgang ist keine Maschine eingetragen. Bitte dort zuerst die Maschine auswählen.
+            </p>
+          ) : (
+            <p className="px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+              {operationMachine
+                ? <>{operationMachine.name}{operationMachine.serial_number ? ` (${operationMachine.serial_number})` : ''}{inactiveSuffix(operationMachine)}</>
+                : (loadError || 'Wird geladen …')}
+            </p>
           )}
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Kommt aus dem Arbeitsgang
+          </p>
         </div>
 
         {/* Programm */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            NC-Programm (optional)
+            Programm (optional)
           </label>
           <select
             name="program_id"
@@ -380,15 +392,6 @@ export default function SetupSheetForm({
             Beschreibung des physischen Referenzpunkts
           </p>
         </div>
-
-        {/* Hinweis bei unbekannter Steuerung */}
-        {formData.control_type && !hasKnownControlType && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-            <p className="text-sm text-yellow-800 dark:text-yellow-300">
-              <strong>Unbekannter Steuerungstyp:</strong> Alle Felder sind optional. Gib die relevanten Informationen für "{formData.control_type}" ein.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Material */}
@@ -472,7 +475,8 @@ export default function SetupSheetForm({
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={!operationMachineId}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {initialData ? 'Aktualisieren' : 'Erstellen'}
         </button>

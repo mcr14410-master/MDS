@@ -51,8 +51,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "operation_id": 1,
-  "machine_id": 1
+  "operation_id": 1
 }
 
 ### ============================================================================
@@ -65,11 +64,9 @@ Content-Type: application/json
 
 {
   "operation_id": 1,
-  "machine_id": 1,
   "program_id": 1,
   "fixture_description": "VORR-2024-015: Flansch-Aufnahme mit Zentrierstiften",
   "clamping_description": "3-Backen-Futter 250mm",
-  "control_type": "heidenhain",
   "preset_number": 1,
   "wcs_x": 0,
   "wcs_y": 0,
@@ -92,11 +89,9 @@ Content-Type: application/json
 
 {
   "operation_id": 2,
-  "machine_id": 2,
   "program_id": 3,
   "fixture_description": "Schraubstock 150mm",
   "clamping_description": "Parallelunterlagen 10mm",
-  "control_type": "siemens",
   "wcs_number": "G54",
   "wcs_x": 150.0,
   "wcs_y": 75.0,
@@ -241,18 +236,16 @@ POST {{baseUrl}}/setup-sheets
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{
-  "machine_id": 1
-}
+{}
 
-### 19. POST - Setup Sheet ohne machine_id (sollte 400 sein)
+### 19. POST - Arbeitsgang ohne Maschine (sollte 400 sein, ID eines solchen Arbeitsgangs einsetzen)
 ### ============================================================================
 POST {{baseUrl}}/setup-sheets
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "operation_id": 1
+  "operation_id": 99
 }
 
 ### 20. GET - Nicht existierendes Setup Sheet (sollte 404 sein)
@@ -288,9 +281,7 @@ Content-Type: application/json
 
 {
   "operation_id": 1,
-  "machine_id": 1,
   "program_id": 1,
-  "control_type": "heidenhain",
   "preset_number": 5,
   "setup_instructions": "Test Workflow",
   "status": "draft"

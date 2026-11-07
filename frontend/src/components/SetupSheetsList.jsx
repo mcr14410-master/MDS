@@ -47,6 +47,8 @@ export default function SetupSheetsList({ operationId }) {
     if (result.success) {
       setShowCreateForm(false);
       fetchSetupSheets({ operation_id: operationId });
+      // Direkt ins neue Blatt, damit Fotos und Spannmittel gleich folgen können
+      if (result.setupSheet?.id) await handleView(result.setupSheet, 'photos');
     }
   };
 
@@ -95,12 +97,12 @@ export default function SetupSheetsList({ operationId }) {
     }
   };
 
-  const handleView = async (setupSheet) => {
+  const handleView = async (setupSheet, tab = 'details') => {
     await fetchSetupSheet(setupSheet.id);
     setViewingSetupSheet(setupSheet);
     setShowCreateForm(false);
     setEditingSetupSheet(null);
-    setActiveTab('details');
+    setActiveTab(tab);
   };
 
   const handleCancel = () => {
@@ -642,6 +644,10 @@ export default function SetupSheetsList({ operationId }) {
             <div key={sheet.id} onClick={() => handleView(sheet)} className="cursor-pointer">
               <SetupSheetCard
                 setupSheet={sheet}
+                onOpen={(sheet, e) => {
+                  e.stopPropagation();
+                  handleView(sheet);
+                }}
                 onEdit={(sheet, e) => {
                   e.stopPropagation();
                   handleEdit(sheet);
