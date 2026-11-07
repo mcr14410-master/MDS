@@ -122,7 +122,28 @@ Content-Type: application/json
 {
   "customer_id": 1,
   "part_number": "P-2024-001",
-  "part_name": "Duplicate Test"
+  "part_name": "Duplicate Test",
+  "revision": "A"
+}
+
+### Test: Create Part without Revision (should fail, 400 – no silent „A“)
+POST {{baseUrl}}/api/parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "part_number": "P-OHNE-REV",
+  "part_name": "Ohne Revision"
+}
+
+### Test: Update Part with empty Revision (should fail, 400)
+PUT {{baseUrl}}/api/parts/{{partId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "revision": ""
 }
 
 ### Test: Create Part with Invalid Customer (should fail)

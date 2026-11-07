@@ -25,7 +25,7 @@ export default function PartFormPage() {
     part_name: '',
     customer_id: urlCustomerId || '',
     customer_part_number: '',
-    revision: 'A',
+    revision: '',
     material: '',
     dimensions: '',
     description: '',
@@ -57,7 +57,7 @@ export default function PartFormPage() {
         part_name: currentPart.part_name || '',
         customer_id: currentPart.customer_id || '',
         customer_part_number: currentPart.customer_part_number || '',
-        revision: currentPart.revision || 'A',
+        revision: currentPart.revision || '',
         material: currentPart.material || '',
         dimensions: currentPart.dimensions || '',
         description: currentPart.description || '',
@@ -132,6 +132,11 @@ export default function PartFormPage() {
     if (!formData.part_name.trim()) {
       newErrors.part_name = 'Bezeichnung ist erforderlich';
     }
+
+    // Zeichnungsindex bewusst eintragen, nie still „A“ (ohne Index z. B. „-“)
+    if (!formData.revision.trim()) {
+      newErrors.revision = 'Revision ist erforderlich (ohne Index „-“ eintragen)';
+    }
     
     if (formData.part_number.length > 50) {
       newErrors.part_number = 'Bauteilnummer darf maximal 50 Zeichen lang sein';
@@ -162,7 +167,7 @@ export default function PartFormPage() {
         part_name: formData.part_name.trim(),
         customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
         customer_part_number: formData.customer_part_number.trim() || null,
-        revision: formData.revision.trim() || 'A',
+        revision: formData.revision.trim(),
         material: formData.material.trim() || null,
         dimensions: formData.dimensions.trim() || null,
         description: formData.description.trim() || null,
@@ -354,7 +359,7 @@ export default function PartFormPage() {
               {/* Revision */}
               <div>
                 <label htmlFor="revision" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Revision
+                  Revision <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -362,10 +367,15 @@ export default function PartFormPage() {
                   name="revision"
                   value={formData.revision}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                  placeholder="z.B. A, B, C"
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-700 border ${
+                    errors.revision ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white`}
+                  placeholder="z.B. A, B, C – ohne Index „-“"
                   maxLength={10}
                 />
+                {errors.revision && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.revision}</p>
+                )}
               </div>
 
               {/* Material */}
