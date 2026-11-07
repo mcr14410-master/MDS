@@ -15,6 +15,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Fixed
+- Bauteil: Die Revision wird nicht mehr mit „A“ vorbelegt und ist Pflichtfeld in Formular und Backend (ohne Index z. B. „-“). Vorher wurde ein leeres Feld still zu „A“, beim Ändern ließ sie sich nicht leeren
+
 ---
 
 ## [2.21.0] - 2026-11-07 - Einrichteblatt-Freigabe und Stände

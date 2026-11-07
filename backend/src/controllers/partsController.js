@@ -255,6 +255,16 @@ exports.createPart = async (req, res) => {
       });
     }
 
+    // Revision (Zeichnungsindex) ist Pflicht und wird nie vorbelegt – sonst landet unbemerkt „A“ im Bauteil
+    const finalRevision = typeof revision === 'string' ? revision.trim() : '';
+    if (!finalRevision) {
+      return res.status(400).json({
+        success: false,
+        error: 'Revision ist erforderlich (ohne Index z. B. „-“ eintragen)',
+        required: ['customer_id', 'part_name', 'revision']
+      });
+    }
+
     // Kunde prüfen
     const customerResult = await pool.query(
       'SELECT id, customer_number, name FROM customers WHERE id = $1 AND is_active = true',
@@ -325,7 +335,7 @@ exports.createPart = async (req, res) => {
       customer_id,
       finalPartNumber,
       part_name,
-      revision || 'A',
+      finalRevision,
       description || null,
       material || null,
       dimensions || null,
@@ -392,6 +402,14 @@ exports.updatePart = async (req, res) => {
       status
     } = req.body;
 
+    // Revision darf beim Ändern nicht geleert werden (fehlt sie im Request, bleibt sie)
+    if (revision !== undefined && (typeof revision !== 'string' || !revision.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Revision ist erforderlich (ohne Index z. B. „-“ eintragen)'
+      });
+    }
+
     // Get old part data for audit log
     const oldPartQuery = 'SELECT * FROM parts WHERE id = $1 AND status != \'deleted\'';
     const oldPartResult = await pool.query(oldPartQuery, [id]);
@@ -445,7 +463,7 @@ exports.updatePart = async (req, res) => {
       customer_id,
       part_number,
       part_name,
-      revision,
+      revision === undefined ? undefined : revision.trim(),
       description,
       material,
       dimensions,
