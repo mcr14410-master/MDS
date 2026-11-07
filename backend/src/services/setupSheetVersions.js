@@ -6,6 +6,24 @@
  * Das Format entspricht dem der Migration 1737000128000 (Stand 1 aktiver Blätter).
  */
 
+const db = require('../config/db');
+
+/** Blatt ist archiviert und damit schreibgeschützt */
+class SheetLockedError extends Error {
+  constructor(message = 'Archivierte Einrichteblätter lassen sich nicht mehr ändern') {
+    super(message);
+    this.status = 409;
+  }
+}
+
+// Grund im Ablauf, wenn eine Änderung das Blatt auf Entwurf zurücksetzt
+const CHANGE_REASONS = {
+  released: 'Geändert nach Freigabe',
+  approved: 'Geändert nach Prüfung',
+  review: 'Geändert während der Prüfung',
+  rejected: 'Geändert nach Ablehnung',
+};
+
 /** Stand eines Blatts lesen. client: Pool oder Transaktions-Client */
 async function buildSnapshot(client, sheetId) {
   const { rows } = await client.query(
@@ -85,7 +103,68 @@ async function createVersion(client, sheetId, kind, userId) {
   return rows[0];
 }
 
+/** Nennt ein Stand des Blatts diese Datei? Dann darf sie nicht gelöscht werden. */
+async function photoFileReferenced(client, sheetId, filePath) {
+  const { rows } = await client.query(
+    `SELECT 1 FROM setup_sheet_versions
+      WHERE setup_sheet_id = $1 AND snapshot->'photos' @> $2::jsonb LIMIT 1`,
+    [sheetId, JSON.stringify([{ file_path: filePath }])]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Schreibende Aktion am Blatt: Transaktion mit gesperrter Zeile. Ändert fn den Inhalt eines
+ * Blatts außerhalb des Entwurfs, fällt es auf Entwurf zurück und der Ablauf hält das fest.
+ * @returns Ergebnis von fn(client) oder null, wenn es das Blatt nicht gibt
+ * @throws SheetLockedError bei archivierten Blättern
+ */
+async function withSheetChange(sheetId, userId, fn) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `SELECT s.workflow_state_id, ws.name AS state
+         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
+        WHERE s.id = $1 FOR UPDATE OF s`,
+      [sheetId]
+    );
+    if (rows.length === 0) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    const { workflow_state_id: fromStateId, state } = rows[0];
+    if (state === 'archived') throw new SheetLockedError();
+
+    const before = await buildSnapshot(client, sheetId);
+    const result = await fn(client);
+    const after = await buildSnapshot(client, sheetId);
+
+    if (state !== 'draft' && !snapshotsEqual(before, after)) {
+      const draft = (await client.query("SELECT id FROM workflow_states WHERE name = 'draft'")).rows[0].id;
+      await client.query('UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2', [draft, sheetId]);
+      // workflow_history.created_at ist timestamp mit UTC (workflowController schreibt in UTC-Session)
+      await client.query(
+        `INSERT INTO workflow_history
+           (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason, created_at)
+         VALUES ('setup_sheet', $1, $2, $3, $4, $5, now() AT TIME ZONE 'UTC')`,
+        [sheetId, fromStateId, draft, userId, CHANGE_REASONS[state] || 'Geändert']
+      );
+    }
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
+  SheetLockedError,
+  photoFileReferenced,
+  withSheetChange,
   buildSnapshot,
   snapshotsEqual,
   createVersion,

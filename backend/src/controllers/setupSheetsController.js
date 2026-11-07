@@ -7,6 +7,47 @@
 const db = require('../config/db');
 const fs = require('fs').promises;
 const path = require('path');
+const { withSheetChange, photoFileReferenced, SheetLockedError } = require('../services/setupSheetVersions');
+
+const UPLOAD_ROOT = path.join(__dirname, '../../uploads/setup-sheets');
+
+// Felder, die PUT ändern darf. Fehlt ein Feld im Body, bleibt es; null oder '' leert es.
+const UPDATABLE_FIELDS = [
+  'program_id', 'fixture_description', 'clamping_description', 'control_type',
+  'preset_number', 'wcs_number', 'wcs_x', 'wcs_y', 'wcs_z', 'reference_point',
+  'raw_material_dimensions', 'material_specification', 'setup_instructions', 'special_notes',
+];
+
+const notFound = (message = 'Einrichteblatt nicht gefunden') => ({ status: 404, body: { success: false, message } });
+
+/**
+ * Schreibende Aktion am Blatt (Spec Einrichteblatt-Freigabe 2): läuft in withSheetChange, also mit
+ * Sperre und Rückfall auf Entwurf. handler(req, client) liefert { status, body, afterCommit? }.
+ * onFail räumt auf, wenn nichts gespeichert wurde (z. B. hochgeladene Datei).
+ */
+function sheetChange(handler, { label, onFail } = {}) {
+  return async (req, res) => {
+    let result;
+    try {
+      result = await withSheetChange(req.params.id, req.user?.id ?? null, (client) => handler(req, client));
+    } catch (error) {
+      if (onFail) await onFail(req).catch(() => {});
+      if (error instanceof SheetLockedError) {
+        return res.status(409).json({ success: false, message: error.message });
+      }
+      console.error(`Error ${label}:`, error);
+      return res.status(500).json({ success: false, message: `Fehler: ${label}`, error: error.message });
+    }
+    if (result === null) result = notFound();
+    if (result.status >= 400 && onFail) await onFail(req).catch(() => {});
+    if (result.afterCommit) await result.afterCommit().catch(err => console.error(`Nacharbeit ${label}:`, err));
+    return res.status(result.status).json(result.body);
+  };
+}
+
+const removeUploadedPhoto = async (req) => {
+  if (req.file) await fs.unlink(path.join(UPLOAD_ROOT, String(req.params.id), req.file.filename));
+};
 
 /**
  * GET /api/setup-sheets
@@ -313,98 +354,30 @@ exports.createSetupSheet = async (req, res) => {
  * PUT /api/setup-sheets/:id
  * Setup Sheet aktualisieren
  */
-exports.updateSetupSheet = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      program_id,
-      fixture_description,
-      clamping_description,
-      control_type,
-      preset_number,
-      wcs_number,
-      wcs_x,
-      wcs_y,
-      wcs_z,
-      reference_point,
-      raw_material_dimensions,
-      material_specification,
-      setup_instructions,
-      special_notes
-    } = req.body;
-
-    // Check if exists
-    const existsCheck = await db.query(
-      'SELECT id FROM setup_sheets WHERE id = $1',
-      [id]
-    );
-
-    if (existsCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Einrichteblatt nicht gefunden'
-      });
+exports.updateSetupSheet = sheetChange(async (req, client) => {
+  const sets = [];
+  const values = [];
+  for (const field of UPDATABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      values.push(req.body[field] === '' ? null : req.body[field]);
+      sets.push(`${field} = $${values.length}`);
     }
-
-    // Update Setup Sheet
-    const updateQuery = `
-      UPDATE setup_sheets SET
-        machine_id = COALESCE((SELECT o.machine_id FROM operations o WHERE o.id = operation_id), machine_id),
-        program_id = COALESCE($1, program_id),
-        fixture_description = COALESCE($2, fixture_description),
-        clamping_description = COALESCE($3, clamping_description),
-        control_type = COALESCE($4, control_type),
-        preset_number = COALESCE($5, preset_number),
-        wcs_number = COALESCE($6, wcs_number),
-        wcs_x = COALESCE($7, wcs_x),
-        wcs_y = COALESCE($8, wcs_y),
-        wcs_z = COALESCE($9, wcs_z),
-        reference_point = COALESCE($10, reference_point),
-        raw_material_dimensions = COALESCE($11, raw_material_dimensions),
-        material_specification = COALESCE($12, material_specification),
-        setup_instructions = COALESCE($13, setup_instructions),
-        special_notes = COALESCE($14, special_notes),
-        updated_by = $15,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $16
-      RETURNING *
-    `;
-
-    const values = [
-      program_id,
-      fixture_description,
-      clamping_description,
-      control_type,
-      preset_number,
-      wcs_number,
-      wcs_x,
-      wcs_y,
-      wcs_z,
-      reference_point,
-      raw_material_dimensions,
-      material_specification,
-      setup_instructions,
-      special_notes,
-      req.user.id,
-      id
-    ];
-
-    const result = await db.query(updateQuery, values);
-
-    res.json({
-      success: true,
-      message: 'Einrichteblatt erfolgreich aktualisiert',
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Error updating setup sheet:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Aktualisieren des Einrichteblatts',
-      error: error.message
-    });
   }
-};
+  values.push(req.user.id);
+  sets.push(`updated_by = $${values.length}`);
+  values.push(req.params.id);
+
+  // Maschine folgt dem Arbeitsgang, ein machine_id im Body zählt nicht
+  const result = await client.query(
+    `UPDATE setup_sheets SET ${sets.join(', ')},
+       machine_id = COALESCE((SELECT o.machine_id FROM operations o WHERE o.id = operation_id), machine_id),
+       updated_at = CURRENT_TIMESTAMP
+     WHERE id = $${values.length}
+     RETURNING *`,
+    values
+  );
+  return { status: 200, body: { success: true, message: 'Einrichteblatt erfolgreich aktualisiert', data: result.rows[0] } };
+}, { label: 'beim Aktualisieren des Einrichteblatts' });
 
 /**
  * DELETE /api/setup-sheets/:id
@@ -454,120 +427,51 @@ exports.deleteSetupSheet = async (req, res) => {
  * POST /api/setup-sheets/:id/photos
  * Foto zu Setup Sheet hinzufügen
  */
+const uploadPhotoInSheet = sheetChange(async (req, client) => {
+  const { id } = req.params;
+  const { caption, photo_type = 'general', sort_order = 0 } = req.body;
+  // Relativer Pfad, den servePhoto unter backend/ auflöst
+  const relativePath = `uploads/setup-sheets/${id}/${req.file.filename}`;
+  const result = await client.query(
+    `INSERT INTO setup_sheet_photos (
+       setup_sheet_id, file_path, file_name, file_size,
+       mime_type, caption, photo_type, sort_order, uploaded_by
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING *`,
+    [id, relativePath, req.file.originalname, req.file.size, req.file.mimetype,
+      caption || null, photo_type, sort_order, req.user.id]
+  );
+  return { status: 201, body: { success: true, message: 'Foto erfolgreich hochgeladen', data: result.rows[0] } };
+}, { label: 'beim Hochladen des Fotos', onFail: removeUploadedPhoto });
+
 exports.uploadPhoto = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { caption, photo_type = 'general', sort_order = 0 } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Keine Datei hochgeladen'
-      });
-    }
-
-    // Check if setup sheet exists
-    const sheetCheck = await db.query(
-      'SELECT id FROM setup_sheets WHERE id = $1',
-      [id]
-    );
-
-    if (sheetCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Einrichteblatt nicht gefunden'
-      });
-    }
-
-    // Insert photo record
-    const insertQuery = `
-      INSERT INTO setup_sheet_photos (
-        setup_sheet_id, file_path, file_name, file_size,
-        mime_type, caption, photo_type, sort_order, uploaded_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-    `;
-
-    // Relativen Pfad konstruieren (passend zum Static-Mount /uploads in server.js)
-    const relativePath = `uploads/setup-sheets/${id}/${req.file.filename}`;
-
-    const values = [
-      id,
-      relativePath,
-      req.file.originalname,
-      req.file.size,
-      req.file.mimetype,
-      caption || null,
-      photo_type,
-      sort_order,
-      req.user.id
-    ];
-
-    const result = await db.query(insertQuery, values);
-
-    res.status(201).json({
-      success: true,
-      message: 'Foto erfolgreich hochgeladen',
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Error uploading photo:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Hochladen des Fotos',
-      error: error.message
-    });
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Keine Datei hochgeladen' });
   }
+  return uploadPhotoInSheet(req, res);
 };
 
 /**
  * DELETE /api/setup-sheets/:id/photos/:photoId
  * Foto löschen
  */
-exports.deletePhoto = async (req, res) => {
-  try {
-    const { id, photoId } = req.params;
+exports.deletePhoto = sheetChange(async (req, client) => {
+  const { id, photoId } = req.params;
+  const deleted = await client.query(
+    'DELETE FROM setup_sheet_photos WHERE id = $1 AND setup_sheet_id = $2 RETURNING file_path',
+    [photoId, id]
+  );
+  if (deleted.rows.length === 0) return notFound('Foto nicht gefunden');
 
-    // Get photo info
-    const photoQuery = await db.query(
-      'SELECT * FROM setup_sheet_photos WHERE id = $1 AND setup_sheet_id = $2',
-      [photoId, id]
-    );
-
-    if (photoQuery.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Foto nicht gefunden'
-      });
-    }
-
-    const photo = photoQuery.rows[0];
-
-    // Delete file from filesystem (file_path ist relativ, zu absolutem Pfad auflösen)
-    try {
-      const absPath = path.join(__dirname, '../..', photo.file_path);
-      await fs.unlink(absPath);
-    } catch (err) {
-      console.error('Error deleting file:', err);
-      // Continue anyway - file might already be deleted
-    }
-
-    // Delete from database
-    await db.query('DELETE FROM setup_sheet_photos WHERE id = $1', [photoId]);
-
-    res.json({
-      success: true,
-      message: 'Foto erfolgreich gelöscht'
-    });
-  } catch (error) {
-    console.error('Error deleting photo:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Löschen des Fotos',
-      error: error.message
-    });
-  }
-};
+  // Datei bleibt, solange ein Stand sie nennt (Zurückgehen braucht sie)
+  const filePath = deleted.rows[0].file_path;
+  const keep = await photoFileReferenced(client, id, filePath);
+  return {
+    status: 200,
+    body: { success: true, message: 'Foto erfolgreich gelöscht' },
+    afterCommit: keep ? null : () => fs.unlink(path.join(__dirname, '../..', filePath)),
+  };
+}, { label: 'beim Löschen des Fotos' });
 
 /**
  * Interne Helper-Funktion: Foto ausliefern (DRY für view + download)
@@ -629,55 +533,21 @@ exports.downloadPhoto = (req, res) => servePhoto(req, res, 'attachment');
  * PUT /api/setup-sheets/:id/photos/:photoId
  * Foto-Metadaten aktualisieren
  */
-exports.updatePhoto = async (req, res) => {
-  try {
-    const { id, photoId } = req.params;
-    const { caption, photo_type, sort_order } = req.body;
-
-    // Check if photo exists
-    const photoCheck = await db.query(
-      'SELECT id FROM setup_sheet_photos WHERE id = $1 AND setup_sheet_id = $2',
-      [photoId, id]
-    );
-
-    if (photoCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Foto nicht gefunden'
-      });
-    }
-
-    // Update photo metadata
-    const updateQuery = `
-      UPDATE setup_sheet_photos SET
-        caption = COALESCE($1, caption),
-        photo_type = COALESCE($2, photo_type),
-        sort_order = COALESCE($3, sort_order)
-      WHERE id = $4
-      RETURNING *
-    `;
-
-    const result = await db.query(updateQuery, [
-      caption,
-      photo_type,
-      sort_order,
-      photoId
-    ]);
-
-    res.json({
-      success: true,
-      message: 'Foto erfolgreich aktualisiert',
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Error updating photo:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Aktualisieren des Fotos',
-      error: error.message
-    });
-  }
-};
+exports.updatePhoto = sheetChange(async (req, client) => {
+  const { id, photoId } = req.params;
+  const { caption, photo_type, sort_order } = req.body;
+  const result = await client.query(
+    `UPDATE setup_sheet_photos SET
+       caption = COALESCE($1, caption),
+       photo_type = COALESCE($2, photo_type),
+       sort_order = COALESCE($3, sort_order)
+     WHERE id = $4 AND setup_sheet_id = $5
+     RETURNING *`,
+    [caption, photo_type, sort_order, photoId, id]
+  );
+  if (result.rows.length === 0) return notFound('Foto nicht gefunden');
+  return { status: 200, body: { success: true, message: 'Foto erfolgreich aktualisiert', data: result.rows[0] } };
+}, { label: 'beim Aktualisieren des Fotos' });
 
 // ============================================================================
 // SPANNMITTEL ZUORDNUNGEN
@@ -688,154 +558,65 @@ exports.updatePhoto = async (req, res) => {
  * Spannmittel zum Setup Sheet hinzufügen
  */
 exports.addClampingDevice = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { clamping_device_id, quantity = 1, notes } = req.body;
-
-    if (!clamping_device_id) {
-      return res.status(400).json({
-        success: false,
-        message: 'clamping_device_id ist erforderlich'
-      });
-    }
-
-    // Prüfen ob Setup Sheet existiert
-    const sheetCheck = await db.query('SELECT id FROM setup_sheets WHERE id = $1', [id]);
-    if (sheetCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Setup Sheet nicht gefunden'
-      });
-    }
-
-    // Prüfen ob Spannmittel existiert
-    const deviceCheck = await db.query(
-      'SELECT id FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL',
-      [clamping_device_id]
-    );
-    if (deviceCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Spannmittel nicht gefunden'
-      });
-    }
-
-    // Höchste sort_order ermitteln
-    const maxOrderResult = await db.query(
-      'SELECT COALESCE(MAX(sort_order), 0) as max_order FROM setup_sheet_clamping_devices WHERE setup_sheet_id = $1',
-      [id]
-    );
-    const nextOrder = maxOrderResult.rows[0].max_order + 1;
-
-    // Einfügen (oder update bei Duplikat)
-    const result = await db.query(`
-      INSERT INTO setup_sheet_clamping_devices 
-        (setup_sheet_id, clamping_device_id, quantity, notes, sort_order, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (setup_sheet_id, clamping_device_id) 
-      DO UPDATE SET quantity = setup_sheet_clamping_devices.quantity + EXCLUDED.quantity
-      RETURNING *
-    `, [id, clamping_device_id, quantity, notes, nextOrder, req.user.id]);
-
-    // Vollständige Daten laden
-    const fullData = await db.query(
-      'SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1',
-      [result.rows[0].id]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Spannmittel hinzugefügt',
-      data: fullData.rows[0]
-    });
-  } catch (error) {
-    console.error('Error adding clamping device:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Hinzufügen des Spannmittels',
-      error: error.message
-    });
+  if (!req.body.clamping_device_id) {
+    return res.status(400).json({ success: false, message: 'clamping_device_id ist erforderlich' });
   }
+  return addClampingDeviceInSheet(req, res);
 };
+
+const addClampingDeviceInSheet = sheetChange(async (req, client) => {
+  const { id } = req.params;
+  const { clamping_device_id, quantity = 1, notes } = req.body;
+  const exists = await client.query('SELECT id FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL', [clamping_device_id]);
+  if (exists.rows.length === 0) return notFound('Spannmittel nicht gefunden');
+
+  const maxOrder = await client.query(
+    'SELECT COALESCE(MAX(sort_order), 0) AS max_order FROM setup_sheet_clamping_devices WHERE setup_sheet_id = $1', [id]);
+  // Einfügen (oder Menge erhöhen bei Duplikat)
+  const result = await client.query(
+    `INSERT INTO setup_sheet_clamping_devices (setup_sheet_id, clamping_device_id, quantity, notes, sort_order, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (setup_sheet_id, clamping_device_id)
+     DO UPDATE SET quantity = setup_sheet_clamping_devices.quantity + EXCLUDED.quantity
+     RETURNING id`,
+    [id, clamping_device_id, quantity, notes, maxOrder.rows[0].max_order + 1, req.user.id]
+  );
+  const fullData = await client.query('SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1', [result.rows[0].id]);
+  return { status: 201, body: { success: true, message: 'Spannmittel hinzugefügt', data: fullData.rows[0] } };
+}, { label: 'beim Hinzufügen des Spannmittels' });
 
 /**
  * PUT /api/setup-sheets/:id/clamping-devices/:itemId
  * Spannmittel-Zuordnung aktualisieren
  */
-exports.updateClampingDevice = async (req, res) => {
-  try {
-    const { id, itemId } = req.params;
-    const { quantity, notes, sort_order } = req.body;
-
-    const result = await db.query(`
-      UPDATE setup_sheet_clamping_devices SET
-        quantity = COALESCE($1, quantity),
-        notes = COALESCE($2, notes),
-        sort_order = COALESCE($3, sort_order)
-      WHERE id = $4 AND setup_sheet_id = $5
-      RETURNING *
-    `, [quantity, notes, sort_order, itemId, id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Zuordnung nicht gefunden'
-      });
-    }
-
-    const fullData = await db.query(
-      'SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1',
-      [itemId]
-    );
-
-    res.json({
-      success: true,
-      message: 'Aktualisiert',
-      data: fullData.rows[0]
-    });
-  } catch (error) {
-    console.error('Error updating clamping device:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Aktualisieren',
-      error: error.message
-    });
-  }
-};
+exports.updateClampingDevice = sheetChange(async (req, client) => {
+  const { id, itemId } = req.params;
+  const { quantity, notes, sort_order } = req.body;
+  const result = await client.query(
+    `UPDATE setup_sheet_clamping_devices SET
+       quantity = COALESCE($1, quantity),
+       notes = COALESCE($2, notes),
+       sort_order = COALESCE($3, sort_order)
+     WHERE id = $4 AND setup_sheet_id = $5
+     RETURNING id`,
+    [quantity, notes, sort_order, itemId, id]
+  );
+  if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
+  const fullData = await client.query('SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1', [itemId]);
+  return { status: 200, body: { success: true, message: 'Aktualisiert', data: fullData.rows[0] } };
+}, { label: 'beim Aktualisieren des Spannmittels' });
 
 /**
  * DELETE /api/setup-sheets/:id/clamping-devices/:itemId
  * Spannmittel-Zuordnung entfernen
  */
-exports.removeClampingDevice = async (req, res) => {
-  try {
-    const { id, itemId } = req.params;
-
-    const result = await db.query(
-      'DELETE FROM setup_sheet_clamping_devices WHERE id = $1 AND setup_sheet_id = $2 RETURNING *',
-      [itemId, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Zuordnung nicht gefunden'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Spannmittel entfernt'
-    });
-  } catch (error) {
-    console.error('Error removing clamping device:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Entfernen',
-      error: error.message
-    });
-  }
-};
+exports.removeClampingDevice = sheetChange(async (req, client) => {
+  const { id, itemId } = req.params;
+  const result = await client.query(
+    'DELETE FROM setup_sheet_clamping_devices WHERE id = $1 AND setup_sheet_id = $2 RETURNING id', [itemId, id]);
+  if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
+  return { status: 200, body: { success: true, message: 'Spannmittel entfernt' } };
+}, { label: 'beim Entfernen des Spannmittels' });
 
 // ============================================================================
 // VORRICHTUNGEN ZUORDNUNGEN
@@ -846,152 +627,63 @@ exports.removeClampingDevice = async (req, res) => {
  * Vorrichtung zum Setup Sheet hinzufügen
  */
 exports.addFixture = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { fixture_id, quantity = 1, notes } = req.body;
-
-    if (!fixture_id) {
-      return res.status(400).json({
-        success: false,
-        message: 'fixture_id ist erforderlich'
-      });
-    }
-
-    // Prüfen ob Setup Sheet existiert
-    const sheetCheck = await db.query('SELECT id FROM setup_sheets WHERE id = $1', [id]);
-    if (sheetCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Setup Sheet nicht gefunden'
-      });
-    }
-
-    // Prüfen ob Vorrichtung existiert
-    const fixtureCheck = await db.query(
-      'SELECT id FROM fixtures WHERE id = $1 AND deleted_at IS NULL',
-      [fixture_id]
-    );
-    if (fixtureCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vorrichtung nicht gefunden'
-      });
-    }
-
-    // Höchste sort_order ermitteln
-    const maxOrderResult = await db.query(
-      'SELECT COALESCE(MAX(sort_order), 0) as max_order FROM setup_sheet_fixtures WHERE setup_sheet_id = $1',
-      [id]
-    );
-    const nextOrder = maxOrderResult.rows[0].max_order + 1;
-
-    // Einfügen (oder update bei Duplikat)
-    const result = await db.query(`
-      INSERT INTO setup_sheet_fixtures 
-        (setup_sheet_id, fixture_id, quantity, notes, sort_order, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (setup_sheet_id, fixture_id) 
-      DO UPDATE SET quantity = setup_sheet_fixtures.quantity + EXCLUDED.quantity
-      RETURNING *
-    `, [id, fixture_id, quantity, notes, nextOrder, req.user.id]);
-
-    // Vollständige Daten laden
-    const fullData = await db.query(
-      'SELECT * FROM setup_sheet_fixtures_view WHERE id = $1',
-      [result.rows[0].id]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Vorrichtung hinzugefügt',
-      data: fullData.rows[0]
-    });
-  } catch (error) {
-    console.error('Error adding fixture:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Hinzufügen der Vorrichtung',
-      error: error.message
-    });
+  if (!req.body.fixture_id) {
+    return res.status(400).json({ success: false, message: 'fixture_id ist erforderlich' });
   }
+  return addFixtureInSheet(req, res);
 };
+
+const addFixtureInSheet = sheetChange(async (req, client) => {
+  const { id } = req.params;
+  const { fixture_id, quantity = 1, notes } = req.body;
+  const exists = await client.query('SELECT id FROM fixtures WHERE id = $1 AND deleted_at IS NULL', [fixture_id]);
+  if (exists.rows.length === 0) return notFound('Vorrichtung nicht gefunden');
+
+  const maxOrder = await client.query(
+    'SELECT COALESCE(MAX(sort_order), 0) AS max_order FROM setup_sheet_fixtures WHERE setup_sheet_id = $1', [id]);
+  // Einfügen (oder Menge erhöhen bei Duplikat)
+  const result = await client.query(
+    `INSERT INTO setup_sheet_fixtures (setup_sheet_id, fixture_id, quantity, notes, sort_order, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (setup_sheet_id, fixture_id)
+     DO UPDATE SET quantity = setup_sheet_fixtures.quantity + EXCLUDED.quantity
+     RETURNING id`,
+    [id, fixture_id, quantity, notes, maxOrder.rows[0].max_order + 1, req.user.id]
+  );
+  const fullData = await client.query('SELECT * FROM setup_sheet_fixtures_view WHERE id = $1', [result.rows[0].id]);
+  return { status: 201, body: { success: true, message: 'Vorrichtung hinzugefügt', data: fullData.rows[0] } };
+}, { label: 'beim Hinzufügen der Vorrichtung' });
 
 /**
  * PUT /api/setup-sheets/:id/fixtures/:itemId
  * Vorrichtung-Zuordnung aktualisieren
  */
-exports.updateFixture = async (req, res) => {
-  try {
-    const { id, itemId } = req.params;
-    const { quantity, notes, sort_order } = req.body;
-
-    const result = await db.query(`
-      UPDATE setup_sheet_fixtures SET
-        quantity = COALESCE($1, quantity),
-        notes = COALESCE($2, notes),
-        sort_order = COALESCE($3, sort_order)
-      WHERE id = $4 AND setup_sheet_id = $5
-      RETURNING *
-    `, [quantity, notes, sort_order, itemId, id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Zuordnung nicht gefunden'
-      });
-    }
-
-    const fullData = await db.query(
-      'SELECT * FROM setup_sheet_fixtures_view WHERE id = $1',
-      [itemId]
-    );
-
-    res.json({
-      success: true,
-      message: 'Aktualisiert',
-      data: fullData.rows[0]
-    });
-  } catch (error) {
-    console.error('Error updating fixture:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Aktualisieren',
-      error: error.message
-    });
-  }
-};
+exports.updateFixture = sheetChange(async (req, client) => {
+  const { id, itemId } = req.params;
+  const { quantity, notes, sort_order } = req.body;
+  const result = await client.query(
+    `UPDATE setup_sheet_fixtures SET
+       quantity = COALESCE($1, quantity),
+       notes = COALESCE($2, notes),
+       sort_order = COALESCE($3, sort_order)
+     WHERE id = $4 AND setup_sheet_id = $5
+     RETURNING id`,
+    [quantity, notes, sort_order, itemId, id]
+  );
+  if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
+  const fullData = await client.query('SELECT * FROM setup_sheet_fixtures_view WHERE id = $1', [itemId]);
+  return { status: 200, body: { success: true, message: 'Aktualisiert', data: fullData.rows[0] } };
+}, { label: 'beim Aktualisieren der Vorrichtung' });
 
 /**
  * DELETE /api/setup-sheets/:id/fixtures/:itemId
  * Vorrichtung-Zuordnung entfernen
  */
-exports.removeFixture = async (req, res) => {
-  try {
-    const { id, itemId } = req.params;
-
-    const result = await db.query(
-      'DELETE FROM setup_sheet_fixtures WHERE id = $1 AND setup_sheet_id = $2 RETURNING *',
-      [itemId, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Zuordnung nicht gefunden'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Vorrichtung entfernt'
-    });
-  } catch (error) {
-    console.error('Error removing fixture:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Fehler beim Entfernen',
-      error: error.message
-    });
-  }
-};
+exports.removeFixture = sheetChange(async (req, client) => {
+  const { id, itemId } = req.params;
+  const result = await client.query(
+    'DELETE FROM setup_sheet_fixtures WHERE id = $1 AND setup_sheet_id = $2 RETURNING id', [itemId, id]);
+  if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
+  return { status: 200, body: { success: true, message: 'Vorrichtung entfernt' } };
+}, { label: 'beim Entfernen der Vorrichtung' });
 
