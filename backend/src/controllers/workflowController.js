@@ -89,7 +89,8 @@ const changeWorkflowState = async (req, res) => {
         break;
       case 'setup_sheet':
         entityTable = 'setup_sheets';
-        entityQuery = 'SELECT id, workflow_state_id FROM setup_sheets WHERE id = $1';
+        // Sperre: eine gleichzeitige Änderung (Rückfall auf Entwurf) darf nicht überschrieben werden
+        entityQuery = 'SELECT id, workflow_state_id FROM setup_sheets WHERE id = $1 FOR UPDATE';
         break;
     }
 

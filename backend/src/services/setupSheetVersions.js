@@ -70,8 +70,10 @@ async function buildSnapshot(client, sheetId) {
   return rows[0]?.snapshot ?? null;
 }
 
-// Schlüssel sortiert, Listen unabhängig von ihrer Reihenfolge
+// Schlüssel sortiert, Listen unabhängig von ihrer Reihenfolge. '' gilt als leer wie null:
+// Altbestand aus dem Formular enthält '' (früher COALESCE), neue Speicherungen schreiben null.
 function canonical(value) {
+  if (value === '') return 'null';
   if (Array.isArray(value)) return `[${value.map(canonical).sort().join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
@@ -265,7 +267,8 @@ async function restoreVersion(sheetId, versionId, userId) {
         [sheetId, p.file_path, p.file_name, p.file_size, p.mime_type, p.caption, p.photo_type, p.sort_order, userId]);
     }
 
-    const stateName = version.id === sheet.released_version_id ? 'released' : 'draft';
+    // Nur unverändert wiederhergestellt gilt wieder als freigegeben (sonst wäre es nicht mehr der geprüfte Inhalt)
+    const stateName = version.id === sheet.released_version_id && warnings.length === 0 ? 'released' : 'draft';
     const toStateId = (await client.query('SELECT id FROM workflow_states WHERE name = $1', [stateName])).rows[0].id;
     await client.query('UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2', [toStateId, sheetId]);
     await client.query(

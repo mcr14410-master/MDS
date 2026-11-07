@@ -199,7 +199,7 @@ export default function SetupSheetsList({ operationId }) {
             <WorkflowStatusBadge status={currentSetupSheet.workflow_state} />
             {canEdit && currentSetupSheet.workflow_state !== 'archived' && (<>
             <button
-              onClick={() => handleEdit(viewingSetupSheet)}
+              onClick={() => handleEdit(currentSetupSheet)}
               className="px-4 py-2 text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
             >
               Bearbeiten

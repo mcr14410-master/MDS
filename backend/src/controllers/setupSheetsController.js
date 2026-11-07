@@ -752,16 +752,28 @@ exports.getVersion = async (req, res) => {
       snap.fields.program_id
         ? db.query('SELECT program_number, program_name FROM programs WHERE id = $1', [snap.fields.program_id])
         : { rows: [] },
-      db.query('SELECT id, inventory_number, name FROM clamping_devices WHERE id = ANY($1::int[])',
-        [ids(snap.clamping_devices, 'clamping_device_id')]),
-      db.query('SELECT id, fixture_number, name FROM fixtures WHERE id = ANY($1::int[])',
-        [ids(snap.fixtures, 'fixture_id')]),
+      db.query(`SELECT id, inventory_number, name, deleted_at IS NOT NULL AS is_deleted
+                  FROM clamping_devices WHERE id = ANY($1::int[])`,
+        [[...ids(snap.clamping_devices, 'clamping_device_id'), snap.fields.clamping_device_id].filter(x => x != null)]),
+      db.query(`SELECT id, fixture_number, name, deleted_at IS NOT NULL AS is_deleted
+                  FROM fixtures WHERE id = ANY($1::int[])`,
+        [[...ids(snap.fixtures, 'fixture_id'), snap.fields.fixture_id].filter(x => x != null)]),
     ]);
-    version.names = {
-      program: program.rows[0] || null,
-      clamping_devices: Object.fromEntries(devices.rows.map(d => [d.id, d])),
-      fixtures: Object.fromEntries(fixtures.rows.map(f => [f.id, f])),
-    };
+    const deviceById = Object.fromEntries(devices.rows.map(d => [d.id, d]));
+    const fixtureById = Object.fromEntries(fixtures.rows.map(f => [f.id, f]));
+    version.names = { program: program.rows[0] || null, clamping_devices: deviceById, fixtures: fixtureById };
+
+    // Was beim Zurückgehen entfallen würde (gleiche Regeln wie restoreVersion)
+    const gone = (row) => !row || row.is_deleted;
+    const label = (row, fallback) => (row ? `${fallback} ${row.inventory_number || row.fixture_number}` : fallback);
+    version.missing = [];
+    if (snap.fields.program_id && !version.names.program) version.missing.push('Programm');
+    for (const id of [snap.fields.clamping_device_id, ...ids(snap.clamping_devices, 'clamping_device_id')].filter(x => x != null)) {
+      if (gone(deviceById[id])) version.missing.push(label(deviceById[id], 'Spannmittel'));
+    }
+    for (const id of [snap.fields.fixture_id, ...ids(snap.fixtures, 'fixture_id')].filter(x => x != null)) {
+      if (gone(fixtureById[id])) version.missing.push(label(fixtureById[id], 'Vorrichtung'));
+    }
     res.json({ success: true, data: version });
   } catch (error) {
     console.error('Error fetching setup sheet version:', error);

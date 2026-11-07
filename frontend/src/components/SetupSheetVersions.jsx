@@ -49,10 +49,20 @@ export default function SetupSheetVersions({ setupSheet, initialVersionId, onRes
   }, [initialVersionId, open]);
 
   const handleRestore = async (version) => {
-    const outcome = version.is_released
+    let missing = [];
+    try {
+      missing = (await fetchVersion(setupSheet.id, version.id)).missing || [];
+    } catch {
+      toast.error('Stand konnte nicht geladen werden');
+      return;
+    }
+    const outcome = version.is_released && missing.length === 0
       ? 'Das Blatt ist danach wieder freigegeben.'
       : 'Das Blatt wird Entwurf und muss neu freigegeben werden.';
-    if (!confirm(`Auf ${versionLabel(version)} zurückgehen?\n\n${outcome}\nDer aktuelle Inhalt wird vorher als Sicherung abgelegt.`)) return;
+    const missingText = missing.length > 0
+      ? `\n\nEntfällt, weil inzwischen gelöscht:\n- ${missing.join('\n- ')}`
+      : '';
+    if (!confirm(`Auf ${versionLabel(version)} zurückgehen?\n\n${outcome}${missingText}\nDer aktuelle Inhalt wird vorher als Sicherung abgelegt.`)) return;
     setBusy(true);
     const result = await restoreVersion(setupSheet.id, version.id);
     setBusy(false);
@@ -123,6 +133,11 @@ export default function SetupSheetVersions({ setupSheet, initialVersionId, onRes
 
       {selected && (
         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+          {selected.missing?.length > 0 && (
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-2">
+              Inzwischen gelöscht, entfällt beim Zurückgehen: {selected.missing.join(', ')}
+            </p>
+          )}
           <div className="flex items-center justify-between">
             <h4 className="text-base font-semibold text-gray-900 dark:text-white">
               {versionLabel(selected)} vom {formatDateTime(selected.created_at)} (nur Ansicht)
@@ -153,11 +168,11 @@ export default function SetupSheetVersions({ setupSheet, initialVersionId, onRes
               <ul className="list-disc ml-5 text-gray-900 dark:text-white">
                 {selected.snapshot.clamping_devices.map((c, i) => {
                   const d = selected.names?.clamping_devices?.[c.clamping_device_id];
-                  return <li key={`c${i}`}>{c.quantity}× {d ? `${d.inventory_number} ${d.name || ''}` : 'Spannmittel gelöscht'}{c.notes ? ` – ${c.notes}` : ''}</li>;
+                  return <li key={`c${i}`}>{c.quantity}× {d ? `${d.inventory_number} ${d.name || ''}${d.is_deleted ? ' (gelöscht)' : ''}` : 'Spannmittel gelöscht'}{c.notes ? ` – ${c.notes}` : ''}</li>;
                 })}
                 {selected.snapshot.fixtures.map((f, i) => {
                   const d = selected.names?.fixtures?.[f.fixture_id];
-                  return <li key={`f${i}`}>{f.quantity}× {d ? `${d.fixture_number} ${d.name || ''}` : 'Vorrichtung gelöscht'}{f.notes ? ` – ${f.notes}` : ''}</li>;
+                  return <li key={`f${i}`}>{f.quantity}× {d ? `${d.fixture_number} ${d.name || ''}${d.is_deleted ? ' (gelöscht)' : ''}` : 'Vorrichtung gelöscht'}{f.notes ? ` – ${f.notes}` : ''}</li>;
                 })}
               </ul>
             </div>

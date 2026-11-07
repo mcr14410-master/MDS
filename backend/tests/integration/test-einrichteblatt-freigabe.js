@@ -213,6 +213,33 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
     assert.equal((await ablauf(id)).length, vorher);
   });
 
+  await test('Altbestand mit leeren Texten: Speichern ohne Änderung bleibt freigegeben', async () => {
+    const { id } = await neuesBlatt({ reference_point: 'Mitte' });
+    await pool.query("UPDATE setup_sheets SET special_notes = '', setup_instructions = '', control_type = '' WHERE id = $1", [id]);
+    await freigeben(id);
+    await call(sheets.updateSetupSheet, {
+      params: { id }, body: { reference_point: 'Mitte', special_notes: '', setup_instructions: '', control_type: '' }, user,
+    });
+    assert.equal((await holeBlatt(id)).workflow_state, 'released');
+  });
+
+  await test('Freigabe während einer Änderung: wartet, dann 409 statt ungeprüftem Stand', async () => {
+    const { id } = await neuesBlatt({ reference_point: 'geprüft' });
+    for (const ziel of ['review', 'approved']) assert.equal((await wechsel(id, ziel)).statusCode, 200);
+    const client = await pool.connect();
+    await client.query('BEGIN');
+    await client.query('SELECT id FROM setup_sheets WHERE id = $1 FOR UPDATE', [id]);
+    await client.query("UPDATE setup_sheets SET reference_point = 'UNGEPRUEFT', workflow_state_id = $1 WHERE id = $2", [state.draft, id]);
+    const freigabe = wechsel(id, 'released');
+    await new Promise(r => setTimeout(r, 300));
+    await client.query('COMMIT');
+    client.release();
+    const res = await freigabe;
+    assert.equal(res.statusCode, 409, JSON.stringify(res.body));
+    assert.equal((await holeBlatt(id)).workflow_state, 'draft');
+    assert.equal((await staende(id)).length, 0);
+  });
+
   await test('Zwei Änderungen gleichzeitig: nur ein Eintrag', async () => {
     const { id } = await neuesBlatt();
     await freigeben(id);

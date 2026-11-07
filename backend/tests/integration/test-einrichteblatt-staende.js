@@ -174,10 +174,26 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
     assert.equal(res.body.data.warnings.length, 2, JSON.stringify(res.body.data.warnings));
     assert.ok(res.body.data.warnings.some(w => /Programm/.test(w)));
     assert.ok(res.body.data.warnings.some(w => /Spannmittel/.test(w)));
+    assert.equal(res.body.data.state, 'draft', 'mit entfallenen Verweisen nicht wieder freigegeben');
     const blatt = await holeBlatt(id);
+    assert.equal(blatt.workflow_state, 'draft');
     assert.equal(blatt.reference_point, 'A');
     assert.equal(blatt.program_id, null);
     assert.equal(blatt.clamping_devices.length, 0);
+  });
+
+  await test('Stand-Ansicht kennzeichnet gelöschte Verweise', async () => {
+    const device = (await pool.query(
+      `INSERT INTO clamping_devices (inventory_number, name, type_id)
+       VALUES ('S-T7', 'Spanner T7', (SELECT id FROM clamping_device_types LIMIT 1)) RETURNING id`)).rows[0].id;
+    const id = await neuesBlatt();
+    await call(sheets.addClampingDevice, { params: { id }, body: { clamping_device_id: device }, user });
+    await freigeben(id);
+    await pool.query('UPDATE clamping_devices SET deleted_at = now() WHERE id = $1', [device]);
+    const [stand] = await liste(id);
+    const v = (await call(sheets.getVersion, { params: { id, versionId: stand.id } })).body.data;
+    assert.equal(v.names.clamping_devices[device].is_deleted, true);
+    assert.deepEqual(v.missing, ['Spannmittel S-T7']);
   });
 
   await test('Foto seit dem Stand gelöscht: wieder da und abrufbar', async () => {

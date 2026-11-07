@@ -46,4 +46,8 @@ test('leeres Feld und anderer Text sind ungleich', () => {
   assert.equal(snapshotsEqual(stand({ fields: { reference_point: null } }), stand()), false);
 });
 
+test('leerer Text und null sind gleich (Altbestand aus dem Formular)', () => {
+  assert.equal(snapshotsEqual(stand({ fields: { reference_point: '' } }), stand({ fields: { reference_point: null } })), true);
+});
+
 console.log(`\n${passed} Tests bestanden`);
