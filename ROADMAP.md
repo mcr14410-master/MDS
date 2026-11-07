@@ -217,6 +217,16 @@ Tabelle `notifications` existiert seit der ersten Migration, wird aber nicht gen
 
 ---
 
+### 📋 Einrichteblatt: Fotos besser beschriften
+Wunsch Nutzer 08.11.2026 (Fotos der Aufspannung, Erstimport Messprogramme)
+- [ ] Je Foto **Beschriftung** (kurz, auf der Karte sichtbar) und **Beschreibung** (länger, mehrzeiliges Eingabefeld). Heute gibt es nur `caption` mit einzeiligem Feld beim Bearbeiten
+- Hinweise: neue Spalte gehört in den Stand (`buildSnapshot`, Vergleich, Zurückgehen); dabei den Befund „Notizen nicht leerbar“ (Offene Fixes) mit erledigen
+
+### 📋 Übersicht „Was wartet auf Prüfung/Freigabe“
+Wunsch Nutzer 08.11.2026
+- [ ] Eine Seite (oder Dashboard-Kachel), die zeigt, was im Freigabe-Ablauf wartet: NC- und Messprogramme sowie Einrichteblätter „In Prüfung“ und „Geprüft“, dazu Blätter „In Bearbeitung“ mit freigegebenem Stand, je mit Link direkt hin
+- Ideen: Filter nach Art und Status, Anzahl im Menü, später auch der Eingang aus dem Mess-PC (Messprogramme Schritt 5). Bezug: Benachrichtigungs-System
+
 ### 📋 Werkzeug-Icons
 `tool_categories.icon` existiert, eigene Icons fehlen.
 - [ ] SVG-Icon-Set für Werkzeugtypen (Fräser, Bohrer, Wendeschneidplatten …)
