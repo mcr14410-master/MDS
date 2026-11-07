@@ -42,13 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.20.0)
+Derzeit keine.
 
-- **Stand 06.11.2026:** Deploy grün im zweiten Anlauf – im ersten stürzte `docker compose` ab, weil die SD-Karte beschädigte Daten liefert (`/usr/bin/docker` neu eingespielt, siehe ROADMAP „SD-Karte von rpi01 defekt“). Migrationen liefen im ersten Anlauf. Prüfpunkte unten noch offen
-- Zwei Migrationen: `1737000126000` (Zähler für Programmnummern, Startwerte aus Nummern im Schema) und `1737000127000` (Statuswechsel je Version, Altbestand über die Zeit zugeordnet)
-- Nach dem Deploy: an einem Test-Arbeitsgang „Programm hochladen“ → Feld Programmnummer ist mit `<Bauteilnummer>-1` vorbelegt (Messprogramm `-M1`); Testprogramm danach wieder löschen
-- Messprogramm mit `.p2x` hochladen → erscheint als „Excel-Export-Einstellung“, „nicht übernehmen“ funktioniert
-- Versionshistorie eines freigegebenen Programms → „Ablauf“ aufklappen: Schritte mit Name und plausibler Uhrzeit (nicht 1–2 h verschoben)
+---
+
+## Erledigt: Release 2.20.0 (06.11.2026, Prüfung 07.11.2026)
+
+Programmnummern Stufe 1 (#302, #305), `.p2x` als Excel-Export-Einstellung (#306), Kartenüberschrift (#307), Ablauf je Version (#308). Migrationen `1737000126000` (Zähler für Programmnummern) und `1737000127000` (Statuswechsel je Version) grün, Tag `v2.20.0`. Deploy im zweiten Anlauf grün: Im ersten stürzte `docker compose` wegen der defekten SD-Karte ab, die am 07.11. getauscht wurde (siehe [PI-NEU-AUFSETZEN.md](PI-NEU-AUFSETZEN.md)). Prüfpunkte am 07.11. auf dem neuen System grün: Programmnummer vorbelegt, `.p2x` samt „nicht übernehmen“, Uhrzeiten im Ablauf.
 
 ---
 
