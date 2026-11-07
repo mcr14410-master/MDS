@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { createVersion } = require('../services/setupSheetVersions');
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -7,6 +8,16 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 });
+
+// Workflow-Logik: Von welchem Status kann wohin gewechselt werden?
+const ALLOWED_TRANSITIONS = {
+  draft: ['review', 'archived'],              // Entwurf → Prüfung oder Archiv
+  review: ['approved', 'rejected', 'draft'],  // Prüfung → Genehmigt, Abgelehnt oder zurück zu Entwurf
+  approved: ['released', 'draft'],            // Genehmigt → Freigegeben oder zurück zu Entwurf
+  released: ['archived'],                     // Freigegeben → nur Archivierung
+  rejected: ['draft', 'archived'],            // Abgelehnt → zurück zu Entwurf oder Archiv
+  archived: [],                               // Archiviert → keine Änderung mehr
+};
 
 // =============================================================================
 // WORKFLOW CONTROLLER
@@ -104,6 +115,18 @@ const changeWorkflowState = async (req, res) => {
       });
     }
 
+    // Einrichteblatt: Der Server prüft den Schritt (bei Programmen bisher nur die Knopfliste)
+    if (entityType === 'setup_sheet') {
+      const fromState = await client.query('SELECT name FROM workflow_states WHERE id = $1', [fromStateId]);
+      if (!(ALLOWED_TRANSITIONS[fromState.rows[0]?.name] || []).includes(toState.name)) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          success: false,
+          error: `Dieser Schritt ist nicht möglich (${fromState.rows[0]?.name} → ${toState.name})`
+        });
+      }
+    }
+
     // Entity-Status aktualisieren
     await client.query(
       `UPDATE ${entityTable} SET workflow_state_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
@@ -130,6 +153,12 @@ const changeWorkflowState = async (req, res) => {
          WHERE id = (SELECT current_revision_id FROM programs WHERE id = $2)`,
         [userId, entityId]
       );
+    }
+
+    // Einrichteblatt: Jede Freigabe sichert einen Stand
+    if (entityType === 'setup_sheet' && toState.name === 'released') {
+      const version = await createVersion(client, entityId, 'release', userId);
+      await client.query('UPDATE setup_sheets SET released_version_id = $1 WHERE id = $2', [version.id, entityId]);
     }
 
     // 4. History-Eintrag erstellen (bei Programmen mit der Version, für die der Status gilt)
@@ -331,17 +360,7 @@ async function getTransitionsFromState(currentState) {
   );
   const allStates = statesResult.rows;
 
-  // Workflow-Logik: Von welchem Status kann wohin gewechselt werden?
-  const allowedTransitions = {
-    'draft': ['review', 'archived'],              // Entwurf → Prüfung oder Archiv
-    'review': ['approved', 'rejected', 'draft'],  // Prüfung → Genehmigt, Abgelehnt oder zurück zu Entwurf
-    'approved': ['released', 'draft'],            // Genehmigt → Freigegeben oder zurück zu Entwurf
-    'released': ['archived'],                     // Freigegeben → nur Archivierung
-    'rejected': ['draft', 'archived'],            // Abgelehnt → zurück zu Entwurf oder Archiv
-    'archived': []                                 // Archiviert → keine Änderung mehr
-  };
-
-  const allowed = allowedTransitions[currentState.name] || [];
+  const allowed = ALLOWED_TRANSITIONS[currentState.name] || [];
   
   return allStates.filter(state => allowed.includes(state.name));
 }

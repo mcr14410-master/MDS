@@ -11,6 +11,7 @@ if (!(process.env.DB_NAME || '').includes('test')) {
 const assert = require('node:assert/strict');
 const pool = require('../../src/config/db');
 const sheets = require('../../src/controllers/setupSheetsController');
+const workflow = require('../../src/controllers/workflowController');
 
 let passed = 0;
 async function test(name, fn) {
@@ -49,6 +50,21 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
   };
   const holeBlatt = async (id) => (await call(sheets.getSetupSheetById, { params: { id } })).body.data;
 
+  const state = {};
+  for (const r of (await pool.query('SELECT id, name FROM workflow_states')).rows) state[r.name] = r.id;
+  const wechsel = (id, ziel, changeReason) => call(workflow.changeWorkflowState, {
+    body: { entityType: 'setup_sheet', entityId: id, toStateId: state[ziel], changeReason }, user,
+  });
+  const freigeben = async (id) => {
+    for (const ziel of ['review', 'approved', 'released']) {
+      const res = await wechsel(id, ziel);
+      assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    }
+    return holeBlatt(id);
+  };
+  const staende = async (id) => (await pool.query(
+    'SELECT * FROM setup_sheet_versions WHERE setup_sheet_id = $1 ORDER BY id', [id])).rows;
+
   await test('neues Blatt ist Entwurf, Status im Body zählt nicht', async () => {
     const sheet = await holeBlatt((await neuesBlatt({ status: 'released' })).id);
     assert.equal(sheet.workflow_state, 'draft');
@@ -68,6 +84,77 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
     const res = await call(sheets.updateSetupSheet, { params: { id }, body: { status: 'released' }, user });
     assert.equal(res.statusCode, 200);
     assert.equal((await holeBlatt(id)).workflow_state, 'draft');
+  });
+
+  await test('Freigabe legt Stand an und setzt Zeiger', async () => {
+    const { id } = await neuesBlatt({ reference_point: 'Mitte' });
+    const blatt = await freigeben(id);
+    assert.equal(blatt.workflow_state, 'released');
+    const v = await staende(id);
+    assert.equal(v.length, 1);
+    assert.equal(v[0].version_number, 1);
+    assert.equal(v[0].kind, 'release');
+    assert.equal(v[0].created_by, adminId);
+    assert.equal(v[0].snapshot.fields.reference_point, 'Mitte');
+    assert.equal(blatt.released_version_id, v[0].id);
+  });
+
+  await test('Stand enthält Fotos, Spannmittel und Vorrichtungen', async () => {
+    const { id } = await neuesBlatt();
+    await pool.query(
+      `INSERT INTO setup_sheet_photos (setup_sheet_id, file_path, file_name, file_size, mime_type, caption, uploaded_by)
+       VALUES ($1, 'uploads/setup-sheets/x/a.jpg', 'a.jpg', 10, 'image/jpeg', 'Bild', $2)`, [id, adminId]);
+    const device = (await pool.query(
+      `INSERT INTO clamping_devices (inventory_number, name, type_id)
+       VALUES ('S-T2', 'Spanner', (SELECT id FROM clamping_device_types LIMIT 1)) RETURNING id`)).rows[0].id;
+    const fixture = (await pool.query(
+      `INSERT INTO fixtures (fixture_number, type_id)
+       VALUES ('V-T2', (SELECT id FROM fixture_types LIMIT 1)) RETURNING id`)).rows[0].id;
+    await pool.query('INSERT INTO setup_sheet_clamping_devices (setup_sheet_id, clamping_device_id, quantity) VALUES ($1, $2, 2)', [id, device]);
+    await pool.query('INSERT INTO setup_sheet_fixtures (setup_sheet_id, fixture_id, quantity) VALUES ($1, $2, 1)', [id, fixture]);
+    await freigeben(id);
+    const [v] = await staende(id);
+    assert.equal(v.snapshot.photos[0].caption, 'Bild');
+    assert.equal(v.snapshot.clamping_devices[0].clamping_device_id, device);
+    assert.equal(v.snapshot.clamping_devices[0].quantity, 2);
+    assert.equal(v.snapshot.fixtures[0].fixture_id, fixture);
+    assert.equal(v.snapshot.photos[0].id, undefined);
+  });
+
+  await test('Nächste Freigabe zählt den Stand hoch', async () => {
+    const { id } = await neuesBlatt();
+    await freigeben(id);
+    await pool.query("UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2", [state.draft, id]);
+    const blatt = await freigeben(id);
+    const v = await staende(id);
+    assert.deepEqual(v.map(x => x.version_number), [1, 2]);
+    assert.equal(blatt.released_version_id, v[1].id);
+  });
+
+  await test('Ungültiger Schritt beim Blatt wird abgelehnt', async () => {
+    const { id } = await neuesBlatt();
+    const res = await wechsel(id, 'released');
+    assert.equal(res.statusCode, 409);
+    assert.equal((await holeBlatt(id)).workflow_state, 'draft');
+    assert.equal((await staende(id)).length, 0);
+  });
+
+  await test('Statuswechsel steht mit Grund im Ablauf', async () => {
+    const { id } = await neuesBlatt();
+    await wechsel(id, 'review', 'Bitte prüfen');
+    const { rows } = await pool.query(
+      "SELECT change_reason FROM workflow_history WHERE entity_type = 'setup_sheet' AND entity_id = $1", [id]);
+    assert.deepEqual(rows.map(r => r.change_reason), ['Bitte prüfen']);
+  });
+
+  await test('Programm: Schritte bleiben wie bisher ungeprüft', async () => {
+    const prog = (await pool.query(
+      `INSERT INTO programs (operation_id, program_number, program_name, workflow_state_id)
+       VALUES ($1, 'TEIL-0010-9', 'Test', $2) RETURNING id`, [opId, state.draft])).rows[0].id;
+    const res = await call(workflow.changeWorkflowState, {
+      body: { entityType: 'program', entityId: prog, toStateId: state.released }, user,
+    });
+    assert.equal(res.statusCode, 200);
   });
 
   console.log(`\n${passed} Tests bestanden`);
