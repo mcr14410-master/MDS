@@ -15,7 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Changed
+- Einrichteblatt: Die Maschine kommt aus dem Arbeitsgang und wird im Formular nur angezeigt; ohne Maschine am Arbeitsgang lässt sich kein Blatt anlegen. Anzeige und Filter folgen einer späteren Änderung am Arbeitsgang (`setup_sheets.machine_id` bleibt vorerst als Altspalte)
+- Einrichteblatt-Karte: Knopf „Öffnen“, Icons wie auf den Programmkarten, Fotoanzahl immer sichtbar. Nach dem Anlegen öffnet sich das neue Blatt direkt bei den Fotos
+- Einrichteblatt-Formular: Feld „Programm (optional)“ statt „NC-Programm“, weil auch Messprogramme zur Auswahl stehen
+
 ### Fixed
+- Einrichteblatt: Die Meldung „Unbekannter Steuerungstyp“ erscheint nicht mehr, zum Beispiel bei einer Messmaschine
+- Einrichteblatt-Karte: Status-Knöpfe öffnen nicht mehr nebenbei die Detailansicht
 - `scripts/deploy.sh`: Auf einem frischen Klon legte die Caddyfile-Prüfung `frontend/dist` über den Docker-Mount als root an, der Deploy brach danach bei `rsync` ab. Der Ordner wird jetzt vorher angelegt.
 
 ---

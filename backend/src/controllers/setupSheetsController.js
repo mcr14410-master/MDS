@@ -35,7 +35,7 @@ exports.getSetupSheets = async (req, res) => {
 		FROM setup_sheets ss
 		JOIN operations o ON ss.operation_id = o.id
 		JOIN parts p ON o.part_id = p.id
-		JOIN machines m ON ss.machine_id = m.id
+		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id
@@ -52,7 +52,7 @@ exports.getSetupSheets = async (req, res) => {
     }
 
     if (machine_id) {
-      query += ` AND ss.machine_id = $${paramCount++}`;
+      query += ` AND COALESCE(o.machine_id, ss.machine_id) = $${paramCount++}`;
       params.push(machine_id);
     }
 
@@ -111,7 +111,7 @@ exports.getSetupSheetById = async (req, res) => {
 		JOIN operations o ON ss.operation_id = o.id
 		JOIN parts p ON o.part_id = p.id
 		LEFT JOIN customers c ON p.customer_id = c.id
-		JOIN machines m ON ss.machine_id = m.id
+		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
 		LEFT JOIN control_types ct ON ct.id = m.control_type_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
@@ -202,11 +202,9 @@ exports.createSetupSheet = async (req, res) => {
   try {
     const {
       operation_id,
-      machine_id,
       program_id,
       fixture_description,
       clamping_description,
-      control_type,
       preset_number,
       wcs_number,
       wcs_x,
@@ -221,16 +219,20 @@ exports.createSetupSheet = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!operation_id || !machine_id) {
+    if (!operation_id) {
       return res.status(400).json({
         success: false,
-        message: 'Operation und Maschine sind Pflichtfelder'
+        message: 'Operation ist ein Pflichtfeld'
       });
     }
 
-    // Check if operation exists
+    // Maschine und Steuerungstyp kommen aus dem Arbeitsgang (auch bei Varianten eigene Zeile)
     const operationCheck = await db.query(
-      'SELECT id FROM operations WHERE id = $1',
+      `SELECT o.machine_id, ct.name AS control_type
+         FROM operations o
+         LEFT JOIN machines m ON m.id = o.machine_id
+         LEFT JOIN control_types ct ON ct.id = m.control_type_id
+        WHERE o.id = $1`,
       [operation_id]
     );
 
@@ -241,16 +243,12 @@ exports.createSetupSheet = async (req, res) => {
       });
     }
 
-    // Check if machine exists
-    const machineCheck = await db.query(
-      'SELECT id FROM machines WHERE id = $1',
-      [machine_id]
-    );
+    const { machine_id, control_type } = operationCheck.rows[0];
 
-    if (machineCheck.rows.length === 0) {
-      return res.status(404).json({
+    if (!machine_id) {
+      return res.status(400).json({
         success: false,
-        message: 'Maschine nicht gefunden'
+        message: 'Am Arbeitsgang ist keine Maschine eingetragen. Bitte dort zuerst die Maschine auswählen.'
       });
     }
 
@@ -316,7 +314,6 @@ exports.updateSetupSheet = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      machine_id,
       program_id,
       fixture_description,
       clamping_description,
@@ -350,30 +347,29 @@ exports.updateSetupSheet = async (req, res) => {
     // Update Setup Sheet
     const updateQuery = `
       UPDATE setup_sheets SET
-        machine_id = COALESCE($1, machine_id),
-        program_id = COALESCE($2, program_id),
-        fixture_description = COALESCE($3, fixture_description),
-        clamping_description = COALESCE($4, clamping_description),
-        control_type = COALESCE($5, control_type),
-        preset_number = COALESCE($6, preset_number),
-        wcs_number = COALESCE($7, wcs_number),
-        wcs_x = COALESCE($8, wcs_x),
-        wcs_y = COALESCE($9, wcs_y),
-        wcs_z = COALESCE($10, wcs_z),
-        reference_point = COALESCE($11, reference_point),
-        raw_material_dimensions = COALESCE($12, raw_material_dimensions),
-        material_specification = COALESCE($13, material_specification),
-        setup_instructions = COALESCE($14, setup_instructions),
-        special_notes = COALESCE($15, special_notes),
-        status = COALESCE($16, status),
-        updated_by = $17,
+        machine_id = COALESCE((SELECT o.machine_id FROM operations o WHERE o.id = operation_id), machine_id),
+        program_id = COALESCE($1, program_id),
+        fixture_description = COALESCE($2, fixture_description),
+        clamping_description = COALESCE($3, clamping_description),
+        control_type = COALESCE($4, control_type),
+        preset_number = COALESCE($5, preset_number),
+        wcs_number = COALESCE($6, wcs_number),
+        wcs_x = COALESCE($7, wcs_x),
+        wcs_y = COALESCE($8, wcs_y),
+        wcs_z = COALESCE($9, wcs_z),
+        reference_point = COALESCE($10, reference_point),
+        raw_material_dimensions = COALESCE($11, raw_material_dimensions),
+        material_specification = COALESCE($12, material_specification),
+        setup_instructions = COALESCE($13, setup_instructions),
+        special_notes = COALESCE($14, special_notes),
+        status = COALESCE($15, status),
+        updated_by = $16,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $18
+      WHERE id = $17
       RETURNING *
     `;
 
     const values = [
-      machine_id,
       program_id,
       fixture_description,
       clamping_description,
