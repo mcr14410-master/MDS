@@ -42,7 +42,7 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release**
+**Nächstes Release** (2.21.0)
 
 - Migration `1737000128000` (Einrichteblatt-Freigabe): `active` → Freigegeben mit Stand 1, sonst gleicher Status. Stand 07.11.: 1 aktives, 6 Entwürfe
 - **Direkt nach dem Deploy:** In der Benutzerverwaltung das Recht „Einrichteblätter bearbeiten“ (`setup_sheet.update`, bei den Programmen) an `CNC-Fräser`, `CNC-Dreher`, `Werkstatt-Team`, `programmer`, `reviewer`, `supervisor` vergeben. Bis dahin können nur Admins Blätter pflegen

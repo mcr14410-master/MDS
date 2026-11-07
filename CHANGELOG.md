@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.21.0] - 2026-11-07 - Einrichteblatt-Freigabe und Stände
+
+### Für Anwender
+- Einrichteblätter laufen jetzt durch dieselbe Freigabe wie Programme: Entwurf, zur Prüfung, geprüft, freigegeben. Im Reiter „Ablauf“ steht, wer wann welchen Schritt gemacht hat.
+- Jede Freigabe sichert den Stand des Blatts samt Fotos und Spannmitteln. Wird ein freigegebenes Blatt geändert, ist es wieder Entwurf, bis es neu freigegeben wird. Der freigegebene Stand bleibt im Reiter „Stände“ abrufbar, und man kann auf ihn zurückgehen.
+- Wer Einrichteblätter bearbeiten darf, wird über ein eigenes Recht in der Benutzerverwaltung festgelegt. So können zum Beispiel auch Bediener Fotos ergänzen, ohne Programme ändern zu dürfen.
+- Die Karte eines Einrichteblatts hat einen Knopf „Öffnen“ und zeigt die Anzahl der Fotos. Die Maschine kommt automatisch aus dem Arbeitsgang, und auch Messprogramme lassen sich zuordnen.
+
 ### Added
 - Einrichteblatt: Freigabe wie bei Programmen (Entwurf → In Prüfung → Geprüft → Freigegeben), mit Reiter „Ablauf“ (Name, Uhrzeit, Grund). Jede Freigabe sichert einen Stand in `setup_sheet_versions` (Formularfelder, Spannmittel, Vorrichtungen, Fotos)
 - Recht `setup_sheet.update` (Kategorie Programme) für Anlegen, Ändern, Fotos, Spannmittel und Vorrichtungen. Migration `1737000128000` gibt es nur `admin`
