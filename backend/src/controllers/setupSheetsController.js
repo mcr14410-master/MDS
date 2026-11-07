@@ -7,7 +7,9 @@
 const db = require('../config/db');
 const fs = require('fs').promises;
 const path = require('path');
-const { withSheetChange, photoFileReferenced, SheetLockedError } = require('../services/setupSheetVersions');
+const {
+  withSheetChange, photoFileReferenced, SheetLockedError, VersionNotFoundError, restoreVersion,
+} = require('../services/setupSheetVersions');
 
 const UPLOAD_ROOT = path.join(__dirname, '../../uploads/setup-sheets');
 
@@ -400,6 +402,15 @@ exports.deleteSetupSheet = async (req, res) => {
       });
     }
 
+    // Ein Blatt mit Stand lässt sich nur noch archivieren (Spec 2 „Löschen“)
+    const versions = await db.query('SELECT 1 FROM setup_sheet_versions WHERE setup_sheet_id = $1 LIMIT 1', [id]);
+    if (versions.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Das Einrichteblatt war schon freigegeben und lässt sich nur noch archivieren'
+      });
+    }
+
     // Delete (CASCADE löscht auch Fotos)
     await db.query('DELETE FROM setup_sheets WHERE id = $1', [id]);
 
@@ -476,41 +487,37 @@ exports.deletePhoto = sheetChange(async (req, client) => {
 /**
  * Interne Helper-Funktion: Foto ausliefern (DRY für view + download)
  */
+/**
+ * Fotodatei ausliefern (DRY für Fotos des Blatts und Fotos aus Ständen), mit Path-Traversal-Schutz
+ * photo: { file_path, file_name, mime_type }
+ */
+async function sendPhotoFile(res, photo, disposition) {
+  const absPath = path.resolve(__dirname, '../..', photo.file_path);
+  const uploadsRoot = path.resolve(__dirname, '../../uploads');
+  if (!absPath.startsWith(uploadsRoot + path.sep)) {
+    return res.status(403).json({ success: false, message: 'Ungültiger Pfad' });
+  }
+  try {
+    await fs.access(absPath);
+  } catch {
+    return res.status(404).json({ success: false, message: 'Datei nicht auf Server gefunden' });
+  }
+  res.setHeader('Content-Type', photo.mime_type || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `${disposition}; filename="${encodeURIComponent(photo.file_name)}"`);
+  return res.sendFile(absPath);
+}
+
 async function servePhoto(req, res, disposition) {
   const { id, photoId } = req.params;
-
   try {
     const result = await db.query(
       'SELECT file_path, file_name, mime_type FROM setup_sheet_photos WHERE id = $1 AND setup_sheet_id = $2',
       [photoId, id]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Foto nicht gefunden' });
     }
-
-    const photo = result.rows[0];
-    const absPath = path.resolve(__dirname, '../..', photo.file_path);
-    const uploadsRoot = path.resolve(__dirname, '../../uploads');
-
-    // Path-Traversal-Schutz
-    if (!absPath.startsWith(uploadsRoot + path.sep)) {
-      return res.status(403).json({ success: false, message: 'Ungültiger Pfad' });
-    }
-
-    // Datei-Existenz prüfen
-    try {
-      await fs.access(absPath);
-    } catch {
-      return res.status(404).json({ success: false, message: 'Datei nicht auf Server gefunden' });
-    }
-
-    res.setHeader('Content-Type', photo.mime_type || 'application/octet-stream');
-    res.setHeader(
-      'Content-Disposition',
-      `${disposition}; filename="${encodeURIComponent(photo.file_name)}"`
-    );
-    res.sendFile(absPath);
+    return await sendPhotoFile(res, result.rows[0], disposition);
   } catch (error) {
     console.error('Error serving photo:', error);
     res.status(500).json({ success: false, message: 'Fehler beim Ausliefern des Fotos' });
@@ -687,3 +694,108 @@ exports.removeFixture = sheetChange(async (req, client) => {
   return { status: 200, body: { success: true, message: 'Vorrichtung entfernt' } };
 }, { label: 'beim Entfernen der Vorrichtung' });
 
+// ============================================================================
+// STÄNDE (Spec Einrichteblatt-Freigabe 2)
+// ============================================================================
+
+/**
+ * GET /api/setup-sheets/:id/versions
+ * Alle Stände eines Blatts, neueste zuerst
+ */
+exports.getVersions = async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT v.id, v.version_number, v.kind, v.created_at, v.created_by,
+              COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.username) AS created_by_name,
+              v.id = s.released_version_id AS is_released,
+              jsonb_array_length(v.snapshot->'photos') AS photo_count
+         FROM setup_sheet_versions v
+         JOIN setup_sheets s ON s.id = v.setup_sheet_id
+         LEFT JOIN users u ON u.id = v.created_by
+        WHERE v.setup_sheet_id = $1
+        ORDER BY v.id DESC`,
+      [req.params.id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching setup sheet versions:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Laden der Stände', error: error.message });
+  }
+};
+
+/**
+ * GET /api/setup-sheets/:id/versions/:versionId
+ * Ein Stand mit Inhalt; Namen von Programm, Spannmitteln und Vorrichtungen zum Anzeigen
+ */
+exports.getVersion = async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT v.*, COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.username) AS created_by_name,
+              v.id = s.released_version_id AS is_released
+         FROM setup_sheet_versions v
+         JOIN setup_sheets s ON s.id = v.setup_sheet_id
+         LEFT JOIN users u ON u.id = v.created_by
+        WHERE v.id = $1 AND v.setup_sheet_id = $2`,
+      [req.params.versionId, req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Stand nicht gefunden' });
+    const version = rows[0];
+    const snap = version.snapshot;
+    const ids = (list, key) => (list || []).map(x => x[key]).filter(x => x != null);
+    const [program, devices, fixtures] = await Promise.all([
+      snap.fields.program_id
+        ? db.query('SELECT program_number, program_name FROM programs WHERE id = $1', [snap.fields.program_id])
+        : { rows: [] },
+      db.query('SELECT id, inventory_number, name FROM clamping_devices WHERE id = ANY($1::int[])',
+        [ids(snap.clamping_devices, 'clamping_device_id')]),
+      db.query('SELECT id, fixture_number, name FROM fixtures WHERE id = ANY($1::int[])',
+        [ids(snap.fixtures, 'fixture_id')]),
+    ]);
+    version.names = {
+      program: program.rows[0] || null,
+      clamping_devices: Object.fromEntries(devices.rows.map(d => [d.id, d])),
+      fixtures: Object.fromEntries(fixtures.rows.map(f => [f.id, f])),
+    };
+    res.json({ success: true, data: version });
+  } catch (error) {
+    console.error('Error fetching setup sheet version:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Laden des Stands', error: error.message });
+  }
+};
+
+/**
+ * GET /api/setup-sheets/:id/versions/:versionId/photos/:index/view
+ * Foto aus einem Stand (auch wenn es im Blatt inzwischen gelöscht ist)
+ */
+exports.viewVersionPhoto = async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT snapshot->\'photos\'->($3::int) AS photo FROM setup_sheet_versions WHERE id = $1 AND setup_sheet_id = $2',
+      [req.params.versionId, req.params.id, Number.parseInt(req.params.index, 10) || 0]
+    );
+    const photo = rows[0]?.photo;
+    if (!photo) return res.status(404).json({ success: false, message: 'Foto nicht gefunden' });
+    return await sendPhotoFile(res, photo, 'inline');
+  } catch (error) {
+    console.error('Error serving version photo:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Ausliefern des Fotos' });
+  }
+};
+
+/**
+ * POST /api/setup-sheets/:id/versions/:versionId/restore
+ * Blatt auf diesen Stand zurücksetzen (Recht program.release)
+ */
+exports.restoreVersion = async (req, res) => {
+  try {
+    const result = await restoreVersion(req.params.id, req.params.versionId, req.user.id);
+    if (result === null) return res.status(404).json({ success: false, message: 'Einrichteblatt nicht gefunden' });
+    res.json({ success: true, message: 'Stand wiederhergestellt', data: result });
+  } catch (error) {
+    if (error instanceof SheetLockedError || error instanceof VersionNotFoundError) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    console.error('Error restoring setup sheet version:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Zurückgehen', error: error.message });
+  }
+};

@@ -161,8 +161,134 @@ async function withSheetChange(sheetId, userId, fn) {
   }
 }
 
+/** Stand gibt es nicht (oder gehört zu einem anderen Blatt) */
+class VersionNotFoundError extends Error {
+  constructor() {
+    super('Stand nicht gefunden');
+    this.status = 404;
+  }
+}
+
+const FIELD_COLUMNS = [
+  'program_id', 'fixture_id', 'clamping_device_id', 'fixture_description', 'clamping_description',
+  'control_type', 'preset_number', 'wcs_number', 'wcs_x', 'wcs_y', 'wcs_z', 'reference_point',
+  'raw_material_dimensions', 'material_specification', 'setup_instructions', 'special_notes',
+];
+
+const versionLabel = (v) => (v.kind === 'release' ? `Stand ${v.version_number}` : 'Sicherung');
+
+/**
+ * Blatt auf einen Stand zurücksetzen (Spec 2 „Zurückgehen“). Vorher wird der aktuelle Inhalt als
+ * Sicherung abgelegt, wenn er sich unterscheidet. Zurück auf den zuletzt freigegebenen Stand →
+ * Freigegeben, sonst Entwurf. Fehlende Verweise (Programm, Spannmittel, Vorrichtung) fallen weg.
+ * @returns { state, warnings, backupVersionId } oder null, wenn es das Blatt nicht gibt
+ */
+async function restoreVersion(sheetId, versionId, userId) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const sheet = (await client.query(
+      `SELECT s.workflow_state_id, s.released_version_id, ws.name AS state
+         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
+        WHERE s.id = $1 FOR UPDATE OF s`,
+      [sheetId]
+    )).rows[0];
+    if (!sheet) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    if (sheet.state === 'archived') throw new SheetLockedError();
+
+    const version = (await client.query(
+      'SELECT * FROM setup_sheet_versions WHERE id = $1 AND setup_sheet_id = $2', [versionId, sheetId]
+    )).rows[0];
+    if (!version) throw new VersionNotFoundError();
+    const target = version.snapshot;
+
+    let backupVersionId = null;
+    if (!snapshotsEqual(await buildSnapshot(client, sheetId), target)) {
+      backupVersionId = (await createVersion(client, sheetId, 'backup', userId)).id;
+    }
+
+    const warnings = [];
+    const exists = async (sql, id) => id == null || (await client.query(sql, [id])).rows.length > 0;
+    const fields = { ...target.fields };
+    if (!(await exists('SELECT 1 FROM programs WHERE id = $1', fields.program_id))) {
+      warnings.push('Programm gibt es nicht mehr – Zuordnung entfällt');
+      fields.program_id = null;
+    }
+    if (!(await exists('SELECT 1 FROM fixtures WHERE id = $1 AND deleted_at IS NULL', fields.fixture_id))) {
+      warnings.push('Vorrichtung im Formular gibt es nicht mehr – Zuordnung entfällt');
+      fields.fixture_id = null;
+    }
+    if (!(await exists('SELECT 1 FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL', fields.clamping_device_id))) {
+      warnings.push('Spannmittel im Formular gibt es nicht mehr – Zuordnung entfällt');
+      fields.clamping_device_id = null;
+    }
+    const values = FIELD_COLUMNS.map(c => fields[c] ?? null);
+    await client.query(
+      `UPDATE setup_sheets SET ${FIELD_COLUMNS.map((c, i) => `${c} = $${i + 1}`).join(', ')},
+         updated_by = $${values.length + 1}, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $${values.length + 2}`,
+      [...values, userId, sheetId]
+    );
+
+    await client.query('DELETE FROM setup_sheet_clamping_devices WHERE setup_sheet_id = $1', [sheetId]);
+    for (const c of target.clamping_devices || []) {
+      if (await exists('SELECT 1 FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL', c.clamping_device_id)) {
+        await client.query(
+          `INSERT INTO setup_sheet_clamping_devices (setup_sheet_id, clamping_device_id, quantity, notes, sort_order, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [sheetId, c.clamping_device_id, c.quantity, c.notes, c.sort_order, userId]);
+      } else {
+        warnings.push('Spannmittel gibt es nicht mehr – Zuordnung entfällt');
+      }
+    }
+    await client.query('DELETE FROM setup_sheet_fixtures WHERE setup_sheet_id = $1', [sheetId]);
+    for (const f of target.fixtures || []) {
+      if (await exists('SELECT 1 FROM fixtures WHERE id = $1 AND deleted_at IS NULL', f.fixture_id)) {
+        await client.query(
+          `INSERT INTO setup_sheet_fixtures (setup_sheet_id, fixture_id, quantity, notes, sort_order, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [sheetId, f.fixture_id, f.quantity, f.notes, f.sort_order, userId]);
+      } else {
+        warnings.push('Vorrichtung gibt es nicht mehr – Zuordnung entfällt');
+      }
+    }
+    // Fotodateien bleiben liegen, solange ein Stand sie nennt – hier werden nur die Zeilen ersetzt
+    await client.query('DELETE FROM setup_sheet_photos WHERE setup_sheet_id = $1', [sheetId]);
+    for (const p of target.photos || []) {
+      await client.query(
+        `INSERT INTO setup_sheet_photos (setup_sheet_id, file_path, file_name, file_size, mime_type,
+                                         caption, photo_type, sort_order, uploaded_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [sheetId, p.file_path, p.file_name, p.file_size, p.mime_type, p.caption, p.photo_type, p.sort_order, userId]);
+    }
+
+    const stateName = version.id === sheet.released_version_id ? 'released' : 'draft';
+    const toStateId = (await client.query('SELECT id FROM workflow_states WHERE name = $1', [stateName])).rows[0].id;
+    await client.query('UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2', [toStateId, sheetId]);
+    await client.query(
+      `INSERT INTO workflow_history
+         (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason, created_at)
+       VALUES ('setup_sheet', $1, $2, $3, $4, $5, now() AT TIME ZONE 'UTC')`,
+      [sheetId, sheet.workflow_state_id, toStateId, userId, `Zurück auf ${versionLabel(version)}`]
+    );
+
+    await client.query('COMMIT');
+    return { state: stateName, warnings, backupVersionId };
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   SheetLockedError,
+  VersionNotFoundError,
+  restoreVersion,
   photoFileReferenced,
   withSheetChange,
   buildSnapshot,

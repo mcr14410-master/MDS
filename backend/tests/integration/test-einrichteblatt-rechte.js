@@ -112,6 +112,11 @@ async function test(name, fn) {
     assert.equal(res.status, 403);
   });
 
+  await test('Zurückgehen ohne program.release: 403, Stände lesen: 200', async () => {
+    assert.equal((await send('GET', `/api/setup-sheets/${id}/versions`, tokenOhne)).status, 200);
+    assert.equal((await send('POST', `/api/setup-sheets/${id}/versions/1/restore`, tokenOhne)).status, 403);
+  });
+
   await test('Mit setup_sheet.update darf eine eigene Rolle ändern', async () => {
     const role = (await pool.query("INSERT INTO roles (name) VALUES ('Test-Fräser') RETURNING id")).rows[0].id;
     await pool.query(

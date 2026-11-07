@@ -216,4 +216,18 @@ router.delete(
   setupSheetsController.removeFixture
 );
 
+// ============================================================================
+// Stände (Spec Einrichteblatt-Freigabe 2): Lesen für alle, Zurückgehen mit program.release
+// ============================================================================
+
+router.get('/:id/versions', authenticateToken, setupSheetsController.getVersions);
+router.get('/:id/versions/:versionId', authenticateToken, setupSheetsController.getVersion);
+router.get('/:id/versions/:versionId/photos/:index/view', authenticateToken, setupSheetsController.viewVersionPhoto);
+router.post(
+  '/:id/versions/:versionId/restore',
+  authenticateToken,
+  requirePermission('program.release'),
+  setupSheetsController.restoreVersion
+);
+
 module.exports = router;

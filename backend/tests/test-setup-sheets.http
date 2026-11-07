@@ -323,6 +323,24 @@ Content-Type: application/json
 }
 
 ### ============================================================================
+### 24. GET - Stände des Blatts (nach der Freigabe in Test 23 mindestens Stand 1)
+### ============================================================================
+GET {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}/versions
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 25. POST - Auf einen Stand zurück (versionId aus Test 24, Recht program.release)
+### ============================================================================
+POST {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}/versions/1/restore
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 26. DELETE - Blatt mit Stand löschen (sollte 409 sein)
+### ============================================================================
+DELETE {{baseUrl}}/setup-sheets/{{workflowTest.response.body.data.id}}
+Authorization: Bearer {{token}}
+
+### ============================================================================
 ### TEST ZUSAMMENFASSUNG
 ### ============================================================================
 ###
