@@ -1,0 +1,300 @@
+/**
+ * Einrichteblatt: Stände sichern und vergleichen
+ * Spec docs/konzepte/EINRICHTEBLATT_FREIGABE_SPEC.md
+ *
+ * Ein Stand ist ein JSON-Snapshot mit Formularfeldern, Spannmitteln, Vorrichtungen und Fotos.
+ * Das Format entspricht dem der Migration 1737000128000 (Stand 1 aktiver Blätter).
+ */
+
+const db = require('../config/db');
+
+/** Blatt ist archiviert und damit schreibgeschützt */
+class SheetLockedError extends Error {
+  constructor(message = 'Archivierte Einrichteblätter lassen sich nicht mehr ändern') {
+    super(message);
+    this.status = 409;
+  }
+}
+
+// Grund im Ablauf, wenn eine Änderung das Blatt auf Entwurf zurücksetzt
+const CHANGE_REASONS = {
+  released: 'Geändert nach Freigabe',
+  approved: 'Geändert nach Prüfung',
+  review: 'Geändert während der Prüfung',
+  rejected: 'Geändert nach Ablehnung',
+};
+
+/** Stand eines Blatts lesen. client: Pool oder Transaktions-Client */
+async function buildSnapshot(client, sheetId) {
+  const { rows } = await client.query(
+    `SELECT jsonb_build_object(
+       'fields', jsonb_build_object(
+         'program_id', s.program_id,
+         'fixture_id', s.fixture_id,
+         'clamping_device_id', s.clamping_device_id,
+         'fixture_description', s.fixture_description,
+         'clamping_description', s.clamping_description,
+         'control_type', s.control_type,
+         'preset_number', s.preset_number,
+         'wcs_number', s.wcs_number,
+         'wcs_x', s.wcs_x,
+         'wcs_y', s.wcs_y,
+         'wcs_z', s.wcs_z,
+         'reference_point', s.reference_point,
+         'raw_material_dimensions', s.raw_material_dimensions,
+         'material_specification', s.material_specification,
+         'setup_instructions', s.setup_instructions,
+         'special_notes', s.special_notes
+       ),
+       'clamping_devices', COALESCE((
+         SELECT jsonb_agg(jsonb_build_object(
+           'clamping_device_id', c.clamping_device_id, 'quantity', c.quantity,
+           'notes', c.notes, 'sort_order', c.sort_order) ORDER BY c.sort_order, c.id)
+         FROM setup_sheet_clamping_devices c WHERE c.setup_sheet_id = s.id), '[]'::jsonb),
+       'fixtures', COALESCE((
+         SELECT jsonb_agg(jsonb_build_object(
+           'fixture_id', f.fixture_id, 'quantity', f.quantity,
+           'notes', f.notes, 'sort_order', f.sort_order) ORDER BY f.sort_order, f.id)
+         FROM setup_sheet_fixtures f WHERE f.setup_sheet_id = s.id), '[]'::jsonb),
+       'photos', COALESCE((
+         SELECT jsonb_agg(jsonb_build_object(
+           'file_path', p.file_path, 'file_name', p.file_name, 'file_size', p.file_size,
+           'mime_type', p.mime_type, 'caption', p.caption, 'photo_type', p.photo_type,
+           'sort_order', p.sort_order) ORDER BY p.sort_order, p.id)
+         FROM setup_sheet_photos p WHERE p.setup_sheet_id = s.id), '[]'::jsonb)
+     ) AS snapshot
+     FROM setup_sheets s
+     WHERE s.id = $1`,
+    [sheetId]
+  );
+  return rows[0]?.snapshot ?? null;
+}
+
+// Schlüssel sortiert, Listen unabhängig von ihrer Reihenfolge. '' gilt als leer wie null:
+// Altbestand aus dem Formular enthält '' (früher COALESCE), neue Speicherungen schreiben null.
+function canonical(value) {
+  if (value === '') return 'null';
+  if (Array.isArray(value)) return `[${value.map(canonical).sort().join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** Zwei Stände inhaltlich vergleichen */
+function snapshotsEqual(a, b) {
+  return canonical(a) === canonical(b);
+}
+
+/**
+ * Stand anlegen. kind 'release' zählt die Nummer hoch, 'backup' bleibt ohne Nummer.
+ * Muss in einer Transaktion laufen, die das Blatt gesperrt oder schon geändert hat.
+ */
+async function createVersion(client, sheetId, kind, userId) {
+  const snapshot = await buildSnapshot(client, sheetId);
+  const { rows } = await client.query(
+    `INSERT INTO setup_sheet_versions (setup_sheet_id, version_number, kind, snapshot, created_by)
+     VALUES ($1,
+             CASE WHEN $2::varchar = 'release'
+                  THEN (SELECT COALESCE(MAX(version_number), 0) + 1 FROM setup_sheet_versions WHERE setup_sheet_id = $1)
+             END,
+             $2, $3, $4)
+     RETURNING *`,
+    [sheetId, kind, snapshot, userId]
+  );
+  return rows[0];
+}
+
+/** Nennt ein Stand des Blatts diese Datei? Dann darf sie nicht gelöscht werden. */
+async function photoFileReferenced(client, sheetId, filePath) {
+  const { rows } = await client.query(
+    `SELECT 1 FROM setup_sheet_versions
+      WHERE setup_sheet_id = $1 AND snapshot->'photos' @> $2::jsonb LIMIT 1`,
+    [sheetId, JSON.stringify([{ file_path: filePath }])]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Schreibende Aktion am Blatt: Transaktion mit gesperrter Zeile. Ändert fn den Inhalt eines
+ * Blatts außerhalb des Entwurfs, fällt es auf Entwurf zurück und der Ablauf hält das fest.
+ * @returns Ergebnis von fn(client) oder null, wenn es das Blatt nicht gibt
+ * @throws SheetLockedError bei archivierten Blättern
+ */
+async function withSheetChange(sheetId, userId, fn) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `SELECT s.workflow_state_id, ws.name AS state
+         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
+        WHERE s.id = $1 FOR UPDATE OF s`,
+      [sheetId]
+    );
+    if (rows.length === 0) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    const { workflow_state_id: fromStateId, state } = rows[0];
+    if (state === 'archived') throw new SheetLockedError();
+
+    const before = await buildSnapshot(client, sheetId);
+    const result = await fn(client);
+    const after = await buildSnapshot(client, sheetId);
+
+    if (state !== 'draft' && !snapshotsEqual(before, after)) {
+      const draft = (await client.query("SELECT id FROM workflow_states WHERE name = 'draft'")).rows[0].id;
+      await client.query('UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2', [draft, sheetId]);
+      // workflow_history.created_at ist timestamp mit UTC (workflowController schreibt in UTC-Session)
+      await client.query(
+        `INSERT INTO workflow_history
+           (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason, created_at)
+         VALUES ('setup_sheet', $1, $2, $3, $4, $5, now() AT TIME ZONE 'UTC')`,
+        [sheetId, fromStateId, draft, userId, CHANGE_REASONS[state] || 'Geändert']
+      );
+    }
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** Stand gibt es nicht (oder gehört zu einem anderen Blatt) */
+class VersionNotFoundError extends Error {
+  constructor() {
+    super('Stand nicht gefunden');
+    this.status = 404;
+  }
+}
+
+const FIELD_COLUMNS = [
+  'program_id', 'fixture_id', 'clamping_device_id', 'fixture_description', 'clamping_description',
+  'control_type', 'preset_number', 'wcs_number', 'wcs_x', 'wcs_y', 'wcs_z', 'reference_point',
+  'raw_material_dimensions', 'material_specification', 'setup_instructions', 'special_notes',
+];
+
+const versionLabel = (v) => (v.kind === 'release' ? `Stand ${v.version_number}` : 'Sicherung');
+
+/**
+ * Blatt auf einen Stand zurücksetzen (Spec 2 „Zurückgehen“). Vorher wird der aktuelle Inhalt als
+ * Sicherung abgelegt, wenn er sich unterscheidet. Zurück auf den zuletzt freigegebenen Stand →
+ * Freigegeben, sonst Entwurf. Fehlende Verweise (Programm, Spannmittel, Vorrichtung) fallen weg.
+ * @returns { state, warnings, backupVersionId } oder null, wenn es das Blatt nicht gibt
+ */
+async function restoreVersion(sheetId, versionId, userId) {
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const sheet = (await client.query(
+      `SELECT s.workflow_state_id, s.released_version_id, ws.name AS state
+         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
+        WHERE s.id = $1 FOR UPDATE OF s`,
+      [sheetId]
+    )).rows[0];
+    if (!sheet) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    if (sheet.state === 'archived') throw new SheetLockedError();
+
+    const version = (await client.query(
+      'SELECT * FROM setup_sheet_versions WHERE id = $1 AND setup_sheet_id = $2', [versionId, sheetId]
+    )).rows[0];
+    if (!version) throw new VersionNotFoundError();
+    const target = version.snapshot;
+
+    let backupVersionId = null;
+    if (!snapshotsEqual(await buildSnapshot(client, sheetId), target)) {
+      backupVersionId = (await createVersion(client, sheetId, 'backup', userId)).id;
+    }
+
+    const warnings = [];
+    const exists = async (sql, id) => id == null || (await client.query(sql, [id])).rows.length > 0;
+    const fields = { ...target.fields };
+    if (!(await exists('SELECT 1 FROM programs WHERE id = $1', fields.program_id))) {
+      warnings.push('Programm gibt es nicht mehr – Zuordnung entfällt');
+      fields.program_id = null;
+    }
+    if (!(await exists('SELECT 1 FROM fixtures WHERE id = $1 AND deleted_at IS NULL', fields.fixture_id))) {
+      warnings.push('Vorrichtung im Formular gibt es nicht mehr – Zuordnung entfällt');
+      fields.fixture_id = null;
+    }
+    if (!(await exists('SELECT 1 FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL', fields.clamping_device_id))) {
+      warnings.push('Spannmittel im Formular gibt es nicht mehr – Zuordnung entfällt');
+      fields.clamping_device_id = null;
+    }
+    const values = FIELD_COLUMNS.map(c => fields[c] ?? null);
+    await client.query(
+      `UPDATE setup_sheets SET ${FIELD_COLUMNS.map((c, i) => `${c} = $${i + 1}`).join(', ')},
+         updated_by = $${values.length + 1}, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $${values.length + 2}`,
+      [...values, userId, sheetId]
+    );
+
+    await client.query('DELETE FROM setup_sheet_clamping_devices WHERE setup_sheet_id = $1', [sheetId]);
+    for (const c of target.clamping_devices || []) {
+      if (await exists('SELECT 1 FROM clamping_devices WHERE id = $1 AND deleted_at IS NULL', c.clamping_device_id)) {
+        await client.query(
+          `INSERT INTO setup_sheet_clamping_devices (setup_sheet_id, clamping_device_id, quantity, notes, sort_order, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [sheetId, c.clamping_device_id, c.quantity, c.notes, c.sort_order, userId]);
+      } else {
+        warnings.push('Spannmittel gibt es nicht mehr – Zuordnung entfällt');
+      }
+    }
+    await client.query('DELETE FROM setup_sheet_fixtures WHERE setup_sheet_id = $1', [sheetId]);
+    for (const f of target.fixtures || []) {
+      if (await exists('SELECT 1 FROM fixtures WHERE id = $1 AND deleted_at IS NULL', f.fixture_id)) {
+        await client.query(
+          `INSERT INTO setup_sheet_fixtures (setup_sheet_id, fixture_id, quantity, notes, sort_order, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [sheetId, f.fixture_id, f.quantity, f.notes, f.sort_order, userId]);
+      } else {
+        warnings.push('Vorrichtung gibt es nicht mehr – Zuordnung entfällt');
+      }
+    }
+    // Fotodateien bleiben liegen, solange ein Stand sie nennt – hier werden nur die Zeilen ersetzt
+    await client.query('DELETE FROM setup_sheet_photos WHERE setup_sheet_id = $1', [sheetId]);
+    for (const p of target.photos || []) {
+      await client.query(
+        `INSERT INTO setup_sheet_photos (setup_sheet_id, file_path, file_name, file_size, mime_type,
+                                         caption, photo_type, sort_order, uploaded_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [sheetId, p.file_path, p.file_name, p.file_size, p.mime_type, p.caption, p.photo_type, p.sort_order, userId]);
+    }
+
+    // Nur unverändert wiederhergestellt gilt wieder als freigegeben (sonst wäre es nicht mehr der geprüfte Inhalt)
+    const stateName = version.id === sheet.released_version_id && warnings.length === 0 ? 'released' : 'draft';
+    const toStateId = (await client.query('SELECT id FROM workflow_states WHERE name = $1', [stateName])).rows[0].id;
+    await client.query('UPDATE setup_sheets SET workflow_state_id = $1 WHERE id = $2', [toStateId, sheetId]);
+    await client.query(
+      `INSERT INTO workflow_history
+         (entity_type, entity_id, from_state_id, to_state_id, changed_by, change_reason, created_at)
+       VALUES ('setup_sheet', $1, $2, $3, $4, $5, now() AT TIME ZONE 'UTC')`,
+      [sheetId, sheet.workflow_state_id, toStateId, userId, `Zurück auf ${versionLabel(version)}`]
+    );
+
+    await client.query('COMMIT');
+    return { state: stateName, warnings, backupVersionId };
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  SheetLockedError,
+  VersionNotFoundError,
+  restoreVersion,
+  photoFileReferenced,
+  withSheetChange,
+  buildSnapshot,
+  snapshotsEqual,
+  createVersion,
+};

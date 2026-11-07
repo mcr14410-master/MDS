@@ -7,7 +7,10 @@
 const express = require('express');
 const router = express.Router();
 const setupSheetsController = require('../controllers/setupSheetsController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requirePermission } = require('../middleware/authMiddleware');
+
+// Schreiben braucht ein eigenes Recht (Spec Einrichteblatt-Freigabe 3), Lesen nur die Anmeldung
+const canEdit = requirePermission('setup_sheet.update');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -71,19 +74,19 @@ router.get('/:id', authenticateToken, setupSheetsController.getSetupSheetById);
  * POST /api/setup-sheets
  * Neues Setup Sheet erstellen
  */
-router.post('/', authenticateToken, setupSheetsController.createSetupSheet);
+router.post('/', authenticateToken, canEdit, setupSheetsController.createSetupSheet);
 
 /**
  * PUT /api/setup-sheets/:id
  * Setup Sheet aktualisieren
  */
-router.put('/:id', authenticateToken, setupSheetsController.updateSetupSheet);
+router.put('/:id', authenticateToken, canEdit, setupSheetsController.updateSetupSheet);
 
 /**
  * DELETE /api/setup-sheets/:id
  * Setup Sheet löschen
  */
-router.delete('/:id', authenticateToken, setupSheetsController.deleteSetupSheet);
+router.delete('/:id', authenticateToken, canEdit, setupSheetsController.deleteSetupSheet);
 
 /**
  * POST /api/setup-sheets/:id/photos
@@ -92,6 +95,7 @@ router.delete('/:id', authenticateToken, setupSheetsController.deleteSetupSheet)
 router.post(
   '/:id/photos',
   authenticateToken,
+  canEdit,
   upload.single('photo'),
   setupSheetsController.uploadPhoto
 );
@@ -123,6 +127,7 @@ router.get(
 router.put(
   '/:id/photos/:photoId',
   authenticateToken,
+  canEdit,
   setupSheetsController.updatePhoto
 );
 
@@ -133,6 +138,7 @@ router.put(
 router.delete(
   '/:id/photos/:photoId',
   authenticateToken,
+  canEdit,
   setupSheetsController.deletePhoto
 );
 
@@ -147,6 +153,7 @@ router.delete(
 router.post(
   '/:id/clamping-devices',
   authenticateToken,
+  canEdit,
   setupSheetsController.addClampingDevice
 );
 
@@ -157,6 +164,7 @@ router.post(
 router.put(
   '/:id/clamping-devices/:itemId',
   authenticateToken,
+  canEdit,
   setupSheetsController.updateClampingDevice
 );
 
@@ -167,6 +175,7 @@ router.put(
 router.delete(
   '/:id/clamping-devices/:itemId',
   authenticateToken,
+  canEdit,
   setupSheetsController.removeClampingDevice
 );
 
@@ -181,6 +190,7 @@ router.delete(
 router.post(
   '/:id/fixtures',
   authenticateToken,
+  canEdit,
   setupSheetsController.addFixture
 );
 
@@ -191,6 +201,7 @@ router.post(
 router.put(
   '/:id/fixtures/:itemId',
   authenticateToken,
+  canEdit,
   setupSheetsController.updateFixture
 );
 
@@ -201,7 +212,22 @@ router.put(
 router.delete(
   '/:id/fixtures/:itemId',
   authenticateToken,
+  canEdit,
   setupSheetsController.removeFixture
+);
+
+// ============================================================================
+// Stände (Spec Einrichteblatt-Freigabe 2): Lesen für alle, Zurückgehen mit program.release
+// ============================================================================
+
+router.get('/:id/versions', authenticateToken, setupSheetsController.getVersions);
+router.get('/:id/versions/:versionId', authenticateToken, setupSheetsController.getVersion);
+router.get('/:id/versions/:versionId/photos/:index/view', authenticateToken, setupSheetsController.viewVersionPhoto);
+router.post(
+  '/:id/versions/:versionId/restore',
+  authenticateToken,
+  requirePermission('program.release'),
+  setupSheetsController.restoreVersion
 );
 
 module.exports = router;

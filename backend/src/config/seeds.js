@@ -401,7 +401,7 @@ async function seed() {
           control_type, preset_number, wcs_x, wcs_y, wcs_z, reference_point,
           raw_material_dimensions, material_specification,
           setup_instructions, special_notes,
-          status, created_by, updated_by
+          workflow_state_id, created_by, updated_by
         )
         SELECT
           $1::integer, $2::integer, $3::integer, $4::integer,
@@ -412,7 +412,7 @@ async function seed() {
           '210x160x85 mm', 'AlMgSi1 F28, gesägt',
           'EINRICHTUNG:\n1. Vorrichtung V00001 mit 4x M12 befestigen\n2. Rohteil einlegen, Anschlag hinten und links\n3. Niederzugspanner aktivieren (50 Nm)\n4. Preset 15 antasten: Oberkante + Mitte Ø12\n5. Werkzeugliste prüfen\n6. Programm O1234 laden\n\nPRÜFUNG NACH SPANNUNG:\n- Rohteil auf festen Sitz prüfen\n- Ausrichtung mit Messuhr ±0.02 mm',
           'ACHTUNG:\n- Bei Vibrationen sofort Stopp, Spannung nachprüfen\n- Kühlmittel: Emulsion 8 %, mind. 40 l/min\n- Nach jedem Teil Späne aus der Vorrichtung entfernen',
-          'active', $5::integer, $5::integer
+          (SELECT id FROM workflow_states WHERE name = 'draft'), $5::integer, $5::integer
         WHERE NOT EXISTS (SELECT 1 FROM setup_sheets WHERE operation_id = $1::integer);
       `, [operationId, machineId, programId || null, fixtureId || null, userId]);
     }

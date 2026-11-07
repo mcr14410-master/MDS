@@ -46,7 +46,6 @@ export default function SetupSheetForm({
     special_notes: initialData?.special_notes || '',
     
     // Status
-    status: initialData?.status || 'draft',
   });
 
   const [errors, setErrors] = useState({});
@@ -199,25 +198,6 @@ export default function SetupSheetForm({
                 {program.program_number} - {program.program_name}
               </option>
             ))}
-          </select>
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Status
-          </label>
-          <select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="draft">Entwurf</option>
-            <option value="review">In Prüfung</option>
-            <option value="approved">Geprüft</option>
-            <option value="active">Aktiv</option>
-            <option value="archived">Archiviert</option>
           </select>
         </div>
       </div>

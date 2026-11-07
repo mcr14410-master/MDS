@@ -80,6 +80,26 @@ export const useSetupSheetsStore = create((set, get) => ({
     }
   },
 
+  // Stände (Spec Einrichteblatt-Freigabe): Liste, einzelner Stand, zurückgehen
+  fetchVersions: async (id) => {
+    const response = await axios.get(`${API_ENDPOINTS.SETUP_SHEETS}/${id}/versions`);
+    return response.data.data;
+  },
+
+  fetchVersion: async (id, versionId) => {
+    const response = await axios.get(`${API_ENDPOINTS.SETUP_SHEETS}/${id}/versions/${versionId}`);
+    return response.data.data;
+  },
+
+  restoreVersion: async (id, versionId) => {
+    try {
+      const response = await axios.post(`${API_ENDPOINTS.SETUP_SHEETS}/${id}/versions/${versionId}/restore`);
+      return { success: true, ...response.data.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Zurückgehen fehlgeschlagen' };
+    }
+  },
+
   // Create setup sheet
   createSetupSheet: async (data) => {
     try {

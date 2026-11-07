@@ -84,7 +84,8 @@ CREATE TABLE setup_sheet_versions (
 ## 5. Backend
 
 - `workflowController`: Der Zweig für `setup_sheet` funktioniert mit der neuen Spalte. Beim Übergang nach `released` legt er in derselben Transaktion den Stand an und setzt `released_version_id`.
-- Neue Hilfsfunktion: `markChangedAfterRelease` setzt das Blatt in derselben Transaktion auf Entwurf und schreibt den Ablauf. Sie läuft in `PUT`, Fotos, Spannmittel und Vorrichtungen (je anlegen, ändern, löschen).
+- `changeWorkflowState` prüft beim Einrichteblatt den Schritt gegen die erlaubten Übergänge (sonst 409). Bei Programmen bleibt es vorerst bei der Knopfliste (ROADMAP „Offene Fixes“).
+- Neue Hilfsfunktion: `withSheetChange` (im Plan statt `markChangedAfterRelease`) setzt das Blatt in derselben Transaktion auf Entwurf und schreibt den Ablauf. Sie läuft in `PUT`, Fotos, Spannmittel und Vorrichtungen (je anlegen, ändern, löschen).
 - `updateSetupSheet` ohne `COALESCE`, damit Felder leerbar sind. Fehlende Felder im Request bleiben unverändert.
 - Neu: `GET /api/setup-sheets/:id/versions`, `GET …/versions/:versionId`, `POST …/versions/:versionId/restore`.
 - Status-Filter der Liste über den Status-Namen. `seeds.js` und `.http`-Tests anpassen.
