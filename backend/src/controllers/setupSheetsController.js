@@ -25,6 +25,7 @@ exports.getSetupSheets = async (req, res) => {
         p.part_name,
 		m.name as machine_name,
 		m.serial_number as machine_number,
+		ws.name as workflow_state,
 		prog.program_number,
 		prog.program_name,
 		rev.version_string as program_version,
@@ -36,6 +37,7 @@ exports.getSetupSheets = async (req, res) => {
 		JOIN operations o ON ss.operation_id = o.id
 		JOIN parts p ON o.part_id = p.id
 		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
+		JOIN workflow_states ws ON ws.id = ss.workflow_state_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id
@@ -57,7 +59,7 @@ exports.getSetupSheets = async (req, res) => {
     }
 
     if (status) {
-      query += ` AND ss.status = $${paramCount++}`;
+      query += ` AND ws.name = $${paramCount++}`;
       params.push(status);
     }
 
@@ -100,6 +102,7 @@ exports.getSetupSheetById = async (req, res) => {
 		c.customer_number,
 		m.name as machine_name,
 		m.serial_number as machine_number,
+		ws.name as workflow_state,
 		ct.name as machine_control_type,
 		prog.program_number,
 		prog.program_name,
@@ -113,6 +116,7 @@ exports.getSetupSheetById = async (req, res) => {
 		LEFT JOIN customers c ON p.customer_id = c.id
 		JOIN machines m ON m.id = COALESCE(o.machine_id, ss.machine_id)
 		LEFT JOIN control_types ct ON ct.id = m.control_type_id
+		JOIN workflow_states ws ON ws.id = ss.workflow_state_id
 		LEFT JOIN programs prog ON ss.program_id = prog.id
 		LEFT JOIN program_revisions rev ON prog.current_revision_id = rev.id
 		LEFT JOIN users u_created ON ss.created_by = u_created.id
@@ -214,8 +218,7 @@ exports.createSetupSheet = async (req, res) => {
       raw_material_dimensions,
       material_specification,
       setup_instructions,
-      special_notes,
-      status = 'draft'
+      special_notes
     } = req.body;
 
     // Validation
@@ -261,9 +264,10 @@ exports.createSetupSheet = async (req, res) => {
         wcs_x, wcs_y, wcs_z, reference_point,
         raw_material_dimensions, material_specification,
         setup_instructions, special_notes,
-        status, created_by, updated_by
+        workflow_state_id, created_by, updated_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $18
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+        (SELECT id FROM workflow_states WHERE name = 'draft'), $17, $17
       )
       RETURNING *
     `;
@@ -285,7 +289,6 @@ exports.createSetupSheet = async (req, res) => {
       material_specification || null,
       setup_instructions || null,
       special_notes || null,
-      status,
       req.user.id
     ];
 
@@ -327,8 +330,7 @@ exports.updateSetupSheet = async (req, res) => {
       raw_material_dimensions,
       material_specification,
       setup_instructions,
-      special_notes,
-      status
+      special_notes
     } = req.body;
 
     // Check if exists
@@ -362,10 +364,9 @@ exports.updateSetupSheet = async (req, res) => {
         material_specification = COALESCE($12, material_specification),
         setup_instructions = COALESCE($13, setup_instructions),
         special_notes = COALESCE($14, special_notes),
-        status = COALESCE($15, status),
-        updated_by = $16,
+        updated_by = $15,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $17
+      WHERE id = $16
       RETURNING *
     `;
 
@@ -384,7 +385,6 @@ exports.updateSetupSheet = async (req, res) => {
       material_specification,
       setup_instructions,
       special_notes,
-      status,
       req.user.id,
       id
     ];
