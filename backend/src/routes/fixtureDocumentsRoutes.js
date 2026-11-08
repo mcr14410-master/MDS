@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const fixtureDocumentsController = require('../controllers/fixtureDocumentsController');
 const { authenticateToken } = require('../middleware/authMiddleware');
-const multer = require('multer');
+const multer = require('../utils/multer');
 const path = require('path');
 
 // Configure multer for file uploads

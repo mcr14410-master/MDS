@@ -28,6 +28,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Messprogramm-Probelauf (`POST /api/programs/cmm?dry_run=true`) geht ohne Arbeitsgang
 - Arbeitsgang-Dokumente: Download über `downloadFileViaApi` wie im übrigen MDS
 
+### Fixed
+- Dateinamen mit Umlauten beim Hochladen: multer/busboy lieferten `originalname` als latin1, „Rückseite.jpg“ wurde als „RÃ¼ckseite.jpg“ gespeichert (Einrichteblatt-Fotos, Dokumente bei Bauteilen, Maschinen, Arbeitsgängen, Kunden, Werkzeugen, Spannmitteln, Vorrichtungen, Wiki, Wartung, Kalibrierungen, Verbrauchsmaterial). Neuer Helfer `utils/multer.js` rechnet vor Filter und Speicherung nach UTF-8 um; alle Module laden multer nur noch darüber (Test wacht darüber). Schon gespeicherte falsche Namen bleiben vorerst
+
 ---
 
 ## [2.22.0] - 2026-11-08 - Dokumentvorschau, Revision als Pflichtfeld

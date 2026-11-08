@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
+const multer = require('../utils/multer');
 const path = require('path');
 const fs = require('fs');
 const controller = require('../controllers/calibrationsController');

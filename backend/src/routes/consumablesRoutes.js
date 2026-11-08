@@ -8,7 +8,7 @@ const controller = require('../controllers/consumablesController');
 const documentsController = require('../controllers/consumableDocumentsController');
 const locationsController = require('../controllers/consumableLocationsController');
 const { authenticateToken } = require('../middleware/authMiddleware');
-const multer = require('multer');
+const multer = require('../utils/multer');
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();

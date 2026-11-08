@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router({ mergeParams: true }); // mergeParams für :partId aus parent route
-const multer = require('multer');
+const multer = require('../utils/multer');
 const path = require('path');
 const fs = require('fs');
 const { authenticateToken } = require('../middleware/authMiddleware');

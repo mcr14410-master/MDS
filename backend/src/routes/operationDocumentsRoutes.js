@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
+const multer = require('../utils/multer');
 const controller = require('../controllers/operationDocumentsController');
 const { authenticateToken, requirePermission } = require('../middleware/authMiddleware');
 

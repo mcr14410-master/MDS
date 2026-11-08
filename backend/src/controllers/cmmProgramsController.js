@@ -24,7 +24,7 @@ const pool = require('../config/db');
 const { CMM_UPLOAD_DIR, insideCmmDir } = require('../middleware/uploadMiddleware');
 const { assignProgramNumber, ProgramNumberError } = require('../utils/programNumber');
 const {
-  roleLabel, decodeOriginalName, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
+  roleLabel, classifyFile, hasCustomMiniRoutines, planRevision, zipEntryName,
 } = require('../services/cmmProgramFiles');
 
 const VERSION_TYPES = ['patch', 'minor', 'major'];
@@ -79,7 +79,7 @@ async function classifyUploads(items) {
   const discard = [];
 
   for (const { file, area } of items) {
-    const name = decodeOriginalName(file.originalname);
+    const name = file.originalname; // schon nach UTF-8 umgerechnet (utils/multer.js)
     if (name !== path.basename(name) || /[\\/:*?"<>|\u0000-\u001f]/.test(name)) {
       errors.push(`Ungültiger Dateiname: ${name}`);
       continue;
