@@ -15,6 +15,8 @@ Ohne Helfer heißt das je Programm: Bauteil, Mess-Arbeitsgang, Messprogramm, Ein
 - Die gestempelte Zeichnung wird Prüfzeichnung im Messprogramm. Sie ist für die Messmaschine gedacht und wird gelegentlich fürs FAI gebraucht, eine zweite Kopie entfällt.
 - Der Index im Ordnernamen ist die Revision des Bauteils.
 - Das Netzlaufwerk ist vom Arbeitsrechner (Windows) aus erreichbar.
+- Die Bauteilnummer erzeugt das MDS wie im Formular, die Teilenummer aus dem Ordner kommt ins Feld „Kunden-Teilenummer“.
+- Übernommene Messprogramme und Einrichteblätter werden direkt freigegeben, mit dem Grund „Erstimport Altbestand“ im Ablauf. Sie laufen ja schon in der Fertigung.
 
 **Nicht Teil dieser Spec:**
 - Messdaten (`02_Messdaten`) und alte Stände (`05_Alte Daten`), sie bleiben im Archiv
@@ -44,7 +46,7 @@ Ohne Helfer heißt das je Programm: Bauteil, Mess-Arbeitsgang, Messprogramm, Ein
 |---|---|
 | Kundenordner, Nummer bis zum ersten Leerzeichen | Kunde mit dieser Kundennummer |
 | Programmordner, erstes Stück | Messmaschine: Kürzel → Maschine wird einmal je Durchlauf zugeordnet. Gibt es genau eine KMG-Maschine, ist sie vorbelegt |
-| Programmordner, zweites Stück | Teilenummer (siehe 4) |
+| Programmordner, zweites Stück | Kunden-Teilenummer (siehe 4) |
 | `Index…` im Namen von `01_Messprogramm` | Revision des Bauteils |
 | Programmordner, Rest | Bezeichnung von Bauteil und Messprogramm. Eine Revision im Ordnernamen wird erkannt und mit dem Index abgeglichen |
 | `01_Messprogramm`, oberste Ebene | Messprogramm 1.0.0: Upload-Bereich „Messprogramm“, `.xlsx` und `.layout.xml` in den Bereich „Excel-Vorlage“. Es gelten dieselben Regeln wie beim Upload von Hand |
@@ -62,10 +64,10 @@ Ohne Helfer heißt das je Programm: Bauteil, Mess-Arbeitsgang, Messprogramm, Ein
 
 ## 4. Bauteil und Arbeitsgang
 
-- **Bauteil finden:** Gesucht wird über die Bauteilnummer. Sie ist im MDS eindeutig. Gehört der Treffer zu einem anderen Kunden, ist das ein Fehler, und das Programm wird nicht übernommen.
-- **Bauteilnummer:** *Offen für den Nutzer, siehe 10.* Vorschlag: Bauteilnummer = Kunden-Teilenummer aus dem Ordner, zusätzlich im Feld „Kunden-Teilenummer“. Alternative: Nummer erzeugen wie im Formular (Kundennummer-laufende Nummer).
-- **Neues Bauteil:** Kunde, Bauteilnummer, Bezeichnung und Revision aus dem Ordner, Status Entwurf.
-- **Vorhandenes Bauteil mit anderer Revision:** Das Bauteil wird nicht geändert. Hinweis in der Zeile, der Nutzer entscheidet: vorhandenes Bauteil nehmen oder Programm überspringen.
+- **Bauteil finden:** Gesucht wird über Kunde + Kunden-Teilenummer + Revision. Die Kunden-Teilenummer ist im MDS nicht eindeutig. Mehrere Treffer: Der Nutzer wählt in der Zeile das Bauteil.
+- **Bauteilnummer:** Bei einem neuen Bauteil erzeugt das MDS sie wie im Formular (Kundennummer-laufende Nummer). Der Helfer schickt dafür keine Bauteilnummer mit.
+- **Neues Bauteil:** Kunde, Kunden-Teilenummer, Bezeichnung und Revision aus dem Ordner, Status Entwurf.
+- **Nur andere Revisionen vorhanden:** Kein Bauteil wird geändert. Hinweis in der Zeile, der Nutzer entscheidet: neues Bauteil mit der Revision aus dem Ordner anlegen (vorbelegt, weil kaum Bauteile vorhanden sind), vorhandenes Bauteil nehmen oder Programm überspringen.
 - **Mess-Arbeitsgang:** Am Bauteil wird ein Arbeitsgang mit der zugeordneten KMG-Maschine gesucht. Gibt es keinen, legt der Helfer einen an. Vorgaben je Durchlauf, vorbelegt mit den zuletzt benutzten Werten: OP-Nummer, Name, Arbeitsgang-Typ. Bereiche sind die Vorgaben des Typs plus Programme, Einrichteblatt und Dokumente.
 
 ## 5. Ablauf im Helfer
@@ -74,7 +76,7 @@ Neue Seite **„Altbestand übernehmen“** unter Messprogramme.
 
 1. **Einlesen:** Ordner wählen oder hineinziehen, entweder einen Kundenordner oder den ganzen Quellordner. Der Browser liest nur die Dateiliste. Hochgeladen wird erst beim Übernehmen.
 2. **Liste:** Eine Zeile je Programmordner mit:
-   - Kunde, Teilenummer, Revision, Bezeichnung, alle änderbar
+   - Kunde, Kunden-Teilenummer, Revision, Bezeichnung, alle änderbar
    - Status: neu / Bauteil vorhanden / schon übernommen / Fehler
    - aufklappbar: welche Datei wohin geht und was nicht übernommen wird
    - Hinweise: Kunde fehlt, Revision im Namen weicht vom Index ab, keine `.prg`, mehrere `.prg`, Bauteil mit anderer Revision
@@ -85,9 +87,10 @@ Neue Seite **„Altbestand übernehmen“** unter Messprogramme.
    4. Messprogramm anlegen, falls am Arbeitsgang noch keins ist. Kommentar: „Erstimport aus Altbestand (Ordner …)“.
    5. Einrichteblatt finden oder anlegen, fehlende Fotos hochladen. Abgeglichen wird über den Dateinamen.
    6. Fehlende Bauteil-Dokumente hochladen, ebenfalls über den Dateinamen.
+   7. Freigeben (wenn eingeschaltet, siehe unten): Messprogramm und Einrichteblatt, sofern sie noch nicht freigegeben sind.
 4. **Ergebnis:** Je Zeile ✓ oder der Fehler. Liest man denselben Ordner noch einmal ein, erkennt der Helfer Übernommenes und macht beim fehlenden Schritt weiter.
 
-**Status nach dem Import:** Messprogramm und Einrichteblatt stehen auf Entwurf und gehen durch die normale Freigabe. *Offen für den Nutzer, siehe 10.*
+**Freigabe nach dem Import:** Schalter „Direkt freigeben“, eingeschaltet. Es gibt ihn nur mit dem Recht `program.release`, ohne das Recht bleibt alles auf Entwurf. Der Helfer geht die regulären Schritte durch (Entwurf → In Prüfung → Geprüft → Freigegeben), jeweils mit dem Grund „Erstimport Altbestand“. So steht im Ablauf jedes Programms und Blatts, wer es wann übernommen hat. Und es klappt auch dann noch, wenn der Server später bei Programmen die Schritte prüft (ROADMAP „Offene Fixes“). Beim Einrichteblatt entsteht mit der Freigabe Stand 1, beim Messprogramm zeigt der Freigabe-Zeiger auf Version 1.0.0.
 
 **Warum der Browser die Schritte nacheinander ausführt statt eine einzige Import-Schnittstelle:** Die vorhandenen Schnittstellen prüfen schon alles: Rechte, Dateiregeln, Programmnummer, Vorlagenname. Eine eigene Import-Schnittstelle müsste diese Logik aus vier Controllern nachbauen. Weil jeder Schritt erst nachsieht, ob es das Ergebnis schon gibt, hinterlässt ein Abbruch keinen kaputten Stand. Es fehlt dann höchstens etwas, und ein zweiter Durchlauf ergänzt es.
 
@@ -106,7 +109,7 @@ Neue Seite **„Altbestand übernehmen“** unter Messprogramme.
 
 ## 7. Rechte
 
-Kein neues Recht. Der Helfer nutzt die Schnittstellen mit ihren Prüfungen. Gebraucht werden `part.create`, `setup_sheet.update` und `program.upload`. Die Seite erscheint nur, wenn der Benutzer alle drei hat.
+Kein neues Recht. Der Helfer nutzt die Schnittstellen mit ihren Prüfungen. Gebraucht werden `part.create`, `setup_sheet.update` und `program.upload`. Die Seite erscheint nur, wenn der Benutzer alle drei hat. Für „Direkt freigeben“ kommt `program.release` dazu.
 
 **Befund (08.11.2026):** Programm-Upload (`POST /api/programs`, `/api/programs/cmm`, neue Versionen) und Bauteil-Dokumente (Hochladen, Löschen) prüfen nur die Anmeldung, kein Recht. Das betrifft auch das Hochladen von Hand. Eingetragen unter ROADMAP „Offene Fixes“, nicht Teil dieser Spec.
 
@@ -121,12 +124,12 @@ Alles andere läuft über die vorhandenen Schnittstellen: Kunden und Bauteile su
 | PR | Inhalt | Test |
 |---|---|---|
 | A | Import-Profil und Ordner-Parser als reine Funktion, Seite mit Einlesen und Liste. Es wird nichts geschrieben | Unit-Tests mit anonymisierten Pfadlisten: Normalfall, ohne Revision im Namen, Revision weicht ab, Unterordner in `01`, fehlende `.prg`, unbekannte Ordner, anders nummerierte Ordner |
-| B | Probelauf ohne Arbeitsgang (Backend), Übernehmen mit Wiederaufnahme | Integrationstest für den Probelauf; UI-Test gegen das Wegwerf-Backend: einlesen, übernehmen, Abbruch nach Schritt 3 nachstellen, zweiter Durchlauf ergänzt den Rest |
+| B | Probelauf ohne Arbeitsgang (Backend), Übernehmen mit Wiederaufnahme und Freigabe | Integrationstest für den Probelauf; UI-Test gegen das Wegwerf-Backend: einlesen, übernehmen, Abbruch nach Schritt 3 nachstellen, zweiter Durchlauf ergänzt den Rest; Ablauf zeigt „Erstimport Altbestand“, Freigabe-Zeiger gesetzt, Einrichteblatt mit Stand 1; ohne `program.release` bleibt alles Entwurf |
 | C | Archiv-Einstellungen, Skript erzeugen | Unit-Test des Skript-Texts: Pfade mit Leerzeichen und Umlauten, `-LiteralPath`, kein Überschreiben. Ausführen am Arbeitsrechner zuerst mit `-Probe` an einer Kopie |
 
 Danach Probelauf durch den Nutzer an wenigen Programmen. Erst dann die übrigen.
 
-## 10. Offen für den Nutzer
+## 10. Entschieden (08.11.2026)
 
-1. **Bauteilnummer:** Kunden-Teilenummer aus dem Ordner übernehmen (Vorschlag) oder eine Nummer erzeugen?
-2. **Status nach dem Import:** Alles auf Entwurf und normal freigeben (Vorschlag, sauberer Nachweis), oder mit dem Recht `program.release` direkt freigeben, mit dem Grund „Erstimport Altbestand“ im Ablauf? Die Programme laufen ja schon in der Fertigung. Bei 120 Programmen sind das sonst 120 Freigaben von Hand.
+1. **Bauteilnummer:** erzeugt wie im Formular, die Teilenummer aus dem Ordner kommt ins Feld „Kunden-Teilenummer“.
+2. **Status nach dem Import:** direkt freigeben mit dem Grund „Erstimport Altbestand“ (Schalter, nur mit `program.release`).
