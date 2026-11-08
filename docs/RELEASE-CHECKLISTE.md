@@ -42,7 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.24.0)
+
+- Keine Migration
+- Altbestand übernehmen: Ordner einlesen, Zeile zeigt die Kurzfassung; aufklappen, eine Datei abwählen und eine PDF umstellen – Kurzfassung ändert sich
+- Vorschau bei einer PDF und einem Foto öffnet sich
+- Archiv: Beispieltexte mit „z. B.“, Hinweis beim Quellordner
+- „Was ist neu“ zeigt 2.24.0
 
 ---
 
