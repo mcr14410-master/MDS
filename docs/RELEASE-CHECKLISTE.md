@@ -42,13 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.22.0)
+Derzeit keine.
 
-- Keine Migration
-- Bauteil anlegen: Revision leer und Pflicht, ohne Eintrag Fehlermeldung (Testbauteil danach löschen)
-- Bauteil- und Maschinen-Dokumente: „Ansehen“ bei einem PDF und einem Foto
-- Arbeitsgang mit schon vorhandenem OP-Code: Hinweis erscheint, Speichern geht; Reiter „Arbeitsgänge“ zeigt die Anzahl
-- „Was ist neu“ zeigt 2.22.0
+---
+
+## Erledigt: Release 2.22.0 (08.11.2026)
+
+Dokumentvorschau für Bauteil- und Maschinen-Dokumente, gleicher OP-Code mit Hinweis, Anzahl am Reiter „Arbeitsgänge“, PC-DMIS-Vorschaubild, Kartenraster (#327), Revision als Pflichtfeld (#326). Keine Migration. Deploy grün, Tag `v2.22.0`. Prüfpunkte grün: Revision Pflicht, „Ansehen“ bei PDF und Foto, Hinweis bei gleichem OP-Code und Anzahl am Reiter, „Was ist neu“.
 
 ---
 
