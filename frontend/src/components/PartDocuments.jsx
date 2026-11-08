@@ -11,7 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from '../utils/axios';
 import { toast } from './Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
-import AuthImage from './common/AuthImage';
+import DocumentThumbnail from './common/DocumentThumbnail';
 import DocumentPreview from './common/DocumentPreview';
 import { previewKind } from '../utils/documentPreview';
 
@@ -282,24 +282,17 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Icon bzw. Vorschaubild */}
-                      {previewKind(doc.original_filename, doc.mime_type) === 'image' ? (
-                        <button
-                          type="button"
-                          onClick={() => setPreviewDoc(doc)}
-                          className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-700"
-                          title="Ansehen"
-                        >
-                          <AuthImage
-                            apiPath={`/api/parts/${partId}/documents/${doc.id}/view`}
-                            alt={doc.original_filename}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ) : (
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.iconBg}`}>
-                          <span className="text-lg">{config.icon}</span>
-                        </div>
-                      )}
+                      <DocumentThumbnail
+                        apiPath={`/api/parts/${partId}/documents/${doc.id}/view`}
+                        fileName={doc.original_filename}
+                        mimeType={doc.mime_type}
+                        onOpen={() => setPreviewDoc(doc)}
+                        fallback={(
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.iconBg}`}>
+                            <span className="text-lg">{config.icon}</span>
+                          </div>
+                        )}
+                      />
 
                       {/* Info */}
                       <div className="min-w-0">

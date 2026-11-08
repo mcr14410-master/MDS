@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useSetupSheetsStore } from '../stores/setupSheetsStore';
 import AuthImage from './common/AuthImage';
+import { toast } from './Toaster';
 
 const PHOTO_TYPES = [
   { value: 'general', label: 'Allgemeines Foto' },
@@ -17,6 +18,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
   const fileInputRef = useRef(null);
   
   const [uploading, setUploading] = useState(false);
+  const [uploadStep, setUploadStep] = useState(null); // { current, total } bei mehreren Fotos
   const [editingPhoto, setEditingPhoto] = useState(null);
   const [viewingPhoto, setViewingPhoto] = useState(null); // NEU: Für Lightbox
   const [editForm, setEditForm] = useState({
@@ -25,44 +27,50 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
     sort_order: 0,
   });
 
-  const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const MAX_SIZE = 20 * 1024 * 1024;
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Nur JPG, PNG und WebP Bilder erlaubt');
-      return;
-    }
+  // Mehrere Fotos nacheinander hochladen (Auswahl oder Ablegen)
+  const uploadFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
 
-    // Validate file size (20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      alert('Datei ist zu groß (max. 20MB)');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('photo', file);
-    formData.append('photo_type', 'general');
-    formData.append('sort_order', photos.length);
+    const skipped = [];
+    const valid = files.filter((file) => {
+      if (!VALID_TYPES.includes(file.type)) { skipped.push(`${file.name}: nur JPG, PNG und WebP`); return false; }
+      if (file.size > MAX_SIZE) { skipped.push(`${file.name}: größer als 20 MB`); return false; }
+      return true;
+    });
 
     setUploading(true);
-    const result = await uploadPhoto(setupSheetId, formData, (progress) => {
-      // Progress callback
-    });
+    let done = 0;
+    for (const [index, file] of valid.entries()) {
+      setUploadStep({ current: index + 1, total: valid.length });
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('photo_type', 'general');
+      formData.append('sort_order', photos.length + index);
+      const result = await uploadPhoto(setupSheetId, formData);
+      if (result.success) done++;
+      else skipped.push(`${file.name}: ${result.error}`);
+    }
     setUploading(false);
+    setUploadStep(null);
 
-    if (!result.success) {
-      alert(result.error);
-    } else if (onPhotoChange) {
-      onPhotoChange();
+    if (done > 0) {
+      toast.success(done === 1 ? 'Foto hochgeladen' : `${done} Fotos hochgeladen`);
+      if (onPhotoChange) onPhotoChange();
     }
+    if (skipped.length > 0) toast.error(`Nicht hochgeladen:\n${skipped.join('\n')}`);
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileSelect = (event) => uploadFiles(event.target.files);
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    if (!uploading) uploadFiles(event.dataTransfer.files);
   };
 
   const handleDelete = async (photoId) => {
@@ -107,7 +115,11 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
     <div className="space-y-4">
       {/* Upload Section */}
       {!readOnly && (
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+      >
         <div className="text-center">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -125,13 +137,14 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
           <div className="mt-4">
             <label htmlFor="photo-upload" className="cursor-pointer">
               <span className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                Foto hochladen
+                Fotos hochladen
               </span>
               <input
                 id="photo-upload"
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp"
+                multiple
                 onChange={handleFileSelect}
                 disabled={uploading}
                 className="sr-only"
@@ -139,7 +152,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
             </label>
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            JPG, PNG oder WebP bis 20MB
+            Mehrere auswählen oder hierher ziehen · JPG, PNG oder WebP bis 20 MB
           </p>
           
           {uploading && (
@@ -151,7 +164,7 @@ export default function SetupSheetPhotos({ setupSheetId, photos = [], onPhotoCha
                 />
               </div>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Hochladen... {uploadProgress}%
+                {uploadStep && uploadStep.total > 1 ? `Foto ${uploadStep.current} von ${uploadStep.total} · ` : ''}Hochladen … {uploadProgress}%
               </p>
             </div>
           )}

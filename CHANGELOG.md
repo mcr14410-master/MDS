@@ -15,6 +15,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Einrichteblatt: mehrere Fotos auf einmal hochladen (Mehrfachauswahl oder Ablegen), nacheinander mit Fortschritt „Foto n von m“
+- Arbeitsgang-Dokumente: Vorschau wie bei Bauteil und Maschine (`DocumentPreview`), neuer Endpunkt `GET /api/operation-documents/:id/view` (inline, Pfad auf den Ordner der Arbeitsgang-Dokumente begrenzt)
+- Vorschaubild für Bild-Dokumente bei Bauteilen, Maschinen und Arbeitsgängen über die gemeinsame Komponente `DocumentThumbnail`
+
+### Changed
+- Arbeitsgang-Dokumente: Download über `downloadFileViaApi` wie im übrigen MDS
+
 ---
 
 ## [2.22.0] - 2026-11-08 - Dokumentvorschau, Revision als Pflichtfeld
