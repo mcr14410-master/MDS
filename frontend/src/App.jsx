@@ -13,6 +13,7 @@ import PartFormPage from './pages/PartFormPage';
 
 import MachinesPage from './pages/MachinesPage';
 import ProgramsOverviewPage from './pages/ProgramsOverviewPage';
+import LegacyImportPage from './pages/LegacyImportPage';
 import MachineDetailPage from './pages/MachineDetailPage';
 import StorageLocationsPage from './pages/StorageLocationsPage';
 import StorageLocationDetailPage from './pages/StorageLocationDetailPage';
@@ -163,6 +164,14 @@ function App() {
             element={
               <ProtectedRoute requiredPermission="part.read">
                 <ProgramsOverviewPage key="cmm" kind="cmm" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cmm-programs/altbestand"
+            element={
+              <ProtectedRoute requiredPermission="part.create">
+                <LegacyImportPage />
               </ProtectedRoute>
             }
           />
