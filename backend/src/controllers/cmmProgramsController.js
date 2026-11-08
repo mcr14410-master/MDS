@@ -254,7 +254,8 @@ exports.createCmmProgram = async (req, res) => {
     const calibration = parseFlag(req.body.calibration);
     const dryRun = req.query.dry_run === 'true';
 
-    if (!operation_id || (!program_name && !dryRun)) {
+    // Probelauf geht auch ohne Arbeitsgang (Altbestand-Import prüft die Dateien vor dem Anlegen)
+    if ((!operation_id || !program_name) && !dryRun) {
       await removeFiles(tempPaths);
       return res.status(400).json({ error: 'Pflichtfelder fehlen', required: ['operation_id', 'program_name', 'files'] });
     }
@@ -262,10 +263,13 @@ exports.createCmmProgram = async (req, res) => {
       return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
     }
 
-    const opResult = await pool.query('SELECT id, op_number FROM operations WHERE id = $1', [operation_id]);
-    if (opResult.rows.length === 0) {
-      await removeFiles(tempPaths);
-      return res.status(404).json({ error: 'Arbeitsgang nicht gefunden' });
+    let opResult = null;
+    if (operation_id) {
+      opResult = await pool.query('SELECT id, op_number FROM operations WHERE id = $1', [operation_id]);
+      if (opResult.rows.length === 0) {
+        await removeFiles(tempPaths);
+        return res.status(404).json({ error: 'Arbeitsgang nicht gefunden' });
+      }
     }
 
     const { uploaded, ignored, errors: classifyErrors } = await classifyUploads(uploadedFiles(req));
