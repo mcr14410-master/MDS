@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.26.0] - 2026-11-08 - Altbestand: mehrere Messprogramme je Ordner
+
+### Für Anwender
+- Altbestand übernehmen: Liegen in einem Programmordner mehrere Messprogramme in Unterordnern (z. B. für FAI, verschiedene Aufspannungen oder Fertigungsstände), wird jedes ein eigenes Messprogramm mit eigenem Mess-Arbeitsgang und Einrichteblatt.
+- Je Programm lassen sich OP-Nummer und Name ändern oder das Programm abwählen. Fotos und Excel-Vorlage ordnest du einem Programm zu, die gestempelte Zeichnung kommt in jedes.
+- Ordner, die schon übernommen sind, werden weiter erkannt. Fehlen dort noch Unterordner-Programme, steht die Zeile auf „Teilweise übernommen“ und sie lassen sich nachholen.
+
 ### Added
 - Altbestand übernehmen: mehrere Messprogramme in einem Programmordner – jeder Ordner im Messprogramm-Ordner, der direkt eine `.prg` enthält (beliebig tief, z. B. `Messprogramm_FAI`, `Messprogramm_Fertigung/AG1`), wird ein eigenes Messprogramm mit eigenem Mess-Arbeitsgang und Einrichteblatt. Je Programm abwählbar, OP-Nummer und Name änderbar (Vorgabe „Messen <Bezeichnung>“); Fotos und Excel-Vorlage (aus einem Ordner ohne `.prg`, z. B. `Vorlage`) einem Programm zuordnen; gestempelte Zeichnung und Kalibrierprogramm in jedem. Herkunftsvermerk je Programm mit Unterordner-Pfad; Wiedererkennen, Teil-Übernahme, Status und Archiv je Programm. Ein Programm direkt im Messprogramm-Ordner verhält sich wie bisher. Schutz: Programm eines anderen Altbestand-Ordners an einem Mess-Arbeitsgang des Bauteils sperrt die Zeile; dieselbe Excel-Vorlage an zwei Programmen oder mehrere an einem ist ein Fehler; Ordner wie „Alte Daten“ bleiben auch im Messprogramm-Ordner liegen; mit der alten Version übernommene Ordner gelten erst als vollständig, wenn auch ihre Unterordner-Programme übernommen sind
 
