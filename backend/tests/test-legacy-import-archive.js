@@ -94,5 +94,17 @@ function test(name, fn) {
     assert.ok(!code.some(l => /[A-Za-z]:\/|\$Quelle\/|\$Archiv\//.test(l)), 'kein / in Pfaden');
   });
 
+  test('Skript: bricht ab, wenn -Probe nicht ankommt (Kopfzeile beschädigt), bevor etwas passiert', () => {
+    const s = build([{ customerFolder: 'KD00000 FIRMA', programFolder: 'HG_X' }]);
+    const lines = s.split('\n');
+    const param = lines.findIndex(l => l.startsWith('param('));
+    const guard = lines.findIndex(l => /\$Probe -isnot \[System\.Management\.Automation\.SwitchParameter\]/.test(l));
+    assert.ok(guard === param + 1, `Prüfung direkt nach param (param ${param}, Prüfung ${guard})`);
+    const block = lines.slice(guard, guard + 4).join('\n');
+    assert.match(block, /beschädigt/);
+    assert.match(block, /exit 1/);
+    assert.ok(lines.slice(0, guard).every(l => !/Move-Item|CreateDirectory/.test(l)));
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();
