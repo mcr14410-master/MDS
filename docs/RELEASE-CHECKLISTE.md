@@ -42,7 +42,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.25.0)
+
+- Keine Migration
+- Altbestand übernehmen: einen schon übernommenen Ordner neu einlesen – Hinweis „Schon übernommen“, Werte aus dem MDS, Status „Übernommen“ (auch der von Hand korrigierte Ordner mit `HG` am Ende)
+- Bei einem neuen Ordner ▾ an Teilenummer, Revision und Bezeichnung: Vorschläge aus dem Ordnernamen
+- „Was ist neu“ zeigt 2.25.0
 
 ---
 
