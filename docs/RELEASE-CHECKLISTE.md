@@ -42,7 +42,12 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.26.0)
+
+- Keine Migration
+- Altbestand übernehmen: Ordner mit Unterprogrammen einlesen – Kurzfassung „n Messprogramme …“, aufgeklappt je Programm ein Block mit Arbeitsgang (OP-Nummer, Name)
+- Schon übernommener Ordner ohne Unterprogramme: weiter „Schon übernommen“ / „Übernommen“
+- „Was ist neu“ zeigt 2.26.0
 
 ---
 
