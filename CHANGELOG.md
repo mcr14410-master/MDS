@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Altbestand übernehmen: Kunden-Teilenummer, Revision und Bezeichnung mit Vorschlägen aus dem Ordnernamen (▾, Freitext bleibt) – hilft bei Ordnern mit anderem Schema, z. B. Kürzel am Ende oder Revision direkt an der Nummer (`utils/legacyImport/suggest.js`, `SuggestInput`)
+
+### Fixed
+- Altbestand übernehmen: Schon übernommene Ordner werden beim erneuten Einlesen am Herkunftsvermerk des Messprogramms erkannt. Kunde, Teilenummer, Revision, Bezeichnung und Bauteil kommen aus dem MDS, die Dateiauswahl richtet sich nach dem Stand im MDS. Vorher gingen Korrekturen und Auswahl beim Neuladen verloren: ein von Hand korrigierter Ordner erschien als „Neu“ (Gefahr eines zweiten Bauteils), ein Ordner mit abgewählten Dateien als „Teilweise übernommen“ und fehlte im Archiv-Skript
+
 ---
 
 ## [2.24.0] - 2026-11-08 - Altbestand: Auswahl je Datei mit Vorschau

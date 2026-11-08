@@ -65,6 +65,12 @@ export function sourceFolder(programSource) {
   return programSource.slice(SOURCE_PREFIX.length).split('\\').pop();
 }
 
+/** Schon übernommenes Messprogramm aus diesem Ordner (Herkunftsvermerk), bei mehreren das neueste; sonst null */
+export function findImportedProgram(programs, parsed) {
+  const source = importSource(parsed);
+  return programs.filter(p => p.description === source).sort((a, b) => b.id - a.id)[0] || null;
+}
+
 /**
  * Status einer Zeile.
  * importState: null (nicht geladen) oder

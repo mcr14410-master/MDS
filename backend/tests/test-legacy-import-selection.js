@@ -154,5 +154,20 @@ const names = (list) => list.map(i => i.path.split('/').pop());
     assert.equal(m.CHOICE_LABELS.skip, 'nicht übernehmen');
   });
 
+  test('Auswahl nach dem Stand im MDS: Fehlendes abgewählt, PDF beim Bauteil bleibt Bauteil-Dokument', () => {
+    const p = parsed();
+    const state = { photoNames: ['a.jpg'], documentNames: ['TEIL-0001.stp', 'Messprotokoll.pdf'] };
+    const sel = m.selectionFromMds(p, state);
+    const f = m.effectiveFiles(p, sel);
+    assert.deepEqual(names(f.photos), ['a.jpg']);
+    assert.deepEqual(names(f.cad), ['TEIL-0001.stp']);
+    assert.deepEqual(names(f.drawingOther), ['Messprotokoll.pdf']);
+    assert.deepEqual(names(f.drawingPdf), ['TEIL-0001.pdf'], 'Prüfzeichnung steckt im Messprogramm – Vorbelegung bleibt');
+    assert.ok(!Object.values(sel.choices).includes(undefined));
+    // Alles da → keine Abweichung von der Vorbelegung
+    const full = { photoNames: ['a.jpg', 'b.jpg'], documentNames: ['TEIL-0001.stp', 'Vorrichtung.stp', 'TEIL-0001.tif'] };
+    assert.deepEqual(m.selectionFromMds(p, full), { choices: {} });
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();

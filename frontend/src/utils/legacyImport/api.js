@@ -36,6 +36,10 @@ export const listSetupSheets = (operationId) =>
   get(`/api/setup-sheets?operation_id=${encodeURIComponent(operationId)}`, d => d.data, 'Einrichteblätter konnten nicht geladen werden');
 export const getSetupSheet = (id) =>
   get(`/api/setup-sheets/${id}`, d => d.data, 'Einrichteblatt konnte nicht geladen werden');
+// Alle Messprogramme (ohne Seiten) – zum Wiedererkennen schon übernommener Ordner am Herkunftsvermerk
+export const listAllCmmPrograms = () =>
+  get('/api/programs?kind=cmm', d => d.data, 'Messprogramme konnten nicht geladen werden');
+export const getPart = (id) => get(`/api/parts/${id}`, d => d.part, 'Bauteil konnte nicht geladen werden');
 export const listPartDocuments = (partId) =>
   get(`/api/parts/${partId}/documents`, d => d.documents, 'Bauteil-Dokumente konnten nicht geladen werden');
 
@@ -95,6 +99,8 @@ export const legacyImportApi = {
   listSetupSheets,
   getSetupSheet,
   listPartDocuments,
+  listAllCmmPrograms,
+  getPart,
   dryRunCmm,
   createCmmProgram,
   createPart,

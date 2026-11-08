@@ -248,5 +248,13 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     assert.deepEqual(byKey['KD00001 FIRMA/HG_TEIL-0014_A_Seite 1'].errors, []);
   });
 
+  test('Revision aus dem Index-Ordner auch einzeln (für Vorschläge)', () => {
+    const [p] = parseLegacyTree(minimal('XXXX-0001a_holder_HG', '01_Messprogramm HG_Index a')).programs;
+    assert.equal(p.indexRevision, 'a');
+    const [q] = parseLegacyTree(minimal('HG_TEIL-0015_B_Platte', '01_Messprogramm HG')).programs;
+    assert.equal(q.indexRevision, null);
+    assert.equal(q.revision, 'B');
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();
