@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
+const multer = require('./utils/multer');
 const { Pool } = require('pg');
 require('dotenv').config();
 const { version: APP_VERSION } = require('../package.json');

@@ -16,7 +16,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-const multer = require('multer');
+const multer = require('../utils/multer');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');

@@ -46,15 +46,8 @@ const WRONG_AREA_REASON = {
   program: 'Gehört zum Messprogramm – im Hauptbereich hochladen',
 };
 
-/**
- * multer/busboy liefert Dateinamen als latin1 – UTF-8-Namen (Umlaute) zurückwandeln.
- * Nur wenn das Ergebnis gültiges UTF-8 ist, sonst Name unverändert lassen.
- */
-function decodeOriginalName(name) {
-  if (!/[\u0080-ÿ]/.test(name)) return name;
-  const decoded = Buffer.from(name, 'latin1').toString('utf8');
-  return decoded.includes('�') ? name : decoded;
-}
+// Umrechnung latin1 → UTF-8 liegt zentral in utils/multer.js (hier für bestehende Aufrufer weitergereicht)
+const { decodeOriginalName } = require('../utils/multer');
 
 /**
  * Einordnung nach Dateiname (ohne Groß-/Kleinschreibung) und Upload-Bereich.

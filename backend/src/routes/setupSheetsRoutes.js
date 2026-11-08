@@ -11,7 +11,7 @@ const { authenticateToken, requirePermission } = require('../middleware/authMidd
 
 // Schreiben braucht ein eigenes Recht (Spec Einrichteblatt-Freigabe 3), Lesen nur die Anmeldung
 const canEdit = requirePermission('setup_sheet.update');
-const multer = require('multer');
+const multer = require('../utils/multer');
 const path = require('path');
 const fs = require('fs');
 
