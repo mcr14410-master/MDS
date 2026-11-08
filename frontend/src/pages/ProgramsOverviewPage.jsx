@@ -11,6 +11,7 @@ import { WORKFLOW_STATUS_LABELS as STATUS_LABELS } from '../utils/workflowLabels
 import ReleasedVersionNote from '../components/ReleasedVersionNote';
 import DeploymentsPanel from '../components/DeploymentsPanel';
 import { downloadProgramVersion, downloadVersions, downloadVersionLabel } from '../utils/programDownload';
+import { useAuthStore } from '../stores/authStore';
 
 const KIND_CONFIG = {
   nc: {
@@ -71,6 +72,9 @@ export default function ProgramsOverviewPage({ kind }) {
     overviewLoading: loading, overviewError: error, fetchProgramsOverview, fetchProgramStats,
   } = useProgramsStore();
   const { getViewMode, setViewMode, getPageSize, setPageSize } = usePreferencesStore();
+  const { hasPermission } = useAuthStore();
+  const canImportLegacy = kind === 'cmm'
+    && ['part.create', 'setup_sheet.update', 'program.upload'].every((p) => hasPermission(p));
 
   const viewMode = getViewMode(config.prefKey);
   const pageSize = getPageSize(config.prefKey);
@@ -119,6 +123,13 @@ export default function ProgramsOverviewPage({ kind }) {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{config.title}</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{config.subtitle}</p>
         </div>
+        <div className="flex items-center gap-3">
+        {canImportLegacy && (
+          <Link to="/cmm-programs/altbestand"
+            className="px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">
+            Altbestand übernehmen
+          </Link>
+        )}
         <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
           <button
             type="button"
@@ -148,6 +159,7 @@ export default function ProgramsOverviewPage({ kind }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+        </div>
         </div>
       </div>
 

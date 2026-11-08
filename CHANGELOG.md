@@ -16,6 +16,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Added
+- Messprogramme: Seite „Altbestand übernehmen“ liest einen Ordner vom Netzlaufwerk ein und zeigt je Programm, was wohin übernommen würde – Kunde, Kunden-Teilenummer, Revision und Bezeichnung aus dem Ordnernamen, Abgleich mit vorhandenen Bauteilen, Dateien je Ziel und was liegen bleibt (noch ohne Übernehmen). Ordner werden über ein Import-Profil mit Stichwörtern erkannt (`utils/legacyImport/`)
 - Einrichteblatt: mehrere Fotos auf einmal hochladen (Mehrfachauswahl oder Ablegen), nacheinander mit Fortschritt „Foto n von m“
 - Arbeitsgang-Dokumente: Vorschau wie bei Bauteil und Maschine (`DocumentPreview`), neuer Endpunkt `GET /api/operation-documents/:id/view` (inline, Pfad auf den Ordner der Arbeitsgang-Dokumente begrenzt)
 - Vorschaubild für Bild-Dokumente bei Bauteilen, Maschinen und Arbeitsgängen über die gemeinsame Komponente `DocumentThumbnail`

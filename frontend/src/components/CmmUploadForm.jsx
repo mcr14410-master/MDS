@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import ProgramNumberField from './ProgramNumberField';
 import { useProgramsStore } from '../stores/programsStore';
 import { toast } from './Toaster';
+import { filesFromEntry } from '../utils/fileEntries';
 
 const FILE_STATUS = {
   new:       { label: 'Neu',         className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
@@ -32,27 +33,6 @@ const formatFileSize = (bytes) => {
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
-
-// Ordner aus Drag & Drop rekursiv auslesen – mit Pfad, damit Unterordner erkennbar bleiben
-async function filesFromEntry(entry) {
-  if (entry.isFile) {
-    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
-    return [{ file, path: entry.fullPath.replace(/^\//, '') }];
-  }
-  if (entry.isDirectory) {
-    const reader = entry.createReader();
-    const entries = [];
-    // readEntries liefert in Blöcken, bis ein leerer Block kommt
-    for (;;) {
-      const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
-      if (batch.length === 0) break;
-      entries.push(...batch);
-    }
-    const nested = await Promise.all(entries.map(filesFromEntry));
-    return nested.flat();
-  }
-  return [];
-}
 
 // Nur die oberste Ebene der Auswahl zählt: Dateien aus Unterordnern (z. B. Messprotokolle,
 // die PC-DMIS neben das Programm schreibt) gehören nicht zum Messprogramm.
