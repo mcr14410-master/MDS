@@ -42,13 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.24.0)
+Derzeit keine.
 
-- Keine Migration
-- Altbestand übernehmen: Ordner einlesen, Zeile zeigt die Kurzfassung; aufklappen, eine Datei abwählen und eine PDF umstellen – Kurzfassung ändert sich
-- Vorschau bei einer PDF und einem Foto öffnet sich
-- Archiv: Beispieltexte mit „z. B.“, Hinweis beim Quellordner
-- „Was ist neu“ zeigt 2.24.0
+---
+
+## Erledigt: Release 2.24.0 (08.11.2026)
+
+Altbestand-Import: Auswahl je Datei mit Vorschau, Kurzfassung je Zeile, bessere Vorbelegung (Messprotokoll, Haupt-CAD), Beispieltexte im Archiv (#343). Keine Migration. Deploy grün, Tag `v2.24.0`. Prüfpunkte grün: Kurzfassung folgt der Auswahl, Vorschau PDF und Foto, Beispieltexte und Hinweis im Archiv, „Was ist neu“.
 
 ---
 
