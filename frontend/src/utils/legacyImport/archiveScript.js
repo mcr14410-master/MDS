@@ -46,6 +46,11 @@ export function buildArchiveScript({ sourceRoot, archiveRoot, entries, createdAt
 # Erst prüfen:  powershell -ExecutionPolicy Bypass -File ${ARCHIVE_SCRIPT_NAME} -Probe
 # Dann:         powershell -ExecutionPolicy Bypass -File ${ARCHIVE_SCRIPT_NAME}
 param([switch]$Probe)
+if ($Probe -isnot [System.Management.Automation.SwitchParameter]) {
+  # Kopfzeile nicht gelesen (z. B. Inhalt kopiert und doppelte BOM) - dann käme auch -Probe nicht an
+  Write-Host 'Skript beschädigt (Kopfzeile nicht gelesen) - nichts verschoben. Bitte neu aus dem MDS herunterladen.'
+  exit 1
+}
 $ErrorActionPreference = 'Stop'
 
 $Quelle = ${psPath(sourceRoot)}
