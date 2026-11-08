@@ -2,7 +2,7 @@
 // Ordner vom Netzlaufwerk einlesen, je Programm vorschlagen, was wohin übernommen wird.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, FolderOpen, Info, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FolderOpen, Info, AlertTriangle, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import { filesFromEntry } from '../utils/fileEntries';
@@ -10,12 +10,31 @@ import { parseLegacyTree } from '../utils/legacyImport/parse.js';
 import {
   matchCustomer, findPartCandidates, defaultCmmMachine, rowStatus,
 } from '../utils/legacyImport/match.js';
-import { legacyImportApi as api, loadProgramState } from '../utils/legacyImport/api.js';
+import { legacyImportApi as api } from '../utils/legacyImport/api.js';
+import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 
 const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.upload'];
 const NO_CANDIDATES = { same: [], otherRevisions: [] };
+const BASE_FEATURES = ['programs', 'setup_sheet', 'documents'];
+const OP_DEFAULTS_KEY = 'mds.legacyImport.opDefaults';
+const FIRST_OP_DEFAULTS = { op_number: 'KMG', op_name: 'Messen', operation_type_id: null };
+const STEP_LABELS = {
+  probelauf: 'Probelauf', bauteil: 'Bauteil', arbeitsgang: 'Arbeitsgang', messprogramm: 'Messprogramm',
+  einrichteblatt: 'Einrichteblatt', fotos: 'Fotos', dokumente: 'Dokumente',
+  freigabe_programm: 'Freigabe Messprogramm', freigabe_einrichteblatt: 'Freigabe Einrichteblatt',
+};
+const inputClass = 'px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
+
+function readOpDefaults() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(OP_DEFAULTS_KEY) || 'null');
+    return saved ? { ...FIRST_OP_DEFAULTS, ...saved } : FIRST_OP_DEFAULTS;
+  } catch {
+    return FIRST_OP_DEFAULTS;
+  }
+}
 
 // Vorgabe für die Bauteil-Auswahl, solange der Nutzer nichts gewählt hat
 function defaultPartChoice(candidates) {
@@ -27,6 +46,7 @@ function defaultPartChoice(candidates) {
 export default function LegacyImportPage() {
   const { hasPermission } = useAuthStore();
   const missingPermissions = REQUIRED_PERMISSIONS.filter((p) => !hasPermission(p));
+  const canRelease = hasPermission('program.release');
 
   const [programs, setPrograms] = useState([]);
   const [notices, setNotices] = useState([]);
@@ -37,6 +57,11 @@ export default function LegacyImportPage() {
   const [importStates, setImportStates] = useState({}); // key → { partId, machineId, state }
   const [reading, setReading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [opDefaults, setOpDefaults] = useState(readOpDefaults);
+  const [release, setRelease] = useState(true);
+  const [selected, setSelected] = useState(new Set());
+  const [running, setRunning] = useState(null);           // key der Zeile, die gerade übernommen wird
+  const [results, setResults] = useState({});             // key → { ok, steps }
   const loadingParts = useRef(new Set());
   const loadingStates = useRef(new Set());
 
@@ -50,8 +75,8 @@ export default function LegacyImportPage() {
     return loaded;
   }, [ctx]);
 
-  const ensureParts = useCallback(async (customerId) => {
-    if (!customerId || loadingParts.current.has(customerId)) return;
+  const ensureParts = useCallback(async (customerId, force = false) => {
+    if (!customerId || (!force && loadingParts.current.has(customerId))) return;
     loadingParts.current.add(customerId);
     try {
       const parts = await api.listParts(customerId);
@@ -90,6 +115,8 @@ export default function LegacyImportPage() {
       setNotices(result.notices);
       setRowState(initial);
       setImportStates({});
+      setResults({});
+      setSelected(new Set());
       loadingStates.current = new Set();
       [...new Set(Object.values(initial).map((s) => s.customerId).filter(Boolean))].forEach(ensureParts);
     } catch (error) {
@@ -151,13 +178,78 @@ export default function LegacyImportPage() {
       const flag = `${row.program.key}|${row.chosenPart.id}|${row.machineId}`;
       if (loadingStates.current.has(flag)) return;
       loadingStates.current.add(flag);
-      loadProgramState(row.chosenPart.id, row.machineId)
+      loadImportState(api, row.chosenPart.id, row.machineId)
         .then((state) => setImportStates((prev) => ({
           ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, state },
         })))
         .catch((error) => toast.error(error.message));
     });
   }, [rows, importStates]);
+
+  const updateOpDefaults = (patch) => {
+    const next = { ...opDefaults, ...patch };
+    setOpDefaults(next);
+    try { localStorage.setItem(OP_DEFAULTS_KEY, JSON.stringify(next)); } catch { /* ohne Speicher weiter */ }
+  };
+
+  const canImport = (row) => missingPermissions.length === 0 && row.machineId
+    && row.status !== 'error' && row.status !== 'imported'
+    && (row.partChoice === 'new' || row.partChoice === 'skip' || typeof row.partChoice === 'number');
+
+  const runOne = async (row) => {
+    const type = ctx.operationTypes.find((t) => t.id === opDefaults.operation_type_id);
+    const enabledFeatures = [...new Set([...(type?.default_features || []), ...BASE_FEATURES])];
+    setRunning(row.program.key);
+    const result = await importProgram({
+      row: {
+        parsed: row.program,
+        customerId: row.state.customerId,
+        partChoice: row.partChoice,
+        customerPartNumber: row.state.customerPartNumber.trim(),
+        revision: row.state.revision.trim(),
+        name: row.state.name.trim(),
+      },
+      settings: {
+        cmmMachineId: row.machineId,
+        opDefaults: { ...opDefaults, enabled_features: enabledFeatures },
+        workflowStates: ctx.workflowStates,
+      },
+      api,
+      release: release && canRelease,
+    });
+    setResults((prev) => ({ ...prev, [row.program.key]: result }));
+    if (result.partId) {
+      // Neues Bauteil in die Kandidaten holen, Zeile darauf festlegen und Stand neu laden
+      await ensureParts(row.state.customerId, true);
+      setRowState((prev) => ({ ...prev, [row.program.key]: { ...prev[row.program.key], partChoice: result.partId } }));
+      setImportStates((prev) => {
+        const next = { ...prev };
+        delete next[row.program.key];
+        return next;
+      });
+      loadingStates.current = new Set([...loadingStates.current].filter((f) => !f.startsWith(`${row.program.key}|`)));
+    }
+    setRunning(null);
+    return result.ok;
+  };
+
+  const runSelected = async () => {
+    let failed = 0;
+    let done = 0;
+    for (const row of rows.filter((r) => selected.has(r.program.key) && canImport(r))) {
+      if (await runOne(row)) done++; else failed++;
+    }
+    setSelected(new Set());
+    if (failed) toast.error(`${done} übernommen, ${failed} mit Fehler`);
+    else toast.success(`${done} übernommen`);
+  };
+
+  const toggleSelected = (key) => setSelected((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+  const importable = rows.filter(canImport);
 
   const counts = rows.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] || 0) + 1 }), {});
   const machineCodes = Object.keys(machineMap).filter((code) => programs.some((p) => p.machineCode === code));
@@ -236,6 +328,48 @@ export default function LegacyImportPage() {
             </div>
           </div>
 
+          <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Vorgaben für neue Arbeitsgänge</div>
+            <div className="flex flex-wrap gap-4 items-end">
+              <label className="text-xs text-gray-600 dark:text-gray-400 flex flex-col">
+                OP-Nummer
+                <input value={opDefaults.op_number} onChange={(e) => updateOpDefaults({ op_number: e.target.value })} className={inputClass} />
+              </label>
+              <label className="text-xs text-gray-600 dark:text-gray-400 flex flex-col">
+                Name
+                <input value={opDefaults.op_name} onChange={(e) => updateOpDefaults({ op_name: e.target.value })} className={inputClass} />
+              </label>
+              <label className="text-xs text-gray-600 dark:text-gray-400 flex flex-col">
+                Arbeitsgang-Typ
+                <select value={opDefaults.operation_type_id ?? ''} className={inputClass}
+                  onChange={(e) => updateOpDefaults({ operation_type_id: e.target.value ? Number(e.target.value) : null })}>
+                  <option value="">– ohne Typ –</option>
+                  {(ctx?.operationTypes || []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </label>
+              {canRelease && (
+                <label className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <input type="checkbox" checked={release} onChange={(e) => setRelease(e.target.checked)} data-testid="legacy-import-release" />
+                  Direkt freigeben (Grund „Erstimport Altbestand“)
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={runSelected}
+              disabled={running !== null || ![...selected].some((k) => importable.some((r) => r.program.key === k))}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+              Markierte übernehmen ({[...selected].filter((k) => importable.some((r) => r.program.key === k)).length})
+            </button>
+            <button type="button" onClick={() => setSelected(new Set(importable.map((r) => r.program.key)))}
+              disabled={running !== null || importable.length === 0}
+              className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50">
+              Alle übernehmbaren markieren
+            </button>
+            {running && <span className="text-sm text-gray-600 dark:text-gray-400">Übernehme {running} …</span>}
+          </div>
+
           <div className="flex flex-wrap gap-2 text-sm text-gray-700 dark:text-gray-300">
             <span>{programs.length} Programme:</span>
             {Object.entries(counts).map(([status, n]) => (
@@ -256,7 +390,33 @@ export default function LegacyImportPage() {
                 status={row.status}
                 customers={ctx?.customers || []}
                 onChange={(patch) => updateRow(row.program.key, patch)}
-              />
+              >
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <label className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <input type="checkbox" checked={selected.has(row.program.key)} disabled={!canImport(row) || running !== null}
+                      onChange={() => toggleSelected(row.program.key)} />
+                    markieren
+                  </label>
+                  <button type="button" onClick={() => runOne(row)} disabled={!canImport(row) || running !== null}
+                    className="px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                    {running === row.program.key ? 'Übernehme …' : 'Übernehmen'}
+                  </button>
+                  {!row.machineId && <span className="text-xs text-amber-700 dark:text-amber-400">Messmaschine für {row.program.machineCode} wählen</span>}
+                </div>
+                {results[row.program.key] && (
+                  <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" data-testid="legacy-import-steps">
+                    {results[row.program.key].steps.map((step) => (
+                      <li key={step.key} className={`flex items-center gap-1 ${
+                        step.status === 'error' ? 'text-red-700 dark:text-red-400'
+                          : step.status === 'done' ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {step.status === 'error' ? <XCircle className="h-3.5 w-3.5" />
+                          : step.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5" /> : <MinusCircle className="h-3.5 w-3.5" />}
+                        {STEP_LABELS[step.key]}{step.message ? `: ${step.message}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </LegacyImportRow>
             ))}
           </div>
         </>
