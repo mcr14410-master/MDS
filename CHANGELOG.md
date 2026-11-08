@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.25.0] - 2026-11-08 - Altbestand: Wiedererkennen und Vorschläge
+
+### Für Anwender
+- Altbestand übernehmen: Schon übernommene Ordner werden beim erneuten Einlesen erkannt. Die damals eingetragenen Werte und die Dateiauswahl kommen aus dem MDS, die Zeile steht auf „Übernommen“ und kommt ins Archiv-Skript.
+- Kunden-Teilenummer, Revision und Bezeichnung bieten Vorschläge aus dem Ordnernamen an (▾), Freitext geht weiterhin. Das hilft bei Ordnern, die anders benannt sind.
+- Dateien, die damals weggelassen wurden, lassen sich nachträglich anhaken und übernehmen.
+
 ### Added
 - Altbestand übernehmen: Kunden-Teilenummer, Revision und Bezeichnung mit Vorschlägen aus dem Ordnernamen (▾, Freitext bleibt) – hilft bei Ordnern mit anderem Schema, z. B. Kürzel am Ende oder Revision direkt an der Nummer (`utils/legacyImport/suggest.js`, `SuggestInput`)
 
