@@ -19,6 +19,7 @@ const REVISION_TOKEN = /^(?:rev\.?|idx|index)?([A-Za-z0-9-]{1,2})$/i;
 const INDEX_IN_FOLDER = /index\s*([A-Za-z0-9-]+)/i;
 
 const UNKNOWN_FOLDER = 'Unbekannter Ordner – nicht übernommen';
+const DOCUMENT_TYPE_REJECTED = 'Dateityp bei Bauteil-Dokumenten nicht erlaubt – nicht übernommen';
 
 function emptyFiles() {
   return { program: [], template: [], calibration: [], photos: [], drawingPdf: [], drawingOther: [], cad: [] };
@@ -102,9 +103,12 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
           if (profile.photoExtensions.includes(ext(fileName))) files.photos.push(item);
           else skip(item, 'Bildformat nicht unterstützt (nur JPG, PNG, WebP) – nicht übernommen');
         } else if (child.key === 'drawing') {
-          (ext(fileName) === 'pdf' ? files.drawingPdf : files.drawingOther).push(item);
+          if (ext(fileName) === 'pdf') files.drawingPdf.push(item);
+          else if (profile.drawingExtensions.includes(ext(fileName))) files.drawingOther.push(item);
+          else skip(item, DOCUMENT_TYPE_REJECTED);
         } else if (child.key === 'cad') {
-          files.cad.push(item);
+          if (profile.cadExtensions.includes(ext(fileName))) files.cad.push(item);
+          else skip(item, DOCUMENT_TYPE_REJECTED);
         } else {
           skip(item, UNKNOWN_FOLDER);
         }

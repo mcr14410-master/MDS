@@ -96,6 +96,8 @@ export default function LegacyImportPage() {
       const result = parseLegacyTree(items);
       const initial = {};
       result.programs.forEach((p) => {
+        // Schon bekannte Zeile: Eingaben (Revision, Bauteil-Wahl …) behalten
+        if (rowState[p.key]) { initial[p.key] = rowState[p.key]; return; }
         initial[p.key] = {
           customerId: matchCustomer(p.customerNumber, context.customers)?.id ?? null,
           customerPartNumber: p.customerPartNumber,
@@ -166,9 +168,14 @@ export default function LegacyImportPage() {
       customer,
       candidates: chosenPart ? { same: [chosenPart], otherRevisions: [] } : candidates,
       importState,
+      release: release && canRelease,
     });
     return { program: parsed, state, customer, candidates, partChoice, chosenPart, machineId, status };
-  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates]);
+  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates, release, canRelease]);
+
+  // Aktueller Stand für „Markierte übernehmen“ (läuft über mehrere Renders)
+  const rowsRef = useRef(rows);
+  useEffect(() => { rowsRef.current = rows; }, [rows]);
 
   // Stand je gewähltem Bauteil nachladen (Mess-Arbeitsgang, Messprogramm)
   useEffect(() => {
@@ -219,9 +226,10 @@ export default function LegacyImportPage() {
       release: release && canRelease,
     });
     setResults((prev) => ({ ...prev, [row.program.key]: result }));
+    // Bauteile immer neu laden – auch wenn der Server ein Bauteil angelegt hat, die Antwort aber fehlte
+    await ensureParts(row.state.customerId, true);
     if (result.partId) {
-      // Neues Bauteil in die Kandidaten holen, Zeile darauf festlegen und Stand neu laden
-      await ensureParts(row.state.customerId, true);
+      // Zeile auf das (neue) Bauteil festlegen und Stand neu laden
       setRowState((prev) => ({ ...prev, [row.program.key]: { ...prev[row.program.key], partChoice: result.partId } }));
       setImportStates((prev) => {
         const next = { ...prev };
@@ -237,7 +245,11 @@ export default function LegacyImportPage() {
   const runSelected = async () => {
     let failed = 0;
     let done = 0;
-    for (const row of rows.filter((r) => selected.has(r.program.key) && canImport(r))) {
+    for (const key of [...selected]) {
+      // Zeile jedes Mal frisch aus dem aktuellen Stand – frühere Läufe können Bauteile angelegt haben
+      await new Promise((resolve) => { setTimeout(resolve, 50); });
+      const row = rowsRef.current.find((r) => r.program.key === key);
+      if (!row || !canImport(row)) continue;
       if (await runOne(row)) done++; else failed++;
     }
     setSelected(new Set());

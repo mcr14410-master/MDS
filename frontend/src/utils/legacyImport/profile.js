@@ -31,4 +31,7 @@ export const DEFAULT_PROFILE = {
   ],
   // Bildformate, die das Einrichteblatt annimmt
   photoExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+  // Dateitypen, die die Bauteil-Dokumente annehmen (Filter in backend/src/routes/partDocumentsRoutes.js)
+  cadExtensions: ['step', 'stp', 'stl', 'obj', 'iges', 'igs', '3ds', 'gltf', 'glb', 'x_t', 'x_b', 'sat'],
+  drawingExtensions: ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'dxf', 'dwg', 'svg'],
 };

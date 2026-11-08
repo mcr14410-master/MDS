@@ -82,6 +82,12 @@ function test(name, fn) {
     assert.equal((s.match(/@\{ Kunde = /g) || []).length, 2);
   });
 
+  test('Skript: Laufwerkswurzel behält den Backslash', () => {
+    const s = m.buildArchiveScript({ sourceRoot: 'Y:\\', archiveRoot: 'Z:\\Archiv\\', entries: [], createdAt: 'x' });
+    assert.ok(s.includes("$Quelle = 'Y:\\'"), s.split('\n').find(l => l.startsWith('$Quelle')));
+    assert.ok(s.includes("$Archiv = 'Z:\\Archiv'"));
+  });
+
   test('Skript: Pfade mit \\ statt /', () => {
     const s = build([{ customerFolder: 'KD00000 FIRMA', programFolder: 'HG_X' }]);
     const code = s.split('\n').filter(l => !l.trim().startsWith('#'));

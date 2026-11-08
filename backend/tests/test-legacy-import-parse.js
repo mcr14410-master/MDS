@@ -201,6 +201,24 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     assert.match(p.skipped.find(s => s.path.includes('Gestempelte')).reason, /schon im Messprogramm-Ordner/);
   });
 
+  test('Bauteil-Dokumente: nur Dateitypen, die das MDS annimmt', () => {
+    const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0014_Platte', [
+      '01_Messprogramm HG_Index0/P.prg',
+      '03_Aufspannungs- und Teiledaten/02_Gestempelte Zeichnung/Thumbs.db',
+      '03_Aufspannungs- und Teiledaten/02_Gestempelte Zeichnung/Z.DWG',
+      '03_Aufspannungs- und Teiledaten/04_CAD-Modell/M.STEP',
+      '03_Aufspannungs- und Teiledaten/04_CAD-Modell/M.prt',
+      '03_Aufspannungs- und Teiledaten/04_CAD-Modell/desktop.ini',
+    ]);
+    const [p] = parseLegacyTree(items).programs;
+    assert.deepEqual(names(p.files.drawingOther), ['Z.DWG']);
+    assert.deepEqual(names(p.files.cad), ['M.STEP']);
+    const reason = (end) => p.skipped.find(s => s.path.endsWith(end))?.reason;
+    assert.match(reason('Thumbs.db'), /Dateityp/);
+    assert.match(reason('M.prt'), /Dateityp/);
+    assert.match(reason('desktop.ini'), /Dateityp/);
+  });
+
   test('Alter Programmordner unter „Alte Daten“ zählt nicht als eigenes Programm', () => {
     const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0013_Platte', [
       '01_Messprogramm HG_Index0/P.prg',

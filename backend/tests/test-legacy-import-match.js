@@ -105,5 +105,15 @@ const fullState = {
     assert.equal(m.rowStatus({ ...base, importState: nothing }), 'part_exists');
   });
 
+  test('Status mit Freigabe: erst „übernommen“, wenn Programm und Blatt freigegeben sind', () => {
+    const base = { parsed: parsedProgram(), customer: { id: 1 }, candidates: { same: [{ id: 1 }], otherRevisions: [] } };
+    const draft = { ...fullState, programState: 'draft', setupSheetState: 'draft' };
+    assert.equal(m.rowStatus({ ...base, importState: draft, release: true }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: { ...fullState, setupSheetState: 'draft' }, release: true }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: fullState, release: true }), 'imported');
+    assert.equal(m.rowStatus({ ...base, importState: draft, release: false }), 'imported');
+    assert.equal(m.rowStatus({ ...base, importState: draft }), 'imported');
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();

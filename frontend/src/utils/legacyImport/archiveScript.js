@@ -28,7 +28,11 @@ export function validateArchiveSettings({ sourceRoot, archiveRoot }) {
 
 // PowerShell-String in einfachen Anführungszeichen; dort gelten auch ‘ ’ ‚ ‛ als Anführungszeichen
 const psQuote = (value) => `'${String(value).replace(/['‘’‚‛]/g, (q) => q + q)}'`;
-const psPath = (value) => psQuote(String(value).trim().replace(/\//g, '\\').replace(/\\+$/, ''));
+const psPath = (value) => {
+  const trimmed = String(value).trim().replace(/\//g, '\\').replace(/\\+$/, '');
+  // Laufwerkswurzel behält den Backslash: Combine('Y:', …) ergäbe den laufwerksrelativen Pfad 'Y:KD…'
+  return psQuote(/^[A-Za-z]:$/.test(trimmed) ? `${trimmed}\\` : trimmed);
+};
 
 /**
  * @param {{ sourceRoot: string, archiveRoot: string, entries: {customerFolder: string, programFolder: string}[], createdAt: string }} args
