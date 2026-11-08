@@ -14,6 +14,7 @@ import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
+import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
 
 const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.upload'];
 const NO_CANDIDATES = { same: [], otherRevisions: [] };
@@ -250,6 +251,9 @@ export default function LegacyImportPage() {
     return next;
   });
   const importable = rows.filter(canImport);
+  const archiveEntries = rows
+    .filter((r) => r.status === 'imported' && r.program.customerFolder)
+    .map((r) => ({ customerFolder: r.program.customerFolder, programFolder: r.program.programFolder }));
 
   const counts = rows.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] || 0) + 1 }), {});
   const machineCodes = Object.keys(machineMap).filter((code) => programs.some((p) => p.machineCode === code));
@@ -419,6 +423,8 @@ export default function LegacyImportPage() {
               </LegacyImportRow>
             ))}
           </div>
+
+          <ArchiveSettings entries={archiveEntries} />
         </>
       )}
     </div>

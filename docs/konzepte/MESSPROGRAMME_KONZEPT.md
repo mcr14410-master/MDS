@@ -592,6 +592,13 @@ Programme mit Begleitdateien in den Eingang (`program_id = NULL`) – **ohne** N
 Zuordnungsansicht: Vorschlag Bauteil/Arbeitsgang anhand des Ordner-/Dateinamens, Benutzer
 bestätigt → Programm 1.0.0 angelegt. Danach Netzlaufwerk nur noch lesend/Archiv.
 
+> **Umgesetzt anders (08.11.2026):** nicht über den Agenten, sondern als Helfer im Browser –
+> Seite „Altbestand übernehmen“: Ordner einlesen (nur Dateiliste), Vorschlag je Programm über ein
+> Import-Profil mit Stichwörtern, Übernehmen über die vorhandenen Schnittstellen mit Wiederaufnahme und
+> optional direkter Freigabe („Erstimport Altbestand“), Archiv per PowerShell-Skript. Der Agent-Weg hätte
+> den Eingang (Schritt 5) vorausgesetzt und lohnt sich für einen einmaligen Import nicht.
+> Spec: [ALTBESTAND_IMPORT_SPEC.md](ALTBESTAND_IMPORT_SPEC.md)
+
 ---
 
 ## 6. MDS-Agent

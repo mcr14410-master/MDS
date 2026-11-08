@@ -32,7 +32,7 @@ const psPath = (value) => psQuote(String(value).trim().replace(/\//g, '\\').repl
 
 /**
  * @param {{ sourceRoot: string, archiveRoot: string, entries: {customerFolder: string, programFolder: string}[], createdAt: string }} args
- * @returns {string} Skript ohne BOM (die Seite stellt beim Speichern ﻿ voran)
+ * @returns {string} Skript ohne BOM (die Seite stellt beim Speichern eine Byte-Order-Mark (BOM) voran)
  */
 export function buildArchiveScript({ sourceRoot, archiveRoot, entries, createdAt }) {
   const lines = entries.map((e) => `  @{ Kunde = ${psQuote(e.customerFolder)}; Programm = ${psQuote(e.programFolder)} }`);
