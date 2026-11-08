@@ -1,6 +1,6 @@
 # Session 8. November 2026 – Workflow-Durchlauf, Revision als Pflichtfeld, Release 2.22.0
 
-**PRs:** #324 bis #329 · Arbeit auf dem Dev-Server `homepi`, Deploy auf rpi01 durch den Nutzer
+**PRs:** #324 bis #332 · Arbeit auf dem Dev-Server `homepi`, Deploy auf rpi01 durch den Nutzer
 
 Fortsetzung von [Session 7./8.11.](SESSION-2026-11-08-einrichteblatt-freigabe-2.21.md). Der Nutzer hat einen Arbeitsablauf durchgespielt (Bauteil, Arbeitsgang, Messprogramm) und alles notiert, was auffiel. Je Punkt wurde entschieden: sofort ändern oder notieren.
 
@@ -16,15 +16,19 @@ Fortsetzung von [Session 7./8.11.](SESSION-2026-11-08-einrichteblatt-freigabe-2.
 | #327 | Befunde aus dem Durchlauf: Dokumentvorschau, gleicher OP-Code, Anzahl Arbeitsgänge, PC-DMIS-Vorschaubild, Kartenraster, ROADMAP Einrichteblatt je Maschinentyp |
 | #328 | Release 2.22.0 |
 | #329 | Release 2.22.0 als erledigt |
+| #331 | Fotos am Einrichteblatt mehrfach hochladen, Vorschau für Arbeitsgang-Dokumente, Vorschaubilder für Bild-Dokumente |
+| #332 | PDF-Dokumente drucken (Bauteil-Details, Bauteil- und Arbeitsgang-Dokumente); vom Nutzer unter Fedora/Firefox geprüft |
 
-**Release 2.22.0** läuft seit 08.11. auf rpi01, keine Migration, Prüfpunkte grün.
+**Release 2.22.0** läuft seit 08.11. auf rpi01, keine Migration, Prüfpunkte grün. #331 und #332 liegen unter „Unreleased“ (nächstes Release 2.23.0).
 
 ## Entscheidungen des Nutzers
 
 - **Revision:** Pflichtfeld ohne Vorbelegung, Teile ohne Index bekommen „-“
 - **Gleicher OP-Code:** Hinweis statt Sperre
 - **PC-DMIS-Vorschaubild:** `.jpg` mit dem Namen der `.prg` wird Begleitdatei. Ob andere Formate gehen und ob PC-DMIS eine eigene Funktion dafür hat, wird später geprüft (Messprogramm-Konzept Abschnitt 10)
-- **Für später notiert (ROADMAP Phase 9):** Einrichteblatt je Maschinentyp, Foto-Beschriftung und -Beschreibung, Übersicht „Was wartet auf Prüfung/Freigabe“
+- **Für später notiert (ROADMAP Phase 9):** Einrichteblatt je Maschinentyp, Foto-Beschriftung und -Beschreibung, Übersicht „Was wartet auf Prüfung/Freigabe“, Druck/Export von Einrichteblatt und Prüfplan
+- **Mehrere Prüfpläne je Arbeitsgang:** Nutzer überlegt, ob das in der Praxis gebraucht wird (ROADMAP)
+- **Einordnung des Nutzers:** Die vielen Nebenschauplätze sind die Punkte, die für die Produktion wichtig sind
 
 ## Befunde
 
@@ -39,6 +43,6 @@ Fortsetzung von [Session 7./8.11.](SESSION-2026-11-08-einrichteblatt-freigabe-2.
 
 ## Nächste Sitzung
 
-1. Workflow-Durchlauf fortsetzen, Befunde wie gehabt sammeln
+1. Workflow-Durchlauf fortsetzen, Befunde wie gehabt sammeln; Release 2.23.0 bei Bedarf (#331, #332)
 2. Probelauf Erstimport (Messprogramme Schritt 7): Befunde auswerten, Konzept 5.5 anpassen
 3. rpi01: Nacht-Backups nach dem SD-Tausch prüfen (falls noch offen), in ein paar Tagen `tune2fs`, Rettungsordner aufräumen, monatliches SD-Image
