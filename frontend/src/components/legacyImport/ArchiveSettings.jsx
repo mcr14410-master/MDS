@@ -5,7 +5,7 @@ import { Download, XCircle } from 'lucide-react';
 import { ARCHIVE_SCRIPT_NAME, buildArchiveScript, validateArchiveSettings } from '../../utils/legacyImport/archiveScript.js';
 
 const STORAGE_KEY = 'mds.legacyImport.archive';
-const inputClass = 'w-full px-2 py-1 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
+const inputClass = 'w-full px-2 py-1 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:italic placeholder:text-gray-400 dark:placeholder:text-gray-500';
 
 function readSettings() {
   try {
@@ -53,13 +53,13 @@ export default function ArchiveSettings({ entries }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="text-xs text-gray-600 dark:text-gray-400">
-          Quellordner
-          <input value={settings.sourceRoot} placeholder="Z:\KMG\Programme" className={inputClass}
+          Quellordner <span className="text-gray-400 dark:text-gray-500">– der Ordner, in dem die Kundenordner liegen</span>
+          <input value={settings.sourceRoot} placeholder="z. B. Z:\KMG\Programme" className={inputClass}
             data-testid="legacy-import-source" onChange={(e) => update({ sourceRoot: e.target.value })} />
         </label>
         <label className="text-xs text-gray-600 dark:text-gray-400">
           Archivordner
-          <input value={settings.archiveRoot} placeholder="Z:\KMG\Archiv" className={inputClass}
+          <input value={settings.archiveRoot} placeholder="z. B. Z:\KMG\Archiv" className={inputClass}
             data-testid="legacy-import-archive" onChange={(e) => update({ archiveRoot: e.target.value })} />
         </label>
       </div>
