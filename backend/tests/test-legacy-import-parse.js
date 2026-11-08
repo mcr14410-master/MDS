@@ -22,6 +22,7 @@ function test(name, fn) {
 
 const tree = (prefix, relPaths) => relPaths.map(p => ({ path: `${prefix}/${p}` }));
 const names = (list) => list.map(i => i.path.split('/').pop());
+const unitFiles = (p, unitPath = '') => p.units.find(u => u.path === unitPath).files;
 
 const NORMAL_REL = [
   '01_Messprogramm HG_IndexA/TEIL-0001.prg',
@@ -76,8 +77,10 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
 
   test('Normalfall: Dateien je Ziel', () => {
     const [p] = parseLegacyTree(normal).programs;
-    assert.deepEqual(names(p.files.program), ['TEIL-0001.prg', 'TEIL-0001.cad']);
-    assert.deepEqual(names(p.files.template), ['TEIL-0001.xlsx', 'TEIL-0001.layout.xml']);
+    assert.deepEqual(names(unitFiles(p).program), ['TEIL-0001.prg', 'TEIL-0001.cad']);
+    assert.deepEqual(names(unitFiles(p).template), ['TEIL-0001.xlsx', 'TEIL-0001.layout.xml']);
+    assert.deepEqual(p.files.template, [], 'keine Vorlage außerhalb eines Programms');
+    assert.deepEqual(p.units.map(u => [u.path, u.label]), [['', 'Messprogramm']]);
     assert.deepEqual(names(p.files.calibration), ['Kal.prg']);
     assert.deepEqual(names(p.files.photos), ['a.JPG']);
     assert.deepEqual(names(p.files.drawingPdf), ['TEIL-0001.pdf']);
@@ -88,7 +91,7 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
   test('Normalfall: Items werden unverändert übernommen', () => {
     const items = normal.map(i => ({ ...i, file: { marker: i.path } }));
     const [p] = parseLegacyTree(items).programs;
-    assert.equal(p.files.program[0].file.marker, p.files.program[0].path);
+    assert.equal(unitFiles(p).program[0].file.marker, unitFiles(p).program[0].path);
   });
 
   test('Normalfall: Aussortiertes mit Grund', () => {
@@ -147,7 +150,7 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0007_Platte',
       ['01_Messprogramm HG_Index0/P1.prg', '01_Messprogramm HG_Index0/P2.PRG']);
     const [p] = parseLegacyTree(items).programs;
-    assert.ok(p.errors.some(e => /Mehrere \.prg/.test(e)), p.errors.join('|'));
+    assert.ok(p.units[0].errors.some(e => /Mehrere \.prg/.test(e)), p.units[0].errors.join('|'));
   });
 
   test('Anders nummerierte Ordner werden erkannt, unbekannte aussortiert', () => {
@@ -157,7 +160,7 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
       '07_Sonstiges/x.txt',
     ]);
     const [p] = parseLegacyTree(items).programs;
-    assert.deepEqual(names(p.files.program), ['P.prg']);
+    assert.deepEqual(names(unitFiles(p).program), ['P.prg']);
     assert.deepEqual(names(p.files.photos), ['f.png']);
     assert.match(p.skipped.find(s => s.path.endsWith('07_Sonstiges/x.txt')).reason, /Unbekannter Ordner/);
   });
@@ -254,6 +257,58 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     const [q] = parseLegacyTree(minimal('HG_TEIL-0015_B_Platte', '01_Messprogramm HG')).programs;
     assert.equal(q.indexRevision, null);
     assert.equal(q.revision, 'B');
+  });
+
+  test('Mehrere Messprogramme in Unterordnern (beliebig tief), Vorlage-Ordner ohne .prg', () => {
+    const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0016_00_Halter', [
+      '01_Messprogramm HG_Index 00/Messprogramm_FAI/FAI.prg',
+      '01_Messprogramm HG_Index 00/Messprogramm_FAI/FAI.cad',
+      '01_Messprogramm HG_Index 00/Messprogramm_Fertigung/AG1/AG1.prg',
+      '01_Messprogramm HG_Index 00/Messprogramm_Fertigung/AG1/Messprotokoll.pdf',
+      '01_Messprogramm HG_Index 00/Messprogramm_Fertigung/AG2/AG2.prg',
+      '01_Messprogramm HG_Index 00/Messprogramm_Fertigung/AG2/alt/AG2_alt.prg',
+      '01_Messprogramm HG_Index 00/Messprogramm_Fertigung/Notiz.txt',
+      '01_Messprogramm HG_Index 00/Vorlage/T.xlsx',
+      '01_Messprogramm HG_Index 00/Vorlage/T.layout.xml',
+      '03_Aufspannungs- und Teiledaten/01_Bilder der Aufspannsituation/a.jpg',
+    ]);
+    const [p] = parseLegacyTree(items).programs;
+    assert.deepEqual(p.errors, []);
+    assert.equal(p.revision, '00');
+    assert.deepEqual(p.units.map(u => [u.path, u.label]), [
+      ['Messprogramm_FAI', 'FAI'],
+      ['Messprogramm_Fertigung/AG1', 'Fertigung / AG1'],
+      ['Messprogramm_Fertigung/AG2', 'Fertigung / AG2'],
+      ['Messprogramm_Fertigung/AG2/alt', 'Fertigung / AG2 / alt'],
+    ]);
+    assert.deepEqual(names(unitFiles(p, 'Messprogramm_FAI').program), ['FAI.prg', 'FAI.cad']);
+    assert.deepEqual(names(unitFiles(p, 'Messprogramm_Fertigung/AG1').program), ['AG1.prg', 'Messprotokoll.pdf']);
+    assert.deepEqual(names(p.files.template), ['T.xlsx', 'T.layout.xml'], 'Vorlage ohne .prg = für ein Programm wählbar');
+    assert.match(p.skipped.find(s => s.path.endsWith('Notiz.txt')).reason, /ohne \.prg/);
+  });
+
+  test('Mehrere .prg im selben Unterordner: Fehler mit Namen', () => {
+    const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0017_A_Platte', [
+      '01_Messprogramm HG_Index A/Messprogramm_FAI/a.prg',
+      '01_Messprogramm HG_Index A/Messprogramm_FAI/b.prg',
+      '01_Messprogramm HG_Index A/Messprogramm_Serie/c.prg',
+    ]);
+    const [p] = parseLegacyTree(items).programs;
+    assert.deepEqual(p.errors, [], 'Fehler gehört zum Programm, nicht zur Zeile');
+    assert.deepEqual(p.units.find(u => u.label === 'FAI').errors, ['Mehrere .prg in „FAI“']);
+  });
+
+  test('Alte Stände im Messprogramm-Ordner bleiben liegen, gleiche Bezeichnungen werden eindeutig', () => {
+    const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0018_A_Platte', [
+      '01_Messprogramm HG_Index A/FAI/a.prg',
+      '01_Messprogramm HG_Index A/Messprogramm_FAI/b.prg',
+      '01_Messprogramm HG_Index A/Alte Daten/x.prg',
+      '01_Messprogramm HG_Index A/Serie/05_Alte Daten/y.prg',
+    ]);
+    const [p] = parseLegacyTree(items).programs;
+    assert.deepEqual(p.units.map(u => [u.path, u.label]), [['FAI', 'FAI'], ['Messprogramm_FAI', 'Messprogramm_FAI']]);
+    assert.match(p.skipped.find(s => s.path.endsWith('x.prg')).reason, /Alte Daten/);
+    assert.match(p.skipped.find(s => s.path.endsWith('y.prg')).reason, /Alte Daten/);
   });
 
   console.log(`\n${passed} Tests bestanden`);

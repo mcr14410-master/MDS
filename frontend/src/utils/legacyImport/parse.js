@@ -21,8 +21,17 @@ const INDEX_IN_FOLDER = /index\s*([A-Za-z0-9-]+)/i;
 const UNKNOWN_FOLDER = 'Unbekannter Ordner – nicht übernommen';
 const DOCUMENT_TYPE_REJECTED = 'Dateityp bei Bauteil-Dokumenten nicht erlaubt – nicht übernommen';
 
+// Dateien, die zum ganzen Ordner gehören (Bauteil, Einrichteblatt) – Programmdateien stehen je Messprogramm in `units`
 function emptyFiles() {
-  return { program: [], template: [], calibration: [], photos: [], drawingPdf: [], drawingOther: [], cad: [] };
+  return { template: [], calibration: [], photos: [], drawingPdf: [], drawingOther: [], cad: [] };
+}
+
+// Bezeichnung eines Messprogramms aus seinem Pfad im Messprogramm-Ordner: „Messprogramm_Fertigung/AG1“ → „Fertigung / AG1“
+function unitLabel(unitPath) {
+  if (!unitPath) return 'Messprogramm';
+  return unitPath.split('/')
+    .map(seg => stripNumber(seg).replace(/^messprogramm[\s_-]*/i, '').trim() || seg)
+    .join(' / ');
 }
 
 // Kopfdaten aus dem Namen des Programmordners: Maschine _ Kunden-Teilenr. _ [Rev.] _ Name
@@ -73,6 +82,7 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
     const warnings = [];
     const errors = [];
     let indexRevision = null;
+    const programItems = []; // { item, dir, fileName } – dir relativ zum Messprogramm-Ordner
 
     const skip = (item, reason) => skipped.push({ path: item.path, reason });
 
@@ -89,8 +99,7 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
       if (rule.key === 'program') {
         const m = rel[0].match(INDEX_IN_FOLDER);
         if (m && indexRevision === null) indexRevision = m[1];
-        if (rel.length > 2) skip(item, 'Unterordner im Messprogramm-Ordner – nicht übernommen');
-        else (isTemplate(fileName) ? files.template : files.program).push(item);
+        programItems.push({ item, dir: rel.slice(1, -1).join('/'), fileName });
       } else if (rule.key === 'calibration') {
         if (rel.length === 2 && isPrg(fileName)) files.calibration.push(item);
         else skip(item, 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen');
@@ -117,8 +126,30 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
       }
     }
 
+    // Messprogramme: jeder Ordner im Messprogramm-Ordner, der direkt eine .prg enthält (beliebig tief)
+    const unitDirs = [...new Set(programItems.filter(x => isPrg(x.fileName)).map(x => x.dir))]
+      .sort((a, b) => a.localeCompare(b));
+    // Ordner wie „Alte Daten“ auch innerhalb des Messprogramm-Ordners liegen lassen (Profil-Regeln mit skip)
+    const skipRuleOf = (dir) => dir.split('/').filter(Boolean)
+      .map(seg => findRule(profile.folders, seg)).find(rule => rule?.skip) || null;
+    const units = unitDirs.filter(dir => !skipRuleOf(dir))
+      .map(dir => ({ path: dir, label: unitLabel(dir), errors: [], files: { program: [], template: [] } }));
+    // Gleiche Bezeichnung (z. B. „FAI“ und „Messprogramm_FAI“) → Pfad als Bezeichnung
+    units.forEach((u) => {
+      if (units.filter(o => o.label === u.label).length > 1) u.duplicate = true;
+    });
+    units.forEach((u) => { if (u.duplicate) { u.label = u.path.split('/').join(' / '); delete u.duplicate; } });
+    programItems.forEach(({ item, dir, fileName }) => {
+      const skipRule = skipRuleOf(dir);
+      if (skipRule) { skip(item, skipRule.skip); return; }
+      const unit = units.find(u => u.path === dir);
+      if (unit) (isTemplate(fileName) ? unit.files.template : unit.files.program).push(item);
+      else if (isTemplate(fileName)) files.template.push(item); // z. B. Ordner „Vorlage“ – Programm wählbar
+      else skip(item, 'Unterordner ohne .prg im Messprogramm-Ordner – nicht übernommen');
+    });
+
     // Gestempelte Zeichnung, die schon im Messprogramm-Ordner liegt, nur einmal übernehmen
-    const programNames = new Set(files.program.map(i => i.path.split('/').pop().toLowerCase()));
+    const programNames = new Set(units.flatMap(u => u.files.program).map(i => i.path.split('/').pop().toLowerCase()));
     files.drawingPdf = files.drawingPdf.filter(item => {
       if (!programNames.has(item.path.split('/').pop().toLowerCase())) return true;
       skip(item, 'Liegt schon im Messprogramm-Ordner – nicht doppelt übernommen');
@@ -127,9 +158,13 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
 
     if (!customerFolder) errors.push('Kundenordner fehlt – Kunden- oder Quellordner wählen');
     if (!head.schemaOk) errors.push('Ordnername passt nicht zum Schema Maschine_Teilenummer_Name');
-    const prgCount = files.program.filter(i => isPrg(i.path)).length;
-    if (prgCount === 0) errors.push('Keine .prg im Messprogramm-Ordner');
-    if (prgCount > 1) errors.push('Mehrere .prg im Messprogramm-Ordner');
+    if (units.length === 0) errors.push('Keine .prg im Messprogramm-Ordner');
+    // Fehler eines Messprogramms bleiben am Programm – sie zählen nur, solange es ausgewählt ist (selection.js)
+    units.forEach((u) => {
+      if (u.files.program.filter(i => isPrg(i.path)).length > 1) {
+        u.errors.push(u.path ? `Mehrere .prg in „${u.label}“` : 'Mehrere .prg im Messprogramm-Ordner');
+      }
+    });
 
     let revision = indexRevision;
     if (indexRevision !== null && head.nameRevision !== null
@@ -157,6 +192,7 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
       nameRevision: head.nameRevision,
       name: head.name,
       files,
+      units,
       skipped,
       warnings,
       errors,

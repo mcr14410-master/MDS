@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Altbestand übernehmen: mehrere Messprogramme in einem Programmordner – jeder Ordner im Messprogramm-Ordner, der direkt eine `.prg` enthält (beliebig tief, z. B. `Messprogramm_FAI`, `Messprogramm_Fertigung/AG1`), wird ein eigenes Messprogramm mit eigenem Mess-Arbeitsgang und Einrichteblatt. Je Programm abwählbar, OP-Nummer und Name änderbar (Vorgabe „Messen <Bezeichnung>“); Fotos und Excel-Vorlage (aus einem Ordner ohne `.prg`, z. B. `Vorlage`) einem Programm zuordnen; gestempelte Zeichnung und Kalibrierprogramm in jedem. Herkunftsvermerk je Programm mit Unterordner-Pfad; Wiedererkennen, Teil-Übernahme, Status und Archiv je Programm. Ein Programm direkt im Messprogramm-Ordner verhält sich wie bisher. Schutz: Programm eines anderen Altbestand-Ordners an einem Mess-Arbeitsgang des Bauteils sperrt die Zeile; dieselbe Excel-Vorlage an zwei Programmen oder mehrere an einem ist ein Fehler; Ordner wie „Alte Daten“ bleiben auch im Messprogramm-Ordner liegen; mit der alten Version übernommene Ordner gelten erst als vollständig, wenn auch ihre Unterordner-Programme übernommen sind
+
+### Changed
+- Altbestand übernehmen: Dateien in Unterordnern des Messprogramm-Ordners werden nicht mehr pauschal aussortiert (Unterordner mit `.prg` = eigenes Messprogramm, Excel-Vorlagen wählbar, Übriges mit Grund „Unterordner ohne .prg“)
+
 ---
 
 ## [2.25.0] - 2026-11-08 - Altbestand: Wiedererkennen und Vorschläge

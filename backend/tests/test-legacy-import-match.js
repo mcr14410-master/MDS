@@ -21,20 +21,27 @@ function test(name, fn) {
 }
 
 const file = (p) => ({ path: p });
+// Zeile nach der Auswahl (withSelection): Dateien des Ordners + ausgewählte Messprogramme
+const unitRow = (unitPath, photos) => ({ path: unitPath, label: unitPath || 'Messprogramm', files: { photos: photos.map(file) } });
 const parsedProgram = (over = {}) => ({
   key: 'KD00000 FIRMA/HG_TEIL-0001_A_Halter',
+  customerFolder: 'KD00000 FIRMA',
+  programFolder: 'HG_TEIL-0001_A_Halter',
   errors: [],
   files: {
-    program: [file('x/01/P.prg')], template: [], calibration: [],
+    calibration: [],
     photos: [file('x/03/01/a.jpg'), file('x/03/01/b.png')],
     drawingPdf: [], drawingOther: [file('x/03/02/Z.tif')], cad: [file('x/03/04/M.stp')],
   },
+  units: [unitRow('', ['x/03/01/a.jpg', 'x/03/01/b.png'])],
   ...over,
 });
-const fullState = {
-  operationId: 5, programId: 7, programState: 'released', setupSheetId: 9, setupSheetState: 'released',
-  photoNames: ['a.jpg', 'b.png'], documentNames: ['Z.tif', 'M.stp'],
-};
+const unitState = (over = {}) => ({
+  operationId: 5, programId: 7, programState: 'released', programSource: null, setupSheetId: 9, setupSheetState: 'released',
+  photoNames: ['a.jpg', 'b.png'], ...over,
+});
+const stateOf = (units, documentNames = ['Z.tif', 'M.stp']) => ({ documentNames, units });
+const fullState = stateOf({ '': unitState() });
 
 (async () => {
   const m = await import(pathToFileURL(path.join(__dirname, '../../frontend/src/utils/legacyImport/match.js')).href);
@@ -97,22 +104,34 @@ const fullState = {
 
   test('Status: teilweise und vollständig übernommen', () => {
     const base = { parsed: parsedProgram(), customer: { id: 1 }, candidates: { same: [{ id: 1 }], otherRevisions: [] } };
-    assert.equal(m.rowStatus({ ...base, importState: { ...fullState, photoNames: ['a.jpg'] } }), 'partial');
-    assert.equal(m.rowStatus({ ...base, importState: { ...fullState, programId: null } }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ '': unitState({ photoNames: ['a.jpg'] }) }) }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ '': unitState({ programId: null }) }) }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ '': unitState() }, ['Z.tif']) }), 'partial');
     assert.equal(m.rowStatus({ ...base, importState: fullState }), 'imported');
-    const nothing = { operationId: null, programId: null, programState: null, setupSheetId: null,
-      setupSheetState: null, photoNames: [], documentNames: [] };
+    const nothing = stateOf({ '': unitState({ operationId: null, programId: null, programState: null, setupSheetId: null,
+      setupSheetState: null, photoNames: [] }) }, []);
     assert.equal(m.rowStatus({ ...base, importState: nothing }), 'part_exists');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({}, []) }), 'part_exists', 'Messprogramm ohne Stand');
   });
 
   test('Status mit Freigabe: erst „übernommen“, wenn Programm und Blatt freigegeben sind', () => {
     const base = { parsed: parsedProgram(), customer: { id: 1 }, candidates: { same: [{ id: 1 }], otherRevisions: [] } };
-    const draft = { ...fullState, programState: 'draft', setupSheetState: 'draft' };
+    const draft = stateOf({ '': unitState({ programState: 'draft', setupSheetState: 'draft' }) });
     assert.equal(m.rowStatus({ ...base, importState: draft, release: true }), 'partial');
-    assert.equal(m.rowStatus({ ...base, importState: { ...fullState, setupSheetState: 'draft' }, release: true }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ '': unitState({ setupSheetState: 'draft' }) }), release: true }), 'partial');
     assert.equal(m.rowStatus({ ...base, importState: fullState, release: true }), 'imported');
     assert.equal(m.rowStatus({ ...base, importState: draft, release: false }), 'imported');
     assert.equal(m.rowStatus({ ...base, importState: draft }), 'imported');
+  });
+
+  test('Status mit mehreren Messprogrammen: jedes für sich, Fotos am eigenen Einrichteblatt', () => {
+    const p = parsedProgram({ units: [unitRow('FAI', ['x/03/01/a.jpg']), unitRow('AG1', ['x/03/01/b.png'])] });
+    const base = { parsed: p, customer: { id: 1 }, candidates: { same: [{ id: 1 }], otherRevisions: [] } };
+    const both = { FAI: unitState({ photoNames: ['a.jpg'] }), AG1: unitState({ operationId: 6, programId: 8, setupSheetId: 10, photoNames: ['b.png'] }) };
+    assert.equal(m.rowStatus({ ...base, importState: stateOf(both) }), 'imported');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ FAI: both.FAI }) }), 'partial', 'AG1 fehlt');
+    assert.equal(m.rowStatus({ ...base, importState: stateOf({ FAI: unitState({ photoNames: ['a.jpg', 'b.png'] }), AG1: unitState({ photoNames: [] }) }) }),
+      'partial', 'Foto am falschen Einrichteblatt zählt nicht');
   });
 
   test('Herkunft: Vermerk am Messprogramm und Vergleich mit dem Ordner', () => {
@@ -127,14 +146,17 @@ const fullState = {
   test('Status: Messprogramm aus einem anderen Ordner schon übernommen', () => {
     const p = parsedProgram();
     const cand = { same: [{ id: 1 }], otherRevisions: [] };
-    const st = (programSource) => ({
-      operationId: 2, programId: 3, programState: 'draft', programSource, setupSheetId: null, setupSheetState: null,
-      photoNames: [], documentNames: [],
-    });
+    const st = (programSource) => stateOf({ '': unitState({ programState: 'draft', programSource, setupSheetId: null, setupSheetState: null, photoNames: [] }) }, []);
     const other = m.importSource({ ...p, programFolder: 'HG_ANDERS' });
     assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(other) }), 'conflict');
     assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(m.importSource(p)) }), 'partial');
     assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(null) }), 'partial');
+  });
+
+  test('Herkunft je Messprogramm: Unterordner mit Pfad, Programm direkt im Ordner wie bisher', () => {
+    const p = parsedProgram();
+    assert.equal(m.unitSource(p, ''), m.importSource(p));
+    assert.equal(m.unitSource(p, 'Messprogramm_Fertigung/AG1'), `${m.importSource(p)}\\Messprogramm_Fertigung\\AG1`);
   });
 
   test('Schon übernommen: Messprogramm mit gleicher Herkunft, neuestes zuerst', () => {
@@ -147,8 +169,22 @@ const fullState = {
       { id: 8, description: null, part_id: 80 },
     ];
     assert.equal(m.findImportedProgram(programs, p).id, 9);
+    assert.equal(m.findImportedProgram([{ id: 3, description: m.unitSource(p, 'Messprogramm_FAI'), part_id: 30 }], p).id, 3, 'Unterordner zählt');
+    assert.equal(m.findImportedProgram([{ id: 4, description: `${m.importSource(p)}_2`, part_id: 40 }], p), null, 'nur ganzer Ordnername');
     assert.equal(m.findImportedProgram(programs.slice(2), p), null);
     assert.equal(m.findImportedProgram([], p), null);
+  });
+
+  test('Konflikt: Programm aus einem anderen Ordner am Bauteil – auch bei mehreren Messprogrammen', () => {
+    const p = parsedProgram({ units: [unitRow('FAI', []), unitRow('AG1', [])] });
+    const cand = { same: [{ id: 1 }], otherRevisions: [] };
+    const st = { documentNames: [], units: {}, foreignSource: m.importSource({ ...p, programFolder: 'HG_ANDERS' }) };
+    assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st }), 'conflict');
+    assert.equal(m.sourceFolder(`${m.importSource(p)}\\Messprogramm_FAI`), 'HG_TEIL-0001_A_Halter', 'Programmordner, nicht Unterordner');
+    assert.equal(m.isForeignSource(`${m.importSource(p)}\\Messprogramm_FAI`, p), false);
+    assert.equal(m.isForeignSource(m.importSource(p), p), false);
+    assert.equal(m.isForeignSource(`${m.importSource(p)}_2`, p), true);
+    assert.equal(m.isForeignSource('von Hand', p), false);
   });
 
   console.log(`\n${passed} Tests bestanden`);
