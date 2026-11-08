@@ -5,6 +5,7 @@ import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
+import PrintPdfButton from '../components/common/PrintPdfButton';
 import OperationsAccordion from '../components/OperationsAccordion';
 import { useOperationsStore } from '../stores/operationsStore';
 import { countOperationGroups } from '../utils/operationGroups';
@@ -473,21 +474,27 @@ export default function PartDetailPage() {
                     </svg>
                     Hauptzeichnung
                   </h3>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
-                        .then((result) => { if (!result.success) toast.error(result.error); });
-                    }}
-                    className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                    title="Herunterladen"
-                  >
-                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </a>
+                  <div className="flex items-center gap-1">
+                    <PrintPdfButton
+                      apiPath={`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/view`}
+                      className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-600 dark:text-gray-300 disabled:opacity-50"
+                    />
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
+                          .then((result) => { if (!result.success) toast.error(result.error); });
+                      }}
+                      className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                      title="Herunterladen"
+                    >
+                      <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                  </div>
                 </div>
                 <PdfViewer 
                   fileUrl={`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`}
@@ -512,32 +519,37 @@ export default function PartDetailPage() {
                 <div className="space-y-2">
                   {/* Hauptzeichnung */}
                   {part.primary_drawing_file && (
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
-                          .then((result) => { if (!result.success) toast.error(result.error); });
-                      }}
-                      className="flex items-center gap-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <div className="flex items-center gap-1">
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
+                            .then((result) => { if (!result.success) toast.error(result.error); });
+                        }}
+                        className="flex-1 min-w-0 flex items-center gap-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            Hauptzeichnung
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {part.primary_drawing_file.original_filename}
+                          </p>
+                        </div>
+                        <svg className="w-4 h-4 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          Hauptzeichnung
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {part.primary_drawing_file.original_filename}
-                        </p>
-                      </div>
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </a>
+                      </a>
+                      {part.primary_drawing_file.original_filename?.toLowerCase().endsWith('.pdf') && (
+                        <PrintPdfButton apiPath={`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/view`} />
+                      )}
+                    </div>
                   )}
 
                   {/* CAD-Modell */}
