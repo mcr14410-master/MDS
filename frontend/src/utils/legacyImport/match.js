@@ -54,6 +54,14 @@ export function importSource(parsed) {
   return `${SOURCE_PREFIX}${parsed.customerFolder}\\${parsed.programFolder}`;
 }
 
+/**
+ * Herkunftsvermerk eines Messprogramms im Ordner: Programm direkt im Messprogramm-Ordner wie bisher,
+ * Programm in einem Unterordner mit dessen Pfad („…\\Messprogramm_Fertigung\\AG1“)
+ */
+export function unitSource(parsed, unitPath) {
+  return unitPath ? `${importSource(parsed)}\\${unitPath.split('/').join('\\')}` : importSource(parsed);
+}
+
 /** true = das vorhandene Messprogramm stammt aus einem anderen Altbestand-Ordner */
 export function isOtherSource(programSource, parsed) {
   return typeof programSource === 'string' && programSource.startsWith(SOURCE_PREFIX)
@@ -68,13 +76,16 @@ export function sourceFolder(programSource) {
 /** Schon übernommenes Messprogramm aus diesem Ordner (Herkunftsvermerk), bei mehreren das neueste; sonst null */
 export function findImportedProgram(programs, parsed) {
   const source = importSource(parsed);
-  return programs.filter(p => p.description === source).sort((a, b) => b.id - a.id)[0] || null;
+  return programs
+    .filter(p => typeof p.description === 'string' && (p.description === source || p.description.startsWith(`${source}\\`)))
+    .sort((a, b) => b.id - a.id)[0] || null;
 }
 
 /**
- * Status einer Zeile.
+ * Status einer Zeile (nach withSelection: `units` = ausgewählte Messprogramme).
  * importState: null (nicht geladen) oder
- *   { operationId, programId, programState, programSource, setupSheetId, setupSheetState, photoNames, documentNames }
+ *   { documentNames, units: { [unitPath]: { operationId, programId, programState, programSource,
+ *     setupSheetId, setupSheetState, photoNames } } }
  * release: true = „Direkt freigeben“ ist an – dann gehört die Freigabe zu den Schritten (Spec 6)
  * @returns {'error'|'new'|'choose_part'|'other_revision'|'part_exists'|'conflict'|'partial'|'imported'}
  */
@@ -83,22 +94,33 @@ export function rowStatus({ parsed, customer, candidates, importState, release =
   if (candidates.same.length > 1) return 'choose_part';
   if (candidates.same.length === 0) return candidates.otherRevisions.length > 0 ? 'other_revision' : 'new';
   if (!importState) return 'part_exists';
-  if (importState.programId && isOtherSource(importState.programSource, parsed)) return 'conflict';
 
-  const expected = expectedNames(parsed);
-  const photos = new Set(importState.photoNames);
-  const docs = new Set(importState.documentNames);
-  const steps = [
-    Boolean(importState.operationId),
-    Boolean(importState.programId),
-    Boolean(importState.setupSheetId),
-    expected.photos.every(n => photos.has(n)) && (expected.photos.length === 0 || Boolean(importState.setupSheetId)),
-    expected.documents.every(n => docs.has(n)),
-  ];
-  if (release) steps.push(importState.programState === 'released' && importState.setupSheetState === 'released');
-  // Fotos/Dokumente zählen erst als „schon da“, wenn auch etwas angelegt wurde
-  const anyCreated = steps.slice(0, 3).some(Boolean) || importState.photoNames.length > 0
-    || expected.documents.some(n => docs.has(n));
+  const unitStates = importState.units || {};
+  const stateOf = (u) => unitStates[u.path] || { photoNames: [] };
+  // Einzelnes Programm direkt im Messprogramm-Ordner: Programm aus einem anderen Ordner am Mess-Arbeitsgang
+  if (parsed.units.length === 1 && parsed.units[0].path === '') {
+    const st = stateOf(parsed.units[0]);
+    if (st.programId && isOtherSource(st.programSource, parsed)) return 'conflict';
+  }
+
+  const docs = new Set(importState.documentNames || []);
+  const expectedDocs = expectedNames(parsed).documents;
+  const steps = [expectedDocs.every(n => docs.has(n))];
+  let anyCreated = expectedDocs.some(n => docs.has(n));
+  parsed.units.forEach((u) => {
+    const st = stateOf(u);
+    const photos = new Set(st.photoNames || []);
+    const expectedPhotos = u.files.photos.map(baseName);
+    steps.push(
+      Boolean(st.operationId),
+      Boolean(st.programId),
+      Boolean(st.setupSheetId),
+      expectedPhotos.every(n => photos.has(n)) && (expectedPhotos.length === 0 || Boolean(st.setupSheetId)),
+    );
+    if (release) steps.push(st.programState === 'released' && st.setupSheetState === 'released');
+    // Fotos/Dokumente zählen erst als „schon da“, wenn auch etwas angelegt wurde
+    if (st.operationId || st.programId || st.setupSheetId || photos.size > 0) anyCreated = true;
+  });
   if (steps.every(Boolean)) return 'imported';
   return anyCreated ? 'partial' : 'part_exists';
 }

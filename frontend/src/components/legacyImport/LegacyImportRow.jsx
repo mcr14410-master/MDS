@@ -11,7 +11,7 @@ import { fieldSuggestions } from '../../utils/legacyImport/suggest.js';
 const inputClass = 'w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
 
 export default function LegacyImportRow({
-  program, source = program, state, customer, candidates, status, customers, onChange, children = null,
+  program, source = program, state, customer, candidates, status, customers, onChange, opDefaults, children = null,
 }) {
   const [open, setOpen] = useState(false);
   const relPath = (p) => p.slice(p.indexOf(`${program.key}/`) + program.key.length + 1);
@@ -35,7 +35,7 @@ export default function LegacyImportRow({
           <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${info.className}`}>{info.label}</span>
           <button type="button" onClick={() => setOpen(!open)} data-testid="legacy-file-summary"
             className="text-xs text-gray-500 dark:text-gray-400 hover:underline">
-            {fileSummary(program.files)}
+            {fileSummary(program)}
           </button>
         </div>
 
@@ -112,7 +112,7 @@ export default function LegacyImportRow({
 
       {open && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <FileSelection program={source} selection={state.selection || {}} relPath={relPath}
+          <FileSelection program={source} selection={state.selection || {}} relPath={relPath} opDefaults={opDefaults}
             onChange={(selection) => onChange({ selection })} />
           <div>
             <div className="font-medium text-gray-700 dark:text-gray-300">Nicht übernommen</div>

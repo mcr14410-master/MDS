@@ -12,7 +12,7 @@ import {
 } from '../utils/legacyImport/match.js';
 import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
-import { withSelection, selectionFromMds } from '../utils/legacyImport/selection.js';
+import { withSelection, selectionFromMds, importTargets } from '../utils/legacyImport/selection.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
@@ -184,7 +184,7 @@ export default function LegacyImportPage() {
     const importState = chosenPart && loaded && loaded.partId === chosenPart.id && loaded.machineId === machineId
       ? loaded.state : null;
     // Nur die ausgewählten Dateien zählen für Status und Übernehmen
-    const effective = withSelection(parsed, state.selection);
+    const effective = withSelection(parsed, state.selection, opDefaults);
     const status = rowStatus({
       parsed: effective,
       customer,
@@ -193,7 +193,7 @@ export default function LegacyImportPage() {
       release: release && canRelease,
     });
     return { program: effective, source: parsed, state, customer, candidates, partChoice, chosenPart, machineId, status };
-  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates, release, canRelease]);
+  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates, release, canRelease, opDefaults]);
 
   // Aktueller Stand für „Markierte übernehmen“ (läuft über mehrere Renders)
   const rowsRef = useRef(rows);
@@ -208,7 +208,7 @@ export default function LegacyImportPage() {
       const flag = `${row.program.key}|${row.chosenPart.id}|${row.machineId}`;
       if (loadingStates.current.has(flag)) return;
       loadingStates.current.add(flag);
-      loadImportState(api, row.chosenPart.id, row.machineId)
+      loadImportState(api, row.chosenPart.id, row.machineId, importTargets(row.source, row.state.selection, opDefaults))
         .then((state) => {
           setImportStates((prev) => ({
             ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, state },
@@ -222,7 +222,7 @@ export default function LegacyImportPage() {
         })
         .catch((error) => toast.error(error.message));
     });
-  }, [rows, importStates]);
+  }, [rows, importStates, opDefaults]);
 
   const updateOpDefaults = (patch) => {
     const next = { ...opDefaults, ...patch };
@@ -436,6 +436,7 @@ export default function LegacyImportPage() {
                 candidates={row.candidates}
                 status={row.status}
                 customers={ctx?.customers || []}
+                opDefaults={opDefaults}
                 onChange={(patch) => updateRow(row.program.key, patch)}
               >
                 <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -453,12 +454,12 @@ export default function LegacyImportPage() {
                 {results[row.program.key] && (
                   <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" data-testid="legacy-import-steps">
                     {results[row.program.key].steps.map((step) => (
-                      <li key={step.key} className={`flex items-center gap-1 ${
+                      <li key={`${step.key}|${step.unit || ''}`} className={`flex items-center gap-1 ${
                         step.status === 'error' ? 'text-red-700 dark:text-red-400'
                           : step.status === 'done' ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         {step.status === 'error' ? <XCircle className="h-3.5 w-3.5" />
                           : step.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5" /> : <MinusCircle className="h-3.5 w-3.5" />}
-                        {STEP_LABELS[step.key]}{step.message ? `: ${step.message}` : ''}
+                        {STEP_LABELS[step.key]}{step.unit ? ` (${step.unit})` : ''}{step.message ? `: ${step.message}` : ''}
                       </li>
                     ))}
                   </ul>
