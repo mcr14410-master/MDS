@@ -8,6 +8,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import API_BASE_URL from '../config/api';
+import { downloadFileViaApi } from '../utils/fileDownload';
+import DocumentPreview from './common/DocumentPreview';
+import DocumentThumbnail from './common/DocumentThumbnail';
+import { previewKind } from '../utils/documentPreview';
 
 const DOCUMENT_TYPES = [
   { value: 'instruction', label: 'Anleitung', icon: '📄' },
@@ -21,6 +25,7 @@ export default function OperationDocumentsTab({ operationId }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -111,27 +116,8 @@ export default function OperationDocumentsTab({ operationId }) {
   };
 
   const handleDownload = async (doc) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${API_BASE_URL}/api/operation-documents/${doc.id}/download`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (!response.ok) throw new Error('Fehler beim Download');
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.original_filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      toast.error(err.message);
-    }
+    const result = await downloadFileViaApi(`/api/operation-documents/${doc.id}/download`, doc.original_filename);
+    if (!result.success) toast.error(result.error);
   };
 
   const handleDelete = async (doc) => {
@@ -328,10 +314,18 @@ export default function OperationDocumentsTab({ operationId }) {
                 key={doc.id}
                 className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
               >
-                {/* Icon */}
-                <div className="text-2xl flex-shrink-0">
-                  {getFileIcon(doc.original_filename)}
-                </div>
+                {/* Icon bzw. Vorschaubild */}
+                <DocumentThumbnail
+                  apiPath={`/api/operation-documents/${doc.id}/view`}
+                  fileName={doc.original_filename}
+                  mimeType={doc.mime_type}
+                  onOpen={() => setPreviewDoc(doc)}
+                  fallback={(
+                    <div className="text-2xl flex-shrink-0">
+                      {getFileIcon(doc.original_filename)}
+                    </div>
+                  )}
+                />
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -355,6 +349,18 @@ export default function OperationDocumentsTab({ operationId }) {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1">
+                  {previewKind(doc.original_filename, doc.mime_type) && (
+                    <button
+                      onClick={() => setPreviewDoc(doc)}
+                      className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                      title="Ansehen"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDownload(doc)}
                     className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
@@ -380,6 +386,14 @@ export default function OperationDocumentsTab({ operationId }) {
             );
           })}
         </div>
+      )}
+      {previewDoc && (
+        <DocumentPreview
+          apiPath={`/api/operation-documents/${previewDoc.id}/view`}
+          fileName={previewDoc.original_filename}
+          mimeType={previewDoc.mime_type}
+          onClose={() => setPreviewDoc(null)}
+        />
       )}
     </div>
   );

@@ -289,6 +289,38 @@ exports.delete = async (req, res) => {
  * GET /api/operation-documents/:id/download
  * Dokument herunterladen
  */
+/**
+ * GET /api/operation-documents/:id/view
+ * Dokument im Browser anzeigen (inline, für Vorschau: Bild, PDF, 3D) – mit Path-Traversal-Schutz
+ */
+exports.view = async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT file_path, original_filename, mime_type FROM operation_documents WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dokument nicht gefunden' });
+    }
+    const doc = result.rows[0];
+
+    const absPath = path.resolve(doc.file_path);
+    if (!absPath.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
+      return res.status(403).json({ success: false, message: 'Ungültiger Pfad' });
+    }
+    if (!fsSync.existsSync(absPath)) {
+      return res.status(404).json({ success: false, message: 'Datei nicht gefunden' });
+    }
+
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`);
+    res.sendFile(absPath);
+  } catch (error) {
+    console.error('Error viewing operation document:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Anzeigen' });
+  }
+};
+
 exports.download = async (req, res) => {
   try {
     const { id } = req.params;

@@ -27,6 +27,9 @@ router.get('/:id', requirePermission('part.read'), controller.getById);
 // GET /api/operation-documents/:id/download - Download
 router.get('/:id/download', requirePermission('part.read'), controller.download);
 
+// GET /api/operation-documents/:id/view - Ansicht im Browser (Vorschau)
+router.get('/:id/view', requirePermission('part.read'), controller.view);
+
 // POST /api/operation-documents - Upload
 router.post('/', requirePermission('part.create'), upload.single('file'), controller.upload);
 

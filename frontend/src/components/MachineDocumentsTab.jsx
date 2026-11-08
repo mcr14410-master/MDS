@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
 import DocumentPreview from './common/DocumentPreview';
+import DocumentThumbnail from './common/DocumentThumbnail';
 import { previewKind } from '../utils/documentPreview';
 
 const DOCUMENT_TYPES = {
@@ -241,6 +242,13 @@ export default function MachineDocumentsTab({ machineId }) {
                             ★ Haupt
                           </span>
                         )}
+                        <DocumentThumbnail
+                          apiPath={`/api/machine-documents/${doc.id}/view`}
+                          fileName={doc.file_name}
+                          mimeType={doc.mime_type}
+                          onOpen={() => setPreviewDoc(doc)}
+                          fallback={null}
+                        />
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900 dark:text-white truncate">{doc.file_name}</p>
                           <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
