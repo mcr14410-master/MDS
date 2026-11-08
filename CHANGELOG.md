@@ -16,6 +16,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Added
+- Altbestand übernehmen: Übernehmen je Programm oder für markierte – Bauteil (Nummer erzeugt, Kunden-Teilenummer aus dem Ordner), Mess-Arbeitsgang, Messprogramm, Einrichteblatt mit Fotos, Bauteil-Dokumente. Jeder Schritt prüft, ob es das Ergebnis schon gibt (Wiederaufnahme nach Abbruch); optional direkt freigeben mit Grund „Erstimport Altbestand“ (nur mit `program.release`)
 - Messprogramme: Seite „Altbestand übernehmen“ liest einen Ordner vom Netzlaufwerk ein und zeigt je Programm, was wohin übernommen würde – Kunde, Kunden-Teilenummer, Revision und Bezeichnung aus dem Ordnernamen, Abgleich mit vorhandenen Bauteilen, Dateien je Ziel und was liegen bleibt (noch ohne Übernehmen). Ordner werden über ein Import-Profil mit Stichwörtern erkannt (`utils/legacyImport/`)
 - Einrichteblatt: mehrere Fotos auf einmal hochladen (Mehrfachauswahl oder Ablegen), nacheinander mit Fortschritt „Foto n von m“
 - Arbeitsgang-Dokumente: Vorschau wie bei Bauteil und Maschine (`DocumentPreview`), neuer Endpunkt `GET /api/operation-documents/:id/view` (inline, Pfad auf den Ordner der Arbeitsgang-Dokumente begrenzt)
@@ -23,6 +24,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Drucken für PDF-Dokumente: Knopf neben dem Download bei Hauptzeichnung und Hauptdokumenten (Bauteil-Details), Bauteil-Dokumenten und Arbeitsgang-Dokumenten. `printFileViaApi` lädt das PDF mit Token in ein unsichtbares iframe und öffnet den Druckdialog (Rückfall: neuer Tab), gemeinsame Komponente `PrintPdfButton`
 
 ### Changed
+- Messprogramm-Probelauf (`POST /api/programs/cmm?dry_run=true`) geht ohne Arbeitsgang
 - Arbeitsgang-Dokumente: Download über `downloadFileViaApi` wie im übrigen MDS
 
 ---

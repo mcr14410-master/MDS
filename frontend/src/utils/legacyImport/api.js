@@ -5,7 +5,6 @@
  * Jede Funktion gibt die Nutzdaten zurück und wirft bei Fehlern einen Error mit der Servermeldung.
  */
 import axios from '../axios';
-import { pickCmmOperation } from './match.js';
 
 function apiError(error, fallback) {
   const data = error.response?.data;
@@ -40,20 +39,50 @@ export const getSetupSheet = (id) =>
 export const listPartDocuments = (partId) =>
   get(`/api/parts/${partId}/documents`, d => d.documents, 'Bauteil-Dokumente konnten nicht geladen werden');
 
-/** Vorläufiger Stand je Bauteil: Mess-Arbeitsgang und Messprogramm (vollständig mit Übernehmen) */
-export async function loadProgramState(partId, cmmMachineId) {
-  const operation = pickCmmOperation(await listOperations(partId), cmmMachineId);
-  const programs = operation ? await listCmmPrograms(operation.id) : [];
-  return {
-    operationId: operation?.id ?? null,
-    programId: programs[0]?.id ?? null,
-    programState: programs[0]?.workflow_state ?? null,
-    setupSheetId: null,
-    setupSheetState: null,
-    photoNames: [],
-    documentNames: [],
-  };
+async function send(method, url, body, pick, fallback) {
+  try {
+    const response = await axios[method](url, body, body instanceof FormData
+      ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
+    return pick(response.data);
+  } catch (error) {
+    throw apiError(error, fallback);
+  }
 }
+
+// Messprogramm-Dateien in die drei Upload-Bereiche wie programsStore.uploadCmm
+function cmmForm(fields, { files = [], templateFiles = [], calibrationFiles = [] }) {
+  const form = new FormData();
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== '' && value !== null && value !== undefined) form.append(key, value);
+  });
+  files.forEach((file) => form.append('files', file, file.name));
+  templateFiles.forEach((file) => form.append('template_files', file, file.name));
+  calibrationFiles.forEach((file) => form.append('calibration_files', file, file.name));
+  return form;
+}
+
+export const dryRunCmm = (groups) =>
+  send('post', '/api/programs/cmm?dry_run=true', cmmForm({}, groups), d => d.data, 'Probelauf des Messprogramms fehlgeschlagen');
+export const createCmmProgram = ({ operation_id, program_name, comment, ...groups }) =>
+  send('post', '/api/programs/cmm', cmmForm({ operation_id, program_name, comment }, groups), d => d.data, 'Messprogramm konnte nicht angelegt werden');
+export const createPart = (body) => send('post', '/api/parts', body, d => d.part, 'Bauteil konnte nicht angelegt werden');
+export const createOperation = (body) => send('post', '/api/operations', body, d => d.data, 'Arbeitsgang konnte nicht angelegt werden');
+// Antwort: { success, data: Datensatz } (setupSheetsController.createSetupSheet)
+export const createSetupSheet = (body) => send('post', '/api/setup-sheets', body, d => d.data, 'Einrichteblatt konnte nicht angelegt werden');
+export function uploadSetupPhoto(sheetId, file) {
+  const form = new FormData();
+  form.append('photo', file, file.name);
+  return send('post', `/api/setup-sheets/${sheetId}/photos`, form, d => d.data, `Foto ${file.name} konnte nicht hochgeladen werden`);
+}
+export function uploadPartDocument(partId, file, { document_type, is_primary_cad }) {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  form.append('document_type', document_type);
+  form.append('is_primary_cad', is_primary_cad ? 'true' : 'false');
+  return send('post', `/api/parts/${partId}/documents`, form, d => d, `Dokument ${file.name} konnte nicht hochgeladen werden`);
+}
+export const workflowChange = ({ entityType, entityId, toStateId, changeReason }) =>
+  send('post', '/api/workflow/change', { entityType, entityId, toStateId, changeReason }, d => d, 'Statuswechsel fehlgeschlagen');
 
 export const legacyImportApi = {
   listCustomers,
@@ -66,4 +95,12 @@ export const legacyImportApi = {
   listSetupSheets,
   getSetupSheet,
   listPartDocuments,
+  dryRunCmm,
+  createCmmProgram,
+  createPart,
+  createOperation,
+  createSetupSheet,
+  uploadSetupPhoto,
+  uploadPartDocument,
+  workflowChange,
 };
