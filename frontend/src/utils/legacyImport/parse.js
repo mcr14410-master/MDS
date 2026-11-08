@@ -19,6 +19,7 @@ const REVISION_TOKEN = /^(?:rev\.?|idx|index)?([A-Za-z0-9-]{1,2})$/i;
 const INDEX_IN_FOLDER = /index\s*([A-Za-z0-9-]+)/i;
 
 const UNKNOWN_FOLDER = 'Unbekannter Ordner – nicht übernommen';
+const DOCUMENT_TYPE_REJECTED = 'Dateityp bei Bauteil-Dokumenten nicht erlaubt – nicht übernommen';
 
 function emptyFiles() {
   return { program: [], template: [], calibration: [], photos: [], drawingPdf: [], drawingOther: [], cad: [] };
@@ -102,9 +103,12 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
           if (profile.photoExtensions.includes(ext(fileName))) files.photos.push(item);
           else skip(item, 'Bildformat nicht unterstützt (nur JPG, PNG, WebP) – nicht übernommen');
         } else if (child.key === 'drawing') {
-          (ext(fileName) === 'pdf' ? files.drawingPdf : files.drawingOther).push(item);
+          if (ext(fileName) === 'pdf') files.drawingPdf.push(item);
+          else if (profile.drawingExtensions.includes(ext(fileName))) files.drawingOther.push(item);
+          else skip(item, DOCUMENT_TYPE_REJECTED);
         } else if (child.key === 'cad') {
-          files.cad.push(item);
+          if (profile.cadExtensions.includes(ext(fileName))) files.cad.push(item);
+          else skip(item, DOCUMENT_TYPE_REJECTED);
         } else {
           skip(item, UNKNOWN_FOLDER);
         }
@@ -157,6 +161,21 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
       errors,
     };
   }).sort((a, b) => a.key.localeCompare(b.key));
+
+  // Gleiches Ziel (Kunde, Teilenummer, Revision, Maschine) aus zwei Ordnern: nur der erste wird übernommen,
+  // sonst landen beide im selben Messprogramm und die zweite .prg fehlt
+  const firstByTarget = new Map();
+  for (const program of programs) {
+    if (!program.customerNumber || program.revision === null) continue;
+    const target = [program.customerNumber, program.customerPartNumber, program.revision, program.machineCode]
+      .map(v => String(v).trim().toLowerCase()).join('|');
+    const first = firstByTarget.get(target);
+    if (first) {
+      program.errors.push(`Gleiches Bauteil und gleiche Maschine wie Ordner „${first.programFolder}“ – nur einer wird übernommen, diesen von Hand anlegen`);
+    } else {
+      firstByTarget.set(target, program);
+    }
+  }
 
   const notices = programs.length === 0
     ? ['Kein Programmordner gefunden – erwartet wird ein Ordner mit einem Unterordner „…Messprogramm…“ (Kunden- oder Quellordner wählen)']

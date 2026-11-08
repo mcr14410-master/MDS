@@ -57,7 +57,7 @@ class FakeApi {
   async createOperation(body) { this.log('createOperation'); this.lastOp = body; const o = { id: this.id(), sequence: 10, ...body }; this.ops.push(o); return o; }
   async createCmmProgram(body) {
     this.log('createCmmProgram'); this.lastProgram = body;
-    const p = { id: this.id(), operation_id: body.operation_id, workflow_state: 'draft' }; this.programs.push(p);
+    const p = { id: this.id(), operation_id: body.operation_id, description: body.description, workflow_state: 'draft' }; this.programs.push(p);
     return { program: p };
   }
   async createSetupSheet(body) { this.log('createSetupSheet'); const s = { id: this.id(), operation_id: body.operation_id, workflow_state: 'draft', photos: [] }; this.sheets.push(s); return s; }
@@ -280,12 +280,32 @@ const methods = (api) => api.calls;
     api.docs.push({ part_id: 1, original_filename: 'X.stp', is_primary_cad: true });
     const s = await m.loadImportState(api, 1, CMM);
     assert.deepEqual(s, {
-      operationId: 2, programId: 3, programState: 'review', setupSheetId: 4, setupSheetState: 'draft',
+      operationId: 2, programId: 3, programState: 'review', programSource: null, setupSheetId: 4, setupSheetState: 'draft',
       photoNames: ['a.jpg'], documentNames: ['X.stp'], hasPrimaryCad: true,
     });
     const none = await m.loadImportState(api, 1, 77);
     assert.equal(none.operationId, null);
     assert.deepEqual(none.documentNames, ['X.stp']);
+  });
+
+  await test('Messprogramm bekommt die Herkunft als Beschreibung', async () => {
+    const api = new FakeApi();
+    await m.importProgram({ row: row(), settings, api, release: false });
+    assert.equal(api.lastProgram.description, 'Altbestand: KD00000 FIRMA\\HG_TEIL-0001_A_Halter Links');
+    const s = await m.loadImportState(api, api.parts[0].id, CMM);
+    assert.equal(s.programSource, api.lastProgram.description);
+  });
+
+  await test('Messprogramm aus einem anderen Ordner: nichts anlegen, Fehler', async () => {
+    const api = new FakeApi();
+    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10 });
+    api.programs.push({ id: 3, operation_id: 2, workflow_state: 'draft', description: 'Altbestand: KD00000 FIRMA\\HG_TEIL-0001_A_Seite 2' });
+    const r = await m.importProgram({ row: row({ partChoice: 1 }), settings, api, release: true });
+    assert.equal(r.ok, false);
+    assert.deepEqual(api.calls, []);
+    const err = r.steps.find(s => s.status === 'error');
+    assert.equal(err.key, 'messprogramm');
+    assert.match(err.message, /„HG_TEIL-0001_A_Seite 2“.*von Hand/);
   });
 
   console.log(`\n${passed} Tests bestanden`);

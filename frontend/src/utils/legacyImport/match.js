@@ -47,17 +47,37 @@ export function expectedNames(parsed) {
   };
 }
 
+const SOURCE_PREFIX = 'Altbestand: ';
+
+/** Herkunftsvermerk am Messprogramm (Beschreibung) – erkennt einen zweiten Ordner fürs selbe Ziel */
+export function importSource(parsed) {
+  return `${SOURCE_PREFIX}${parsed.customerFolder}\\${parsed.programFolder}`;
+}
+
+/** true = das vorhandene Messprogramm stammt aus einem anderen Altbestand-Ordner */
+export function isOtherSource(programSource, parsed) {
+  return typeof programSource === 'string' && programSource.startsWith(SOURCE_PREFIX)
+    && programSource !== importSource(parsed);
+}
+
+/** Ordnername aus dem Herkunftsvermerk */
+export function sourceFolder(programSource) {
+  return programSource.slice(SOURCE_PREFIX.length).split('\\').pop();
+}
+
 /**
  * Status einer Zeile.
  * importState: null (nicht geladen) oder
- *   { operationId, programId, programState, setupSheetId, setupSheetState, photoNames, documentNames }
- * @returns {'error'|'new'|'choose_part'|'other_revision'|'part_exists'|'partial'|'imported'}
+ *   { operationId, programId, programState, programSource, setupSheetId, setupSheetState, photoNames, documentNames }
+ * release: true = „Direkt freigeben“ ist an – dann gehört die Freigabe zu den Schritten (Spec 6)
+ * @returns {'error'|'new'|'choose_part'|'other_revision'|'part_exists'|'conflict'|'partial'|'imported'}
  */
-export function rowStatus({ parsed, customer, candidates, importState }) {
+export function rowStatus({ parsed, customer, candidates, importState, release = false }) {
   if (parsed.errors.length > 0 || !customer) return 'error';
   if (candidates.same.length > 1) return 'choose_part';
   if (candidates.same.length === 0) return candidates.otherRevisions.length > 0 ? 'other_revision' : 'new';
   if (!importState) return 'part_exists';
+  if (importState.programId && isOtherSource(importState.programSource, parsed)) return 'conflict';
 
   const expected = expectedNames(parsed);
   const photos = new Set(importState.photoNames);
@@ -69,6 +89,7 @@ export function rowStatus({ parsed, customer, candidates, importState }) {
     expected.photos.every(n => photos.has(n)) && (expected.photos.length === 0 || Boolean(importState.setupSheetId)),
     expected.documents.every(n => docs.has(n)),
   ];
+  if (release) steps.push(importState.programState === 'released' && importState.setupSheetState === 'released');
   // Fotos/Dokumente zählen erst als „schon da“, wenn auch etwas angelegt wurde
   const anyCreated = steps.slice(0, 3).some(Boolean) || importState.photoNames.length > 0
     || expected.documents.some(n => docs.has(n));

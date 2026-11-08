@@ -14,6 +14,7 @@ import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
+import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
 
 const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.upload'];
 const NO_CANDIDATES = { same: [], otherRevisions: [] };
@@ -95,6 +96,8 @@ export default function LegacyImportPage() {
       const result = parseLegacyTree(items);
       const initial = {};
       result.programs.forEach((p) => {
+        // Schon bekannte Zeile: Eingaben (Revision, Bauteil-Wahl …) behalten
+        if (rowState[p.key]) { initial[p.key] = rowState[p.key]; return; }
         initial[p.key] = {
           customerId: matchCustomer(p.customerNumber, context.customers)?.id ?? null,
           customerPartNumber: p.customerPartNumber,
@@ -165,9 +168,14 @@ export default function LegacyImportPage() {
       customer,
       candidates: chosenPart ? { same: [chosenPart], otherRevisions: [] } : candidates,
       importState,
+      release: release && canRelease,
     });
     return { program: parsed, state, customer, candidates, partChoice, chosenPart, machineId, status };
-  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates]);
+  }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates, release, canRelease]);
+
+  // Aktueller Stand für „Markierte übernehmen“ (läuft über mehrere Renders)
+  const rowsRef = useRef(rows);
+  useEffect(() => { rowsRef.current = rows; }, [rows]);
 
   // Stand je gewähltem Bauteil nachladen (Mess-Arbeitsgang, Messprogramm)
   useEffect(() => {
@@ -193,7 +201,7 @@ export default function LegacyImportPage() {
   };
 
   const canImport = (row) => missingPermissions.length === 0 && row.machineId
-    && row.status !== 'error' && row.status !== 'imported'
+    && row.status !== 'error' && row.status !== 'conflict' && row.status !== 'imported'
     && (row.partChoice === 'new' || row.partChoice === 'skip' || typeof row.partChoice === 'number');
 
   const runOne = async (row) => {
@@ -218,9 +226,10 @@ export default function LegacyImportPage() {
       release: release && canRelease,
     });
     setResults((prev) => ({ ...prev, [row.program.key]: result }));
+    // Bauteile immer neu laden – auch wenn der Server ein Bauteil angelegt hat, die Antwort aber fehlte
+    await ensureParts(row.state.customerId, true);
     if (result.partId) {
-      // Neues Bauteil in die Kandidaten holen, Zeile darauf festlegen und Stand neu laden
-      await ensureParts(row.state.customerId, true);
+      // Zeile auf das (neue) Bauteil festlegen und Stand neu laden
       setRowState((prev) => ({ ...prev, [row.program.key]: { ...prev[row.program.key], partChoice: result.partId } }));
       setImportStates((prev) => {
         const next = { ...prev };
@@ -236,7 +245,11 @@ export default function LegacyImportPage() {
   const runSelected = async () => {
     let failed = 0;
     let done = 0;
-    for (const row of rows.filter((r) => selected.has(r.program.key) && canImport(r))) {
+    for (const key of [...selected]) {
+      // Zeile jedes Mal frisch aus dem aktuellen Stand – frühere Läufe können Bauteile angelegt haben
+      await new Promise((resolve) => { setTimeout(resolve, 50); });
+      const row = rowsRef.current.find((r) => r.program.key === key);
+      if (!row || !canImport(row)) continue;
       if (await runOne(row)) done++; else failed++;
     }
     setSelected(new Set());
@@ -250,6 +263,9 @@ export default function LegacyImportPage() {
     return next;
   });
   const importable = rows.filter(canImport);
+  const archiveEntries = rows
+    .filter((r) => r.status === 'imported' && r.program.customerFolder)
+    .map((r) => ({ customerFolder: r.program.customerFolder, programFolder: r.program.programFolder }));
 
   const counts = rows.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] || 0) + 1 }), {});
   const machineCodes = Object.keys(machineMap).filter((code) => programs.some((p) => p.machineCode === code));
@@ -419,6 +435,8 @@ export default function LegacyImportPage() {
               </LegacyImportRow>
             ))}
           </div>
+
+          <ArchiveSettings entries={archiveEntries} />
         </>
       )}
     </div>

@@ -7,7 +7,7 @@
  *
  * Reines Modul ohne React/axios (wird auch von Node-Tests geladen).
  */
-import { pickCmmOperation } from './match.js';
+import { pickCmmOperation, importSource, isOtherSource, sourceFolder } from './match.js';
 
 export const RELEASE_REASON = 'Erstimport Altbestand';
 
@@ -35,7 +35,7 @@ export function releasePath(stateName) {
 }
 
 const emptyState = () => ({
-  operationId: null, programId: null, programState: null, setupSheetId: null, setupSheetState: null,
+  operationId: null, programId: null, programState: null, programSource: null, setupSheetId: null, setupSheetState: null,
   photoNames: [], documentNames: [], hasPrimaryCad: false,
 });
 
@@ -54,6 +54,7 @@ export async function loadImportState(api, partId, cmmMachineId) {
   if (program) {
     state.programId = program.id;
     state.programState = program.workflow_state;
+    state.programSource = program.description ?? null;
   }
   const [sheet] = await api.listSetupSheets(operation.id);
   if (sheet) {
@@ -112,6 +113,11 @@ export async function importProgram({ row, settings, api, release }) {
 
   try {
     if (partId) state = await loadImportState(api, partId, settings.cmmMachineId);
+    if (state.programId && isOtherSource(state.programSource, parsed)) {
+      add('messprogramm', 'error',
+        `Am Mess-Arbeitsgang liegt schon das Messprogramm aus Ordner „${sourceFolder(state.programSource)}“ – diesen Ordner von Hand anlegen`);
+      return { ok: false, steps, partId, importState: state };
+    }
 
     current = 'probelauf';
     if (!state.programId) {
@@ -154,6 +160,7 @@ export async function importProgram({ row, settings, api, release }) {
         operation_id: state.operationId,
         program_name: row.name,
         comment: importComment(parsed),
+        description: importSource(parsed),
         ...programFiles,
       });
       state.programId = created.program.id;

@@ -105,5 +105,37 @@ const fullState = {
     assert.equal(m.rowStatus({ ...base, importState: nothing }), 'part_exists');
   });
 
+  test('Status mit Freigabe: erst „übernommen“, wenn Programm und Blatt freigegeben sind', () => {
+    const base = { parsed: parsedProgram(), customer: { id: 1 }, candidates: { same: [{ id: 1 }], otherRevisions: [] } };
+    const draft = { ...fullState, programState: 'draft', setupSheetState: 'draft' };
+    assert.equal(m.rowStatus({ ...base, importState: draft, release: true }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: { ...fullState, setupSheetState: 'draft' }, release: true }), 'partial');
+    assert.equal(m.rowStatus({ ...base, importState: fullState, release: true }), 'imported');
+    assert.equal(m.rowStatus({ ...base, importState: draft, release: false }), 'imported');
+    assert.equal(m.rowStatus({ ...base, importState: draft }), 'imported');
+  });
+
+  test('Herkunft: Vermerk am Messprogramm und Vergleich mit dem Ordner', () => {
+    const p = parsedProgram();
+    assert.equal(m.importSource(p), `Altbestand: ${p.customerFolder}\\${p.programFolder}`);
+    assert.equal(m.isOtherSource(null, p), false);
+    assert.equal(m.isOtherSource('von Hand angelegt', p), false);
+    assert.equal(m.isOtherSource(m.importSource(p), p), false);
+    assert.equal(m.isOtherSource(m.importSource({ ...p, programFolder: 'HG_ANDERS' }), p), true);
+  });
+
+  test('Status: Messprogramm aus einem anderen Ordner schon übernommen', () => {
+    const p = parsedProgram();
+    const cand = { same: [{ id: 1 }], otherRevisions: [] };
+    const st = (programSource) => ({
+      operationId: 2, programId: 3, programState: 'draft', programSource, setupSheetId: null, setupSheetState: null,
+      photoNames: [], documentNames: [],
+    });
+    const other = m.importSource({ ...p, programFolder: 'HG_ANDERS' });
+    assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(other) }), 'conflict');
+    assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(m.importSource(p)) }), 'partial');
+    assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(null) }), 'partial');
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();
