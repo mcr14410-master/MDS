@@ -42,7 +42,14 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.23.0)
+
+- Keine Migration. Altdaten mit falschen Umlauten wurden schon am 08.11.2026 von Hand korrigiert (1 Einrichteblatt-Foto)
+- Messprogramme: Knopf „Altbestand übernehmen“ sichtbar (braucht `part.create`, `setup_sheet.update`, `program.upload`; „Direkt freigeben“ zusätzlich `program.release`), Seite öffnet sich
+- Einrichteblatt: zwei Fotos auf einmal hochladen, eins mit Umlaut im Namen – Name wird richtig angezeigt (danach löschen)
+- Bauteil-Dokument (PDF): „Drucken“ öffnet den Druckdialog; Arbeitsgang-Dokument: „Ansehen“
+- „Was ist neu“ zeigt 2.23.0
+- Danach: Probelauf Altbestand mit wenigen echten Programmordnern, Archiv-Skript zuerst mit `-Probe`
 
 ---
 

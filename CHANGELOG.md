@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.23.0] - 2026-11-08 - Altbestand-Import, mehrere Fotos auf einmal
+
+### Für Anwender
+- Messprogramme: Neue Seite „Altbestand übernehmen“. Sie liest einen Ordner mit alten Messprogrammen ein, zeigt je Programm, was wohin übernommen wird, und legt Bauteil, Mess-Arbeitsgang, Messprogramm, Einrichteblatt mit Fotos und Dokumente auf Knopfdruck an, auf Wunsch gleich freigegeben. Danach erzeugt sie ein Skript, das die übernommenen Ordner ins Archiv verschiebt.
+- Einrichteblatt: Mehrere Fotos lassen sich auf einmal hochladen, per Mehrfachauswahl oder Ablegen.
+- PDF-Dokumente lassen sich direkt drucken. Arbeitsgang-Dokumente haben jetzt dieselbe Vorschau wie Bauteile und Maschinen, Bilder zeigen ein Vorschaubild.
+- Dateinamen mit Umlauten werden beim Hochladen richtig gespeichert (vorher wurde aus „Rückseite“ „RÃ¼ckseite“).
+
 ### Added
 - Altbestand übernehmen: Quell- und Archivordner einstellen (im Browser gespeichert) und PowerShell-Skript `altbestand-archiv.ps1` erzeugen, das vollständig übernommene Programmordner ins Archiv verschiebt – überschreibt nie, Testmodus `-Probe`, Protokoll neben dem Skript; bricht ab, ohne etwas zu verschieben, wenn die Kopfzeile beschädigt ist (sonst käme `-Probe` nicht an)
 - Altbestand übernehmen: Übernehmen je Programm oder für markierte – Bauteil (Nummer erzeugt, Kunden-Teilenummer aus dem Ordner), Mess-Arbeitsgang, Messprogramm, Einrichteblatt mit Fotos, Bauteil-Dokumente. Jeder Schritt prüft, ob es das Ergebnis schon gibt (Wiederaufnahme nach Abbruch); optional direkt freigeben mit Grund „Erstimport Altbestand“ (nur mit `program.release`). Zwei Programmordner für dasselbe Bauteil an derselben Messmaschine werden nicht zusammengelegt: Der zweite ist als Fehler markiert, ein später eingelesener Ordner erkennt das schon übernommene Messprogramm am Herkunftsvermerk (Beschreibung) und wird gesperrt
