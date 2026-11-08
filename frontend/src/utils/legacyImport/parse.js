@@ -162,6 +162,21 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
     };
   }).sort((a, b) => a.key.localeCompare(b.key));
 
+  // Gleiches Ziel (Kunde, Teilenummer, Revision, Maschine) aus zwei Ordnern: nur der erste wird übernommen,
+  // sonst landen beide im selben Messprogramm und die zweite .prg fehlt
+  const firstByTarget = new Map();
+  for (const program of programs) {
+    if (!program.customerNumber || program.revision === null) continue;
+    const target = [program.customerNumber, program.customerPartNumber, program.revision, program.machineCode]
+      .map(v => String(v).trim().toLowerCase()).join('|');
+    const first = firstByTarget.get(target);
+    if (first) {
+      program.errors.push(`Gleiches Bauteil und gleiche Maschine wie Ordner „${first.programFolder}“ – nur einer wird übernommen, diesen von Hand anlegen`);
+    } else {
+      firstByTarget.set(target, program);
+    }
+  }
+
   const notices = programs.length === 0
     ? ['Kein Programmordner gefunden – erwartet wird ein Ordner mit einem Unterordner „…Messprogramm…“ (Kunden- oder Quellordner wählen)']
     : [];

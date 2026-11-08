@@ -201,7 +201,7 @@ export default function LegacyImportPage() {
   };
 
   const canImport = (row) => missingPermissions.length === 0 && row.machineId
-    && row.status !== 'error' && row.status !== 'imported'
+    && row.status !== 'error' && row.status !== 'conflict' && row.status !== 'imported'
     && (row.partChoice === 'new' || row.partChoice === 'skip' || typeof row.partChoice === 'number');
 
   const runOne = async (row) => {

@@ -63,8 +63,8 @@ function cmmForm(fields, { files = [], templateFiles = [], calibrationFiles = []
 
 export const dryRunCmm = (groups) =>
   send('post', '/api/programs/cmm?dry_run=true', cmmForm({}, groups), d => d.data, 'Probelauf des Messprogramms fehlgeschlagen');
-export const createCmmProgram = ({ operation_id, program_name, comment, ...groups }) =>
-  send('post', '/api/programs/cmm', cmmForm({ operation_id, program_name, comment }, groups), d => d.data, 'Messprogramm konnte nicht angelegt werden');
+export const createCmmProgram = ({ operation_id, program_name, comment, description, ...groups }) =>
+  send('post', '/api/programs/cmm', cmmForm({ operation_id, program_name, comment, description }, groups), d => d.data, 'Messprogramm konnte nicht angelegt werden');
 export const createPart = (body) => send('post', '/api/parts', body, d => d.part, 'Bauteil konnte nicht angelegt werden');
 export const createOperation = (body) => send('post', '/api/operations', body, d => d.data, 'Arbeitsgang konnte nicht angelegt werden');
 // Antwort: { success, data: Datensatz } (setupSheetsController.createSetupSheet)

@@ -229,5 +229,24 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     assert.match(programs[0].skipped[0].reason, /Alte Daten/);
   });
 
+  test('Zwei Ordner für dasselbe Bauteil an derselben Maschine: der zweite ist ein Fehler', () => {
+    const items = [
+      ...minimal('HG_TEIL-0014_A_Seite 1', '01_Messprogramm HG_Index A'),
+      ...minimal('HG_TEIL-0014_A_Seite 2', '01_Messprogramm HG_Index A'),
+      ...minimal('HG_TEIL-0014_B_Seite 1', '01_Messprogramm HG_Index B'),
+      ...minimal('XY_TEIL-0014_A_Seite 1', '01_Messprogramm XY_Index A'),
+      ...minimal('HG_TEIL-0014_A_Seite 1', '01_Messprogramm HG_Index A', 'KD00001 FIRMA'),
+    ];
+    const { programs } = parseLegacyTree(items);
+    const byKey = Object.fromEntries(programs.map(p => [p.key, p]));
+    assert.deepEqual(byKey['KD00000 FIRMA/HG_TEIL-0014_A_Seite 1'].errors, []);
+    const second = byKey['KD00000 FIRMA/HG_TEIL-0014_A_Seite 2'].errors;
+    assert.equal(second.length, 1, second.join('|'));
+    assert.match(second[0], /Gleiches Bauteil.*„HG_TEIL-0014_A_Seite 1“/);
+    assert.deepEqual(byKey['KD00000 FIRMA/HG_TEIL-0014_B_Seite 1'].errors, []);
+    assert.deepEqual(byKey['KD00000 FIRMA/XY_TEIL-0014_A_Seite 1'].errors, []);
+    assert.deepEqual(byKey['KD00001 FIRMA/HG_TEIL-0014_A_Seite 1'].errors, []);
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();
