@@ -20,6 +20,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Changed
 - Altbestand übernehmen: PDF im Messprogramm-Ordner ist abgewählt, wenn es eine Zeichnung im Zeichnungs-Ordner gibt (war oft ein Messprotokoll und landete als Prüfzeichnung); Haupt-CAD-Vorschlag ist das Modell mit der Kunden-Teilenummer im Namen, sonst das alphabetisch erste (vorher das erste in der zufälligen Reihenfolge des Browsers)
+- Altbestand übernehmen, Archiv: Beispieltexte in Quell- und Archivordner beginnen mit „z. B.“ und sind kursiv und blasser (sahen wie eingetragene Werte aus); Hinweis, dass der Quellordner der Ordner mit den Kundenordnern ist
 
 ---
 
