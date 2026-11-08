@@ -31,6 +31,7 @@ const ROLE_LABELS = {
 // Rolle „other“ umfasst mehrere Begleitdateien – Bezeichnung nach Endung
 function roleLabel(role, name = '') {
   if (role === 'other' && /\.p2x$/i.test(name)) return 'Excel-Export-Einstellung (.p2x)';
+  if (role === 'other' && /\.jpe?g$/i.test(name)) return 'Vorschaubild (PC-DMIS, .jpg)';
   return ROLE_LABELS[role];
 }
 
@@ -93,6 +94,10 @@ function classifyByName(name) {
   if (lower.endsWith('.pdf')) return { kind: 'file', role: 'drawing', target: 'program_dir' };
   // Einstellung des alten Excel-Exports (Zielpfad, Kopfzeilen) – bei älteren Programmen noch in Gebrauch
   if (lower.endsWith('.p2x')) return { kind: 'file', role: 'other', target: 'program_dir' };
+  // Vorschaubild für PC-DMIS: gilt nur mit dem Namen der .prg (prüft planRevision), von Hand gelegt
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return { kind: 'file', role: 'other', target: 'program_dir', preview: true };
+  }
   if (lower.endsWith('.stp') || lower.endsWith('.step')) return { kind: 'cad_import' };
   return { kind: 'unknown' };
 }
@@ -241,6 +246,18 @@ function planRevision({ uploaded: allUploaded, previous, remove = [], excelRepor
   // Ergebnis prüfen
   const mains = files.filter(f => f.role === 'main');
   if (mains.length === 0) errors.push('Messprogramm (.prg) fehlt');
+
+  // Hochgeladene Bilder zählen nur als PC-DMIS-Vorschaubild, wenn sie wie die .prg heißen
+  for (let i = files.length - 1; i >= 0; i--) {
+    const f = files[i];
+    if (!f.preview || f.source !== 'upload') continue;
+    if (mains.length === 1 && stem(f.name) === stem(mains[0].name)) continue;
+    files.splice(i, 1);
+    removed.push({
+      ...f,
+      reason: 'Bild heißt anders als die .prg – PC-DMIS nutzt es nicht als Vorschaubild. Fotos der Aufspannung gehören ins Einrichteblatt',
+    });
+  }
 
   const xlsx = files.find(f => f.role === 'report_xlsx');
   const layout = files.find(f => f.role === 'report_layout');

@@ -15,6 +15,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Bauteil- und Maschinen-Dokumente: Vorschau über die gemeinsame Komponente `DocumentPreview` – Bilder in der Lightbox (Bauteile zusätzlich mit Vorschaubild in der Liste), PDF im PDF-Viewer, 3D-Modelle (STEP, STL, IGES …) im StepViewer. Neuer Endpunkt `GET /api/parts/:partId/documents/:documentId/view` (inline, Pfad auf den Ordner der Bauteil-Dokumente begrenzt)
+- Messprogramme: PC-DMIS-Vorschaubild (`.jpg`/`.jpeg` mit dem Namen der `.prg`) wird als Begleitdatei versioniert und bereitgestellt; Bilder mit anderem Namen werden mit Hinweis aufs Einrichteblatt aussortiert
+- Bauteil: Anzahl der Arbeitsgänge auf dem Reiter (Varianten zählen einmal, wie im Kopf der Liste)
+
+### Changed
+- Arbeitsgang: Gleicher OP-Code an einem Bauteil ist erlaubt; das Formular zeigt nur einen Hinweis. Die Prüfung im Controller war ein Überbleibsel (Constraint seit Migration `1737000072000` entfernt)
+- Arbeitsgänge-Liste: Kopf zählt Varianten einmal
+- Karten von NC-Programmen, Messprogrammen und Einrichteblättern richten sich nach dem verfügbaren Platz (Mindestbreite) statt nach der Fensterbreite
+- Bauteilseite: Download von Hauptzeichnung und CAD-Datei über `downloadFileViaApi` wie im übrigen MDS
+
 ### Fixed
 - Bauteil: Die Revision wird nicht mehr mit „A“ vorbelegt und ist Pflichtfeld in Formular und Backend (ohne Index z. B. „-“). Vorher wurde ein leeres Feld still zu „A“, beim Ändern ließ sie sich nicht leeren
 

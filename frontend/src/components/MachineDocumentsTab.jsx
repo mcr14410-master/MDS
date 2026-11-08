@@ -4,6 +4,8 @@ import { useMachinesStore } from '../stores/machinesStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
+import DocumentPreview from './common/DocumentPreview';
+import { previewKind } from '../utils/documentPreview';
 
 const DOCUMENT_TYPES = {
   manual: 'Handbuch',
@@ -26,6 +28,7 @@ const DOCUMENT_TYPE_ICONS = {
 export default function MachineDocumentsTab({ machineId }) {
   const { documents, uploadDocument, deleteDocument, setPrimaryDocument, fetchMachineDocuments } = useMachinesStore();
   const { hasPermission } = useAuthStore();
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadData, setUploadData] = useState({ document_type: 'manual', description: '' });
@@ -258,6 +261,21 @@ export default function MachineDocumentsTab({ machineId }) {
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Ansehen */}
+                        {previewKind(doc.file_name, doc.mime_type) && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDoc(doc)}
+                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                            title="Ansehen"
+                          >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          </button>
+                        )}
+
                         {/* Download */}
                         <button
                           type="button"
@@ -305,6 +323,14 @@ export default function MachineDocumentsTab({ machineId }) {
             );
           })}
         </div>
+      )}
+      {previewDoc && (
+        <DocumentPreview
+          apiPath={`/api/machine-documents/${previewDoc.id}/view`}
+          fileName={previewDoc.file_name}
+          mimeType={previewDoc.mime_type}
+          onClose={() => setPreviewDoc(null)}
+        />
       )}
     </div>
   );

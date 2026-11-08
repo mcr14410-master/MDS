@@ -765,6 +765,8 @@ Ab Schritt 3 ist schon Nutzen da; der Agent kommt danach, ohne dass sich das Dat
 - [x] Gehören noch weitere Dateien zu einem Programm? Tasterdateien sind global, aber das
       **Kalibrierprogramm** je Bauteil gehört dazu (30.10.2026) → 4.2a
 - [x] Kalibrierprogramm umsetzen: Rolle `calibration`, eigener Upload-Bereich (30.10.2026) → 4.2a; Name offen (Programmnummern)
+- [x] PC-DMIS-Vorschaubild: `.jpg` mit dem Namen der `.prg` im Programmordner zeigt PC-DMIS als Vorschau → Begleitdatei (Rolle `other`), Bilder mit anderem Namen werden aussortiert (08.11.2026)
+- [ ] Vorschaubild: gehen auch andere Formate als `.jpg`? Hat PC-DMIS eine eigene Funktion dafür, und wo legt sie das Bild ab (Name, Ordner)? Falls PC-DMIS es selbst schreibt: Agent muss die Änderung als Begleitdatei melden
 - [ ] Ausgabepfade unabhängig von der Ordnerablage (fester Messdaten-Stamm, Pfad aus Überwachungsfeldern) (4.2a)
 - [ ] Überwachungsfelder aus dem MDS vorbelegen (Textdatei oder Automation) – nach Schritt 5 (4.2a)
 - [x] `.prg` wird von PC-DMIS regelmäßig gespeichert, vermutlich bei jedem Lauf (19.10.2026) → 4.4

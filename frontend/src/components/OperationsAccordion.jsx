@@ -333,7 +333,7 @@ export default function OperationsAccordion({ partId, focusOperationId = null, f
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Arbeitsgänge</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {sortedOperations.length} {sortedOperations.length === 1 ? 'Arbeitsgang' : 'Arbeitsgänge'}
+            {groupedOperations.length} {groupedOperations.length === 1 ? 'Arbeitsgang' : 'Arbeitsgänge'}
             {sortedOperations.length > 0 && (
               <span className="text-gray-400 dark:text-gray-500"> · {expandedIds.size} geöffnet</span>
             )}

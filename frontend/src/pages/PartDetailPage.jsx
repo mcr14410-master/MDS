@@ -4,7 +4,10 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { usePartsStore } from '../stores/partsStore';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../components/Toaster';
+import { downloadFileViaApi } from '../utils/fileDownload';
 import OperationsAccordion from '../components/OperationsAccordion';
+import { useOperationsStore } from '../stores/operationsStore';
+import { countOperationGroups } from '../utils/operationGroups';
 import StepViewer from '../components/common/StepViewer';
 import PdfViewer from '../components/common/PdfViewer';
 import PartDocuments from '../components/PartDocuments';
@@ -26,6 +29,7 @@ export default function PartDetailPage() {
   const focusTab = searchParams.get('tab') === 'cmm_programs' ? 'cmm_programs' : 'programs';
   const navigate = useNavigate();
   const { currentPart, loading, error, fetchPart, deletePart, updatePart } = usePartsStore();
+  const storeOperations = useOperationsStore((state) => state.operations);
   const { hasPermission } = useAuthStore();
   const [activeTab, setActiveTab] = useState(focusOperationId ? 'operations' : 'details'); // 'details', 'operations', 'documents'
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -134,6 +138,10 @@ export default function PartDetailPage() {
   }
 
   const part = currentPart;
+
+  // Anzahl auf dem Reiter: aktuell aus dem Akkordeon (Store), solange es dieses Bauteil zeigt, sonst vom Bauteil
+  const opsOfPart = storeOperations.filter((o) => String(o.part_id) === String(id));
+  const operationCount = countOperationGroups(opsOfPart.length > 0 ? opsOfPart : (part?.operations || []));
 
   return (
     <div className="space-y-6">
@@ -273,6 +281,11 @@ export default function PartDetailPage() {
             }`}
           >
             Arbeitsgänge
+            {operationCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+                {operationCount}
+              </span>
+            )}
           </button>
           
           {/* Historie Tab - rechts ausgerichtet */}
@@ -409,21 +422,8 @@ export default function PartDetailPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const token = localStorage.getItem('token');
-                        fetch(`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, {
-                          headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        .then(res => res.blob())
-                        .then(blob => {
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = part.primary_cad_file.original_filename;
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          a.remove();
-                        });
+                        downloadFileViaApi(`/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, part.primary_cad_file.original_filename)
+                          .then((result) => { if (!result.success) toast.error(result.error); });
                       }}
                       className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                       title="Herunterladen"
@@ -478,21 +478,8 @@ export default function PartDetailPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const token = localStorage.getItem('token');
-                      fetch(`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      })
-                      .then(res => res.blob())
-                      .then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = part.primary_drawing_file.original_filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        a.remove();
-                      });
+                      downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
+                        .then((result) => { if (!result.success) toast.error(result.error); });
                     }}
                     className="p-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                     title="Herunterladen"
@@ -529,21 +516,8 @@ export default function PartDetailPage() {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        const token = localStorage.getItem('token');
-                        fetch(`${API_BASE_URL}/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, {
-                          headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        .then(res => res.blob())
-                        .then(blob => {
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = part.primary_drawing_file.original_filename;
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          a.remove();
-                        });
+                        downloadFileViaApi(`/api/parts/${part.id}/documents/${part.primary_drawing_file.id}/download`, part.primary_drawing_file.original_filename)
+                          .then((result) => { if (!result.success) toast.error(result.error); });
                       }}
                       className="flex items-center gap-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
                     >
@@ -572,21 +546,8 @@ export default function PartDetailPage() {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        const token = localStorage.getItem('token');
-                        fetch(`${API_BASE_URL}/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, {
-                          headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        .then(res => res.blob())
-                        .then(blob => {
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = part.primary_cad_file.original_filename;
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          a.remove();
-                        });
+                        downloadFileViaApi(`/api/parts/${part.id}/cad-file/${encodeURIComponent(part.primary_cad_file.original_filename)}`, part.primary_cad_file.original_filename)
+                          .then((result) => { if (!result.success) toast.error(result.error); });
                       }}
                       className="flex items-center gap-3 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group"
                     >

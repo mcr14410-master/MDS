@@ -287,6 +287,42 @@ exports.downloadDocument = async (req, res) => {
 };
 
 /**
+ * GET /api/parts/:partId/documents/:documentId/view
+ * Dokument im Browser anzeigen (inline, für Vorschau: Bild, PDF, STEP) – mit Path-Traversal-Schutz
+ */
+exports.viewDocument = async (req, res) => {
+  try {
+    const { partId, documentId } = req.params;
+    const result = await pool.query(
+      'SELECT file_path, original_filename, mime_type FROM part_documents WHERE id = $1 AND part_id = $2',
+      [documentId, partId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Dokument nicht gefunden' });
+    }
+    const doc = result.rows[0];
+
+    const absPath = path.resolve(doc.file_path);
+    const uploadsRoot = path.resolve(UPLOAD_DIR);
+    if (!absPath.startsWith(uploadsRoot + path.sep)) {
+      return res.status(403).json({ success: false, error: 'Ungültiger Pfad' });
+    }
+    try {
+      await fs.access(absPath);
+    } catch {
+      return res.status(404).json({ success: false, error: 'Datei nicht gefunden' });
+    }
+
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`);
+    res.sendFile(absPath);
+  } catch (error) {
+    console.error('Error viewing document:', error);
+    res.status(500).json({ success: false, error: 'Fehler beim Anzeigen' });
+  }
+};
+
+/**
  * GET /api/parts/:partId/cad-file
  * Primäres CAD-Model für 3D-Viewer servieren
  */
