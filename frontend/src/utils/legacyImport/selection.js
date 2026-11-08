@@ -106,6 +106,24 @@ export function effectiveFiles(parsed, selection = {}) {
   return files;
 }
 
+/**
+ * Auswahl nach dem Stand im MDS (schon übernommener Ordner): Fotos und Dokumente, die dort fehlen, gelten
+ * als damals abgewählt; eine PDF, die beim Bauteil liegt, als Bauteil-Dokument. Nur Abweichungen von der Vorbelegung.
+ */
+export function selectionFromMds(parsed, importState) {
+  const photos = new Set(importState.photoNames || []);
+  const docs = new Set(importState.documentNames || []);
+  const choices = {};
+  fileEntries(parsed).forEach((entry) => {
+    let choice = entry.defaultChoice;
+    if (entry.group === 'photos') choice = photos.has(entry.name) ? 'photo' : 'skip';
+    else if (entry.group === 'cad' || entry.group === 'document') choice = docs.has(entry.name) ? 'part_document' : 'skip';
+    else if (entry.group === 'pdf' && docs.has(entry.name)) choice = 'part_document';
+    if (choice !== entry.defaultChoice) choices[entry.path] = choice;
+  });
+  return { choices };
+}
+
 /** Zeile mit den ausgewählten Dateien (für Status und Übernehmen) */
 export function withSelection(parsed, selection = {}) {
   return { ...parsed, files: effectiveFiles(parsed, selection) };

@@ -1,10 +1,12 @@
 // Altbestand-Import: eine Zeile je Programmordner – Vorschlag, Korrektur, Dateien je Ziel
 // program = Zeile mit den ausgewählten Dateien, source = alle Dateien aus dem Ordner (für die Auswahl)
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react';
 import { STATUS_INFO } from './statusInfo';
 import FileSelection from './FileSelection';
+import SuggestInput from './SuggestInput';
 import { fileSummary } from '../../utils/legacyImport/selection.js';
+import { fieldSuggestions } from '../../utils/legacyImport/suggest.js';
 
 const inputClass = 'w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
 
@@ -14,6 +16,7 @@ export default function LegacyImportRow({
   const [open, setOpen] = useState(false);
   const relPath = (p) => p.slice(p.indexOf(`${program.key}/`) + program.key.length + 1);
   const info = STATUS_INFO[status];
+  const suggestions = fieldSuggestions(source);
   // Auswahl, solange es nicht genau einen passenden Treffer gibt (mehrere oder nur andere Revisionen)
   const several = candidates.same.length > 1;
   const showPartChoice = several || (candidates.same.length === 0 && candidates.otherRevisions.length > 0);
@@ -47,20 +50,23 @@ export default function LegacyImportRow({
               ))}
             </select>
           </label>
-          <label className="text-xs text-gray-600 dark:text-gray-400">
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             Kunden-Teilenummer
-            <input value={state.customerPartNumber} className={inputClass}
-              onChange={(e) => onChange({ customerPartNumber: e.target.value, partChoice: undefined })} />
-          </label>
-          <label className="text-xs text-gray-600 dark:text-gray-400">
+            <SuggestInput value={state.customerPartNumber} label="Kunden-Teilenummer" inputClass={inputClass}
+              suggestions={suggestions.customerPartNumber}
+              onChange={(v) => onChange({ customerPartNumber: v, partChoice: undefined })} />
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             Revision
-            <input value={state.revision} className={inputClass}
-              onChange={(e) => onChange({ revision: e.target.value, partChoice: undefined })} />
-          </label>
-          <label className="text-xs text-gray-600 dark:text-gray-400">
+            <SuggestInput value={state.revision} label="Revision" inputClass={inputClass}
+              suggestions={suggestions.revision}
+              onChange={(v) => onChange({ revision: v, partChoice: undefined })} />
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             Bezeichnung
-            <input value={state.name} className={inputClass} onChange={(e) => onChange({ name: e.target.value })} />
-          </label>
+            <SuggestInput value={state.name} label="Bezeichnung" inputClass={inputClass}
+              suggestions={suggestions.name} onChange={(v) => onChange({ name: v })} />
+          </div>
         </div>
 
         {showPartChoice && (
@@ -81,6 +87,11 @@ export default function LegacyImportRow({
           </label>
         )}
 
+        {state.fromMds && (
+          <p className="flex items-center gap-1 text-sm text-green-700 dark:text-green-400" data-testid="legacy-from-mds">
+            <CheckCircle2 className="h-4 w-4 shrink-0" /> Schon übernommen – Werte und Dateiauswahl aus dem MDS
+          </p>
+        )}
         {!customer && program.customerNumber && (
           <p className="flex items-center gap-1 text-sm text-red-700 dark:text-red-400">
             <XCircle className="h-4 w-4 shrink-0" /> Kunde {program.customerNumber} nicht im MDS – Kunde wählen

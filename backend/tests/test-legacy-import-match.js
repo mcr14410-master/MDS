@@ -137,5 +137,19 @@ const fullState = {
     assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st(null) }), 'partial');
   });
 
+  test('Schon übernommen: Messprogramm mit gleicher Herkunft, neuestes zuerst', () => {
+    const p = parsedProgram();
+    const src = m.importSource(p);
+    const programs = [
+      { id: 5, description: src, part_id: 50, operation_id: 500 },
+      { id: 9, description: src, part_id: 90, operation_id: 900 },
+      { id: 7, description: m.importSource({ ...p, programFolder: 'HG_ANDERS' }), part_id: 70 },
+      { id: 8, description: null, part_id: 80 },
+    ];
+    assert.equal(m.findImportedProgram(programs, p).id, 9);
+    assert.equal(m.findImportedProgram(programs.slice(2), p), null);
+    assert.equal(m.findImportedProgram([], p), null);
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();

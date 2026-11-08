@@ -153,6 +153,7 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
       machineCode: head.machineCode,
       customerPartNumber: head.customerPartNumber,
       revision,
+      indexRevision,
       nameRevision: head.nameRevision,
       name: head.name,
       files,

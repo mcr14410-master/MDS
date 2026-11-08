@@ -8,11 +8,11 @@ import { toast } from '../components/Toaster';
 import { filesFromEntry } from '../utils/fileEntries';
 import { parseLegacyTree } from '../utils/legacyImport/parse.js';
 import {
-  matchCustomer, findPartCandidates, defaultCmmMachine, rowStatus,
+  matchCustomer, findPartCandidates, defaultCmmMachine, rowStatus, findImportedProgram,
 } from '../utils/legacyImport/match.js';
 import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
-import { withSelection } from '../utils/legacyImport/selection.js';
+import { withSelection, selectionFromMds } from '../utils/legacyImport/selection.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
@@ -55,7 +55,7 @@ export default function LegacyImportPage() {
   const [ctx, setCtx] = useState(null);                 // { customers, machines, operationTypes, workflowStates }
   const [partsByCustomer, setPartsByCustomer] = useState({});
   const [machineMap, setMachineMap] = useState({});     // Kürzel → Maschinen-ID
-  const [rowState, setRowState] = useState({});         // key → { customerId, customerPartNumber, revision, name, partChoice, selection }
+  const [rowState, setRowState] = useState({});         // key → { customerId, customerPartNumber, revision, name, partChoice, selection, fromMds }
   const [importStates, setImportStates] = useState({}); // key → { partId, machineId, state }
   const [reading, setReading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -95,10 +95,29 @@ export default function LegacyImportPage() {
     try {
       const context = await loadContext();
       const result = parseLegacyTree(items);
+      // Schon übernommene Ordner am Herkunftsvermerk erkennen: Werte und Bauteil aus dem MDS
+      const imported = await api.listAllCmmPrograms();
+      const fromMds = {};
+      await Promise.all(result.programs.filter((p) => !rowState[p.key]).map(async (p) => {
+        const known = findImportedProgram(imported, p);
+        if (!known?.part_id) return;
+        try {
+          const part = await api.getPart(known.part_id);
+          fromMds[p.key] = {
+            customerId: part.customer_id ?? null,
+            customerPartNumber: part.customer_part_number ?? '',
+            revision: part.revision ?? '',
+            name: part.part_name ?? p.name,
+            partChoice: part.id,
+            fromMds: true,
+          };
+        } catch { /* Bauteil nicht lesbar – dann wie ein neuer Ordner */ }
+      }));
       const initial = {};
       result.programs.forEach((p) => {
         // Schon bekannte Zeile: Eingaben (Revision, Bauteil-Wahl …) behalten
         if (rowState[p.key]) { initial[p.key] = rowState[p.key]; return; }
+        if (fromMds[p.key]) { initial[p.key] = fromMds[p.key]; return; }
         initial[p.key] = {
           customerId: matchCustomer(p.customerNumber, context.customers)?.id ?? null,
           customerPartNumber: p.customerPartNumber,
@@ -190,9 +209,17 @@ export default function LegacyImportPage() {
       if (loadingStates.current.has(flag)) return;
       loadingStates.current.add(flag);
       loadImportState(api, row.chosenPart.id, row.machineId)
-        .then((state) => setImportStates((prev) => ({
-          ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, state },
-        })))
+        .then((state) => {
+          setImportStates((prev) => ({
+            ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, state },
+          }));
+          // Schon übernommen: Dateiauswahl einmalig auf den Stand im MDS setzen (damals Abgewähltes bleibt abgewählt)
+          setRowState((prev) => {
+            const rs = prev[row.program.key];
+            if (!rs?.fromMds || rs.selection) return prev;
+            return { ...prev, [row.program.key]: { ...rs, selection: selectionFromMds(row.source, state) } };
+          });
+        })
         .catch((error) => toast.error(error.message));
     });
   }, [rows, importStates]);
