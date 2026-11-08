@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.24.0] - 2026-11-08 - Altbestand: Auswahl je Datei mit Vorschau
+
+### Für Anwender
+- Altbestand übernehmen: Vor dem Übernehmen lässt sich je Datei festlegen, was ins MDS kommt – Dateien abwählen, PDFs als Prüfzeichnung, Bauteil-Dokument oder gar nicht übernehmen und das Haupt-CAD wählen.
+- Jede Bild-, PDF- und 3D-Datei lässt sich vorher in der Vorschau ansehen, noch bevor etwas hochgeladen wird.
+- Eine kurze Übersicht pro Programm zeigt auch bei zugeklappter Zeile, was übernommen wird. Ein Messprotokoll im Messprogramm-Ordner wird nicht mehr automatisch zur Prüfzeichnung.
+
 ### Added
 - Altbestand übernehmen: Auswahl je Datei vor dem Übernehmen – Dateien abwählen, PDFs als Prüfzeichnung, Bauteil-Dokument oder gar nicht übernehmen, Haupt-CAD festlegen; Kurzfassung („1 Prüfzeichnung · 2 CAD · 3 Fotos“) auch bei zugeklappter Zeile; Vorschau für Bilder, PDFs und 3D-Modelle direkt aus dem eingelesenen Ordner, noch vor dem Hochladen (`utils/legacyImport/selection.js`, `FileSelection`, `LocalFilePreview`)
 
