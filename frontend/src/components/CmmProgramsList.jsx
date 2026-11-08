@@ -121,7 +121,7 @@ export default function CmmProgramsList({ operationId }) {
           {hasPermission('part.update') && uploadButton('Erstes Messprogramm hochladen')}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-4">
           {programs
             .filter((program) => statusFilter === 'all' || program.workflow_state === statusFilter)
             .map((program) => (

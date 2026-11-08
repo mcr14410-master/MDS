@@ -67,7 +67,7 @@ const parseFlag = (value) => {
  * gemeldet; unbekannte Dateien und ungültiges XML sind Fehler.
  */
 const UNKNOWN_REASON = {
-  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml, .p2x)',
+  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml, .p2x, Vorschaubild .jpg)',
   template: 'Excel-Vorlage besteht nur aus .xlsx und .layout.xml',
   calibration: 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen',
 };
@@ -132,6 +132,7 @@ async function classifyUploads(items) {
       name,
       role: info.role,
       target: info.target,
+      preview: info.preview || undefined,
       path: file.path,
       size: file.size,
       mime: file.mimetype,

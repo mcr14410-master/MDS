@@ -59,7 +59,7 @@ const TYPE_COLORS = {
 };
 
 export default function OperationForm({ partId, operation, onClose, onSuccess }) {
-  const { createOperation, updateOperation } = useOperationsStore();
+  const { createOperation, updateOperation, operations } = useOperationsStore();
   const { types, fetchTypes } = useOperationTypesStore();
   const { machines, fetchMachines } = useMachinesStore();
   const [loading, setLoading] = useState(false);
@@ -195,6 +195,15 @@ export default function OperationForm({ partId, operation, onClose, onSuccess })
   // Aktuell gewählter Typ
   const selectedType = types.find(t => t.id === formData.operation_type_id);
 
+
+  // Gleicher OP-Code ist erlaubt, aber man soll es merken (andere Varianten derselben Gruppe zählen nicht)
+  const opCodeKey = formData.op_number.trim().toLowerCase();
+  const duplicateOpCode = opCodeKey
+    ? operations.find((o) => String(o.part_id) === String(partId)
+        && o.id !== operation?.id
+        && !(operation?.variant_group_id && o.variant_group_id === operation.variant_group_id)
+        && (o.op_number || '').trim().toLowerCase() === opCodeKey)
+    : null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
@@ -290,6 +299,11 @@ export default function OperationForm({ partId, operation, onClose, onSuccess })
               />
               {errors.op_number && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.op_number}</p>
+              )}
+              {!errors.op_number && duplicateOpCode && (
+                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                  OP-Code gibt es an diesem Bauteil schon ({duplicateOpCode.op_name}) – Speichern geht trotzdem
+                </p>
               )}
             </div>
 

@@ -11,6 +11,9 @@ import { useState, useEffect, useRef } from 'react';
 import axios from '../utils/axios';
 import { toast } from './Toaster';
 import { downloadFileViaApi } from '../utils/fileDownload';
+import AuthImage from './common/AuthImage';
+import DocumentPreview from './common/DocumentPreview';
+import { previewKind } from '../utils/documentPreview';
 
 // Dokument-Typ Labels und Icons (Reihenfolge = Anzeige-Reihenfolge)
 // iconBg muss statisch sein, sonst purged Tailwind die Klasse
@@ -39,6 +42,7 @@ const detectType = (filename) => {
 };
 
 export default function PartDocuments({ partId, onDocumentChange }) {
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -277,10 +281,25 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                     className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Icon */}
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.iconBg}`}>
-                        <span className="text-lg">{config.icon}</span>
-                      </div>
+                      {/* Icon bzw. Vorschaubild */}
+                      {previewKind(doc.original_filename, doc.mime_type) === 'image' ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDoc(doc)}
+                          className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-700"
+                          title="Ansehen"
+                        >
+                          <AuthImage
+                            apiPath={`/api/parts/${partId}/documents/${doc.id}/view`}
+                            alt={doc.original_filename}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.iconBg}`}>
+                          <span className="text-lg">{config.icon}</span>
+                        </div>
+                      )}
 
                       {/* Info */}
                       <div className="min-w-0">
@@ -331,6 +350,20 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                         </button>
                       )}
 
+                      {/* Ansehen */}
+                      {previewKind(doc.original_filename, doc.mime_type) && (
+                        <button
+                          onClick={() => setPreviewDoc(doc)}
+                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          title="Ansehen"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                      )}
+
                       {/* Download */}
                       <button
                         onClick={() => handleDownload(doc.id, doc.original_filename)}
@@ -359,6 +392,14 @@ export default function PartDocuments({ partId, onDocumentChange }) {
             </div>
           );
         })
+      )}
+      {previewDoc && (
+        <DocumentPreview
+          apiPath={`/api/parts/${partId}/documents/${previewDoc.id}/view`}
+          fileName={previewDoc.original_filename}
+          mimeType={previewDoc.mime_type}
+          onClose={() => setPreviewDoc(null)}
+        />
       )}
     </div>
   );

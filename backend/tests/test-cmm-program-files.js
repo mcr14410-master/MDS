@@ -358,4 +358,29 @@ test('Neue Version: übernommene .p2x entfernen wie andere Begleitdateien', () =
   assert.equal(plan.removed[0].reason, 'entfernt');
 });
 
+test('PC-DMIS-Vorschaubild: .jpg mit Namen der .prg wird Begleitdatei', () => {
+  assert.deepEqual(classifyFile('TEIL-0001_OP30.jpg'), { kind: 'file', role: 'other', target: 'program_dir', preview: true });
+  assert.equal(classifyFile('TEIL-0001_OP30.JPEG').preview, true);
+  const plan = planRevision({ uploaded: [...GROUP, f('teil-0001_op30.JPG')], previous: null });
+  assert.deepEqual(plan.errors, []);
+  const bild = plan.files.find(x => x.name === 'teil-0001_op30.JPG');
+  assert.equal(bild.role, 'other');
+  assert.equal(roleLabel('other', 'teil-0001_op30.JPG'), 'Vorschaubild (PC-DMIS, .jpg)');
+});
+
+test('Bild mit anderem Namen wird aussortiert, Hinweis aufs Einrichteblatt', () => {
+  const plan = planRevision({ uploaded: [...GROUP, f('Aufspannung.jpg')], previous: null });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.some(x => x.name === 'Aufspannung.jpg'), false);
+  const raus = plan.removed.find(x => x.name === 'Aufspannung.jpg');
+  assert.match(raus.reason, /Einrichteblatt/);
+});
+
+test('Neue Version: nur Vorschaubild hochgeladen, Name passt zur .prg der Vorversion', () => {
+  const previous = GROUP.map(x => ({ ...x }));
+  const plan = planRevision({ uploaded: [f('TEIL-0001_OP30.jpg')], previous });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.find(x => x.name === 'TEIL-0001_OP30.jpg').status, 'new');
+});
+
 console.log(`\n${passed} Tests bestanden`);

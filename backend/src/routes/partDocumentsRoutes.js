@@ -81,6 +81,12 @@ router.post('/', upload.single('file'), partDocumentsController.uploadDocument);
 router.get('/:documentId/download', partDocumentsController.downloadDocument);
 
 /**
+ * GET /api/parts/:partId/documents/:documentId/view
+ * Dokument im Browser anzeigen (Vorschau)
+ */
+router.get('/:documentId/view', partDocumentsController.viewDocument);
+
+/**
  * PATCH /api/parts/:partId/documents/:documentId
  * Dokument-Metadaten aktualisieren
  */

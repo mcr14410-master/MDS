@@ -702,7 +702,7 @@ export default function SetupSheetsList({ operationId }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(20rem,100%),1fr))] gap-4">
           {setupSheets.map((sheet) => (
             <div key={sheet.id} onClick={() => handleView(sheet)} className="cursor-pointer">
               <SetupSheetCard

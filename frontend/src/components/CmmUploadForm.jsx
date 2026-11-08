@@ -293,7 +293,7 @@ export default function CmmUploadForm({ operationId, program, onClose, onSuccess
           {/* Messprogramm */}
           <DropArea
             onItems={(items) => addItems('program', items)}
-            hint=".prg, .cad, Prüfzeichnung (.pdf), .MiniRoutines.xml, .p2x (alter Excel-Export) – PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert"
+            hint=".prg, .cad, Prüfzeichnung (.pdf), .MiniRoutines.xml, .p2x (alter Excel-Export), Vorschaubild (.jpg mit Namen der .prg) – PC-DMIS-Sicherungen (.PRG~, .PRG^), andere Dateitypen und Unterordner (z. B. Messprotokolle) werden aussortiert"
           >
             {isRevision && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">

@@ -150,18 +150,8 @@ exports.createOperation = async (req, res) => {
       });
     }
 
-    // Check if op_number already exists for this part
-    const opCheck = await pool.query(
-      'SELECT id FROM operations WHERE part_id = $1 AND op_number = $2',
-      [part_id, op_number]
-    );
-    
-    if (opCheck.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: `OP-Nummer ${op_number} existiert bereits für dieses Bauteil`
-      });
-    }
+    // Gleicher OP-Code an einem Bauteil ist erlaubt (Constraint seit Migration 1737000072000 entfernt);
+    // das Formular zeigt nur einen Hinweis
 
     // If no sequence provided, get the next sequence number
     let finalSequence = sequence;
@@ -277,27 +267,7 @@ exports.updateOperation = async (req, res) => {
 
     const currentOp = existingOp.rows[0];
 
-    // If op_number is being changed, check for duplicates (außerhalb der Varianten-Gruppe)
-    if (op_number && op_number !== currentOp.op_number) {
-      let opCheckQuery = 'SELECT id FROM operations WHERE part_id = $1 AND op_number = $2 AND id != $3';
-      let opCheckParams = [currentOp.part_id, op_number, id];
-      
-      // Bei Varianten: Andere Varianten der gleichen Gruppe ignorieren
-      if (currentOp.variant_group_id) {
-        opCheckQuery += ' AND (variant_group_id IS NULL OR variant_group_id != $4)';
-        opCheckParams.push(currentOp.variant_group_id);
-      }
-      
-      const opCheck = await client.query(opCheckQuery, opCheckParams);
-      
-      if (opCheck.rows.length > 0) {
-        await client.query('ROLLBACK');
-        return res.status(409).json({
-          success: false,
-          message: `OP-Nummer ${op_number} existiert bereits für dieses Bauteil`
-        });
-      }
-    }
+    // Gleicher OP-Code ist erlaubt, siehe createOperation
 
     // Diese Operation aktualisieren
     const query = `

@@ -228,6 +228,11 @@ Wunsch Nutzer 08.11.2026
 - [ ] Eine Seite (oder Dashboard-Kachel), die zeigt, was im Freigabe-Ablauf wartet: NC- und Messprogramme sowie Einrichteblätter „In Prüfung“ und „Geprüft“, dazu Blätter „In Bearbeitung“ mit freigegebenem Stand, je mit Link direkt hin
 - Ideen: Filter nach Art und Status, Anzahl im Menü, später auch der Eingang aus dem Mess-PC (Messprogramme Schritt 5). Bezug: Benachrichtigungs-System
 
+### 📋 Einrichteblatt je Maschinentyp
+Wunsch Nutzer 08.11.2026
+- [ ] Felder passend zum Maschinentyp (Fräsen, Drehen, Messen …) statt eines CNC-Formulars für alle (Preset/WCS ergeben an der Messmaschine keinen Sinn, dort eher Ausrichtung, Taster)
+- Ideen: Felder je Maschinentyp über das vorhandene System für eigene Felder in den Stammdaten festlegen (betriebsneutral, nicht im Code); die Felder müssen mit in die Stände (`buildSnapshot`, Vergleich, Zurückgehen)
+
 ### 📋 Werkzeug-Icons
 `tool_categories.icon` existiert, eigene Icons fehlen.
 - [ ] SVG-Icon-Set für Werkzeugtypen (Fräser, Bohrer, Wendeschneidplatten …)
