@@ -162,7 +162,12 @@ export function effectiveUnits(parsed, selection = {}, opDefaults = {}) {
         if (choice === 'program') files.program.push(entry.item);
         else if (choice === 'drawing') files.drawingPdf.unshift(entry.item);
       } else if (choice.startsWith('photo:') && target(choiceUnit(choice)) === u.path) files.photos.push(entry.item);
-      else if (choice.startsWith('template:') && target(choiceUnit(choice)) === u.path) files.template.push(entry.item);
+      else if (choice.startsWith('template:')) {
+        // Vorlage aus einem Programmordner entfällt mit ihrem Programm; nur gemeinsame (z. B. „Vorlage“) wandert weiter
+        const to = choiceUnit(choice);
+        const resolved = chosen.some((c) => c.path === to) ? to : (entry.unit === null ? chosen[0].path : null);
+        if (resolved === u.path) files.template.push(entry.item);
+      }
     });
     return {
       path: u.path,
@@ -176,11 +181,10 @@ export function effectiveUnits(parsed, selection = {}, opDefaults = {}) {
 
 /** Alle Messprogramme mit Herkunft und geplantem Arbeitsgang – zum Laden des Stands im MDS */
 export function importTargets(parsed, selection = {}, opDefaults = {}) {
-  return parsed.units.map((u) => ({
-    path: u.path,
-    source: unitSource(parsed, u.path),
-    opName: operationFor(parsed, u, selection, opDefaults).op_name,
-  }));
+  return parsed.units.map((u) => {
+    const op = operationFor(parsed, u, selection, opDefaults);
+    return { path: u.path, source: unitSource(parsed, u.path), opName: op.op_name, opNumber: op.op_number };
+  });
 }
 
 /**
@@ -192,7 +196,9 @@ export function selectionFromMds(parsed, importState) {
   const unitStates = importState.units || {};
   const docs = new Set(importState.documentNames || []);
   const units = {};
-  if (parsed.units.some((u) => unitStates[u.path]?.programId)) {
+  // Nur wenn ein Unterordner-Programm übernommen ist, war die Übernahme mit dieser Version: dann gilt Fehlendes als
+  // abgewählt. Die alte Version konnte Unterordner nicht übernehmen – deren Programme bleiben ausgewählt.
+  if (parsed.units.some((u) => u.path !== '' && unitStates[u.path]?.programId)) {
     parsed.units.forEach((u) => { if (!unitStates[u.path]?.programId) units[u.path] = { skip: true }; });
   }
   const choices = {};
@@ -211,9 +217,24 @@ export function selectionFromMds(parsed, importState) {
 /** Zeile mit den ausgewählten Dateien und Messprogrammen (für Status und Übernehmen) */
 export function withSelection(parsed, selection = {}, opDefaults = {}) {
   const units = effectiveUnits(parsed, selection, opDefaults);
-  const errors = units.length === 0 && parsed.units.length > 0
-    ? [...parsed.errors, 'Kein Messprogramm ausgewählt'] : parsed.errors;
-  return { ...parsed, errors, files: effectiveFiles(parsed, selection), units, unitCount: parsed.units.length };
+  const errors = [...parsed.errors];
+  if (units.length === 0 && parsed.units.length > 0) errors.push('Kein Messprogramm ausgewählt');
+  parsed.units.filter((u) => unitSelected(u.path, selection)).forEach((u) => errors.push(...(u.errors || [])));
+  // Excel-Vorlage: ein Name darf im MDS nur an einem Messprogramm hängen, ein Programm hat höchstens eine
+  const baseOf = (item) => baseName(item).replace(/\.(xlsx|layout\.xml)$/i, '');
+  const owners = new Map();
+  units.forEach((u) => {
+    const bases = [...new Set(u.files.template.map(baseOf))];
+    if (bases.length > 1) errors.push(`Mehrere Excel-Vorlagen bei „${u.label}“ – nur eine zuordnen`);
+    bases.forEach((b) => owners.set(b.toLowerCase(), [...(owners.get(b.toLowerCase()) || []), { name: b, unit: u.label }]));
+  });
+  owners.forEach((list) => {
+    if (list.length > 1) errors.push(`Excel-Vorlage „${list[0].name}“ ist mehreren Messprogrammen zugeordnet (${list.map((x) => x.unit).join(', ')}) – nur einem zuordnen`);
+  });
+  return {
+    ...parsed, errors, files: effectiveFiles(parsed, selection), units,
+    unitCount: parsed.units.length, targets: importTargets(parsed, selection, opDefaults),
+  };
 }
 
 /** Kurzfassung für die zugeklappte Zeile, z. B. „3 Messprogramme · 1 Prüfzeichnung · 2 CAD · 3 Fotos“ */

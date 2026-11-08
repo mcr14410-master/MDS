@@ -26,12 +26,12 @@ export default function FileSelection({ program, selection, onChange, relPath, o
     return CHOICE_LABELS[c];
   };
 
-  // Excel-Vorlage: .xlsx und .layout.xml gleichen Namens gehören zusammen
-  const templateBase = (name) => name.toLowerCase().replace(/\.(xlsx|layout\.xml)$/, '');
+  // Excel-Vorlage: .xlsx und .layout.xml gleichen Namens im selben Ordner gehören zusammen
+  const templateBase = (filePath) => filePath.toLowerCase().replace(/\.(xlsx|layout\.xml)$/, '');
   const setChoice = (entry, choice) => {
     const choices = { ...(selection.choices || {}) };
     const targets = entry.group === 'template'
-      ? entries.filter((e) => e.group === 'template' && templateBase(e.name) === templateBase(entry.name))
+      ? entries.filter((e) => e.group === 'template' && templateBase(e.path) === templateBase(entry.path))
       : [entry];
     targets.forEach((t) => {
       if (choice === t.defaultChoice) delete choices[t.path];

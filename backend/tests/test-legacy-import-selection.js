@@ -22,7 +22,7 @@ function test(name, fn) {
 
 const base = 'KMG/KD00000 FIRMA/HG_TEIL-0001_A_Halter';
 const item = (rel) => ({ path: `${base}/${rel}`, file: { name: rel.split('/').pop() } });
-const unit = (unitPath, label, program, template = []) => ({ path: unitPath, label, files: { program, template } });
+const unit = (unitPath, label, program, template = [], errors = []) => ({ path: unitPath, label, errors, files: { program, template } });
 const parsed = (files = {}, units = null) => ({
   key: 'KD00000 FIRMA/HG_TEIL-0001_A_Halter',
   customerFolder: 'KD00000 FIRMA',
@@ -260,6 +260,45 @@ const names = (list) => list.map(i => i.path.split('/').pop());
     const us = m.effectiveUnits(p, sel);
     assert.deepEqual(names(us.find(u => u.label === 'Fertigung / AG1').files.photos), ['a.jpg']);
     assert.deepEqual(us.flatMap(u => names(u.files.photos)), ['a.jpg'], 'b.jpg nirgends → abgewählt');
+  });
+
+  test('Stand im MDS mit altem Import (nur Programm direkt im Ordner): Unterordner-Programme bleiben ausgewählt', () => {
+    const p = parsed({}, [
+      unit('', 'Messprogramm', [item('01/P.prg')]),
+      unit('Sub', 'Sub', [item('01/Sub/S.prg')]),
+    ]);
+    const sel = m.selectionFromMds(p, { documentNames: [], units: { '': { programId: 1, photoNames: [] }, Sub: { programId: null, photoNames: [] } } });
+    assert.deepEqual(sel.units, {}, 'alte Version konnte Sub nicht übernehmen – nicht als abgewählt werten');
+    const neu = m.selectionFromMds(multi(), { documentNames: [], units: { Messprogramm_FAI: { programId: 1, photoNames: [] } } });
+    assert.deepEqual(Object.keys(neu.units).sort(), ['Messprogramm_Fertigung/AG1', 'Messprogramm_Fertigung/AG2'], 'neue Version: Rest war abgewählt');
+  });
+
+  test('Excel-Vorlage: gleicher Name an zwei Programmen ist ein Fehler, eigene Vorlage eines abgewählten Programms entfällt', () => {
+    const p = parsed({}, [
+      unit('AG1', 'AG1', [item('01/AG1/a.prg')], [item('01/AG1/Protokoll.xlsx'), item('01/AG1/Protokoll.layout.xml')]),
+      unit('AG2', 'AG2', [item('01/AG2/b.prg')], [item('01/AG2/Protokoll.xlsx'), item('01/AG2/Protokoll.layout.xml')]),
+    ]);
+    assert.ok(m.withSelection(p, {}).errors.some(e => /Excel-Vorlage „Protokoll“ .*mehreren Messprogrammen/.test(e)), m.withSelection(p, {}).errors.join('|'));
+    const ag2Skip = { choices: { [`${base}/01/AG2/Protokoll.xlsx`]: 'skip', [`${base}/01/AG2/Protokoll.layout.xml`]: 'skip' } };
+    assert.deepEqual(m.withSelection(p, ag2Skip).errors, []);
+    const onlyAg2 = m.withSelection(p, { units: { AG1: { skip: true } } });
+    assert.deepEqual(names(onlyAg2.units[0].files.template), ['Protokoll.xlsx', 'Protokoll.layout.xml'], 'nur die eigene, nicht die von AG1');
+    assert.deepEqual(onlyAg2.errors, []);
+  });
+
+  test('Fehler eines Programms zählen nur, solange es ausgewählt ist', () => {
+    const p = parsed({}, [
+      unit('A', 'A', [item('01/A/a.prg')]),
+      unit('B', 'B', [item('01/B/b.prg'), item('01/B/c.prg')], [], ['Mehrere .prg in „B“']),
+    ]);
+    assert.ok(m.withSelection(p, {}).errors.includes('Mehrere .prg in „B“'));
+    assert.deepEqual(m.withSelection(p, { units: { B: { skip: true } } }).errors, []);
+  });
+
+  test('Ziele zum Laden des Stands gehören zur Zeile (alle Programme)', () => {
+    const w = m.withSelection(multi(), { units: { Messprogramm_FAI: { skip: true } } }, OP);
+    assert.deepEqual(w.targets.map(t => t.path), ['Messprogramm_FAI', 'Messprogramm_Fertigung/AG1', 'Messprogramm_Fertigung/AG2']);
+    assert.equal(w.targets[0].opNumber, 'KMG');
   });
 
   console.log(`\n${passed} Tests bestanden`);

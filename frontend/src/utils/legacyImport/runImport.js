@@ -7,7 +7,7 @@
  *
  * Reines Modul ohne React/axios (wird auch von Node-Tests geladen).
  */
-import { pickCmmOperation, isOtherSource, sourceFolder } from './match.js';
+import { pickCmmOperation, isOtherSource, isForeignSource, sourceFolder } from './match.js';
 
 export const RELEASE_REASON = 'Erstimport Altbestand';
 
@@ -43,12 +43,13 @@ const emptyUnitState = () => ({
 
 /**
  * Was es zu einem Bauteil an der KMG-Maschine schon gibt – je Messprogramm des Ordners.
- * targets: [{ path, source, opName }] (selection.js importTargets bzw. ausgewählte Programme)
+ * targets: [{ path, source, opName, opNumber }] – alle Messprogramme des Ordners (selection.js importTargets)
+ * parsed: Zeile – dann wird ein Programm eines anderen Altbestand-Ordners am Bauteil gemeldet (foreignSource)
  * Zuordnung eines Mess-Arbeitsgangs: 1. Messprogramm mit gleichem Herkunftsvermerk; 2. einzelnes Programm direkt
  * im Messprogramm-Ordner: erster Mess-Arbeitsgang (wie bisher); 3. abgebrochener Lauf: Arbeitsgang ohne
  * Messprogramm mit dem geplanten Namen.
  */
-export async function loadImportState(api, partId, cmmMachineId, targets) {
+export async function loadImportState(api, partId, cmmMachineId, targets, parsed = null) {
   const docs = await api.listPartDocuments(partId);
   const state = {
     documentNames: docs.map(d => d.original_filename),
@@ -61,6 +62,10 @@ export async function loadImportState(api, partId, cmmMachineId, targets) {
   if (ops.length === 0) return state;
   const programsOf = new Map();
   for (const op of ops) programsOf.set(op.id, await api.listCmmPrograms(op.id));
+  if (parsed) {
+    const foreign = [...programsOf.values()].flat().find(p => isForeignSource(p.description, parsed));
+    if (foreign) state.foreignSource = foreign.description;
+  }
 
   const used = new Set();
   const assign = async (target, op, program) => {
@@ -94,7 +99,8 @@ export async function loadImportState(api, partId, cmmMachineId, targets) {
   }
   for (const t of targets) {
     if (state.units[t.path].operationId) continue;
-    const op = ops.find(o => !used.has(o.id) && programsOf.get(o.id).length === 0 && o.op_name === t.opName);
+    const op = ops.find(o => !used.has(o.id) && programsOf.get(o.id).length === 0
+      && o.op_name === t.opName && (!t.opNumber || o.op_number === t.opNumber));
     if (op) await assign(t, op, null);
   }
   return state;
@@ -114,7 +120,7 @@ export async function importProgram({ row, settings, api, release }) {
   const add = (key, status, message, unit) => {
     const step = { key, status };
     if (message) step.message = message;
-    if (unit && several) step.unit = unit.label;
+    if (unit && several) { step.unit = unit.label; step.unitPath = unit.path; }
     steps.push(step);
   };
 
@@ -128,7 +134,9 @@ export async function importProgram({ row, settings, api, release }) {
   }
 
   const units = parsed.units;
-  const targets = units.map(u => ({ path: u.path, source: u.source, opName: u.operation.op_name }));
+  // Stand für alle Messprogramme des Ordners laden (auch abgewählte), damit keins den Arbeitsgang eines anderen nimmt
+  const targets = parsed.targets
+    || units.map(u => ({ path: u.path, source: u.source, opName: u.operation.op_name, opNumber: u.operation.op_number }));
   let partId = typeof partChoice === 'number' ? partChoice : null;
   let state = { documentNames: [], hasPrimaryCad: false, units: Object.fromEntries(units.map(u => [u.path, emptyUnitState()])) };
   let current = 'probelauf';
@@ -157,8 +165,14 @@ export async function importProgram({ row, settings, api, release }) {
   }
 
   try {
-    if (partId) state = await loadImportState(api, partId, settings.cmmMachineId, targets);
+    if (partId) state = await loadImportState(api, partId, settings.cmmMachineId, targets, parsed);
     const us = (u) => state.units[u.path];
+
+    if (state.foreignSource) {
+      add('messprogramm', 'error',
+        `Am Bauteil liegt schon ein Messprogramm aus Ordner „${sourceFolder(state.foreignSource)}“ – diesen Ordner von Hand anlegen`);
+      return fail();
+    }
 
     // Einzelnes Programm direkt im Ordner: Programm aus einem anderen Ordner am Mess-Arbeitsgang → von Hand
     if (units.length === 1 && units[0].path === '') {

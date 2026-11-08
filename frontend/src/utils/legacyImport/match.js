@@ -68,9 +68,17 @@ export function isOtherSource(programSource, parsed) {
     && programSource !== importSource(parsed);
 }
 
-/** Ordnername aus dem Herkunftsvermerk */
+/** true = Herkunftsvermerk eines anderen Altbestand-Ordners (nicht dieser Ordner, auch nicht eines seiner Unterordner) */
+export function isForeignSource(programSource, parsed) {
+  if (typeof programSource !== 'string' || !programSource.startsWith(SOURCE_PREFIX)) return false;
+  const source = importSource(parsed);
+  return programSource !== source && !programSource.startsWith(`${source}\\`);
+}
+
+/** Programmordner aus dem Herkunftsvermerk (Kunde\\Programmordner[\\Unterordner …]) */
 export function sourceFolder(programSource) {
-  return programSource.slice(SOURCE_PREFIX.length).split('\\').pop();
+  const parts = programSource.slice(SOURCE_PREFIX.length).split('\\');
+  return parts[1] ?? parts[parts.length - 1];
 }
 
 /** Schon übernommenes Messprogramm aus diesem Ordner (Herkunftsvermerk), bei mehreren das neueste; sonst null */
@@ -95,6 +103,8 @@ export function rowStatus({ parsed, customer, candidates, importState, release =
   if (candidates.same.length === 0) return candidates.otherRevisions.length > 0 ? 'other_revision' : 'new';
   if (!importState) return 'part_exists';
 
+  // Programm eines anderen Altbestand-Ordners an einem Mess-Arbeitsgang des Bauteils (loadImportState)
+  if (importState.foreignSource) return 'conflict';
   const unitStates = importState.units || {};
   const stateOf = (u) => unitStates[u.path] || { photoNames: [] };
   // Einzelnes Programm direkt im Messprogramm-Ordner: Programm aus einem anderen Ordner am Mess-Arbeitsgang

@@ -150,7 +150,7 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
     const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0007_Platte',
       ['01_Messprogramm HG_Index0/P1.prg', '01_Messprogramm HG_Index0/P2.PRG']);
     const [p] = parseLegacyTree(items).programs;
-    assert.ok(p.errors.some(e => /Mehrere \.prg/.test(e)), p.errors.join('|'));
+    assert.ok(p.units[0].errors.some(e => /Mehrere \.prg/.test(e)), p.units[0].errors.join('|'));
   });
 
   test('Anders nummerierte Ordner werden erkannt, unbekannte aussortiert', () => {
@@ -294,7 +294,21 @@ const minimal = (programFolder, programDir = '01_Messprogramm HG_Index0', custom
       '01_Messprogramm HG_Index A/Messprogramm_Serie/c.prg',
     ]);
     const [p] = parseLegacyTree(items).programs;
-    assert.ok(p.errors.some(e => /Mehrere \.prg in „FAI“/.test(e)), p.errors.join('|'));
+    assert.deepEqual(p.errors, [], 'Fehler gehört zum Programm, nicht zur Zeile');
+    assert.deepEqual(p.units.find(u => u.label === 'FAI').errors, ['Mehrere .prg in „FAI“']);
+  });
+
+  test('Alte Stände im Messprogramm-Ordner bleiben liegen, gleiche Bezeichnungen werden eindeutig', () => {
+    const items = tree('KMG/KD00000 FIRMA/HG_TEIL-0018_A_Platte', [
+      '01_Messprogramm HG_Index A/FAI/a.prg',
+      '01_Messprogramm HG_Index A/Messprogramm_FAI/b.prg',
+      '01_Messprogramm HG_Index A/Alte Daten/x.prg',
+      '01_Messprogramm HG_Index A/Serie/05_Alte Daten/y.prg',
+    ]);
+    const [p] = parseLegacyTree(items).programs;
+    assert.deepEqual(p.units.map(u => [u.path, u.label]), [['FAI', 'FAI'], ['Messprogramm_FAI', 'Messprogramm_FAI']]);
+    assert.match(p.skipped.find(s => s.path.endsWith('x.prg')).reason, /Alte Daten/);
+    assert.match(p.skipped.find(s => s.path.endsWith('y.prg')).reason, /Alte Daten/);
   });
 
   console.log(`\n${passed} Tests bestanden`);

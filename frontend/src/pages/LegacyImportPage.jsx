@@ -12,7 +12,7 @@ import {
 } from '../utils/legacyImport/match.js';
 import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
-import { withSelection, selectionFromMds, importTargets } from '../utils/legacyImport/selection.js';
+import { withSelection, selectionFromMds } from '../utils/legacyImport/selection.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
@@ -21,6 +21,8 @@ const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.uplo
 const NO_CANDIDATES = { same: [], otherRevisions: [] };
 const BASE_FEATURES = ['programs', 'setup_sheet', 'documents'];
 const OP_DEFAULTS_KEY = 'mds.legacyImport.opDefaults';
+// Stand im MDS hängt an den geplanten Arbeitsgängen (Name, OP-Nummer) – bei Änderung neu laden
+const targetsKey = (row) => JSON.stringify((row.targets || []).map((t) => [t.path, t.opNumber, t.opName]));
 const FIRST_OP_DEFAULTS = { op_number: 'KMG', op_name: 'Messen', operation_type_id: null };
 const STEP_LABELS = {
   probelauf: 'Probelauf', bauteil: 'Bauteil', arbeitsgang: 'Arbeitsgang', messprogramm: 'Messprogramm',
@@ -180,11 +182,11 @@ export default function LegacyImportPage() {
       : program;
     const chosenPart = typeof partChoice === 'number'
       ? [...candidates.same, ...candidates.otherRevisions].find((p) => p.id === partChoice) : null;
-    const loaded = importStates[program.key];
-    const importState = chosenPart && loaded && loaded.partId === chosenPart.id && loaded.machineId === machineId
-      ? loaded.state : null;
     // Nur die ausgewählten Dateien zählen für Status und Übernehmen
     const effective = withSelection(parsed, state.selection, opDefaults);
+    const loaded = importStates[program.key];
+    const importState = chosenPart && loaded && loaded.partId === chosenPart.id && loaded.machineId === machineId
+      && loaded.targetsKey === targetsKey(effective) ? loaded.state : null;
     const status = rowStatus({
       parsed: effective,
       customer,
@@ -204,14 +206,15 @@ export default function LegacyImportPage() {
     rows.forEach((row) => {
       if (!row.chosenPart || !row.machineId) return;
       const loaded = importStates[row.program.key];
-      if (loaded && loaded.partId === row.chosenPart.id && loaded.machineId === row.machineId) return;
-      const flag = `${row.program.key}|${row.chosenPart.id}|${row.machineId}`;
+      const key = targetsKey(row.program);
+      if (loaded && loaded.partId === row.chosenPart.id && loaded.machineId === row.machineId && loaded.targetsKey === key) return;
+      const flag = `${row.program.key}|${row.chosenPart.id}|${row.machineId}|${key}`;
       if (loadingStates.current.has(flag)) return;
       loadingStates.current.add(flag);
-      loadImportState(api, row.chosenPart.id, row.machineId, importTargets(row.source, row.state.selection, opDefaults))
+      loadImportState(api, row.chosenPart.id, row.machineId, row.program.targets, row.source)
         .then((state) => {
           setImportStates((prev) => ({
-            ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, state },
+            ...prev, [row.program.key]: { partId: row.chosenPart.id, machineId: row.machineId, targetsKey: key, state },
           }));
           // Schon übernommen: Dateiauswahl einmalig auf den Stand im MDS setzen (damals Abgewähltes bleibt abgewählt)
           setRowState((prev) => {
@@ -222,7 +225,7 @@ export default function LegacyImportPage() {
         })
         .catch((error) => toast.error(error.message));
     });
-  }, [rows, importStates, opDefaults]);
+  }, [rows, importStates]);
 
   const updateOpDefaults = (patch) => {
     const next = { ...opDefaults, ...patch };
@@ -454,7 +457,7 @@ export default function LegacyImportPage() {
                 {results[row.program.key] && (
                   <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" data-testid="legacy-import-steps">
                     {results[row.program.key].steps.map((step) => (
-                      <li key={`${step.key}|${step.unit || ''}`} className={`flex items-center gap-1 ${
+                      <li key={`${step.key}|${step.unitPath ?? ''}`} className={`flex items-center gap-1 ${
                         step.status === 'error' ? 'text-red-700 dark:text-red-400'
                           : step.status === 'done' ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         {step.status === 'error' ? <XCircle className="h-3.5 w-3.5" />

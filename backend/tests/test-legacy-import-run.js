@@ -356,8 +356,8 @@ const methods = (api) => api.calls;
     const raw = multiRaw();
     const [faiSource] = targets(raw).map(t => t.source);
     api.parts.push({ id: 1 });
-    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10, op_name: 'Messen FAI' },
-      { id: 3, part_id: 1, machine_id: CMM, sequence: 20, op_name: 'Messen Fertigung / AG1' });
+    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10, op_number: 'KMG', op_name: 'Messen FAI' },
+      { id: 3, part_id: 1, machine_id: CMM, sequence: 20, op_number: 'KMG', op_name: 'Messen Fertigung / AG1' });
     api.programs.push({ id: 4, operation_id: 2, workflow_state: 'draft', description: faiSource });
     api.sheets.push({ id: 5, operation_id: 2, workflow_state: 'draft', photos: ['a.jpg', 'b.jpg', 'c.jpg'] });
     api.docs.push({ part_id: 1, original_filename: 'TEIL-0001.stp', is_primary_cad: true },
@@ -388,6 +388,40 @@ const methods = (api) => api.calls;
     const err = r.steps.find(s => s.status === 'error');
     assert.equal(err.key, 'messprogramm');
     assert.match(err.message, /„HG_TEIL-0001_A_Seite 2“.*von Hand/);
+  });
+
+  await test('Konflikt bei mehreren Messprogrammen: Programm eines anderen Ordners am Bauteil sperrt', async () => {
+    const api = new FakeApi();
+    api.parts.push({ id: 1 });
+    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10 });
+    api.programs.push({ id: 3, operation_id: 2, workflow_state: 'draft', description: 'Altbestand: KD00000 FIRMA\\HG_TEIL-0001_A_Seite 2' });
+    const r = await m.importProgram({ row: row({ partChoice: 1 }, multiRaw()), settings, api, release: false });
+    assert.equal(r.ok, false);
+    assert.deepEqual(api.calls, []);
+    assert.match(r.steps.find(s => s.status === 'error').message, /„HG_TEIL-0001_A_Seite 2“/);
+  });
+
+  await test('Programm direkt im Ordner allein ausgewählt: nimmt nicht den Arbeitsgang eines Unterordner-Programms', async () => {
+    const api = new FakeApi();
+    const raw = rawParsed({ units: [
+      { path: '', label: 'Messprogramm', files: { program: [item(`${base}/01/P.prg`)], template: [] } },
+      { path: 'Messprogramm_FAI', label: 'FAI', files: { program: [item(`${base}/01/Messprogramm_FAI/FAI.prg`)], template: [] } },
+    ] });
+    api.parts.push({ id: 1 });
+    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10, op_name: 'Messen FAI' });
+    api.programs.push({ id: 3, operation_id: 2, workflow_state: 'draft', description: targets(raw)[1].source });
+    const r = await m.importProgram({ row: row({ partChoice: 1 }, raw, { units: { Messprogramm_FAI: { skip: true } } }), settings, api, release: false });
+    assert.equal(r.ok, true, JSON.stringify(r.steps));
+    assert.equal(api.ops.length, 2, 'eigener Arbeitsgang fürs Programm direkt im Ordner');
+    assert.equal(api.programs.find(p => p.description === targets(raw)[0].source).operation_id, api.ops[1].id);
+  });
+
+  await test('Abgebrochener Lauf: Arbeitsgang ohne Programm nur bei gleicher OP-Nummer und gleichem Namen', async () => {
+    const api = new FakeApi();
+    api.parts.push({ id: 1 });
+    api.ops.push({ id: 2, part_id: 1, machine_id: CMM, sequence: 10, op_number: 'OP90', op_name: 'Messen FAI' });
+    await m.importProgram({ row: row({ partChoice: 1 }, multiRaw()), settings, api, release: false });
+    assert.equal(api.programs.some(p => p.operation_id === 2), false, 'fremder Arbeitsgang mit anderer OP-Nummer bleibt unberührt');
   });
 
   console.log(`\n${passed} Tests bestanden`);

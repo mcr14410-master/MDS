@@ -129,8 +129,19 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
     // Messprogramme: jeder Ordner im Messprogramm-Ordner, der direkt eine .prg enthält (beliebig tief)
     const unitDirs = [...new Set(programItems.filter(x => isPrg(x.fileName)).map(x => x.dir))]
       .sort((a, b) => a.localeCompare(b));
-    const units = unitDirs.map(dir => ({ path: dir, label: unitLabel(dir), files: { program: [], template: [] } }));
+    // Ordner wie „Alte Daten“ auch innerhalb des Messprogramm-Ordners liegen lassen (Profil-Regeln mit skip)
+    const skipRuleOf = (dir) => dir.split('/').filter(Boolean)
+      .map(seg => findRule(profile.folders, seg)).find(rule => rule?.skip) || null;
+    const units = unitDirs.filter(dir => !skipRuleOf(dir))
+      .map(dir => ({ path: dir, label: unitLabel(dir), errors: [], files: { program: [], template: [] } }));
+    // Gleiche Bezeichnung (z. B. „FAI“ und „Messprogramm_FAI“) → Pfad als Bezeichnung
+    units.forEach((u) => {
+      if (units.filter(o => o.label === u.label).length > 1) u.duplicate = true;
+    });
+    units.forEach((u) => { if (u.duplicate) { u.label = u.path.split('/').join(' / '); delete u.duplicate; } });
     programItems.forEach(({ item, dir, fileName }) => {
+      const skipRule = skipRuleOf(dir);
+      if (skipRule) { skip(item, skipRule.skip); return; }
       const unit = units.find(u => u.path === dir);
       if (unit) (isTemplate(fileName) ? unit.files.template : unit.files.program).push(item);
       else if (isTemplate(fileName)) files.template.push(item); // z. B. Ordner „Vorlage“ – Programm wählbar
@@ -148,9 +159,10 @@ export function parseLegacyTree(items, profile = DEFAULT_PROFILE) {
     if (!customerFolder) errors.push('Kundenordner fehlt – Kunden- oder Quellordner wählen');
     if (!head.schemaOk) errors.push('Ordnername passt nicht zum Schema Maschine_Teilenummer_Name');
     if (units.length === 0) errors.push('Keine .prg im Messprogramm-Ordner');
+    // Fehler eines Messprogramms bleiben am Programm – sie zählen nur, solange es ausgewählt ist (selection.js)
     units.forEach((u) => {
       if (u.files.program.filter(i => isPrg(i.path)).length > 1) {
-        errors.push(u.path ? `Mehrere .prg in „${u.label}“` : 'Mehrere .prg im Messprogramm-Ordner');
+        u.errors.push(u.path ? `Mehrere .prg in „${u.label}“` : 'Mehrere .prg im Messprogramm-Ordner');
       }
     });
 

@@ -175,5 +175,17 @@ const fullState = stateOf({ '': unitState() });
     assert.equal(m.findImportedProgram([], p), null);
   });
 
+  test('Konflikt: Programm aus einem anderen Ordner am Bauteil – auch bei mehreren Messprogrammen', () => {
+    const p = parsedProgram({ units: [unitRow('FAI', []), unitRow('AG1', [])] });
+    const cand = { same: [{ id: 1 }], otherRevisions: [] };
+    const st = { documentNames: [], units: {}, foreignSource: m.importSource({ ...p, programFolder: 'HG_ANDERS' }) };
+    assert.equal(m.rowStatus({ parsed: p, customer: { id: 1 }, candidates: cand, importState: st }), 'conflict');
+    assert.equal(m.sourceFolder(`${m.importSource(p)}\\Messprogramm_FAI`), 'HG_TEIL-0001_A_Halter', 'Programmordner, nicht Unterordner');
+    assert.equal(m.isForeignSource(`${m.importSource(p)}\\Messprogramm_FAI`, p), false);
+    assert.equal(m.isForeignSource(m.importSource(p), p), false);
+    assert.equal(m.isForeignSource(`${m.importSource(p)}_2`, p), true);
+    assert.equal(m.isForeignSource('von Hand', p), false);
+  });
+
   console.log(`\n${passed} Tests bestanden`);
 })();
