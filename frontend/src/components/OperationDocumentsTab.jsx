@@ -10,6 +10,7 @@ import { toast } from './Toaster';
 import API_BASE_URL from '../config/api';
 import { downloadFileViaApi } from '../utils/fileDownload';
 import DocumentPreview from './common/DocumentPreview';
+import PrintPdfButton from './common/PrintPdfButton';
 import DocumentThumbnail from './common/DocumentThumbnail';
 import { previewKind } from '../utils/documentPreview';
 
@@ -360,6 +361,9 @@ export default function OperationDocumentsTab({ operationId }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </button>
+                  )}
+                  {previewKind(doc.original_filename, doc.mime_type) === 'pdf' && (
+                    <PrintPdfButton apiPath={`/api/operation-documents/${doc.id}/view`} iconClassName="w-5 h-5" />
                   )}
                   <button
                     onClick={() => handleDownload(doc)}

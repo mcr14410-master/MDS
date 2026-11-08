@@ -19,6 +19,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Einrichteblatt: mehrere Fotos auf einmal hochladen (Mehrfachauswahl oder Ablegen), nacheinander mit Fortschritt „Foto n von m“
 - Arbeitsgang-Dokumente: Vorschau wie bei Bauteil und Maschine (`DocumentPreview`), neuer Endpunkt `GET /api/operation-documents/:id/view` (inline, Pfad auf den Ordner der Arbeitsgang-Dokumente begrenzt)
 - Vorschaubild für Bild-Dokumente bei Bauteilen, Maschinen und Arbeitsgängen über die gemeinsame Komponente `DocumentThumbnail`
+- Drucken für PDF-Dokumente: Knopf neben dem Download bei Hauptzeichnung und Hauptdokumenten (Bauteil-Details), Bauteil-Dokumenten und Arbeitsgang-Dokumenten. `printFileViaApi` lädt das PDF mit Token in ein unsichtbares iframe und öffnet den Druckdialog (Rückfall: neuer Tab), gemeinsame Komponente `PrintPdfButton`
 
 ### Changed
 - Arbeitsgang-Dokumente: Download über `downloadFileViaApi` wie im übrigen MDS
