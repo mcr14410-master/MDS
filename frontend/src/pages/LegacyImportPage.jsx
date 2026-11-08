@@ -12,6 +12,7 @@ import {
 } from '../utils/legacyImport/match.js';
 import { legacyImportApi as api } from '../utils/legacyImport/api.js';
 import { importProgram, loadImportState } from '../utils/legacyImport/runImport.js';
+import { withSelection } from '../utils/legacyImport/selection.js';
 import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
@@ -54,7 +55,7 @@ export default function LegacyImportPage() {
   const [ctx, setCtx] = useState(null);                 // { customers, machines, operationTypes, workflowStates }
   const [partsByCustomer, setPartsByCustomer] = useState({});
   const [machineMap, setMachineMap] = useState({});     // Kürzel → Maschinen-ID
-  const [rowState, setRowState] = useState({});         // key → { customerId, customerPartNumber, revision, name, partChoice }
+  const [rowState, setRowState] = useState({});         // key → { customerId, customerPartNumber, revision, name, partChoice, selection }
   const [importStates, setImportStates] = useState({}); // key → { partId, machineId, state }
   const [reading, setReading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -163,14 +164,16 @@ export default function LegacyImportPage() {
     const loaded = importStates[program.key];
     const importState = chosenPart && loaded && loaded.partId === chosenPart.id && loaded.machineId === machineId
       ? loaded.state : null;
+    // Nur die ausgewählten Dateien zählen für Status und Übernehmen
+    const effective = withSelection(parsed, state.selection);
     const status = rowStatus({
-      parsed,
+      parsed: effective,
       customer,
       candidates: chosenPart ? { same: [chosenPart], otherRevisions: [] } : candidates,
       importState,
       release: release && canRelease,
     });
-    return { program: parsed, state, customer, candidates, partChoice, chosenPart, machineId, status };
+    return { program: effective, source: parsed, state, customer, candidates, partChoice, chosenPart, machineId, status };
   }), [programs, rowState, ctx, partsByCustomer, machineMap, importStates, release, canRelease]);
 
   // Aktueller Stand für „Markierte übernehmen“ (läuft über mehrere Renders)
@@ -400,6 +403,7 @@ export default function LegacyImportPage() {
               <LegacyImportRow
                 key={row.program.key}
                 program={row.program}
+                source={row.source}
                 state={{ ...row.state, partChoice: row.partChoice }}
                 customer={row.customer}
                 candidates={row.candidates}

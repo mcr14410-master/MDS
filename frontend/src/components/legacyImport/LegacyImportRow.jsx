@@ -1,21 +1,16 @@
 // Altbestand-Import: eine Zeile je Programmordner – Vorschlag, Korrektur, Dateien je Ziel
+// program = Zeile mit den ausgewählten Dateien, source = alle Dateien aus dem Ordner (für die Auswahl)
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle, XCircle } from 'lucide-react';
 import { STATUS_INFO } from './statusInfo';
-
-const TARGETS = [
-  ['program', 'Messprogramm'],
-  ['template', 'Excel-Vorlage'],
-  ['calibration', 'Kalibrierprogramm'],
-  ['drawingPdf', 'Prüfzeichnung (im Messprogramm)'],
-  ['photos', 'Fotos Einrichteblatt'],
-  ['cad', 'CAD-Modell (Bauteil-Dokument)'],
-  ['drawingOther', 'Zeichnung (Bauteil-Dokument)'],
-];
+import FileSelection from './FileSelection';
+import { fileSummary } from '../../utils/legacyImport/selection.js';
 
 const inputClass = 'w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white';
 
-export default function LegacyImportRow({ program, state, customer, candidates, status, customers, onChange, children = null }) {
+export default function LegacyImportRow({
+  program, source = program, state, customer, candidates, status, customers, onChange, children = null,
+}) {
   const [open, setOpen] = useState(false);
   const relPath = (p) => p.slice(p.indexOf(`${program.key}/`) + program.key.length + 1);
   const info = STATUS_INFO[status];
@@ -35,6 +30,10 @@ export default function LegacyImportRow({ program, state, customer, candidates, 
           </button>
           <span className="font-mono text-sm text-gray-900 dark:text-white break-all">{program.key}</span>
           <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${info.className}`}>{info.label}</span>
+          <button type="button" onClick={() => setOpen(!open)} data-testid="legacy-file-summary"
+            className="text-xs text-gray-500 dark:text-gray-400 hover:underline">
+            {fileSummary(program.files)}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -102,16 +101,8 @@ export default function LegacyImportRow({ program, state, customer, candidates, 
 
       {open && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <div className="space-y-2">
-            {TARGETS.filter(([key]) => program.files[key].length > 0).map(([key, label]) => (
-              <div key={key}>
-                <div className="font-medium text-gray-700 dark:text-gray-300">{label}</div>
-                <ul className="ml-4 list-disc text-gray-600 dark:text-gray-400">
-                  {program.files[key].map((f) => <li key={f.path} className="break-all">{relPath(f.path)}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <FileSelection program={source} selection={state.selection || {}} relPath={relPath}
+            onChange={(selection) => onChange({ selection })} />
           <div>
             <div className="font-medium text-gray-700 dark:text-gray-300">Nicht übernommen</div>
             {program.skipped.length === 0 ? (
