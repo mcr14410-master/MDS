@@ -15,6 +15,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.22.0] - 2026-11-08 - Dokumentvorschau, Revision als Pflichtfeld
+
+### Für Anwender
+- Dokumente an Bauteilen und Maschinen lassen sich jetzt direkt ansehen: Fotos groß, PDF-Zeichnungen im Fenster und 3D-Modelle in der 3D-Ansicht.
+- Beim Anlegen eines Bauteils ist die Revision ein Pflichtfeld und nicht mehr mit „A“ vorbelegt. Teile ohne Zeichnungsindex bekommen „-“.
+- Mehrere Arbeitsgänge mit demselben OP-Code sind möglich, das Formular weist nur darauf hin. Der Reiter „Arbeitsgänge“ zeigt die Anzahl.
+- Messprogramme: Ein Vorschaubild (.jpg mit dem Namen des Messprogramms) wird mit hochgeladen und erscheint am Mess-PC in PC-DMIS. Die Programmkarten nutzen bei schmalem Fenster den Platz besser.
+
 ### Added
 - Bauteil- und Maschinen-Dokumente: Vorschau über die gemeinsame Komponente `DocumentPreview` – Bilder in der Lightbox (Bauteile zusätzlich mit Vorschaubild in der Liste), PDF im PDF-Viewer, 3D-Modelle (STEP, STL, IGES …) im StepViewer. Neuer Endpunkt `GET /api/parts/:partId/documents/:documentId/view` (inline, Pfad auf den Ordner der Bauteil-Dokumente begrenzt)
 - Messprogramme: PC-DMIS-Vorschaubild (`.jpg`/`.jpeg` mit dem Namen der `.prg`) wird als Begleitdatei versioniert und bereitgestellt; Bilder mit anderem Namen werden mit Hinweis aufs Einrichteblatt aussortiert
