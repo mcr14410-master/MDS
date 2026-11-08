@@ -42,12 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.26.0)
+Derzeit keine.
 
-- Keine Migration
-- Altbestand übernehmen: Ordner mit Unterprogrammen einlesen – Kurzfassung „n Messprogramme …“, aufgeklappt je Programm ein Block mit Arbeitsgang (OP-Nummer, Name)
-- Schon übernommener Ordner ohne Unterprogramme: weiter „Schon übernommen“ / „Übernommen“
-- „Was ist neu“ zeigt 2.26.0
+---
+
+## Erledigt: Release 2.26.0 (08.11.2026)
+
+Altbestand-Import: mehrere Messprogramme je Programmordner, je Programm eigener Mess-Arbeitsgang mit Einrichteblatt, inkl. Review-Korrekturen (#350). Keine Migration. Deploy grün, Tag `v2.26.0`. Prüfpunkte grün: Ordner mit Unterprogrammen (Kurzfassung, Block je Programm mit Arbeitsgang), schon übernommener Ordner weiter „Übernommen“, „Was ist neu“.
 
 ---
 
