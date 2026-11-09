@@ -15,10 +15,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.0] - 2026-11-09 - Bauteile: Drag & Drop, Suche, Variante kopieren
+
 ### Für Anwender
 - Die Nummer eines gelöschten Bauteils wird nicht mehr neu vergeben. „Auto“ schlägt die nächste freie Nummer vor, statt beim Anlegen mit einer unverständlichen Datenbank-Meldung abzubrechen.
-- Bauteil-Dokumente lassen sich jetzt auch per Drag & Drop hochladen: Dateien einfach auf die gestrichelte Fläche ziehen.
-- Die Suche auf der Bauteile-Seite findet auch die Kunden-Zeichnungsnummer und die Zeichnungsnummer.
+- Bauteil-Dokumente lassen sich per Drag & Drop hochladen (Dateien auf die gestrichelte Fläche ziehen), und die Suche auf der Bauteile-Seite findet auch die Kunden-Zeichnungsnummer und die Zeichnungsnummer.
 - Einrichteblatt: Preset 0 und Nullpunkt-Werte 0 bleiben beim Speichern erhalten (vorher wurden sie geleert, ein freigegebenes Blatt fiel dadurch auf Entwurf).
 - Die Bauteilseite passt jetzt aufs Handy, und eine Zykluszeit mit zwei Nachkommastellen lässt sich wieder speichern.
 - Variante anlegen: „Einrichteblatt kopieren“ und „Prüfplan kopieren“ funktionieren wieder. Das Einrichteblatt kommt als Entwurf für die neue Maschine mit Spannmitteln, Vorrichtungen und Fotos, aber ohne Programm. NC-Programme und Werkzeuglisten werden nicht mehr angeboten, weil sie zur Maschine gehören.

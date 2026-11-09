@@ -42,7 +42,17 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**Nächstes Release** (2.27.0)
+
+- Keine Migration
+- `scripts/backup.sh` geändert: nach dem nächsten Nacht-Backup `ls -l /srv/mds/backups` – alle Dumps `-rw-------`; Backup-Status im MDS weiter grün
+- Bauteil-Dokumente: Datei auf die gestrichelte Fläche ziehen → wird hochgeladen
+- Bauteile-Suche nach einer Kunden-Zeichnungsnummer findet das Bauteil
+- „# Auto“ beim Bauteil-Anlegen schlägt eine freie Nummer vor (nicht die eines gelöschten Bauteils)
+- Einrichteblatt mit Preset 0 speichern → 0 bleibt stehen
+- Variante anlegen mit „Einrichteblatt kopieren“ und „Prüfplan kopieren“ → Variante entsteht, Einrichteblatt als Entwurf ohne Programm, Prüfplan mit Merkmalen
+- Bauteilseite auf dem Handy: kein waagrechtes Scrollen
+- „Was ist neu“ zeigt 2.27.0
 
 ---
 
