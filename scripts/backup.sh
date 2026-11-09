@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+# Dumps enthalten alle Betriebsdaten: nur für den Besitzer (root) lesbar. Das Backend
+# (Backup-Monitor) liest im Ordner nur Dateiliste, Größe und Datum – dafür reichen die Ordnerrechte.
+umask 077
+
 # Compose-Befehle aus dem Repo-Root (Cron startet z. B. in /root → sonst „no configuration file provided“)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -57,6 +61,9 @@ fi
 log "🗑️  Lösche Backups älter als $KEEP_DAYS Tage und unbrauchbare Dateien (< $MIN_BYTES Bytes)..."
 find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -mtime +$KEEP_DAYS -delete
 find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -size -${MIN_BYTES}c -delete
+
+# Ältere Dumps (vor der Umstellung mit 644 geschrieben) ebenfalls schützen
+find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -perm /077 -exec chmod 600 {} +
 
 SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 log "✅ Backup erstellt und geprüft: $BACKUP_FILE ($SIZE)"
