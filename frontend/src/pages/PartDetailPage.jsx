@@ -146,8 +146,8 @@ export default function PartDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start gap-4">
+      {/* Header – auf schmalen Bildschirmen rutschen Status und Knöpfe unter den Titel */}
+      <div className="flex flex-wrap justify-between items-start gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate('/parts')}
@@ -247,10 +247,11 @@ export default function PartDetailPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="-mb-px flex gap-8">
+        {/* Auf dem Handy scrollt die Reiterleiste in sich, nicht die ganze Seite */}
+        <nav className="-mb-px flex gap-4 sm:gap-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('details')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap shrink-0 ${
               activeTab === 'details'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -260,7 +261,7 @@ export default function PartDetailPage() {
           </button>
           <button
             onClick={() => setActiveTab('documents')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap shrink-0 ${
               activeTab === 'documents'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -275,7 +276,7 @@ export default function PartDetailPage() {
           </button>
           <button
             onClick={() => setActiveTab('operations')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap shrink-0 ${
               activeTab === 'operations'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -292,7 +293,7 @@ export default function PartDetailPage() {
           {/* Historie Tab - rechts ausgerichtet */}
           <button
             onClick={() => setActiveTab('history')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ml-auto ${
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap shrink-0 ml-auto ${
               activeTab === 'history'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
