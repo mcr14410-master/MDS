@@ -10,6 +10,28 @@ const pool = new Pool({
 });
 
 /**
+ * Prüft, ob eine Bauteilnummer schon vergeben ist – auch an ein gelöschtes Bauteil.
+ * Gelöschte Bauteile bleiben in der DB (Soft-Delete), ihre Nummer wird nicht neu vergeben.
+ * Liefert die Fehlermeldung oder null.
+ */
+async function partNumberConflict(partNumber, excludeId = null) {
+  const result = await pool.query(
+    `SELECT status FROM parts
+     WHERE part_number = $1 AND ($2::int IS NULL OR id != $2)
+     ORDER BY (status = 'deleted')
+     LIMIT 1`,
+    [partNumber, excludeId]
+  );
+  if (result.rows.length === 0) return null;
+  return result.rows[0].status === 'deleted'
+    ? 'Bauteilnummer gehörte zu einem gelöschten Bauteil und wird nicht neu vergeben'
+    : 'Bauteilnummer existiert bereits';
+}
+
+const isPartNumberUniqueViolation = (error) =>
+  error.code === '23505' && error.constraint === 'parts_part_number_key';
+
+/**
  * Get all parts with optional filtering
  * GET /api/parts?customer_id=1&status=active
  */
@@ -292,7 +314,6 @@ exports.createPart = async (req, res) => {
         SELECT part_number FROM parts 
         WHERE customer_id = $1 
           AND part_number LIKE $2
-          AND status != 'deleted'
         ORDER BY part_number DESC
         LIMIT 1
       `, [customer_id, `${customerNumber}-%`]);
@@ -310,15 +331,10 @@ exports.createPart = async (req, res) => {
       finalPartNumber = `${customerNumber}-${String(nextSequence).padStart(5, '0')}`;
     }
 
-    // Check if part_number already exists
-    const checkQuery = 'SELECT id FROM parts WHERE part_number = $1 AND status != \'deleted\'';
-    const checkResult = await pool.query(checkQuery, [finalPartNumber]);
-
-    if (checkResult.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        error: 'Bauteilnummer existiert bereits'
-      });
+    // Nummer schon vergeben (auch an ein gelöschtes Bauteil)?
+    const conflict = await partNumberConflict(finalPartNumber);
+    if (conflict) {
+      return res.status(409).json({ success: false, error: conflict });
     }
 
     const query = `
@@ -370,6 +386,10 @@ exports.createPart = async (req, res) => {
       part: result.rows[0]
     });
   } catch (error) {
+    // Gleichzeitig angelegt: Die Datenbank meldet die doppelte Nummer
+    if (isPartNumberUniqueViolation(error)) {
+      return res.status(409).json({ success: false, error: 'Bauteilnummer existiert bereits' });
+    }
     console.error('Error creating part:', error);
     res.status(500).json({
       success: false,
@@ -425,16 +445,9 @@ exports.updatePart = async (req, res) => {
 
     // Check if new part_number already exists for another part
     if (part_number) {
-      const duplicateCheck = await pool.query(
-        'SELECT id FROM parts WHERE part_number = $1 AND id != $2 AND status != \'deleted\'',
-        [part_number, id]
-      );
-
-      if (duplicateCheck.rows.length > 0) {
-        return res.status(409).json({
-          success: false,
-          error: 'Part number already exists'
-        });
+      const conflict = await partNumberConflict(part_number, id);
+      if (conflict) {
+        return res.status(409).json({ success: false, error: conflict });
       }
     }
 
@@ -521,6 +534,9 @@ exports.updatePart = async (req, res) => {
       part: result.rows[0]
     });
   } catch (error) {
+    if (isPartNumberUniqueViolation(error)) {
+      return res.status(409).json({ success: false, error: 'Bauteilnummer existiert bereits' });
+    }
     console.error('Error updating part:', error);
     res.status(500).json({
       success: false,
@@ -665,7 +681,6 @@ exports.generatePartNumber = async (req, res) => {
       SELECT part_number FROM parts 
       WHERE customer_id = $1 
         AND part_number LIKE $2
-        AND status != 'deleted'
       ORDER BY part_number DESC
       LIMIT 1
     `, [customer_id, `${customerNumber}-%`]);
