@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Die Nummer eines gelöschten Bauteils wird nicht mehr neu vergeben. „Auto“ schlägt die nächste freie Nummer vor, statt beim Anlegen mit einer unverständlichen Datenbank-Meldung abzubrechen.
+
+### Fixed
+- Bauteile: „# Auto“ (`generatePartNumber`, Auto-Vergabe in `createPart`) und die Doppelt-Prüfung beim Anlegen/Ändern berücksichtigen gelöschte Bauteile (Soft-Delete) – vorher Vorschlag der gelöschten Nummer und 500 durch `parts_part_number_key`; Eingabe einer gelöschten Nummer → 409 mit Hinweis, Unique-Verletzung (gleichzeitiges Anlegen) → 409; Integrationstest `test-bauteilnummer-geloescht.js`
+
 ---
 
 ## [2.26.0] - 2026-11-08 - Altbestand: mehrere Messprogramme je Ordner
