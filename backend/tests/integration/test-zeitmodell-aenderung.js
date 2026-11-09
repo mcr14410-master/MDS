@@ -304,7 +304,9 @@ const snapshot = async (userId) => JSON.stringify((await pool.query(
 
   console.log('Künftig datiert');
   const future = (() => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 40); return d.toISOString().slice(0, 10); })();
-  const futureEnd = (() => { const d = new Date(`${future}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 13); return d.toISOString().slice(0, 10); })();
+  // 3 Wochen = 3 Freitage: mindestens einer ist kein Feiertag (Weihnachten/Neujahr fallen höchstens auf zwei),
+  // sonst ändert das 4-Tage-Modell nichts am Urlaub (Befund 09.11.2026: 19.12.–01.01. → 0 Urlaube)
+  const futureEnd = (() => { const d = new Date(`${future}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 20); return d.toISOString().slice(0, 10); })();
   const u3 = await createUser('2026-08-03');
   const urlaub3 = await addAbsence(u3, 'Urlaub', future, futureEnd);
   await test(`Neues Modell ab ${future}: keine Tageswerte, Urlaub dort neu gezählt, heute weiter Vollzeit`, async () => {
