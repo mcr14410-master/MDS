@@ -17,9 +17,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Für Anwender
 - Die Nummer eines gelöschten Bauteils wird nicht mehr neu vergeben. „Auto“ schlägt die nächste freie Nummer vor, statt beim Anlegen mit einer unverständlichen Datenbank-Meldung abzubrechen.
+- Bauteil-Dokumente lassen sich jetzt auch per Drag & Drop hochladen: Dateien einfach auf die gestrichelte Fläche ziehen.
+- Die Suche auf der Bauteile-Seite findet auch die Kunden-Zeichnungsnummer und die Zeichnungsnummer.
+
+### Added
+- Bauteil-Dokumente: Drag & Drop auf die Upload-Fläche (`PartDocuments`), Hervorhebung beim Ziehen, nur Dateien werden angenommen; Arbeitsgang- und Maschinen-Dokumente nehmen Dateien schon über das sichtbare Dateifeld an
 
 ### Fixed
 - Bauteile: „# Auto“ (`generatePartNumber`, Auto-Vergabe in `createPart`) und die Doppelt-Prüfung beim Anlegen/Ändern berücksichtigen gelöschte Bauteile (Soft-Delete) – vorher Vorschlag der gelöschten Nummer und 500 durch `parts_part_number_key`; Eingabe einer gelöschten Nummer → 409 mit Hinweis, Unique-Verletzung (gleichzeitiges Anlegen) → 409; Integrationstest `test-bauteilnummer-geloescht.js`
+- Bauteile-Suche (`getAllParts`) durchsucht zusätzlich `customer_part_number` und `drawing_number`; Platzhalter im Suchfeld angepasst; Integrationstest `test-bauteile-suche.js`
+- Integrationstest `test-zeitmodell-aenderung.js` („Künftig datiert“) war datumsabhängig rot: Urlaub 19.12.–01.01. enthält nur Freitage, die Feiertage sind – das 4-Tage-Modell ändert dann nichts. Zeitraum auf 3 Wochen verlängert (immer ein normaler Freitag); Code unverändert
 
 ---
 

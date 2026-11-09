@@ -49,6 +49,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedType, setSelectedType] = useState('auto');
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
   // Dokumente laden
@@ -73,10 +74,10 @@ export default function PartDocuments({ partId, onDocumentChange }) {
     }
   }, [partId]);
 
-  // Datei hochladen
-  const handleUpload = async (event) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  // Dateien hochladen (Auswahl oder Drag & Drop)
+  const uploadFiles = async (fileList) => {
+    const files = [...(fileList || [])];
+    if (files.length === 0 || uploading) return;
 
     setUploading(true);
     setUploadProgress(0);
@@ -194,12 +195,41 @@ export default function PartDocuments({ partId, onDocumentChange }) {
     );
   }
 
+  // Drag & Drop: nur Dateien annehmen (kein gezogener Text o. Ä.)
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+  const handleDragOver = (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = uploading ? 'none' : 'copy';
+    setDragOver(true);
+  };
+  const handleDragLeave = (e) => {
+    // Beim Wechsel auf ein Kind-Element nicht flackern
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false);
+  };
+  const handleDrop = (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    setDragOver(false);
+    uploadFiles(e.dataTransfer.files);
+  };
+
   const totalDocuments = Object.values(documents).reduce((sum, arr) => sum + (arr?.length || 0), 0);
 
   return (
     <div className="space-y-6">
       {/* Upload-Bereich */}
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border-2 border-dashed border-gray-300 dark:border-gray-600">
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        data-testid="part-documents-dropzone"
+        className={`rounded-lg p-6 border-2 border-dashed transition-colors ${
+          dragOver
+            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+            : 'bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600'
+        }`}
+      >
         <div className="text-center">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -228,14 +258,17 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                onChange={handleUpload}
+                onChange={(e) => uploadFiles(e.target.files)}
                 className="hidden"
                 accept=".step,.stp,.stl,.obj,.iges,.igs,.3ds,.gltf,.glb,.x_t,.x_b,.sat,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.tif,.tiff,.dxf,.dwg,.svg,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.7z"
               />
             </label>
           </div>
 
-          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            {dragOver ? 'Loslassen zum Hochladen' : 'oder Dateien hierher ziehen'}
+          </p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             CAD-Modelle, Zeichnungen, Fotos, Prüfpläne, Zertifikate, Spezifikationen · Max. 100 MB
           </p>
         </div>

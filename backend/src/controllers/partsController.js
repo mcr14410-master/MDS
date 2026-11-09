@@ -65,7 +65,8 @@ exports.getAllParts = async (req, res) => {
     }
 
     if (search) {
-      whereClause += ` AND (p.part_number ILIKE $${paramCount} OR p.part_name ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
+      whereClause += ` AND (p.part_number ILIKE $${paramCount} OR p.part_name ILIKE $${paramCount} OR p.description ILIKE $${paramCount}
+        OR p.customer_part_number ILIKE $${paramCount} OR p.drawing_number ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
     }

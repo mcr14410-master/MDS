@@ -247,7 +247,7 @@ export default function PartsPage() {
             </svg>
             <input
               type="text"
-              placeholder="Suche nach Teilenummer, Bezeichnung, Beschreibung... (ESC zum Löschen)"
+              placeholder="Suche nach Teilenummer, Bezeichnung, Zeichnungsnummer, Beschreibung … (ESC zum Löschen)"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               onKeyDown={(e) => {
