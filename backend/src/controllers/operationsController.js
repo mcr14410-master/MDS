@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { openDeploymentFor } = require('../services/deploymentGuards');
+const { copySetupSheets, copyInspectionPlan, removeCopiedDirs } = require('../services/variantCopy');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -480,15 +481,15 @@ exports.getOperationsByPart = async (req, res) => {
  */
 exports.createVariant = async (req, res) => {
   const client = await pool.connect();
-  
+  let copiedDirs = [];
+
   try {
     const { id } = req.params;
     const { 
       machine_id, 
       setup_time_minutes, 
       cycle_time_seconds,
-      copy_programs = false,
-      copy_tools = false,
+      // NC-Programme und Werkzeuglisten werden nicht kopiert (maschinenspezifisch, Entscheidung 09.11.2026)
       copy_setup_sheets = false,
       copy_inspection_plans = false
     } = req.body;
@@ -578,67 +579,17 @@ exports.createVariant = async (req, res) => {
 
     const newOperation = newOpResult.rows[0];
 
-    // Optional: Unterbereiche kopieren
-    if (copy_programs) {
-      await client.query(`
-        INSERT INTO programs (operation_id, name, file_path, version, machine_id, status, description, created_by)
-        SELECT $1, name, file_path, version, $2, status, description, $3
-        FROM programs WHERE operation_id = $4
-      `, [newOperation.id, machine_id, req.user?.id, id]);
-    }
-
-    if (copy_tools) {
-      // Tool Lists kopieren
-      const toolListsResult = await client.query(
-        'SELECT * FROM tool_lists WHERE operation_id = $1',
-        [id]
-      );
-      
-      for (const toolList of toolListsResult.rows) {
-        const newListResult = await client.query(`
-          INSERT INTO tool_lists (operation_id, name, version, status, notes, created_by)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING id
-        `, [newOperation.id, toolList.name, toolList.version, toolList.status, toolList.notes, req.user?.id]);
-        
-        // Tool List Items kopieren
-        await client.query(`
-          INSERT INTO tool_list_items (tool_list_id, position, tool_number, tool_name, description, cutting_data, notes)
-          SELECT $1, position, tool_number, tool_name, description, cutting_data, notes
-          FROM tool_list_items WHERE tool_list_id = $2
-        `, [newListResult.rows[0].id, toolList.id]);
-      }
-    }
-
+    // Optional: Einrichteblätter (als Entwurf, ohne Programm) und Prüfplan kopieren
+    const copied = { setup_sheets: 0, skipped_photos: 0, inspection_plan: false };
+    const copyArgs = { fromOperationId: id, toOperationId: newOperation.id, machineId: machine_id, userId: req.user?.id || null };
     if (copy_setup_sheets) {
-      await client.query(`
-        INSERT INTO setup_sheets (operation_id, title, content, version, status, created_by)
-        SELECT $1, title, content, version, status, $2
-        FROM setup_sheets WHERE operation_id = $3
-      `, [newOperation.id, req.user?.id, id]);
+      const r = await copySetupSheets(client, copyArgs);
+      copiedDirs = r.copiedDirs;
+      copied.setup_sheets = r.sheets;
+      copied.skipped_photos = r.skippedPhotos;
     }
-
     if (copy_inspection_plans) {
-      // Inspection Plans kopieren
-      const plansResult = await client.query(
-        'SELECT * FROM inspection_plans WHERE operation_id = $1',
-        [id]
-      );
-      
-      for (const plan of plansResult.rows) {
-        const newPlanResult = await client.query(`
-          INSERT INTO inspection_plans (operation_id, name, version, status, notes, created_by)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING id
-        `, [newOperation.id, plan.name, plan.version, plan.status, plan.notes, req.user?.id]);
-        
-        // Inspection Items kopieren
-        await client.query(`
-          INSERT INTO inspection_items (inspection_plan_id, sequence, characteristic, nominal_value, tolerance_min, tolerance_max, unit, measuring_method, frequency, notes)
-          SELECT $1, sequence, characteristic, nominal_value, tolerance_min, tolerance_max, unit, measuring_method, frequency, notes
-          FROM inspection_items WHERE inspection_plan_id = $2
-        `, [newPlanResult.rows[0].id, plan.id]);
-      }
+      copied.inspection_plan = await copyInspectionPlan(client, copyArgs);
     }
 
     await client.query('COMMIT');
@@ -655,11 +606,13 @@ exports.createVariant = async (req, res) => {
       data: {
         ...newOperation,
         machine_name: machineResult.rows[0]?.name || null
-      }
+      },
+      copied
     });
 
   } catch (error) {
     await client.query('ROLLBACK');
+    await removeCopiedDirs(copiedDirs).catch(() => {});
     console.error('Error creating variant:', error);
     res.status(500).json({
       success: false,

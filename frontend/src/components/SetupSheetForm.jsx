@@ -5,6 +5,7 @@ import { inactiveSuffix } from '../utils/machineOptions';
 import axios from '../utils/axios';
 import { API_ENDPOINTS } from '../config/api';
 import { useProgramsStore, EMPTY_PROGRAMS } from '../stores/programsStore';
+import { initialSetupSheetForm, setupSheetPayload } from '../utils/setupSheetForm';
 
 export default function SetupSheetForm({ 
   onSubmit, 
@@ -20,33 +21,7 @@ export default function SetupSheetForm({
   const [operationMachineId, setOperationMachineId] = useState(undefined); // undefined = lädt, null = keine
   const [loadError, setLoadError] = useState(null);
 
-  const [formData, setFormData] = useState({
-    operation_id: operationId || '',
-    program_id: initialData?.program_id || '',
-    
-    // Asset Relations (temporär Freitext)
-    fixture_description: initialData?.fixture_description || '',
-    clamping_description: initialData?.clamping_description || '',
-    
-    // Nullpunkt (steuerungsspezifisch)
-    control_type: initialData?.control_type || '',
-    preset_number: initialData?.preset_number || '',
-    wcs_number: initialData?.wcs_number || '',
-    wcs_x: initialData?.wcs_x || '',
-    wcs_y: initialData?.wcs_y || '',
-    wcs_z: initialData?.wcs_z || '',
-    reference_point: initialData?.reference_point || '',
-    
-    // Material
-    raw_material_dimensions: initialData?.raw_material_dimensions || '',
-    material_specification: initialData?.material_specification || '',
-    
-    // Anweisungen
-    setup_instructions: initialData?.setup_instructions || '',
-    special_notes: initialData?.special_notes || '',
-    
-    // Status
-  });
+  const [formData, setFormData] = useState(() => initialSetupSheetForm(initialData, operationId));
 
   const [errors, setErrors] = useState({});
 
@@ -118,16 +93,8 @@ export default function SetupSheetForm({
       return;
     }
     
-    // Convert string values to numbers where needed
-    const dataToSubmit = {
-      ...formData,
-      operation_id: operationId || formData.operation_id,
-      program_id: formData.program_id ? parseInt(formData.program_id) : null,
-      preset_number: formData.preset_number ? parseInt(formData.preset_number) : null,
-      wcs_x: formData.wcs_x ? parseFloat(formData.wcs_x) : null,
-      wcs_y: formData.wcs_y ? parseFloat(formData.wcs_y) : null,
-      wcs_z: formData.wcs_z ? parseFloat(formData.wcs_z) : null,
-    };
+    // Zahlen umwandeln – 0 bleibt 0, leer wird null
+    const dataToSubmit = setupSheetPayload(formData, operationId);
     
     onSubmit(dataToSubmit);
   };

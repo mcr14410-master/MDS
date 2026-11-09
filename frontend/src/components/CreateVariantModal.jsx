@@ -16,8 +16,6 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
     machine_id: '',
     setup_time_minutes: operation?.setup_time_minutes || '',
     cycle_time_seconds: operation?.cycle_time_seconds ? (operation.cycle_time_seconds / 60).toFixed(2) : '',
-    copy_programs: false,
-    copy_tools: false,
     copy_setup_sheets: false,
     copy_inspection_plans: false,
   });
@@ -83,8 +81,6 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
           machine_id: parseInt(formData.machine_id),
           setup_time_minutes: formData.setup_time_minutes ? parseInt(formData.setup_time_minutes) : null,
           cycle_time_seconds: formData.cycle_time_seconds ? Math.round(parseFloat(formData.cycle_time_seconds) * 60) : null,
-          copy_programs: formData.copy_programs,
-          copy_tools: formData.copy_tools,
           copy_setup_sheets: formData.copy_setup_sheets,
           copy_inspection_plans: formData.copy_inspection_plans,
         })
@@ -97,6 +93,9 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
       }
 
       toast.success('Variante erfolgreich erstellt');
+      if (data.copied?.skipped_photos > 0) {
+        toast.error(`${data.copied.skipped_photos} Foto(s) des Einrichteblatts nicht kopiert – Datei fehlt auf dem Server`);
+      }
       onSuccess();
     } catch (error) {
       toast.error(error.message);
@@ -221,14 +220,14 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
               Was soll kopiert werden?
             </label>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Kopierte Inhalte können danach für die neue Maschine angepasst werden
+              Kopierte Inhalte können danach für die neue Maschine angepasst werden. NC-Programme und
+              Werkzeuglisten gehören zur Maschine und werden nicht kopiert – das Programm für die neue
+              Maschine wie gewohnt hochladen.
             </p>
             <div className="space-y-2">
               {[
-                { id: 'copy_programs', label: 'NC-Programme', icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
-                { id: 'copy_tools', label: 'Werkzeuglisten', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0' },
-                { id: 'copy_setup_sheets', label: 'Einrichteblätter', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-                { id: 'copy_inspection_plans', label: 'Prüfpläne', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+                { id: 'copy_setup_sheets', label: 'Einrichteblatt (als Entwurf, ohne Programm-Zuordnung)', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                { id: 'copy_inspection_plans', label: 'Prüfplan', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
               ].map((option) => (
                 <label
                   key={option.id}
@@ -261,7 +260,7 @@ export default function CreateVariantModal({ operation, onClose, onSuccess }) {
                 <strong>Neue Variante:</strong> {operation?.op_number} auf {selectedMachine.name}
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                Die Variante erhält eigene Programme, Werkzeuge und Setup-Dokumente.
+                Die Variante erhält eigene Programme und Werkzeuglisten; Kopien sind unabhängig vom Original.
               </p>
             </div>
           )}

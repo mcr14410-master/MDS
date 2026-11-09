@@ -20,6 +20,16 @@ const UPDATABLE_FIELDS = [
   'raw_material_dimensions', 'material_specification', 'setup_instructions', 'special_notes',
 ];
 
+// '' und fehlende Werte → null; 0 bleibt 0 (Preset 0, Nullpunkt 0)
+const emptyToNull = (v) => (v === undefined || v === '' ? null : v);
+
+// Freitext (Notiz, Bildunterschrift): nur schreiben, wenn im Request – null oder '' leert
+const optionalText = (body, field, values) => {
+  if (!Object.prototype.hasOwnProperty.call(body, field)) return `${field}`;
+  values.push(emptyToNull(body[field]));
+  return `$${values.length}`;
+};
+
 const notFound = (message = 'Einrichteblatt nicht gefunden') => ({ status: 404, body: { success: false, message } });
 
 /**
@@ -324,20 +334,20 @@ exports.createSetupSheet = async (req, res) => {
     const values = [
       operation_id,
       machine_id,
-      program_id || null,
-      fixture_description || null,
-      clamping_description || null,
-      control_type || null,
-      preset_number || null,
-      wcs_number || null,
-      wcs_x || null,
-      wcs_y || null,
-      wcs_z || null,
-      reference_point || null,
-      raw_material_dimensions || null,
-      material_specification || null,
-      setup_instructions || null,
-      special_notes || null,
+      emptyToNull(program_id),
+      emptyToNull(fixture_description),
+      emptyToNull(clamping_description),
+      emptyToNull(control_type),
+      emptyToNull(preset_number),
+      emptyToNull(wcs_number),
+      emptyToNull(wcs_x),
+      emptyToNull(wcs_y),
+      emptyToNull(wcs_z),
+      emptyToNull(reference_point),
+      emptyToNull(raw_material_dimensions),
+      emptyToNull(material_specification),
+      emptyToNull(setup_instructions),
+      emptyToNull(special_notes),
       req.user.id
     ];
 
@@ -548,15 +558,18 @@ exports.downloadPhoto = (req, res) => servePhoto(req, res, 'attachment');
  */
 exports.updatePhoto = sheetChange(async (req, client) => {
   const { id, photoId } = req.params;
-  const { caption, photo_type, sort_order } = req.body;
+  const { photo_type, sort_order } = req.body;
+  const values = [photo_type, sort_order];
+  const caption = optionalText(req.body, 'caption', values);
+  values.push(photoId, id);
   const result = await client.query(
     `UPDATE setup_sheet_photos SET
-       caption = COALESCE($1, caption),
-       photo_type = COALESCE($2, photo_type),
-       sort_order = COALESCE($3, sort_order)
-     WHERE id = $4 AND setup_sheet_id = $5
+       caption = ${caption},
+       photo_type = COALESCE($1, photo_type),
+       sort_order = COALESCE($2, sort_order)
+     WHERE id = $${values.length - 1} AND setup_sheet_id = $${values.length}
      RETURNING *`,
-    [caption, photo_type, sort_order, photoId, id]
+    values
   );
   if (result.rows.length === 0) return notFound('Foto nicht gefunden');
   return { status: 200, body: { success: true, message: 'Foto erfolgreich aktualisiert', data: result.rows[0] } };
@@ -604,15 +617,18 @@ const addClampingDeviceInSheet = sheetChange(async (req, client) => {
  */
 exports.updateClampingDevice = sheetChange(async (req, client) => {
   const { id, itemId } = req.params;
-  const { quantity, notes, sort_order } = req.body;
+  const { quantity, sort_order } = req.body;
+  const values = [quantity, sort_order];
+  const notes = optionalText(req.body, 'notes', values);
+  values.push(itemId, id);
   const result = await client.query(
     `UPDATE setup_sheet_clamping_devices SET
        quantity = COALESCE($1, quantity),
-       notes = COALESCE($2, notes),
-       sort_order = COALESCE($3, sort_order)
-     WHERE id = $4 AND setup_sheet_id = $5
+       notes = ${notes},
+       sort_order = COALESCE($2, sort_order)
+     WHERE id = $${values.length - 1} AND setup_sheet_id = $${values.length}
      RETURNING id`,
-    [quantity, notes, sort_order, itemId, id]
+    values
   );
   if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
   const fullData = await client.query('SELECT * FROM setup_sheet_clamping_devices_view WHERE id = $1', [itemId]);
@@ -673,15 +689,18 @@ const addFixtureInSheet = sheetChange(async (req, client) => {
  */
 exports.updateFixture = sheetChange(async (req, client) => {
   const { id, itemId } = req.params;
-  const { quantity, notes, sort_order } = req.body;
+  const { quantity, sort_order } = req.body;
+  const values = [quantity, sort_order];
+  const notes = optionalText(req.body, 'notes', values);
+  values.push(itemId, id);
   const result = await client.query(
     `UPDATE setup_sheet_fixtures SET
        quantity = COALESCE($1, quantity),
-       notes = COALESCE($2, notes),
-       sort_order = COALESCE($3, sort_order)
-     WHERE id = $4 AND setup_sheet_id = $5
+       notes = ${notes},
+       sort_order = COALESCE($2, sort_order)
+     WHERE id = $${values.length - 1} AND setup_sheet_id = $${values.length}
      RETURNING id`,
-    [quantity, notes, sort_order, itemId, id]
+    values
   );
   if (result.rows.length === 0) return notFound('Zuordnung nicht gefunden');
   const fullData = await client.query('SELECT * FROM setup_sheet_fixtures_view WHERE id = $1', [itemId]);

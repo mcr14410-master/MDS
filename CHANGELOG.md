@@ -19,6 +19,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Die Nummer eines gelöschten Bauteils wird nicht mehr neu vergeben. „Auto“ schlägt die nächste freie Nummer vor, statt beim Anlegen mit einer unverständlichen Datenbank-Meldung abzubrechen.
 - Bauteil-Dokumente lassen sich jetzt auch per Drag & Drop hochladen: Dateien einfach auf die gestrichelte Fläche ziehen.
 - Die Suche auf der Bauteile-Seite findet auch die Kunden-Zeichnungsnummer und die Zeichnungsnummer.
+- Einrichteblatt: Preset 0 und Nullpunkt-Werte 0 bleiben beim Speichern erhalten (vorher wurden sie geleert, ein freigegebenes Blatt fiel dadurch auf Entwurf).
+- Die Bauteilseite passt jetzt aufs Handy, und eine Zykluszeit mit zwei Nachkommastellen lässt sich wieder speichern.
+- Variante anlegen: „Einrichteblatt kopieren“ und „Prüfplan kopieren“ funktionieren wieder. Das Einrichteblatt kommt als Entwurf für die neue Maschine mit Spannmitteln, Vorrichtungen und Fotos, aber ohne Programm. NC-Programme und Werkzeuglisten werden nicht mehr angeboten, weil sie zur Maschine gehören.
 
 ### Added
 - Bauteil-Dokumente: Drag & Drop auf die Upload-Fläche (`PartDocuments`), Hervorhebung beim Ziehen, nur Dateien werden angenommen; Arbeitsgang- und Maschinen-Dokumente nehmen Dateien schon über das sichtbare Dateifeld an
@@ -26,6 +29,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Fixed
 - Bauteile: „# Auto“ (`generatePartNumber`, Auto-Vergabe in `createPart`) und die Doppelt-Prüfung beim Anlegen/Ändern berücksichtigen gelöschte Bauteile (Soft-Delete) – vorher Vorschlag der gelöschten Nummer und 500 durch `parts_part_number_key`; Eingabe einer gelöschten Nummer → 409 mit Hinweis, Unique-Verletzung (gleichzeitiges Anlegen) → 409; Integrationstest `test-bauteilnummer-geloescht.js`
 - Bauteile-Suche (`getAllParts`) durchsucht zusätzlich `customer_part_number` und `drawing_number`; Platzhalter im Suchfeld angepasst; Integrationstest `test-bauteile-suche.js`
+- Einrichteblatt: Preset/Nullpunkt 0 – Formular belegte mit `|| ''` vor und wandelte beim Speichern mit `x ? parse(x) : null`, Anlegen im Backend mit `|| null`; jetzt `frontend/src/utils/setupSheetForm.js` (0 bleibt, leer → null) und `emptyToNull` in `createSetupSheet`; Tests `test-setup-sheet-form.js`, `test-einrichteblatt-werte.js`
+- Einrichteblatt: Bildunterschrift (`PUT …/photos/:photoId`) und Notiz an Spannmittel/Vorrichtung (`PUT …/clamping-devices|fixtures/:itemId`) werden nur geschrieben, wenn sie im Request stehen; `null` oder `''` leert (vorher `COALESCE`, `null` ließ den alten Wert stehen)
+- Arbeitsgang: Zykluszeit-Feld mit `step="any"` statt `0.1` – Werte wie 2.61 min (aus Sekunden umgerechnet) galten als ungültig und blockierten das Speichern ohne sichtbare Meldung; gespeichert wird weiter auf ganze Sekunden
+- Bauteilseite auf Handybreite: Reiterleiste scrollt in sich (`overflow-x-auto`, „Historie“ ragte 85 px hinaus), Status und Knöpfe rutschen unter den Titel (vorher Titel bis auf ein Zeichen abgeschnitten)
+- Variante anlegen (`POST /api/operations/:id/create-variant`): alle vier Kopierpfade schrieben in alte Spalten (`programs.name`, `setup_sheets.title`, `inspection_plans.name`, `tool_lists.operation_id`) – Haken angehakt → 500, Variante nicht angelegt. Neu `services/variantCopy.js`: Einrichteblätter als Entwurf (neue Maschine, `program_id` leer, ohne Stände), Spannmittel/Vorrichtungen (ohne gelöschte), Fotos als eigene Datei im Ordner des neuen Blatts (fehlende Datei übersprungen, Meldung im Dialog; bei Fehler Rollback samt Dateien); Prüfplan samt Merkmalen. `copy_programs`/`copy_tools` entfallen (Entscheidung Nutzer 09.11.2026: maschinenspezifisch), Dialog angepasst; Integrationstest `test-variante-kopieren.js`
+- `scripts/backup.sh`: Dumps mit `umask 077` (600), ältere Dumps werden auf 600 nachgezogen; der Backup-Monitor liest nur Dateiliste, Größe und Datum
 - Integrationstest `test-zeitmodell-aenderung.js` („Künftig datiert“) war datumsabhängig rot: Urlaub 19.12.–01.01. enthält nur Freitage, die Feiertage sind – das 4-Tage-Modell ändert dann nichts. Zeitraum auf 3 Wochen verlängert (immer ein normaler Freitag); Code unverändert
 
 ---
