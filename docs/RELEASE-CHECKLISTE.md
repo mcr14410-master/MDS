@@ -42,13 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.27.2)
+Derzeit keine.
 
-- Keine Migration
-- `compose.yaml` geändert (`group_add` beim Backend), `deploy.sh` legt den Container neu an
-- Nach dem Deploy: `docker compose exec backend id` → enthält `1001(nodejs)`
-- Cron-Übersicht: Backup-Status „Ausführen“ → grün, alle Dumps gültig (kein neues Backup nötig)
-- „Was ist neu“ zeigt 2.27.2
+---
+
+## Erledigt: Release 2.27.2 (10.11.2026)
+
+Backend-Container bekommt per `group_add` die Lesegruppe der Dumps (#359). Keine Migration. Deploy grün, Tag `v2.27.2`. Backup-Status nach „Ausführen“ grün – damit sind die Dumps seit 2.27.1 für andere Benutzer auf dem Pi gesperrt und der Monitor liest sie wieder.
 
 ---
 
