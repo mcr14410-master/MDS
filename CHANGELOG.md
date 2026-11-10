@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.2] - 2026-11-10 - Backup-Status
+
 ### Für Anwender
 - Der Backup-Status im MDS ist jetzt wirklich wieder grün – die Korrektur aus 2.27.1 griff noch nicht. Die Sicherungen selbst waren die ganze Zeit in Ordnung.
 

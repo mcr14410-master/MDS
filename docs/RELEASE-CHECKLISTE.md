@@ -42,15 +42,19 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.27.1)
+**Nächstes Release** (2.27.2)
 
 - Keine Migration
-- Vor dem Deploy auf rpi01: `getent group 1001; getent passwd 1001` – muss leer sein (sonst könnte dieser Benutzer die Dumps lesen → nicht deployen, melden)
-- `scripts/backup.sh` geändert: nach dem nächsten Nacht-Backup `ls -ln /srv/mds/backups` – alle Dumps `-rw-r-----` mit Besitzer `0` und Gruppe `1001`; Backup-Status im MDS grün (sofort: `sudo ./scripts/backup.sh`, dann in der Cron-Übersicht „Ausführen“)
-- Einrichteblatt (Heidenhain): Preset 0 eingeben und speichern → Karte und Detailansicht zeigen Preset 0
-- Messprogramm hochladen: Datei ins Fenster ziehen → Fenster bleibt in der Bildmitte; Arbeitsgänge umsortieren geht weiter
-- Bauteilliste, Tabelle und Karten: Kunden-Zeichnungsnummer unter der Bezeichnung, Kundennummer beim Kunden
-- „Was ist neu“ zeigt 2.27.1
+- `compose.yaml` geändert (`group_add` beim Backend), `deploy.sh` legt den Container neu an
+- Nach dem Deploy: `docker compose exec backend id` → enthält `1001(nodejs)`
+- Cron-Übersicht: Backup-Status „Ausführen“ → grün, alle Dumps gültig (kein neues Backup nötig)
+- „Was ist neu“ zeigt 2.27.2
+
+---
+
+## Erledigt: Release 2.27.1 (10.11.2026)
+
+Backup-Dumps root:1001 mit 640, Preset 0, Datei-Drag im Messprogramm-Fenster, Bauteilliste mit Kunden-Zeichnungsnummer und Kundennummer (#357). Keine Migration. Deploy grün, Tag `v2.27.1`. Dumps danach `-rw-r----- 0 1001`. Prüfpunkte grün bis auf den Backup-Status: weiter EACCES, weil `nodejs` im Backend-Image nur zur Gruppe `nogroup` gehört – behoben in 2.27.2 (#359).
 
 ---
 
