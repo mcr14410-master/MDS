@@ -223,15 +223,14 @@ export default function SetupSheetForm({
         {isHeidenhain && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Preset-Nummer (1-99)
+              Preset-Nummer
             </label>
             <input
               type="number"
               name="preset_number"
               value={formData.preset_number}
               onChange={handleChange}
-              min="1"
-              max="99"
+              min="0"
               placeholder="z.B. 1"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />

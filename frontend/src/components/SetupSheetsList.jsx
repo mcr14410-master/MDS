@@ -494,7 +494,7 @@ export default function SetupSheetsList({ operationId }) {
                 )}
 
                 {/* Nullpunkt */}
-                {(currentSetupSheet.preset_number || currentSetupSheet.wcs_number) && (
+                {(currentSetupSheet.preset_number != null || currentSetupSheet.wcs_number) && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                       Nullpunkt-System
@@ -508,7 +508,7 @@ export default function SetupSheetsList({ operationId }) {
                           </dd>
                         </div>
                       )}
-                      {currentSetupSheet.preset_number && (
+                      {currentSetupSheet.preset_number != null && (
                         <div>
                           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Preset-Nummer</dt>
                           <dd className="text-sm text-gray-900 dark:text-white">
