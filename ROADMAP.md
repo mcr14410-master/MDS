@@ -621,6 +621,16 @@ Der Interpreter `hh.js` arbeitet auf dem G-Code selbst – diese Funktionen gehe
 
 ## 💡 Phase 12+: Ideen / Optionale Features
 
+### Import-Assistent per Drag & Drop (Idee Nutzer 10.11.2026)
+Allgemeiner Weg, bestehende Daten ins MDS zu bringen – dauerhaft und auch für andere Betriebe, ohne feste Ordnerstruktur. Der Altbestand-Helfer („Altbestand übernehmen“) ist auf unsere Ablage zugeschnitten und wird nach der Übernahme des Bestands kaum noch gebraucht (abschaltbar, vgl. [MODULE_KONZEPT.md](docs/konzepte/MODULE_KONZEPT.md)).
+Der Assistent zeigt die fertige Bauteilstruktur, jede Ebene hat eine eigene Ablagefläche:
+- [ ] **Bauteil:** Kunde aus dem Bestand, vorhandenes oder neues Bauteil; Ordner oder PDF hineinziehen → Bauteil aus dem Namen erkennen (wie im Helfer); Ablage für Bauteil-Dokumente
+- [ ] **Arbeitsgang:** vorhandenen wählen oder neu aus den Arbeitsgangtypen
+- [ ] **Mess-/NC-Programm** anlegen, Ablage für die Programmdateien
+- [ ] **Einrichteblatt** anlegen, vorhandenes Programm wählen, Ablage für Fotos
+
+Notizen (noch nicht abgestimmt): Das Schreiben (Bauteil, Arbeitsgang, Messprogramm, Einrichteblatt, Fotos, Dokumente, mit Wiederaufnahme) kann aus dem Helfer kommen (`runImport.js`), ebenso die Namenserkennung (`suggest.js`); ohnehin unser Ordnerschema voraussetzend sind vor allem `parse.js`/`profile.js`. NC-Programme übernimmt der Helfer bisher nicht – Namensregel, Programmnummer und Freigabe müssen wie beim normalen Upload greifen. Abgrenzen zur Bauteilseite: Mehrwert ist alles auf einer Seite, erst zusammenstellen, dann am Stück anlegen. Vor der Umsetzung: Konzept → Spec → Plan.
+
 ### Lager-Erweiterungen (erst nach der Lager-Architektur-Entscheidung)
 - [ ] **Rohmaterial:** Material, Güte, Form, Abmessungen; Bestand mit Chargen-Verfolgung; Wareneingang/Entnahme; Bauteil → Rohmaterial-Zuordnung; Lieferanten
 - [ ] **Normteile / Zukaufteile:** DIN/ISO-Katalog, Kategorien (Schrauben, Muttern, Stifte, O-Ringe …), Bestand + Mindestbestand, Lieferanten; optional Stücklisten
