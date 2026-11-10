@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.1] - 2026-11-10 - Backup-Status, Preset 0, Bauteilliste
+
 ### Für Anwender
 - Der Backup-Status im MDS ist wieder grün: Seit 2.27.0 konnte die Prüfung die Sicherungen nicht mehr lesen, die Sicherungen selbst waren in Ordnung.
 - Einrichteblatt: Preset 0 lässt sich jetzt eingeben und wird angezeigt.

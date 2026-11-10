@@ -42,17 +42,21 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Nächstes Release** (2.27.0)
+**Nächstes Release** (2.27.1)
 
 - Keine Migration
-- `scripts/backup.sh` geändert: nach dem nächsten Nacht-Backup `ls -l /srv/mds/backups` – alle Dumps `-rw-------`; Backup-Status im MDS weiter grün
-- Bauteil-Dokumente: Datei auf die gestrichelte Fläche ziehen → wird hochgeladen
-- Bauteile-Suche nach einer Kunden-Zeichnungsnummer findet das Bauteil
-- „# Auto“ beim Bauteil-Anlegen schlägt eine freie Nummer vor (nicht die eines gelöschten Bauteils)
-- Einrichteblatt mit Preset 0 speichern → 0 bleibt stehen
-- Variante anlegen mit „Einrichteblatt kopieren“ und „Prüfplan kopieren“ → Variante entsteht, Einrichteblatt als Entwurf ohne Programm, Prüfplan mit Merkmalen
-- Bauteilseite auf dem Handy: kein waagrechtes Scrollen
-- „Was ist neu“ zeigt 2.27.0
+- Vor dem Deploy auf rpi01: `getent group 1001; getent passwd 1001` – muss leer sein (sonst könnte dieser Benutzer die Dumps lesen → nicht deployen, melden)
+- `scripts/backup.sh` geändert: nach dem nächsten Nacht-Backup `ls -ln /srv/mds/backups` – alle Dumps `-rw-r-----` mit Besitzer `0` und Gruppe `1001`; Backup-Status im MDS grün (sofort: `sudo ./scripts/backup.sh`, dann in der Cron-Übersicht „Ausführen“)
+- Einrichteblatt (Heidenhain): Preset 0 eingeben und speichern → Karte und Detailansicht zeigen Preset 0
+- Messprogramm hochladen: Datei ins Fenster ziehen → Fenster bleibt in der Bildmitte; Arbeitsgänge umsortieren geht weiter
+- Bauteilliste, Tabelle und Karten: Kunden-Zeichnungsnummer unter der Bezeichnung, Kundennummer beim Kunden
+- „Was ist neu“ zeigt 2.27.1
+
+---
+
+## Erledigt: Release 2.27.0 (09.11.2026)
+
+Bauteile: gelöschte Nummern nicht neu vergeben (#353), Drag & Drop für Bauteil-Dokumente und erweiterte Suche (#354), Preset/Nullpunkt 0, Variante mit Einrichteblatt und Prüfplan kopieren, Handy-Ansicht, Backup-Dumps nur für root (#355). Keine Migration. Deploy grün, Tag `v2.27.0`. Prüfpunkte grün bis auf den Backup-Status: Der Backup-Monitor im Backend-Container (UID 1001) konnte die Dumps mit 600 nicht mehr lesen und meldete „Letztes gültiges Backup: keins“ – die Dumps selbst waren in Ordnung, behoben in 2.27.1.
 
 ---
 
