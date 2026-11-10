@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Der Backup-Status im MDS ist jetzt wirklich wieder grün – die Korrektur aus 2.27.1 griff noch nicht. Die Sicherungen selbst waren die ganze Zeit in Ordnung.
+
+### Fixed
+- Backup-Monitor: Der Backend-Container bekommt per `group_add` in `compose.yaml` die Gruppe `BACKUP_READ_GID` (Standard 1001), damit er die Dumps (root:1001, 640, seit 2.27.1) lesen kann. Der Benutzer `nodejs` im Image gehört nur zu `nogroup` (65533) – 2.27.1 setzte die Gruppe 1001 auf den Dateien, aber niemand im Container hatte sie, der Monitor meldete weiter EACCES
+
 ---
 
 ## [2.27.1] - 2026-11-10 - Backup-Status, Preset 0, Bauteilliste

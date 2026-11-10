@@ -55,6 +55,10 @@ services:
       - /srv/mds/uploads:/app/uploads
       - /srv/mds/backups:/app/backups:ro
       - ./CHANGELOG.md:/app/CHANGELOG.md:ro
+    # Leserecht auf die Dumps (root:BACKUP_READ_GID, 640 – scripts/backup.sh) für den Backup-Monitor;
+    # der Benutzer nodejs im Image gehört sonst nur zu nogroup
+    group_add:
+      - "${BACKUP_READ_GID:-1001}"
     depends_on:
       db:
         condition: service_healthy
