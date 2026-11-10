@@ -5,9 +5,11 @@
 
 set -euo pipefail
 
-# Dumps enthalten alle Betriebsdaten: nur für den Besitzer (root) lesbar. Das Backend
-# (Backup-Monitor) liest im Ordner nur Dateiliste, Größe und Datum – dafür reichen die Ordnerrechte.
+# Dumps enthalten alle Betriebsdaten: lesbar nur für root und die Gruppe des Backend-Containers
+# (Benutzer nodejs, GID 1001 – backend/Dockerfile). Der Backup-Monitor entpackt jeden Dump zur
+# Prüfung und braucht Leserechte; andere Benutzer auf dem Pi sehen die Dumps nicht (640).
 umask 077
+BACKUP_READ_GID="${BACKUP_READ_GID:-1001}"
 
 # Compose-Befehle aus dem Repo-Root (Cron startet z. B. in /root → sonst „no configuration file provided“)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -62,8 +64,8 @@ log "🗑️  Lösche Backups älter als $KEEP_DAYS Tage und unbrauchbare Dateie
 find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -mtime +$KEEP_DAYS -delete
 find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -size -${MIN_BYTES}c -delete
 
-# Ältere Dumps (vor der Umstellung mit 644 geschrieben) ebenfalls schützen
-find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -perm /077 -exec chmod 600 {} +
+# Rechte aller Dumps setzen (auch ältere mit 644 oder 600): root:BACKUP_READ_GID, 640
+find "$BACKUP_DIR" -name "mds_backup_*.sql.gz" -exec chgrp "$BACKUP_READ_GID" {} + -exec chmod 640 {} +
 
 SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 log "✅ Backup erstellt und geprüft: $BACKUP_FILE ($SIZE)"
