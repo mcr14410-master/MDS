@@ -174,7 +174,17 @@ export default function OperationsAccordion({ partId, focusOperationId = null, f
     setDragOverId(null);
   };
 
+  // Nur Arbeitsgänge umsortieren: gezogene Dateien (z. B. ins Messprogramm-Fenster in der Karte) nicht
+  // hervorheben – sonst skaliert die Karte, und ein Fenster darin springt aus der Bildmitte. Außerhalb
+  // einer Ablagefläche Ablegen verweigern, damit der Browser die Datei nicht öffnet (Formular wäre weg).
   const handleDragOver = (e, operationId) => {
+    if (!draggedId) {
+      if (!e.nativeEvent.defaultPrevented) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'none';
+      }
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (operationId !== draggedId) {
@@ -183,6 +193,7 @@ export default function OperationsAccordion({ partId, focusOperationId = null, f
   };
 
   const handleDragLeave = () => {
+    if (!draggedId) return;
     setDragOverId(null);
   };
 

@@ -460,6 +460,11 @@ function PartCard({ part, canEdit, canDelete, onDelete }) {
                 {part.part_name}
               </p>
             )}
+            {part.customer_part_number && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {part.customer_part_number}
+              </p>
+            )}
           </div>
           <span className={`flex-shrink-0 px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${getStatusColor(part.status)}`}>
             {getStatusLabel(part.status)}
@@ -473,6 +478,9 @@ function PartCard({ part, canEdit, canDelete, onDelete }) {
               <Link to={`/customers/${part.customer_id}`} className="hover:text-blue-600 dark:hover:text-blue-400">
                 {part.customer_name}
               </Link>
+              {part.customer_number && (
+                <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">({part.customer_number})</span>
+              )}
             </div>
           )}
           <div className="text-gray-600 dark:text-gray-300">
@@ -570,15 +578,27 @@ function PartsTable({ parts, canEdit, canDelete, onDelete }) {
                 </td>
                 <td className="px-4 py-3 truncate text-sm text-gray-900 dark:text-gray-100">
                   {part.part_name || '-'}
+                  {part.customer_part_number && (
+                    <div className="truncate text-xs text-gray-500 dark:text-gray-400" title="Kunden-Zeichnungsnummer">
+                      {part.customer_part_number}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 truncate text-sm">
                   {part.customer_name ? (
-                    <Link
-                      to={`/customers/${part.customer_id}`}
-                      className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {part.customer_name}
-                    </Link>
+                    <>
+                      <Link
+                        to={`/customers/${part.customer_id}`}
+                        className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {part.customer_name}
+                      </Link>
+                      {part.customer_number && (
+                        <div className="truncate text-xs text-gray-500 dark:text-gray-400" title="Kundennummer">
+                          {part.customer_number}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <span className="text-gray-400 dark:text-gray-500">-</span>
                   )}

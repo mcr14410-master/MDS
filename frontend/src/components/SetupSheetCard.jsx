@@ -73,12 +73,12 @@ export default function SetupSheetCard({ setupSheet, onOpen, onEdit, onDelete, o
       )}
 
       {/* Nullpunkt Info (kompakt) */}
-      {(setupSheet.preset_number || setupSheet.wcs_number) && (
+      {(setupSheet.preset_number != null || setupSheet.wcs_number) && (
         <div className="bg-gray-50 dark:bg-gray-900/30 rounded p-2 mb-4 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-gray-600 dark:text-gray-400">Nullpunkt:</span>
             <span className="font-medium text-gray-900 dark:text-white">
-              {setupSheet.preset_number && `Preset ${setupSheet.preset_number}`}
+              {setupSheet.preset_number != null && `Preset ${setupSheet.preset_number}`}
               {setupSheet.wcs_number && setupSheet.wcs_number}
             </span>
           </div>
