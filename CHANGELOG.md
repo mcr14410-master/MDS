@@ -19,10 +19,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Der Backup-Status im MDS ist wieder grün: Seit 2.27.0 konnte die Prüfung die Sicherungen nicht mehr lesen, die Sicherungen selbst waren in Ordnung.
 - Einrichteblatt: Preset 0 lässt sich jetzt eingeben und wird angezeigt.
 - Eine Datei ins Fenster „Messprogramm hochladen“ zu ziehen, lässt das Fenster nicht mehr springen.
-- Die Bauteilliste zeigt in der Tabellenansicht klein die Kunden-Zeichnungsnummer unter der Bezeichnung und die Kundennummer unter dem Kunden.
+- Die Bauteilliste zeigt in der Tabellen- und der Kartenansicht klein die Kunden-Zeichnungsnummer unter der Bezeichnung und die Kundennummer beim Kunden.
 
 ### Changed
-- Bauteile, Tabellenansicht: Kunden-Zeichnungsnummer (`customer_part_number`) unter der Bezeichnung, Kundennummer unter dem Kunden – klein und nur, wenn gesetzt
+- Bauteile, Tabellen- und Kartenansicht: Kunden-Zeichnungsnummer (`customer_part_number`) unter der Bezeichnung, Kundennummer beim Kunden (Tabelle darunter, Karte in Klammern) – klein und nur, wenn gesetzt
 
 ### Fixed
 - `scripts/backup.sh`: Dumps jetzt root:1001 mit 640 statt root:600 (2.27.0) – der Backup-Monitor entpackt jeden Dump zur Prüfung und läuft im Backend-Container als `nodejs` (1001), er bekam EACCES und meldete „Letztes gültiges Backup: keins“. Gruppe über `BACKUP_READ_GID` änderbar; ältere Dumps werden mit umgestellt
