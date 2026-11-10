@@ -570,15 +570,27 @@ function PartsTable({ parts, canEdit, canDelete, onDelete }) {
                 </td>
                 <td className="px-4 py-3 truncate text-sm text-gray-900 dark:text-gray-100">
                   {part.part_name || '-'}
+                  {part.customer_part_number && (
+                    <div className="truncate text-xs text-gray-500 dark:text-gray-400" title="Kunden-Zeichnungsnummer">
+                      {part.customer_part_number}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 truncate text-sm">
                   {part.customer_name ? (
-                    <Link
-                      to={`/customers/${part.customer_id}`}
-                      className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {part.customer_name}
-                    </Link>
+                    <>
+                      <Link
+                        to={`/customers/${part.customer_id}`}
+                        className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {part.customer_name}
+                      </Link>
+                      {part.customer_number && (
+                        <div className="truncate text-xs text-gray-500 dark:text-gray-400" title="Kundennummer">
+                          {part.customer_number}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <span className="text-gray-400 dark:text-gray-500">-</span>
                   )}
