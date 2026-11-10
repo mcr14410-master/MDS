@@ -5,9 +5,10 @@
 
 set -euo pipefail
 
-# Dumps enthalten alle Betriebsdaten: lesbar nur für root und die Gruppe des Backend-Containers
-# (Benutzer nodejs, GID 1001 – backend/Dockerfile). Der Backup-Monitor entpackt jeden Dump zur
-# Prüfung und braucht Leserechte; andere Benutzer auf dem Pi sehen die Dumps nicht (640).
+# Dumps enthalten alle Betriebsdaten: lesbar nur für root und die Gruppe BACKUP_READ_GID (640).
+# Der Backup-Monitor im Backend-Container entpackt jeden Dump zur Prüfung; der Container bekommt
+# diese Gruppe über group_add in compose.yaml (gleiche Variable, gleicher Standard 1001).
+# Andere Benutzer auf dem Pi sehen die Dumps nicht.
 umask 077
 BACKUP_READ_GID="${BACKUP_READ_GID:-1001}"
 
