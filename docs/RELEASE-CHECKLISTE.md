@@ -42,7 +42,37 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+### Release 2.27.3 (Rechte und Uhrzeiten bei Programmen, #365, #366)
+
+**Migration `1737000129000`** stellt die Zeitstempel im Modul Programme auf `timestamptz` und rechnet die Altdaten um
+(Messprogramme und Einrichteblätter −1 bzw. −2 h, NC-Programme und Ablauf unverändert). Ein Rückweg stellt nicht den alten
+Stand her – deshalb **vor dem Deploy das Backup** (`sudo ./scripts/backup.sh`, muss mit „✅ Backup erstellt und geprüft“ enden).
+
+Nach dem Deploy:
+1. Prüfabfrage (nur lesen) – alle Zeilen müssen in `passt` die volle Zahl haben (vor dem Deploy: Einrichteblätter 65/65,
+   Messprogramm-Versionen 87/87, NC-Programme 3/3):
+   ```bash
+   cd ~/mds && docker compose exec -T db psql -U mds mds <<'EOF'
+   SELECT data_type FROM information_schema.columns WHERE table_name = 'programs' AND column_name = 'created_at';
+   WITH a AS (SELECT entity_type, entity_id AS id, min(created_at) AS t FROM audit_logs
+               WHERE action = 'CREATE' AND entity_type IN ('programs', 'setup-sheets') AND entity_id IS NOT NULL GROUP BY 1, 2)
+   SELECT 'programs nc' AS was, count(*) AS mit_audit, count(*) FILTER (WHERE abs(extract(epoch FROM p.created_at - a.t)) < 120) AS passt
+     FROM programs p JOIN a ON a.entity_type = 'programs' AND a.id = p.id WHERE p.kind = 'nc'
+   UNION ALL
+   SELECT 'setup_sheets', count(*), count(*) FILTER (WHERE abs(extract(epoch FROM s.created_at - a.t)) < 120)
+     FROM setup_sheets s JOIN a ON a.entity_type = 'setup-sheets' AND a.id = s.id
+   UNION ALL
+   SELECT 'cmm_versionen', count(*), count(*) FILTER (WHERE abs(extract(epoch FROM pr.created_at - f.t)) < 120)
+     FROM program_revisions pr JOIN programs p ON p.id = pr.program_id AND p.kind = 'cmm'
+     JOIN (SELECT revision_id, min(created_at) AS t FROM program_revision_files GROUP BY 1) f ON f.revision_id = pr.id;
+   EOF
+   ```
+   Erste Zeile: `timestamp with time zone`.
+2. Uhrzeiten: ein Messprogramm und ein Einrichteblatt mit bekannter Uhrzeit ansehen (Karte „Erstellt“, Versionsverlauf,
+   Ablauf) – Uhrzeit wie am Tag des Hochladens, nicht 1–2 h später
+3. Rechte: als CNC-Fräser bzw. CNC-Dreher anmelden → an Programmkarten „Neue Version hochladen“ da; „Programm hochladen“,
+   Bearbeiten, Löschen und Zurückrollen weg; bei Bauteil-Dokumenten kein Hochladen/Löschen. Als Programmierer alles da
+4. Altbestand übernehmen öffnet weiter (Programmierer/admin haben `program.create` und `part.update`)
 
 ---
 
