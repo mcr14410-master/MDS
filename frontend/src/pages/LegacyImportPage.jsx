@@ -17,7 +17,7 @@ import LegacyImportRow from '../components/legacyImport/LegacyImportRow';
 import { STATUS_INFO } from '../components/legacyImport/statusInfo';
 import ArchiveSettings from '../components/legacyImport/ArchiveSettings';
 
-const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.upload'];
+const REQUIRED_PERMISSIONS = ['part.create', 'setup_sheet.update', 'program.create', 'program.upload', 'part.update'];
 const NO_CANDIDATES = { same: [], otherRevisions: [] };
 const BASE_FEATURES = ['programs', 'setup_sheet', 'documents'];
 const OP_DEFAULTS_KEY = 'mds.legacyImport.opDefaults';

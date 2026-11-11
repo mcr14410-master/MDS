@@ -15,6 +15,7 @@ import DocumentThumbnail from './common/DocumentThumbnail';
 import DocumentPreview from './common/DocumentPreview';
 import PrintPdfButton from './common/PrintPdfButton';
 import { previewKind } from '../utils/documentPreview';
+import { useAuthStore } from '../stores/authStore';
 
 // Dokument-Typ Labels und Icons (Reihenfolge = Anzeige-Reihenfolge)
 // iconBg muss statisch sein, sonst purged Tailwind die Klasse
@@ -43,6 +44,7 @@ const detectType = (filename) => {
 };
 
 export default function PartDocuments({ partId, onDocumentChange }) {
+  const canEdit = useAuthStore((s) => s.hasPermission('part.update')); // gleiche Prüfung wie das Backend
   const [previewDoc, setPreviewDoc] = useState(null);
   const [documents, setDocuments] = useState({});
   const [loading, setLoading] = useState(true);
@@ -219,6 +221,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
   return (
     <div className="space-y-6">
       {/* Upload-Bereich */}
+      {canEdit && (
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -289,6 +292,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
           </div>
         )}
       </div>
+      )}
 
       {/* Dokumente nach Typ */}
       {totalDocuments === 0 ? (
@@ -352,7 +356,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                       {/* Set Primary CAD (nur für CAD-Modelle) */}
-                      {type === 'cad_model' && !doc.is_primary_cad && (
+                      {canEdit && type === 'cad_model' && !doc.is_primary_cad && (
                         <button
                           onClick={() => handleSetPrimary(doc.id)}
                           className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -365,7 +369,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                       )}
 
                       {/* Set Primary Drawing (nur für Zeichnungen) */}
-                      {type === 'drawing' && !doc.is_primary_drawing && (
+                      {canEdit && type === 'drawing' && !doc.is_primary_drawing && (
                         <button
                           onClick={() => handleSetPrimaryDrawing(doc.id)}
                           className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -408,6 +412,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                       </button>
 
                       {/* Delete */}
+                      {canEdit && (
                       <button
                         onClick={() => handleDelete(doc.id, doc.original_filename)}
                         className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
@@ -417,6 +422,7 @@ export default function PartDocuments({ partId, onDocumentChange }) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
+                      )}
                     </div>
                   </div>
                 ))}

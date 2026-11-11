@@ -117,7 +117,7 @@ export default function ProgramsList({ operationId }) {
           </p>
         </div>
         
-        {hasPermission('part.update') && (
+        {hasPermission('program.create') && (
           <div className="flex flex-wrap justify-end gap-2">
             <button
               onClick={() => setShowUploadForm(true)}
@@ -153,7 +153,7 @@ export default function ProgramsList({ operationId }) {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Laden Sie das erste NC-Programm für diesen Arbeitsgang hoch.
           </p>
-          {hasPermission('part.update') && (
+          {hasPermission('program.create') && (
             <button
               onClick={() => setShowUploadForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requirePermission } = require('../middleware/authMiddleware');
 const { upload, cmmUpload, handleMulterError } = require('../middleware/uploadMiddleware');
 const programsController = require('../controllers/programsController');
 const cmmProgramsController = require('../controllers/cmmProgramsController');
@@ -16,7 +16,8 @@ const cmmFields = cmmUpload.fields([
 router.use(authenticateToken);
 
 // POST /api/programs - Programm hochladen
-router.post('/', 
+router.post('/',
+  requirePermission('program.create'), // vor multer: ohne Recht keine Datei ablegen
   upload.single('file'), 
   handleMulterError,
   programsController.createProgram
@@ -24,6 +25,7 @@ router.post('/',
 
 // POST /api/programs/cmm - Messprogramm (KMG) mit Dateigruppe anlegen
 router.post('/cmm',
+  requirePermission('program.create'),
   cmmFields,
   handleMulterError,
   cmmProgramsController.createCmmProgram
@@ -41,6 +43,7 @@ router.get('/stats', programsController.getProgramStats);
 
 // POST /api/programs/:id/cmm-revisions - Messprogramm: neue Version (geänderte Dateien, Rest wird übernommen)
 router.post('/:id/cmm-revisions',
+  requirePermission('program.upload'),
   cmmFields,
   handleMulterError,
   cmmProgramsController.createCmmRevision
@@ -54,13 +57,14 @@ router.get('/:id/files/:fileId/download', cmmProgramsController.downloadCmmFile)
 
 // POST /api/programs/:id/revisions - Neue Revision hochladen (VOR GET!)
 router.post('/:id/revisions',
+  requirePermission('program.upload'),
   upload.single('file'),
   handleMulterError,
   programsController.uploadNewRevision
 );
 
 // POST /api/programs/:id/rollback?to=1.0.1 - Auf alte Version zurückrollen
-router.post('/:id/rollback', programsController.rollbackToRevision);
+router.post('/:id/rollback', requirePermission('program.update'), programsController.rollbackToRevision);
 
 // GET /api/programs/:id/revisions - Versions-Historie (VOR /:id!)
 router.get('/:id/revisions', programsController.getProgramRevisions);
@@ -78,9 +82,9 @@ router.get('/:id/download', programsController.downloadProgram);
 router.get('/:id', programsController.getProgramById);
 
 // PUT /api/programs/:id - Metadaten ändern
-router.put('/:id', programsController.updateProgram);
+router.put('/:id', requirePermission('program.update'), programsController.updateProgram);
 
 // DELETE /api/programs/:id - Programm löschen
-router.delete('/:id', programsController.deleteProgram);
+router.delete('/:id', requirePermission('program.delete'), programsController.deleteProgram);
 
 module.exports = router;

@@ -98,7 +98,7 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
           </svg>
         </button>
 
-        {hasPermission('part.update') && (
+        {hasPermission('program.upload') && (
           <button
             onClick={() => onNewRevision(program)}
             className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
@@ -110,7 +110,7 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
           </button>
         )}
 
-        {hasPermission('part.update') && (
+        {hasPermission('program.update') && (
           <button
             onClick={() => onEdit(program)}
             className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -122,7 +122,7 @@ export default function CmmProgramCard({ program, onEdit, onDelete, onViewVersio
           </button>
         )}
 
-        {hasPermission('part.delete') && (
+        {hasPermission('program.delete') && (
           <button
             onClick={() => onDelete(program)}
             className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"

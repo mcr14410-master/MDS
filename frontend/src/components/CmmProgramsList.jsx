@@ -99,7 +99,7 @@ export default function CmmProgramsList({ operationId }) {
               Auf Gerät bereitstellen
             </button>
           )}
-          {hasPermission('part.update') && uploadButton('Messprogramm hochladen')}
+          {hasPermission('program.create') && uploadButton('Messprogramm hochladen')}
         </div>
       </div>
 
@@ -118,7 +118,7 @@ export default function CmmProgramsList({ operationId }) {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Den PC-DMIS-Ordner des Programms hochladen – .prg, .cad, Prüfzeichnung; Excel-Vorlage und Kalibrierprogramm im eigenen Bereich.
           </p>
-          {hasPermission('part.update') && uploadButton('Erstes Messprogramm hochladen')}
+          {hasPermission('program.create') && uploadButton('Erstes Messprogramm hochladen')}
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-4">
