@@ -9,7 +9,7 @@ const router = express.Router({ mergeParams: true }); // mergeParams für :partI
 const multer = require('../utils/multer');
 const path = require('path');
 const fs = require('fs');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requirePermission } = require('../middleware/authMiddleware');
 const partDocumentsController = require('../controllers/partDocumentsController');
 
 // Temporäres Upload-Verzeichnis
@@ -72,7 +72,7 @@ router.get('/', partDocumentsController.getPartDocuments);
  * POST /api/parts/:partId/documents
  * Dokument hochladen
  */
-router.post('/', upload.single('file'), partDocumentsController.uploadDocument);
+router.post('/', requirePermission('part.update'), upload.single('file'), partDocumentsController.uploadDocument); // Recht vor multer: ohne Recht keine Datei ablegen
 
 /**
  * GET /api/parts/:partId/documents/:documentId/download
@@ -90,25 +90,25 @@ router.get('/:documentId/view', partDocumentsController.viewDocument);
  * PATCH /api/parts/:partId/documents/:documentId
  * Dokument-Metadaten aktualisieren
  */
-router.patch('/:documentId', partDocumentsController.updateDocument);
+router.patch('/:documentId', requirePermission('part.update'), partDocumentsController.updateDocument);
 
 /**
  * DELETE /api/parts/:partId/documents/:documentId
  * Dokument löschen
  */
-router.delete('/:documentId', partDocumentsController.deleteDocument);
+router.delete('/:documentId', requirePermission('part.update'), partDocumentsController.deleteDocument);
 
 /**
  * POST /api/parts/:partId/documents/:documentId/set-primary
  * Als primäres CAD-Model setzen
  */
-router.post('/:documentId/set-primary', partDocumentsController.setPrimaryCad);
+router.post('/:documentId/set-primary', requirePermission('part.update'), partDocumentsController.setPrimaryCad);
 
 /**
  * POST /api/parts/:partId/documents/:documentId/set-primary-drawing
  * Als primäre Zeichnung setzen
  */
-router.post('/:documentId/set-primary-drawing', partDocumentsController.setPrimaryDrawing);
+router.post('/:documentId/set-primary-drawing', requirePermission('part.update'), partDocumentsController.setPrimaryDrawing);
 
 // Error Handler für Multer
 router.use((err, req, res, next) => {
