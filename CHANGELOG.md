@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.3] - 2026-11-12 - Rechte und Uhrzeiten bei Programmen
+
 ### Für Anwender
 - Programme und Bauteil-Dokumente beachten jetzt die Rechte aus der Benutzerverwaltung: Neue Programme anlegen, neue Versionen hochladen, Programme bearbeiten oder löschen und Dokumente ändern kann nur, wer das jeweilige Recht hat. Wer ein Recht nicht hat, sieht den Knopf dafür nicht mehr.
 - Wer neue Versionen hochladen darf, sieht dafür jetzt auch den Knopf an der Programmkarte – bisher war er an Bauteil-Rechte gebunden.
