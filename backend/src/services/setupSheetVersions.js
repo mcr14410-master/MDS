@@ -116,6 +116,20 @@ async function photoFileReferenced(client, sheetId, filePath) {
 }
 
 /**
+ * Blatt sperren und Status lesen. Sperre ohne Join: Wartet eine zweite Änderung an der Sperre und hat die
+ * erste den Status geändert (Rückfall auf Entwurf), prüfte Postgres den Join mit der alten Statuszeile –
+ * das Blatt fiel heraus und die zweite Änderung meldete „nicht gefunden“.
+ * @returns {{ workflow_state_id, released_version_id, state } | null}
+ */
+async function lockSheet(client, sheetId) {
+  const sheet = (await client.query(
+    'SELECT workflow_state_id, released_version_id FROM setup_sheets WHERE id = $1 FOR UPDATE', [sheetId])).rows[0];
+  if (!sheet) return null;
+  const ws = (await client.query('SELECT name FROM workflow_states WHERE id = $1', [sheet.workflow_state_id])).rows[0];
+  return { ...sheet, state: ws?.name };
+}
+
+/**
  * Schreibende Aktion am Blatt: Transaktion mit gesperrter Zeile. Ändert fn den Inhalt eines
  * Blatts außerhalb des Entwurfs, fällt es auf Entwurf zurück und der Ablauf hält das fest.
  * @returns Ergebnis von fn(client) oder null, wenn es das Blatt nicht gibt
@@ -125,17 +139,12 @@ async function withSheetChange(sheetId, userId, fn) {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    const { rows } = await client.query(
-      `SELECT s.workflow_state_id, ws.name AS state
-         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
-        WHERE s.id = $1 FOR UPDATE OF s`,
-      [sheetId]
-    );
-    if (rows.length === 0) {
+    const locked = await lockSheet(client, sheetId);
+    if (!locked) {
       await client.query('ROLLBACK');
       return null;
     }
-    const { workflow_state_id: fromStateId, state } = rows[0];
+    const { workflow_state_id: fromStateId, state } = locked;
     if (state === 'archived') throw new SheetLockedError();
 
     const before = await buildSnapshot(client, sheetId);
@@ -189,12 +198,7 @@ async function restoreVersion(sheetId, versionId, userId) {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    const sheet = (await client.query(
-      `SELECT s.workflow_state_id, s.released_version_id, ws.name AS state
-         FROM setup_sheets s JOIN workflow_states ws ON ws.id = s.workflow_state_id
-        WHERE s.id = $1 FOR UPDATE OF s`,
-      [sheetId]
-    )).rows[0];
+    const sheet = await lockSheet(client, sheetId);
     if (!sheet) {
       await client.query('ROLLBACK');
       return null;
