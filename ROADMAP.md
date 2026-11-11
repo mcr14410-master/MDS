@@ -631,6 +631,14 @@ Der Assistent zeigt die fertige Bauteilstruktur, jede Ebene hat eine eigene Abla
 
 Notizen (noch nicht abgestimmt): Das Schreiben (Bauteil, Arbeitsgang, Messprogramm, Einrichteblatt, Fotos, Dokumente, mit Wiederaufnahme) kann aus dem Helfer kommen (`runImport.js`), ebenso die Namenserkennung (`suggest.js`); ohnehin unser Ordnerschema voraussetzend sind vor allem `parse.js`/`profile.js`. NC-Programme übernimmt der Helfer bisher nicht – Namensregel, Programmnummer und Freigabe müssen wie beim normalen Upload greifen. Abgrenzen zur Bauteilseite: Mehrwert ist alles auf einer Seite, erst zusammenstellen, dann am Stück anlegen. Vor der Umsetzung: Konzept → Spec → Plan.
 
+### MDS unter einem Namen statt der IP erreichbar (Idee Nutzer 11.11.2026)
+Heute nur über `http://<IP>:81`. Am MDS selbst ist nichts nötig: Caddy lauscht auf `:80` ohne festen Hostnamen und beantwortet jeden Namen.
+- [ ] **Weg A, DNS-Eintrag** im Router oder Firmen-DNS. Geht auf allen Geräten, auch über VPN. Dann nicht `.local` nehmen (für mDNS reserviert, Windows fragt das per Multicast ab), sondern z. B. `mds.intern` oder die Firmen-Domain
+- [ ] **Weg B, mDNS über Avahi** auf dem Pi (ohne Router): Hostname auf `mds` setzen (`hostnamectl`, `/etc/hosts`), dann meldet Avahi `mds.local` von selbst. Alternative: rpi01 behalten und den Alias per `avahi-publish -a -R mds.local <IP>` als systemd-Dienst veröffentlichen (braucht `avahi-utils` und eine feste IP)
+- Grenzen von mDNS: nicht über VPN oder in andere Subnetze; bei Windows mit Netzwerkprofil „Öffentlich“ kann die Firewall es blockieren; Android je nach Version unzuverlässig (am Pixel testen)
+- Folgen: Das Netzlaufwerk-Backup hängt nicht am Hostnamen (fest `RESTIC_HOST="mds"`). Ein neuer Name zählt für den Browser als andere Adresse, PWA und gespeicherte Ansichten sind dort neu. Der Kiosk kann auf der IP bleiben
+- Systemänderung auf dem Pi, die der Nutzer selbst vornimmt; danach in `docs/PI-NEU-AUFSETZEN.md` festhalten
+
 ### Lager-Erweiterungen (erst nach der Lager-Architektur-Entscheidung)
 - [ ] **Rohmaterial:** Material, Güte, Form, Abmessungen; Bestand mit Chargen-Verfolgung; Wareneingang/Entnahme; Bauteil → Rohmaterial-Zuordnung; Lieferanten
 - [ ] **Normteile / Zukaufteile:** DIN/ISO-Katalog, Kategorien (Schrauben, Muttern, Stifte, O-Ringe …), Bestand + Mindestbestand, Lieferanten; optional Stücklisten
