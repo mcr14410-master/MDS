@@ -18,11 +18,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Programme und Bauteil-Dokumente beachten jetzt die Rechte aus der Benutzerverwaltung: Neue Programme anlegen, neue Versionen hochladen, Programme bearbeiten oder löschen und Dokumente ändern kann nur, wer das jeweilige Recht hat. Wer ein Recht nicht hat, sieht den Knopf dafür nicht mehr.
 - Wer neue Versionen hochladen darf, sieht dafür jetzt auch den Knopf an der Programmkarte – bisher war er an Bauteil-Rechte gebunden.
+- Uhrzeiten und Datum bei Messprogrammen und Einrichteblättern stimmen jetzt: Bisher erschienen sie 1–2 Stunden zu spät, ein Upload kurz vor Mitternacht stand beim nächsten Tag. Vorhandene Einträge werden beim Update richtiggestellt.
+- Ändern zwei Personen gleichzeitig ein freigegebenes Einrichteblatt, geht die zweite Änderung nicht mehr mit „nicht gefunden“ verloren.
 
 ### Fixed
 - Programme: Schreibrouten prüfen die Rechte – Anlegen (`POST /api/programs`, `/cmm`, auch Probelauf) `program.create`, neue Version (`/:id/revisions`, `/:id/cmm-revisions`) `program.upload`, Ändern und Zurückrollen `program.update`, Löschen `program.delete`. Bisher reichte die Anmeldung, auch eine reine Leserolle konnte hochladen, ändern und löschen. Prüfung vor multer, ohne Recht wird keine Datei abgelegt
 - Bauteil-Dokumente: Hochladen, Ändern, Löschen und Hauptdokument setzen prüfen `part.update`
 - Oberfläche: Programm-Knöpfe hingen an `part.update`/`part.delete` statt an den Programmrechten; jetzt dieselben Rechte wie im Backend (auch Zurückrollen in der Versionsliste und die Dokument-Aktionen). Der Altbestand-Import verlangt zusätzlich `program.create` und `part.update`
+- Zeitstempel im Modul Programme: Migration `1737000129000` stellt `programs.created_at`/`updated_at`, `program_revisions.created_at`/`released_at`, `workflow_history.created_at`, `setup_sheets.created_at`/`updated_at` und `setup_sheet_photos.uploaded_at` auf `timestamptz`. Altdaten je Schreiber: zentraler Pool (Messprogramme, Einrichteblätter) Berliner Zeit, eigene Pools (NC-Programme, Statuswechsel, Variantenkopie) UTC; den Schreiber von `updated_at` erkennt die gleiche Transaktionszeit. Regeln vorher in Produktion gegen Audit-Log und Messprogramm-Dateien geprüft. `programsController` und `workflowController` nutzen jetzt `config/db`, die Ausgleichsrechnungen (`AT TIME ZONE` in der Versionshistorie, `now() AT TIME ZONE 'UTC'` beim Rückfall des Einrichteblatts) entfallen. Rückweg (down) stellt einheitlich UTC her, nicht den gemischten Stand
+- Einrichteblatt: `withSheetChange`/`restoreVersion` sperren die Zeile ohne Join (`lockSheet`). Mit Join fiel das Blatt bei einer wartenden zweiten Änderung nach einem Statuswechsel aus der Sperrabfrage (Postgres prüft den Join mit der alten Statuszeile), die Änderung endete mit 404
 
 ---
 
