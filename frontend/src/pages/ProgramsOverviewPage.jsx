@@ -74,7 +74,7 @@ export default function ProgramsOverviewPage({ kind }) {
   const { getViewMode, setViewMode, getPageSize, setPageSize } = usePreferencesStore();
   const { hasPermission } = useAuthStore();
   const canImportLegacy = kind === 'cmm'
-    && ['part.create', 'setup_sheet.update', 'program.upload'].every((p) => hasPermission(p));
+    && ['part.create', 'setup_sheet.update', 'program.create', 'program.upload', 'part.update'].every((p) => hasPermission(p));
 
   const viewMode = getViewMode(config.prefKey);
   const pageSize = getPageSize(config.prefKey);

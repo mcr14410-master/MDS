@@ -1,6 +1,7 @@
 // frontend/src/components/RevisionsList.jsx
 import { useState, useEffect } from 'react';
 import { useProgramsStore } from '../stores/programsStore';
+import { useAuthStore } from '../stores/authStore';
 import { toast } from './Toaster';
 import DiffViewer from './DiffViewer';
 import { WORKFLOW_STATUS_LABELS } from '../utils/workflowLabels';
@@ -23,6 +24,7 @@ const formatDateTime = (value) => new Date(value).toLocaleString('de-DE', {
 const personName = (name, username) => name || username || 'System';
 
 export default function RevisionsList({ program, onClose }) {
+  const canRollback = useAuthStore((s) => s.hasPermission('program.update')); // gleiche Prüfung wie POST /:id/rollback
   const { fetchRevisions, rollbackProgram, loading } = useProgramsStore();
   
   const [revisions, setRevisions] = useState([]);
@@ -302,7 +304,7 @@ export default function RevisionsList({ program, onClose }) {
                         </button>
 
                         {/* Rollback Button */}
-                        {!isActive && (
+                        {!isActive && canRollback && (
                           <button
                             onClick={() => handleRollback(revision.version_string)}
                             disabled={loading}

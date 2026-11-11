@@ -15,6 +15,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Programme und Bauteil-Dokumente beachten jetzt die Rechte aus der Benutzerverwaltung: Neue Programme anlegen, neue Versionen hochladen, Programme bearbeiten oder löschen und Dokumente ändern kann nur, wer das jeweilige Recht hat. Wer ein Recht nicht hat, sieht den Knopf dafür nicht mehr.
+- Wer neue Versionen hochladen darf, sieht dafür jetzt auch den Knopf an der Programmkarte – bisher war er an Bauteil-Rechte gebunden.
+
+### Fixed
+- Programme: Schreibrouten prüfen die Rechte – Anlegen (`POST /api/programs`, `/cmm`, auch Probelauf) `program.create`, neue Version (`/:id/revisions`, `/:id/cmm-revisions`) `program.upload`, Ändern und Zurückrollen `program.update`, Löschen `program.delete`. Bisher reichte die Anmeldung, auch eine reine Leserolle konnte hochladen, ändern und löschen. Prüfung vor multer, ohne Recht wird keine Datei abgelegt
+- Bauteil-Dokumente: Hochladen, Ändern, Löschen und Hauptdokument setzen prüfen `part.update`
+- Oberfläche: Programm-Knöpfe hingen an `part.update`/`part.delete` statt an den Programmrechten; jetzt dieselben Rechte wie im Backend (auch Zurückrollen in der Versionsliste und die Dokument-Aktionen). Der Altbestand-Import verlangt zusätzlich `program.create` und `part.update`
+
 ---
 
 ## [2.27.2] - 2026-11-10 - Backup-Status
