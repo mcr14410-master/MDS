@@ -1,13 +1,7 @@
-const { Pool } = require('pg');
 const { createVersion } = require('../services/setupSheetVersions');
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+// Zentraler Pool (Europe/Berlin); Zeitspalten des Moduls sind seit Migration 1737000129000 timestamptz
+const pool = require('../config/db');
 
 // Workflow-Logik: Von welchem Status kann wohin gewechselt werden?
 const ALLOWED_TRANSITIONS = {

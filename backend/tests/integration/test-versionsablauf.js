@@ -43,13 +43,13 @@ const call = async (fn, req) => { const res = fakeRes(); await fn(req, res); ret
     `INSERT INTO programs (operation_id, program_number, program_name, workflow_state_id)
      VALUES ($1, 'TEIL-0003-1', 'Schruppen', $2) RETURNING id`, [opId, state.draft])).rows[0].id;
 
-  // Neue NC-Version wie beim Hochladen; created_at wie vom programsController (Pool ohne Zeitzone → UTC)
+  // Neue NC-Version wie beim Hochladen (created_at ist timestamptz, Migration 1737000129000)
   async function upload(version) {
     const [major, minor, patch] = version.split('.').map(Number);
     const id = (await pool.query(
       `INSERT INTO program_revisions (program_id, version_major, version_minor, version_patch, version_string,
          filename, filepath, workflow_state_id, created_by, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'TEIL-0003.h', '/nicht/vorhanden', $6, $7, now() AT TIME ZONE 'UTC') RETURNING id`,
+       VALUES ($1, $2, $3, $4, $5, 'TEIL-0003.h', '/nicht/vorhanden', $6, $7, now()) RETURNING id`,
       [progId, major, minor, patch, version, state.draft, adminId])).rows[0].id;
     await pool.query('UPDATE programs SET current_revision_id = $1, workflow_state_id = $2 WHERE id = $3', [id, state.draft, progId]);
     return id;

@@ -1,4 +1,3 @@
-const { Pool } = require('pg');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
@@ -6,13 +5,8 @@ const crypto = require('crypto');
 const { suggestProgramNumber, assignProgramNumber, ProgramNumberError } = require('../utils/programNumber');
 const { openDeploymentFor } = require('../services/deploymentGuards');
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+// Zentraler Pool (Europe/Berlin); Zeitspalten des Moduls sind seit Migration 1737000129000 timestamptz
+const pool = require('../config/db');
 
 // Helper: File-Hash berechnen (SHA-256)
 const calculateFileHash = (filepath) => {
@@ -856,12 +850,9 @@ exports.getProgramRevisions = async (req, res) => {
         pr.optimized_by_user_id,
         pr.workflow_state_id,
         pr.released_by,
-        -- echte Zeitpunkte: released_at schreibt der Workflow-Controller (UTC), created_at bei
-        -- Messprogrammen der zentrale Pool (Europe/Berlin), bei NC-Programmen dieser Pool (UTC)
-        pr.released_at AT TIME ZONE 'UTC' as released_at,
+        pr.released_at,
         pr.created_by,
-        CASE WHEN p.kind = 'cmm' THEN pr.created_at AT TIME ZONE 'Europe/Berlin'
-             ELSE pr.created_at AT TIME ZONE 'UTC' END as created_at,
+        pr.created_at,
         ws.name as workflow_state,
         ws.color as workflow_color,
         u_created.username as created_by_username,
@@ -882,10 +873,9 @@ exports.getProgramRevisions = async (req, res) => {
       [id]
     );
 
-    // Ablauf je Version: Statuswechsel mit Benutzer und Zeitpunkt (älteste zuerst).
-    // workflow_history.created_at schreibt der Workflow-Controller in UTC.
+    // Ablauf je Version: Statuswechsel mit Benutzer und Zeitpunkt (älteste zuerst)
     const historyResult = await pool.query(
-      `SELECT wh.id, wh.revision_id, wh.created_at AT TIME ZONE 'UTC' AS created_at, wh.change_reason,
+      `SELECT wh.id, wh.revision_id, wh.created_at, wh.change_reason,
               fs.name AS from_state, ts.name AS to_state,
               u.username AS changed_by_username,
               NULLIF(trim(concat_ws(' ', u.first_name, u.last_name)), '') AS changed_by_name
