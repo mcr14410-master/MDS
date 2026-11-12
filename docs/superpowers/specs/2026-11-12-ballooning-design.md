@@ -56,13 +56,13 @@ Genau eine je Zeichnungsdokument.
 |---|---|---|
 | `id` | serial | |
 | `part_document_id` | integer, unique, FK `part_documents` | die gestempelte Zeichnung |
-| `numbering` | varchar(20) | `own` (MDS zählt) oder `customer` (Nummern vom Kunden) |
+| `numbering` | varchar(20) | `own` (MDS zählt) oder `existing` (Ballons sind schon auf der Zeichnung: vom Kunden gestempelt oder von Hand gestempelte Prüfzeichnung aus dem Altbestand) |
 | `status` | varchar(20) | `draft` oder `released` |
 | `general_tolerance` | varchar(50), nullable | aus dem Schriftfeld, z. B. `ISO 2768-mK` |
 | `page_rotation` | jsonb | Drehung je Seite, z. B. `{"1": 90}` |
 | `previous_stamp_id` | integer, nullable, FK `drawing_stamps` | Vorgänger beim neuen Index (Ausblick) |
 | `released_by`, `released_at` | integer / timestamptz | Freigabe |
-| `version` | integer | für Änderungskonflikte (siehe 7) |
+| `version` | integer | für Änderungskonflikte (siehe 8) |
 | `created_by`, `created_at`, `updated_by`, `updated_at` | | `timestamptz` |
 
 ### 1.2 `drawing_characteristics` – ein Merkmal je Zeile
@@ -71,7 +71,7 @@ Genau eine je Zeichnungsdokument.
 |---|---|---|
 | `id` | serial | |
 | `stamp_id` | integer, FK `drawing_stamps` | |
-| `balloon_label` | varchar(20) | Ballonnummer als Text: `12`, bei Kundennummern auch `12a`, `B3` |
+| `balloon_label` | varchar(20) | Ballonnummer als Text: `12`, bei vorhandenen Ballons auch `12a`, `B3` |
 | `sort_order` | integer | Reihenfolge in Listen und Ausgaben |
 | `page` | integer | Seite der Zeichnung (ab 1) |
 | `frame` | jsonb | Rahmen `{x, y, w, h}` relativ zur Seite (0…1) |
@@ -97,7 +97,7 @@ Unique `(stamp_id, balloon_label)`. Unterpositionen bekommen **keine** eigenen Z
 ### 1.3 Nummern
 
 - **Eigene Nummerierung, Entwurf:** fortlaufend in der Reihenfolge des Setzens. Löschen schließt die Lücke (Nummern dahinter rücken nach). „Nach Lage neu nummerieren“ zählt von links oben nach rechts unten (Zeilenbänder, dann x).
-- **Kundennummern:** Die Nummer wird beim Setzen mit eingegeben. Das MDS zählt nicht und nummeriert nicht um.
+- **Ballons schon auf der Zeichnung** (`existing`): Rahmen um den vorhandenen Ballon bzw. das Maß ziehen, die vorhandene Nummer wird beim Setzen mit eingegeben. Das MDS zählt nicht und nummeriert nicht um.
 - **Freigegeben (beide Arten):** Nummern sind fest. Das Backend lehnt jede Änderung von `balloon_label` ab. Löschen setzt `status = 'removed'`, die Nummer bleibt belegt. Neue Merkmale bekommen die nächste freie Nummer und `added_after_release = true`.
 - Verschieben eines Ballons ändert die Nummer nie.
 - Freigabe und jede Änderung danach stehen im Audit-Log.
@@ -145,7 +145,7 @@ Ein Modul für Zeichnungsschreibweise, an einer Stelle im Repo, genutzt von Fron
 
 ### 2.4 Ausgaben
 
-- **Gestempeltes PDF:** Ballons, Linien und KC-Dreiecke werden über das Original gelegt und als neue Datei erzeugt (`pdf-lib` kommt dazu). Bei Kundennummern wird das Original unverändert ausgegeben, die Ballons stehen schon darauf.
+- **Gestempeltes PDF:** Ballons, Linien und KC-Dreiecke werden über das Original gelegt und als neue Datei erzeugt (`pdf-lib` kommt dazu). Bei `existing` wird das Original unverändert ausgegeben, die Ballons stehen schon darauf.
 - **Merkmalsliste als Excel/CSV** (`exceljs` ist vorhanden): Ballonnummer, vorgeschlagene PC-DMIS-ID nach Regel (Vorgabe `PM{nr}`), Art, Nennmaß, Abmaße, Grenzmaße, KC, 100 %. Dient dem Programmierer beim Anlegen der Dimensionen.
 
 ## 3. Stufe 2: Prüfplan
@@ -221,7 +221,29 @@ Jedes Messprogramm bekommt **zusätzlich** zum Kundenprotokoll eine Standard-Aus
 - **100-%-Datenübermittlung:** Excel nach Ausgabeprofil zum Herunterladen, Versand per Mail bleibt beim Benutzer.
 - Kundenvorlagen sind Kundenunterlagen: nie ins Repo, nie auf den Dev-Server. Entwickelt und getestet wird mit nachgebauten Dummy-Vorlagen.
 
-## 7. Fehlerfälle
+## 7. Bezug zu den Messprogrammen
+
+Abgeglichen mit MESSPROGRAMME_KONZEPT, MESSPROGRAMME_AGENT_SPEC und ALTBESTAND_IMPORT_SPEC (12.11.2026). Festgehalten als Richtung; die Feinheiten klärt der Plan der jeweiligen Stufe.
+
+**Passt ohne Änderung**
+- **Überwachungsfelder** (Kunde, Zeichnungsnummer, Index, Auftrag, FAI-Nr., Seriennummer) liefern den Kopf der Standard-Ausgabe (5.1).
+- **Rückweg der Ergebnisse:** Die im Messprogramm-Konzept vorgesehene Stufe „Ergebnisse ins MDS, verknüpft mit Auftrag und Seriennummer“ ist Stufe 4 dieser Spec – kein zweites Konzept dafür.
+- **Bereitstellen über den Agenten** bleibt für die Stufen 1–4 unverändert; der Agent liest nur und ändert keine Programminhalte.
+- **Programmversion je Messlauf:** Die Bereitstellung hält die Version je Programm fest (`agent_deployment_programs`). Beim Hochladen einer Ergebnisdatei ermittelt das MDS daraus die Version, mit der gemessen wurde – eindeutig, wenn zur Messzeit genau eine Bereitstellung des Programms aktiv war, sonst fragt es nach. Der Abgleich Programm ↔ Zeichnung nennt dann die Version.
+
+**Prüfzeichnung**
+- Heute ist die Prüfzeichnung eine PDF in der Messprogramm-Version (Rolle `drawing`, Ziel Programmordner). Beim Altbestand gilt „gestempelte Zeichnung wird Prüfzeichnung, keine zweite Kopie“.
+- **Neu (Entscheidung 12.11.2026):** Die Zeichnung gehört zum **Bauteil** (`part_documents`), dort wird gestempelt. Die Prüfzeichnung im Messprogramm ist eine **festgehaltene Kopie des gestempelten PDFs** in der Programmversion – beim Hochladen einer neuen Version „Gestempelte Zeichnung aus dem MDS übernehmen“. So bleibt die Version reproduzierbar und der Agent stellt weiter genau das bereit, was zur Version gehört.
+- Ändert sich die Stempelung danach, zeigt das Messprogramm „Prüfzeichnung ist älter als die Stempelung“.
+- **Altbestand:** Die von Hand gestempelten Prüfzeichnungen bleiben unverändert im Messprogramm. Wird eine davon für Prüfplan oder FAI gebraucht, wird sie per Knopf als Bauteil-Zeichnung übernommen (Kopie) und im Modus `existing` nachgezogen – nur bei Bedarf, nicht für alle auf einmal. Die Altbestand-Regel „keine zweite Kopie“ gilt damit nur noch für Zeichnungen, die nicht gestempelt werden.
+
+**Standard-Ausgabe neben den Protokollvorlagen**
+- Heute hat jedes Programm genau eine eigene Protokollvorlage (`.xlsx` + `.layout.xml`, Name = Programmnummer); sie bleibt unverändert.
+- Wird die Standard-Ausgabe (5.1) eine zweite ExcelFormReport-Vorlage, ist sie **global** – einmal im MDS gepflegt, vom Agenten auf jedem Mess-PC ins Vorlagenverzeichnis gelegt, vom Gesundheitscheck geprüft. Globale Dateien kennt der Agent bisher nicht (Erweiterung).
+- Wird es eine CSV über Dateibefehle, braucht es keine Vorlage, sondern einen Baustein im Programm, den der Programmierer einfügt.
+- Welcher Weg, entscheidet der Spike vor dem Plan der Stufe 4.
+
+## 8. Fehlerfälle
 
 | Fall | Verhalten |
 |---|---|
@@ -238,18 +260,18 @@ Jedes Messprogramm bekommt **zusätzlich** zum Kundenprotokoll eine Standard-Aus
 | Datei: dieselbe Seriennummer doppelt in einer Datei | Fehler, Übernehmen gesperrt |
 | Messmittel abgelaufen | Warnung beim Erfassen, Wert wird gespeichert |
 
-## 8. Tests
+## 9. Tests
 
 - **Parser:** Tabellentest mit Eingabe → erwartetem Ergebnis, mindestens die 19 Fälle der Skizze (u. a. `Ø40 h7` → 39,975–40,000; `g6` außerhalb der Skizzen-Tabelle muss im MDS erkannt werden), Stichproben ISO 286 gegen `toleranceCalculator`.
-- **Backend** (`npm run test:integration`): Nummernregeln (Entwurf, Kundennummern, Freigabe, entfallen), Rechte, Löschsperren, unveränderliche Messwerte, Datei-Upload mit Dummy-Dateien (mehrere Spalten, mehrere Dateien, Duplikate, falsche Zeichnung).
+- **Backend** (`npm run test:integration`): Nummernregeln (Entwurf, vorhandene Ballons, Freigabe, entfallen), Rechte, Löschsperren, unveränderliche Messwerte, Datei-Upload mit Dummy-Dateien (mehrere Spalten, mehrere Dateien, Duplikate, falsche Zeichnung).
 - **Oberfläche** (Playwright): Stempeln in beiden Varianten, Freigeben, „Aus Zeichnung übernehmen“, FAI erfassen und abschließen.
 - **PC-DMIS:** Spike und Logik in der Test-VM; am Mess-PC prüft der Nutzer nur das echte Gerät.
 - **Testdaten:** nur Platzhalter (`TEIL-0001`, `KD00000`, `FIRMA`) und erzeugte Dummy-Zeichnungen, keine Kundenzeichnungen.
 
-## 9. Ausblick
+## 10. Ausblick
 
 - **Neuer Zeichnungsindex:** Ballons aus der Vorgänger-Stempelung übernehmen (`previous_stamp_id`), übernommene Merkmale als „prüfen“ markiert, Nummern bleiben, Entfallenes bleibt entfallen, Neues hinten an. Prüfplan-Positionen auf den neuen Index umhängen.
-- **Automatische Übernahme über den Agenten:** Der Agent schaut in den Ausgabeordner und lädt neue Dateien hoch (dieselbe Datei, derselbe Leser). Sie landen im **Eingang** „Messläufe ohne Zuordnung“. Automatisch übernommen wird nur, wenn alles eindeutig ist: freigegebene Messprogramm-Version, Auftrag/FAI-Nr. passt zu einer offenen Messreihe, Lauf nicht abgebrochen. Läufe mit nicht freigegebenem Programm nie automatisch. Verwerfen mit Grund, nie übernommene Läufe fallen nach z. B. 30 Tagen aus dem Eingang. Je Messreihe abschaltbar. Ist das Netz weg, hält der Agent zurück.
+- **Automatische Übernahme über den Agenten:** Voraussetzung ist der feste Messdaten-Stamm statt `02_Messdaten` im Bauteilordner (MESSPROGRAMME_KONZEPT 4.2, Ausgabepfade). Der Agent schaut in den Ausgabeordner und lädt neue Dateien hoch (dieselbe Datei, derselbe Leser). Sie landen im **Eingang** „Messläufe ohne Zuordnung“. Automatisch übernommen wird nur, wenn alles eindeutig ist: freigegebene Messprogramm-Version, Auftrag/FAI-Nr. passt zu einer offenen Messreihe, Lauf nicht abgebrochen. Läufe mit nicht freigegebenem Programm nie automatisch. Verwerfen mit Grund, nie übernommene Läufe fallen nach z. B. 30 Tagen aus dem Eingang. Je Messreihe abschaltbar. Ist das Netz weg, hält der Agent zurück.
 - **Fertiges PC-DMIS-Protokoll** (`OnReportPrintEnd`) als Anhang am Messlauf.
 - **Überwachungsfelder vorbelegen** aus dem MDS (MESSPROGRAMME_KONZEPT 4.2, Idee A/B).
 - **OCR-Spike** mit echten Scans, nur lokal im Browser als Vorschlag.
