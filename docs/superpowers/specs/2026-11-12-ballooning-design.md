@@ -145,7 +145,7 @@ Ein Modul für Zeichnungsschreibweise, an einer Stelle im Repo, genutzt von Fron
 
 ### 2.4 Ausgaben
 
-- **Gestempeltes PDF:** Ballons, Linien und KC-Dreiecke werden über das Original gelegt und als neue Datei erzeugt (`pdf-lib` kommt dazu). Bei `existing` wird das Original unverändert ausgegeben, die Ballons stehen schon darauf.
+- **Gestempeltes PDF (Gesamtansicht, alle Ballons):** Ballons, Linien und KC-Dreiecke werden über das Original gelegt und als neue Datei erzeugt (`pdf-lib` kommt dazu). Für FAI und Übersicht; die Ansicht je Arbeitsgang folgt mit Stufe 2 (3). Bei `existing` wird das Original unverändert ausgegeben, die Ballons stehen schon darauf.
 - **Merkmalsliste als Excel/CSV** (`exceljs` ist vorhanden): Ballonnummer, vorgeschlagene PC-DMIS-ID nach Regel (Vorgabe `PM{nr}`), Art, Nennmaß, Abmaße, Grenzmaße, KC, 100 %. Dient dem Programmierer beim Anlegen der Dimensionen.
 
 ## 3. Stufe 2: Prüfplan
@@ -157,6 +157,7 @@ Ein Modul für Zeichnungsschreibweise, an einer Stelle im Repo, genutzt von Fron
 - **Mehrere Arbeitsgänge:** Jeder Arbeitsgang wählt seine Merkmale aus derselben Stempelung. Ein Merkmal darf in mehreren Arbeitsgängen vorkommen, jede Position hat eigene Messmittel und Anweisungen.
 - **Abdeckung:** In der Merkmalsliste zeigt eine Spalte, in welchen Arbeitsgängen das Merkmal geprüft wird. Merkmale ohne Arbeitsgang fallen auf.
 - **Klick auf die Ballonnummer** im Prüfplan öffnet die Zeichnung am Ballon.
+- **Zeichnung je Arbeitsgang (Entscheidung 12.11.2026):** Anzeige und Druck im Arbeitsgang zeigen **nur die Ballons der Merkmale aus seinem Prüfplan** – alle Ballons wären für einzelne Arbeitsgänge unübersichtlich. Die Nummern bleiben dieselben wie in der Gesamtansicht (keine Umnummerierung je Arbeitsgang), Lücken in der Nummernfolge sind gewollt. Gilt für Bildschirm, PDF zum Ausdrucken und später die Anzeige am Terminal. Bei `existing` (Ballons stehen schon im Original) lassen sich fremde Ballons nicht ausblenden – dort werden die Merkmale des Arbeitsgangs mit Rahmen hervorgehoben.
 - **Bestehende Prüfpläne** bleiben unverändert. Je Position „Ballon zuordnen“; weichen die Werte ab, zeigt das MDS alt und neu, der Benutzer bestätigt. Keine automatische Zuordnung.
 - **Merkmal entfallen:** Position bleibt mit Warnhinweis, bis sie entfernt wird.
 - **Neuer Zeichnungsindex:** Prüfplan zeigt weiter auf die alte Stempelung, Hinweis „Zeichnung jetzt Index C, Prüfplan bezieht sich auf B“.
@@ -233,7 +234,7 @@ Abgeglichen mit MESSPROGRAMME_KONZEPT, MESSPROGRAMME_AGENT_SPEC und ALTBESTAND_I
 
 **Prüfzeichnung**
 - Heute ist die Prüfzeichnung eine PDF in der Messprogramm-Version (Rolle `drawing`, Ziel Programmordner). Beim Altbestand gilt „gestempelte Zeichnung wird Prüfzeichnung, keine zweite Kopie“.
-- **Neu (Entscheidung 12.11.2026):** Die Zeichnung gehört zum **Bauteil** (`part_documents`), dort wird gestempelt. Die Prüfzeichnung im Messprogramm ist eine **festgehaltene Kopie des gestempelten PDFs** in der Programmversion – beim Hochladen einer neuen Version „Gestempelte Zeichnung aus dem MDS übernehmen“. So bleibt die Version reproduzierbar und der Agent stellt weiter genau das bereit, was zur Version gehört.
+- **Neu (Entscheidung 12.11.2026):** Die Zeichnung gehört zum **Bauteil** (`part_documents`), dort wird gestempelt. Die Prüfzeichnung im Messprogramm ist eine **festgehaltene Kopie des gestempelten PDFs** in der Programmversion, standardmäßig die Ansicht des Arbeitsgangs, zu dem das Messprogramm gehört (nur dessen Ballons, siehe 3); wahlweise die Gesamtansicht, z. B. für ein FAI-Messprogramm – beim Hochladen einer neuen Version „Gestempelte Zeichnung aus dem MDS übernehmen“. So bleibt die Version reproduzierbar und der Agent stellt weiter genau das bereit, was zur Version gehört.
 - Ändert sich die Stempelung danach, zeigt das Messprogramm „Prüfzeichnung ist älter als die Stempelung“.
 - **Altbestand:** Die von Hand gestempelten Prüfzeichnungen bleiben unverändert im Messprogramm. Wird eine davon für Prüfplan oder FAI gebraucht, wird sie per Knopf als Bauteil-Zeichnung übernommen (Kopie) und im Modus `existing` nachgezogen – nur bei Bedarf, nicht für alle auf einmal. Die Altbestand-Regel „keine zweite Kopie“ gilt damit nur noch für Zeichnungen, die nicht gestempelt werden.
 
