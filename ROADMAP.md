@@ -256,6 +256,15 @@ Wunsch Nutzer 08.11.2026
 - [ ] Druck- bzw. PDF-Export für Einrichteblätter (mit Fotos, Spannmitteln, freigegebenem Stand) und Prüfpläne – für Maschinen ohne Terminal
 - Ideen: vorhandene PDF-Erzeugung nutzen (`utils/pdfResponse.js`, Zeitnachweis); auf dem Ausdruck Stand, Freigabe und Datum, damit ein alter Ausdruck erkennbar ist
 
+### 📋 Ballooning: Zeichnung stempeln, Prüfplan, FAI, Messwerte
+Wunsch Nutzer 12.11.2026 – Spec: [docs/superpowers/specs/2026-11-12-ballooning-design.md](docs/superpowers/specs/2026-11-12-ballooning-design.md) (Entwurf zur Freigabe)
+- [ ] Stufe 1: Zeichnung stempeln (Ballons, Parser für Zeichnungsschreibweise, Entwurf/Freigabe der Nummern, Kundennummern, gestempeltes PDF, Merkmalsliste)
+- [ ] Stufe 2: Prüfplan-Positionen verweisen auf Merkmale, „Aus Zeichnung übernehmen“, Abdeckung je Arbeitsgang
+- [ ] Stufe 3: Messreihen und FAI (Handeingabe, AS9102 Form 1–3, eigenes FAI-Formular)
+- [ ] Stufe 4: Messwerte aus Datei (Standard-Ausgabe PC-DMIS, `PM{nr}`, Abgleich Programm ↔ Zeichnung) – vorher Spike in der Test-VM
+- [ ] Stufe 5: Ausgabeprofil je Kunde, Kunden-Excel-Vorlagen, 100-%-Datenübermittlung
+- Ausblick: Ballons auf neuen Index übernehmen, automatische Übernahme über den Agenten, OCR-Spike
+
 ### 💭 Mehrere Prüfpläne je Arbeitsgang (Nutzer überlegt)
 Stand 08.11.2026: heute genau ein Prüfplan je Arbeitsgang (Unique-Index auf `inspection_plans.operation_id`), ohne Status. Idee: mehrere Pläne mit Freigabe und Ständen wie beim Einrichteblatt. Offen: wofür mehrere (Prüfart wie Erstmuster/Serie/Werkerselbstprüfung oder nur Name je Seite/Aufspannung)? Erst nach Entscheidung des Nutzers eine Spec
 

@@ -218,6 +218,7 @@ FAI-Nr., Seriennummer. Sie landen im Protokoll, und aus ihnen wird der Protokoll
 weg, schreibt das Programm trotzdem weiter dorthin → Vorschlag: fester Messdaten-Stamm, Pfad im Programm
 aus den Überwachungsfeldern zusammengesetzt; dann hängt das Programm nicht mehr an der Ordnerablage.
 Rückweg der Ergebnisse (PDF/Excel) ins MDS, verknüpft mit Auftrag und Seriennummer = Stufe 3.
+→ Ausgearbeitet in der Ballooning-Spec, Stufe 4 (Messwerte aus Datei) und Ausblick (automatische Übernahme): [2026-11-12-ballooning-design.md](../superpowers/specs/2026-11-12-ballooning-design.md). Dort auch: Prüfzeichnung als festgehaltene Kopie der gestempelten Bauteil-Zeichnung (Abschnitt 7).
 
 ### 4.3 Agent, Zustände, Transfers
 
