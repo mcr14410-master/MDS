@@ -42,8 +42,14 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**2.28.0 – Grund der Fehlbuchung (#376).** Keine Migration, nur Frontend.
-1. Klicktest: Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter mit Fehlbuchung öffnen → Status in der Tageszeile zeigt den Grund (z. B. Fr 13.11. „Zu lange ohne Pause“), Tage ohne Stempel „Keine Buchungen“
+**Fehlbuchungs-Texte zentral (#379).** Keine Migration, nur Frontend.
+1. Klicktest: Urlaub & Arbeitszeit → Verwaltung → Reiter Fehlbuchungen und Übersicht zeigen dieselben Texte wie die Monatsübersicht (z. B. „Gehen fehlt“, „Zu lange ohne Pause“)
+
+---
+
+## Erledigt: Release 2.28.0 (17.11.2026)
+
+Grund der Fehlbuchung in der Monatsübersicht des Mitarbeiters (#376). Keine Migration. Deploy grün, Tag `v2.28.0`.
 
 ---
 
