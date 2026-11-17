@@ -1,6 +1,6 @@
 {
   "name": "mds-backend",
-  "version": "2.27.4",
+  "version": "2.27.5",
   "description": "Backend API für Fertigungsdaten Management System",
   "main": "src/server.js",
   "scripts": {
