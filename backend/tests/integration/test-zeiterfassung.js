@@ -352,6 +352,40 @@ const setRegion = (region) =>
     assert.equal(d.fehlt, false);
   });
 
+  console.log('Pausenprüfung: nicht länger als 6 h am Stück (ArbZG § 4 Satz 3, Grenze „Pause ab“ + Toleranz = 6:05)');
+  const fehltTypen = async (blocks, extra) => {
+    const u = await createUser('2026-11-01', pausenModell);
+    for (const [from, to] of blocks) await stamp(u, '2026-11-13', from, to);
+    if (extra) await extra(u);
+    await recalc(u, '2026-11-13');
+    const r = await pool.query(`SELECT has_missing_entries, missing_entry_types FROM time_daily_summary
+                                WHERE user_id = $1 AND date = '2026-11-13'`, [u]);
+    return r.rows[0].missing_entry_types || [];
+  };
+  await test('07:03–14:20, 17:46–18:10, 20:30–21:29 (7:17 am Stück) → zu lange ohne Pause, Pause selbst reicht', async () => {
+    const t = await fehltTypen([['07:03', '14:20'], ['17:46', '18:10'], ['20:30', '21:29']]);
+    assert.deepEqual(t, ['block_too_long']);
+  });
+  await test('07:07–13:09, 20:50–21:28 (6:02 am Stück, in der Toleranz) → keine Meldung', async () => {
+    assert.deepEqual(await fehltTypen([['07:07', '13:09'], ['20:50', '21:28']]), []);
+  });
+  await test('Fr 07:00–13:10 durchgehend (6:10, unter Soll + Puffer 6:15) → keine Meldung', async () => {
+    assert.deepEqual(await fehltTypen([['07:00', '13:10']]), []);
+  });
+  await test('07:00–13:10, 13:40–14:00 (Tag 6:30, Pause 30 min, aber 6:10 am Stück) → zu lange ohne Pause', async () => {
+    assert.deepEqual(await fehltTypen([['07:00', '13:10'], ['13:40', '14:00']]), ['block_too_long']);
+  });
+  await test('Lücke 10 min teilt den Block nicht: 07:00–11:00, 11:10–14:00, 14:30–15:00', async () => {
+    assert.deepEqual(await fehltTypen([['07:00', '11:00'], ['11:10', '14:00'], ['14:30', '15:00']]), ['block_too_long']);
+  });
+  await test('gestempelte Pause 10:00–10:30 teilt 07:00–15:00 → keine Meldung', async () => {
+    const t = await fehltTypen([['07:00', '15:00']], (u) => pool.query(`
+      INSERT INTO time_entries (user_id, entry_type, timestamp, source) VALUES
+      ($1, 'break_start', '2026-11-13 10:00'::timestamp AT TIME ZONE 'Europe/Berlin', 'test'),
+      ($1, 'break_end',   '2026-11-13 10:30'::timestamp AT TIME ZONE 'Europe/Berlin', 'test')`, [u]));
+    assert.deepEqual(t, []);
+  });
+
   await test('Terminal: Tagessoll heute aus dem Verlauf', async () => {
     const today = toDateStr(new Date());
     const fuenfStunden = await createModel('Test 5 h täglich', [300, 300, 300, 300, 300, 300, 300]);

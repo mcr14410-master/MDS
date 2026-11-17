@@ -983,6 +983,7 @@ export default function VacationsPage({ view: propView }) {
                               type === 'clock_out' ? 'Gehen' :
                               type === 'break_end' ? 'Pausenende' :
                               type === 'break_short' ? 'Pause kurz' :
+                              type === 'block_too_long' ? 'Zu lange ohne Pause' :
                               type === 'no_entries' ? 'Keine Buchung' : type
                             ).join(', ')}
                           </span>

@@ -826,6 +826,21 @@ async function getCurrentStatus(userId) {
 // Ausgestempelte Unterbrechung gilt ab dieser Länge als Ruhepause (ArbZG § 4: Abschnitte ab 15 min)
 const GAP_MIN_MINUTES = 15;
 
+// Längster Arbeitsblock ohne Ruhepause (ArbZG § 4 Satz 3): Arbeitsabschnitte, zwischen denen
+// weniger als GAP_MIN_MINUTES liegen, gehören zum selben Block; gezählt wird die Arbeitszeit darin
+function longestBlockMinutes(segments) {
+  let longest = 0;
+  let current = 0;
+  let prevEnd = null;
+  for (const { start, end } of segments) {
+    const minutes = (end - start) / 60000;
+    current = prevEnd && (start - prevEnd) / 60000 < GAP_MIN_MINUTES ? current + minutes : minutes;
+    if (current > longest) longest = current;
+    prevEnd = end;
+  }
+  return longest;
+}
+
 // Tagesstatistik berechnen
 async function getDayStats(userId, date) {
   const dateStr = toLocalDateStr(date);
@@ -840,6 +855,8 @@ async function getDayStats(userId, date) {
   let workMinutes = 0;
   let breakMinutes = 0;
   let gapMinutes = 0;      // Lücken Gehen → Kommen ab GAP_MIN_MINUTES, zählen für die Pausenprüfung
+  const segments = [];     // Arbeitsabschnitte (Kommen/Pausenende → Pausenbeginn/Gehen) für die Blockprüfung
+  let segmentStart = null;
   let clockInTime = null;
   let breakStartTime = null;
   let firstClockIn = null;
@@ -856,8 +873,13 @@ async function getDayStats(userId, date) {
           if (gap >= GAP_MIN_MINUTES) gapMinutes += gap;
         }
         clockInTime = ts;
+        segmentStart = ts;
         break;
       case 'clock_out':
+        if (segmentStart) {
+          segments.push({ start: segmentStart, end: ts });
+          segmentStart = null;
+        }
         if (clockInTime) {
           workMinutes += (ts - clockInTime) / 60000;
           clockInTime = null;
@@ -866,12 +888,17 @@ async function getDayStats(userId, date) {
         break;
       case 'break_start':
         breakStartTime = ts;
+        if (segmentStart) {
+          segments.push({ start: segmentStart, end: ts });
+          segmentStart = null;
+        }
         break;
       case 'break_end':
         if (breakStartTime) {
           breakMinutes += (ts - breakStartTime) / 60000;
           breakStartTime = null;
         }
+        if (clockInTime) segmentStart = ts;
         break;
     }
   }
@@ -880,12 +907,14 @@ async function getDayStats(userId, date) {
   if (clockInTime) {
     workMinutes += (new Date() - clockInTime) / 60000;
   }
+  if (segmentStart) segments.push({ start: segmentStart, end: new Date() });
 
   return {
     worked_minutes: Math.round(workMinutes - breakMinutes),
     break_minutes: Math.round(breakMinutes),
     gross_minutes: Math.round(workMinutes),
     gap_minutes: Math.round(gapMinutes),
+    longest_block_minutes: Math.round(longestBlockMinutes(segments)),
     first_clock_in: firstClockIn,
     last_clock_out: lastClockOut
   };
@@ -1056,6 +1085,10 @@ async function computeDailySummary(userId, date, options = {}) {
     const pauseGesamt = dayStats.break_minutes + dayStats.gap_minutes;
     if (pausePflicht && pauseGesamt < (minBreak - breakTolerance)) {
       missingTypes.push('break_short');
+    }
+    // Nicht länger als „Pause ab“ (+ Toleranz) am Stück ohne Ruhepause – gleiche Bedingung wie oben
+    if (pausePflicht && dayStats.longest_block_minutes > breakThreshold + breakTolerance) {
+      missingTypes.push('block_too_long');
     }
   }
 
