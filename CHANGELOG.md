@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Wer sich mittags oder zwischendurch aus- und später wieder einstempelt, bekommt keine Meldung „Pause zu kurz“ mehr: Die Zeit zwischen Gehen und Kommen zählt jetzt als Pause, sofern sie mindestens 15 Minuten dauert. Arbeitszeit und Saldo ändern sich dadurch nicht.
+
+### Fixed
+- Zeiterfassung, Pausenprüfung: Lücken zwischen `clock_out` und dem nächsten `clock_in` ab 15 min (ArbZG § 4) zählen zur Pause (`getDayStats` liefert `gap_minutes`). Bisher zählten nur `break_start`/`break_end`; ein Tag mit Ausstempeln statt Pause bekam über der Pausenschwelle `break_short` („Fehlbuchung“). `break_minutes` (Spalte „Pause“) und die Arbeitszeit bleiben unverändert. Bereits gespeicherte Tage werden erst bei der nächsten Neuberechnung des Tages korrigiert
+
 ---
 
 ## [2.27.3] - 2026-11-12 - Rechte und Uhrzeiten bei Programmen
