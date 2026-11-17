@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Die Gründe für fehlende Buchungen heißen jetzt überall gleich, auch in der Übersicht der Verwaltung (z. B. „Gehen fehlt“ statt nur „Gehen“).
+
+### Changed
+- Zeiterfassung: Fehlbuchungsliste (`TimeTrackingAdminPanel`) und Verwaltungs-Übersicht (`VacationsPage`) nutzen die zentralen Texte aus `utils/missingEntryLabels.js` statt eigener Zuordnungen. Unbekannte Typen erscheinen roh statt als leere Plakette
+
 ---
 
 ## [2.28.0] - 2026-11-17 - Grund der Fehlbuchung

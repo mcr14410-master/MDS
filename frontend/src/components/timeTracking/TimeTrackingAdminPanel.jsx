@@ -7,6 +7,7 @@ import {
 import { useTimeTrackingStore } from '../../stores/timeTrackingStore';
 import CorrectionModal from './CorrectionModal';
 import axios from '../../utils/axios';
+import { MISSING_ENTRY_LABELS } from '../../utils/missingEntryLabels';
 
 const MONTHS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -358,11 +359,7 @@ export default function TimeTrackingAdminPanel({ view: viewProp, onViewChange } 
                         key={type}
                         className="px-2 py-1 text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded"
                       >
-                        {type === 'clock_out' && 'Gehen fehlt'}
-                        {type === 'break_end' && 'Pausenende fehlt'}
-                        {type === 'break_short' && 'Pause zu kurz'}
-                        {type === 'block_too_long' && 'Zu lange ohne Pause'}
-                        {type === 'no_entries' && 'Keine Buchungen'}
+                        {MISSING_ENTRY_LABELS[type] || type}
                       </span>
                     ))}
                   </div>
