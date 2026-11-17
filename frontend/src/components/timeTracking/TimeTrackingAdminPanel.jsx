@@ -361,6 +361,7 @@ export default function TimeTrackingAdminPanel({ view: viewProp, onViewChange } 
                         {type === 'clock_out' && 'Gehen fehlt'}
                         {type === 'break_end' && 'Pausenende fehlt'}
                         {type === 'break_short' && 'Pause zu kurz'}
+                        {type === 'block_too_long' && 'Zu lange ohne Pause'}
                         {type === 'no_entries' && 'Keine Buchungen'}
                       </span>
                     ))}

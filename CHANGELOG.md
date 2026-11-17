@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Die Zeiterfassung meldet jetzt auch, wenn jemand länger als 6 Stunden am Stück ohne Pause gearbeitet hat – auch wenn die Pause insgesamt reicht, aber erst danach kam. Die Meldung heißt „Zu lange ohne Pause“. Wie bisher wird nur geprüft, wenn der Tag über Soll + Puffer liegt.
+
+### Fixed
+- Zeiterfassung, Pausenprüfung: neuer Fehltyp `block_too_long` (ArbZG § 4 Satz 3). `getDayStats` liefert `longest_block_minutes`: Arbeitsabschnitte zwischen Kommen/Pausenende und Pausenbeginn/Gehen, Unterbrechungen unter 15 min teilen den Block nicht, gezählt wird die Arbeitszeit. Grenze „Pause ab“ + Toleranz aus dem Zeitmodell, geprüft nur unter derselben Bedingung wie die Mindestpause (über Schwelle und über Soll + Puffer). Seit 2.27.4 zählen Lücken als Pause; Tage mit langem ersten Block wurden dadurch grün. Anzeige in Fehlbuchungsliste und Übersicht
+
 ---
 
 ## [2.27.4] - 2026-11-17 - Pausenprüfung in der Zeiterfassung
