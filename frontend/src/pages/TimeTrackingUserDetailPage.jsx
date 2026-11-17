@@ -9,6 +9,7 @@ import axios from '../utils/axios';
 import CorrectionModal from '../components/timeTracking/CorrectionModal';
 import EditEntryModal from '../components/timeTracking/EditEntryModal';
 import DayEditModal from '../components/timeTracking/DayEditModal';
+import { missingEntryText } from '../utils/missingEntryLabels';
 
 const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -440,7 +441,7 @@ export default function TimeTrackingUserDetailPage() {
                   else if (isVacation) { statusText = day.vacation_type; statusColor = 'text-blue-400'; }
                   else if (isWeekend) { statusText = 'Wochenende'; statusColor = 'text-gray-400'; }
                   else if (day.status === 'complete') { statusText = 'Vollständig'; statusColor = 'text-green-400'; }
-                  else if (hasMissing) { statusText = 'Fehlbuchung'; statusColor = 'text-red-400'; }
+                  else if (hasMissing) { statusText = missingEntryText(day.missing_entry_types) || 'Fehlbuchung'; statusColor = 'text-red-400'; }
                   else if (day.status === 'absent') { statusText = 'Abwesend'; statusColor = 'text-red-400'; }
                   else if (day.worked_minutes > 0) { statusText = 'Offen'; statusColor = 'text-yellow-400'; }
 

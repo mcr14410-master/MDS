@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- In der Monatsübersicht eines Mitarbeiters steht bei einer Fehlbuchung jetzt gleich der Grund, z. B. „Zu lange ohne Pause“, „Pause zu kurz“ oder „Gehen fehlt“. Tage ganz ohne Stempel heißen dort „Keine Buchungen“.
+
+### Changed
+- Zeiterfassung, Mitarbeiter-Monatsübersicht (`TimeTrackingUserDetailPage`): Status zeigt statt „Fehlbuchung“ die Gründe aus `missing_entry_types` (neu `utils/missingEntryLabels.js`); ohne Typen bleibt „Fehlbuchung“
+
 ---
 
 ## [2.27.5] - 2026-11-17 - Zu lange ohne Pause
