@@ -23,6 +23,7 @@ import EmployeeSettingsPanel from '../components/vacations/EmployeeSettingsPanel
 import MyTimeTrackingPanel from '../components/timeTracking/MyTimeTrackingPanel';
 import TimeTrackingAdminPanel from '../components/timeTracking/TimeTrackingAdminPanel';
 import TimeTrackingSettingsPanel from '../components/timeTracking/TimeTrackingSettingsPanel';
+import { missingEntryText } from '../utils/missingEntryLabels';
 
 const MONTHS = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -979,13 +980,7 @@ export default function VacationsPage({ view: propView }) {
                         <div key={idx} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
                           <span className="text-sm text-gray-700 dark:text-gray-300">{entry.name}</span>
                           <span className="text-xs text-red-500">
-                            {entry.missing_entry_types?.map(type => 
-                              type === 'clock_out' ? 'Gehen' :
-                              type === 'break_end' ? 'Pausenende' :
-                              type === 'break_short' ? 'Pause kurz' :
-                              type === 'block_too_long' ? 'Zu lange ohne Pause' :
-                              type === 'no_entries' ? 'Keine Buchung' : type
-                            ).join(', ')}
+                            {missingEntryText(entry.missing_entry_types)}
                           </span>
                         </div>
                       ))
