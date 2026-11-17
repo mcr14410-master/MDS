@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.28.0] - 2026-11-17 - Grund der Fehlbuchung
+
 ### Für Anwender
 - In der Monatsübersicht eines Mitarbeiters steht bei einer Fehlbuchung jetzt gleich der Grund, z. B. „Zu lange ohne Pause“, „Pause zu kurz“ oder „Gehen fehlt“. Tage ganz ohne Stempel heißen dort „Keine Buchungen“.
 
