@@ -42,21 +42,14 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**2.27.4 – Pausenprüfung (#372).** Keine Migration. Gespeicherte Tage mit „Pause zu kurz“ ändern sich erst bei Neuberechnung.
-1. Vor oder nach dem Deploy betroffene Tage zählen:
-   ```bash
-   docker compose exec -T db psql -U mds -d mds -c "SELECT u.username, d.date FROM time_daily_summary d JOIN users u ON u.id = d.user_id WHERE 'break_short' = ANY(d.missing_entry_types) ORDER BY d.date;"
-   ```
-2. Fr 13.11. (07:07–13:09, 20:50–21:28) in der Zeiterfassung öffnen → Stift am Tag → Tagesinfo speichern → Status „Vollständig“, Saldo +0:40 unverändert
-3. Weitere Tage aus der Liste genauso, wenn die Lücke zwischen Gehen und Kommen ≥ 15 min ist (bei vielen Tagen Bescheid geben → Neuberechnungs-Skript)
+**2.28.0 – Grund der Fehlbuchung (#376).** Keine Migration, nur Frontend.
+1. Klicktest: Urlaub & Arbeitszeit → Verwaltung → Mitarbeiter mit Fehlbuchung öffnen → Status in der Tageszeile zeigt den Grund (z. B. Fr 13.11. „Zu lange ohne Pause“), Tage ohne Stempel „Keine Buchungen“
 
-**2.27.5 – Blockprüfung „Zu lange ohne Pause“ (#374).** Keine Migration. Seit 2.27.4 sind Tage mit Lücken grün, auch wenn der erste Block über 6 h lag (z. B. Fr 13.11. 07:03–14:20). Diese Tage nach dem Deploy neu berechnen:
-1. Kandidaten (Tage ohne Fehlbuchung mit mehr als einem Kommen) auflisten:
-   ```bash
-   docker compose exec -T db psql -U mds -d mds -c "SELECT u.username, d.date FROM time_daily_summary d JOIN users u ON u.id = d.user_id WHERE NOT d.has_missing_entries AND d.date >= '2026-11-01' AND (SELECT count(*) FROM time_entries e WHERE e.user_id = d.user_id AND e.entry_type = 'clock_in' AND DATE(e.timestamp) = d.date) > 1 ORDER BY d.date;"
-   ```
-2. Fr 13.11. (07:03–14:20, 17:46–18:10, 20:30–21:29) → Stift am Tag → Tagesinfo speichern → Fehlbuchung, in der Fehlbuchungsliste „Zu lange ohne Pause“; Saldo +2:41 unverändert
-3. Übrige Tage aus der Liste genauso (bei vielen Tagen Bescheid geben → Neuberechnungs-Skript)
+---
+
+## Erledigt: Release 2.27.4 und 2.27.5 (17.11.2026)
+
+Pausenprüfung: Lücken zwischen Gehen und Kommen ab 15 min zählen als Pause (#372), neue Meldung „Zu lange ohne Pause“ bei mehr als „Pause ab“ + Toleranz am Stück (#374). Keine Migration. 2.27.5 deployt, Tag `v2.27.5`. Fr 13.11. (07:03–14:20, 17:46–18:10, 20:30–21:29) neu berechnet → Fehlbuchung, Saldo +2:41 unverändert. Abfragen für weitere betroffene Tage (`break_short` bzw. Tage mit mehreren Kommen seit 01.11.) stehen im Git-Verlauf dieser Datei (#373, #375).
 
 ---
 
