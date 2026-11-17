@@ -267,6 +267,7 @@ Wunsch Nutzer 12.11.2026 – Spec: [docs/superpowers/specs/2026-11-12-ballooning
 - [ ] Stufe 4: Messwerte aus Datei (Standard-Ausgabe PC-DMIS, `PM{nr}`, Abgleich Programm ↔ Zeichnung) – vorher Spike in der Test-VM
 - [ ] Stufe 5: Ausgabeprofil je Kunde, Kunden-Excel-Vorlagen, 100-%-Datenübermittlung
 - Ausblick: Ballons auf neuen Index übernehmen, automatische Übernahme über den Agenten, OCR-Spike
+- Idee (17.11.2026, nach Demo beim Chef): Stempeln zusätzlich als **Standalone-Version** ohne MDS – für den eigenen Gebrauch, eventuell auch für andere Betriebe. Nur lokal (Kundenzeichnungen nie in die Cloud), z. B. HTML-Datei im Browser ohne Server, Stempelung als Projektdatei neben der Zeichnung, später ins MDS importierbar. Folge für Stufe 1: Parser, Datenformat und PDF-Ausgabe vom MDS getrennt halten (kein Zugriff auf API/Stores im Kern), dann lässt sich die Standalone-Version ohne Umbau ableiten. Eigenes Projekt mit Repo, Lizenz und Weitergabe erst nach Entscheidung
 
 ### 💭 Mehrere Prüfpläne je Arbeitsgang (Nutzer überlegt)
 Stand 08.11.2026: heute genau ein Prüfplan je Arbeitsgang (Unique-Index auf `inspection_plans.operation_id`), ohne Status. Idee: mehrere Pläne mit Freigabe und Ständen wie beim Einrichteblatt. Offen: wofür mehrere (Prüfart wie Erstmuster/Serie/Werkerselbstprüfung oder nur Name je Seite/Aufspannung)? Erst nach Entscheidung des Nutzers eine Spec
