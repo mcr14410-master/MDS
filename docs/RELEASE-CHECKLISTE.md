@@ -49,7 +49,7 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 
 ## Erledigt: Release 2.27.4 und 2.27.5 (17.11.2026)
 
-Pausenprüfung: Lücken zwischen Gehen und Kommen ab 15 min zählen als Pause (#372), neue Meldung „Zu lange ohne Pause“ bei mehr als „Pause ab“ + Toleranz am Stück (#374). Keine Migration. 2.27.5 deployt, Tag `v2.27.5`. Fr 13.11. (07:03–14:20, 17:46–18:10, 20:30–21:29) neu berechnet → Fehlbuchung, Saldo +2:41 unverändert. Abfragen für weitere betroffene Tage (`break_short` bzw. Tage mit mehreren Kommen seit 01.11.) stehen im Git-Verlauf dieser Datei (#373, #375).
+Pausenprüfung: Lücken zwischen Gehen und Kommen ab 15 min zählen als Pause (#372), neue Meldung „Zu lange ohne Pause“ bei mehr als „Pause ab“ + Toleranz am Stück (#374). Keine Migration. 2.27.5 deployt, Tag `v2.27.5`. Fr 13.11. (07:03–14:20, 17:46–18:10, 20:30–21:29) neu berechnet → Fehlbuchung, Saldo +2:41 unverändert. Abfragen für weitere betroffene Tage (`break_short` bzw. Tage mit mehreren Kommen seit 01.11.): keine weiteren Tage betroffen.
 
 ---
 
