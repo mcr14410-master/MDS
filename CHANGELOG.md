@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.4] - 2026-11-17 - Pausenprüfung in der Zeiterfassung
+
 ### Für Anwender
 - Wer sich mittags oder zwischendurch aus- und später wieder einstempelt, bekommt keine Meldung „Pause zu kurz“ mehr: Die Zeit zwischen Gehen und Kommen zählt jetzt als Pause, sofern sie mindestens 15 Minuten dauert. Arbeitszeit und Saldo ändern sich dadurch nicht.
 
