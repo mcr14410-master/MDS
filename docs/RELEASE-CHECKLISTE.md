@@ -42,7 +42,13 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-Derzeit keine.
+**2.27.4 – Pausenprüfung (#372).** Keine Migration. Gespeicherte Tage mit „Pause zu kurz“ ändern sich erst bei Neuberechnung.
+1. Vor oder nach dem Deploy betroffene Tage zählen:
+   ```bash
+   docker compose exec -T db psql -U mds -d mds -c "SELECT u.username, d.date FROM time_daily_summary d JOIN users u ON u.id = d.user_id WHERE 'break_short' = ANY(d.missing_entry_types) ORDER BY d.date;"
+   ```
+2. Fr 13.11. (07:07–13:09, 20:50–21:28) in der Zeiterfassung öffnen → Stift am Tag → Tagesinfo speichern → Status „Vollständig“, Saldo +0:40 unverändert
+3. Weitere Tage aus der Liste genauso, wenn die Lücke zwischen Gehen und Kommen ≥ 15 min ist (bei vielen Tagen Bescheid geben → Neuberechnungs-Skript)
 
 ---
 
