@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.27.5] - 2026-11-17 - Zu lange ohne Pause
+
 ### Für Anwender
 - Die Zeiterfassung meldet jetzt auch, wenn jemand länger als 6 Stunden am Stück ohne Pause gearbeitet hat – auch wenn die Pause insgesamt reicht, aber erst danach kam. Die Meldung heißt „Zu lange ohne Pause“. Wie bisher wird nur geprüft, wenn der Tag über Soll + Puffer liegt.
 
