@@ -323,6 +323,35 @@ const setRegion = (region) =>
     assert.equal((await day(u11, '2026-10-05')).saldo, -480);
   });
 
+  console.log('Pausenprüfung: Lücke zwischen Gehen und Kommen zählt als Pause (ab 15 min, ArbZG § 4)');
+  // Fr 13.11.2026, Soll 6:00, Pausen-Einstellung wie im Betrieb: ab 6 h, Soll + 15 min Puffer, 30 min (−5 Toleranz)
+  const pausenModell = await createModel('Test Pause Fr 6 h', [480, 480, 480, 480, 360, 0, 0]);
+  await pool.query(`UPDATE time_models SET break_threshold_minutes = 360, break_threshold_buffer_minutes = 15,
+                    min_break_minutes = 30, break_tolerance_minutes = 5 WHERE id = $1`, [pausenModell]);
+  const pausenTag = async (blocks) => {
+    const u = await createUser('2026-11-01', pausenModell);
+    for (const [from, to] of blocks) await stamp(u, '2026-11-13', from, to);
+    await recalc(u, '2026-11-13');
+    return day(u, '2026-11-13');
+  };
+  await test('07:07–13:09 und 20:50–21:28 (Lücke 7:41) → vollständig, keine Fehlbuchung, +0:40', async () => {
+    const d = await pausenTag([['07:07', '13:09'], ['20:50', '21:28']]);
+    assert.equal(d.status, 'complete');
+    assert.equal(d.fehlt, false);
+    assert.equal(d.ist, 400);
+    assert.equal(d.saldo, 40);
+  });
+  await test('Lücke nur 10 min (07:00–13:00, 13:10–13:50) → Pause zu kurz', async () => {
+    const d = await pausenTag([['07:00', '13:00'], ['13:10', '13:50']]);
+    assert.equal(d.fehlt, true);
+    assert.equal(d.ist, 400);
+  });
+  await test('zwei Lücken à 15 min → reicht als Pause', async () => {
+    const d = await pausenTag([['07:00', '10:00'], ['10:15', '12:00'], ['12:15', '13:55']]);
+    assert.equal(d.ist, 385);
+    assert.equal(d.fehlt, false);
+  });
+
   await test('Terminal: Tagessoll heute aus dem Verlauf', async () => {
     const today = toDateStr(new Date());
     const fuenfStunden = await createModel('Test 5 h täglich', [300, 300, 300, 300, 300, 300, 300]);

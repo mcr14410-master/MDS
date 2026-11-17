@@ -823,6 +823,9 @@ async function getCurrentStatus(userId) {
   return { status, since: last.timestamp, last_entry: last.entry_type };
 }
 
+// Ausgestempelte Unterbrechung gilt ab dieser Länge als Ruhepause (ArbZG § 4: Abschnitte ab 15 min)
+const GAP_MIN_MINUTES = 15;
+
 // Tagesstatistik berechnen
 async function getDayStats(userId, date) {
   const dateStr = toLocalDateStr(date);
@@ -836,6 +839,7 @@ async function getDayStats(userId, date) {
 
   let workMinutes = 0;
   let breakMinutes = 0;
+  let gapMinutes = 0;      // Lücken Gehen → Kommen ab GAP_MIN_MINUTES, zählen für die Pausenprüfung
   let clockInTime = null;
   let breakStartTime = null;
   let firstClockIn = null;
@@ -847,6 +851,10 @@ async function getDayStats(userId, date) {
     switch (entry.entry_type) {
       case 'clock_in':
         if (!firstClockIn) firstClockIn = ts;
+        if (lastClockOut && !clockInTime) {
+          const gap = (ts - lastClockOut) / 60000;
+          if (gap >= GAP_MIN_MINUTES) gapMinutes += gap;
+        }
         clockInTime = ts;
         break;
       case 'clock_out':
@@ -877,6 +885,7 @@ async function getDayStats(userId, date) {
     worked_minutes: Math.round(workMinutes - breakMinutes),
     break_minutes: Math.round(breakMinutes),
     gross_minutes: Math.round(workMinutes),
+    gap_minutes: Math.round(gapMinutes),
     first_clock_in: firstClockIn,
     last_clock_out: lastClockOut
   };
@@ -1043,7 +1052,9 @@ async function computeDailySummary(userId, date, options = {}) {
     const pausePflicht = dayStats.gross_minutes > breakThreshold && 
                          dayStats.gross_minutes > (targetMinutes + breakBuffer);
     
-    if (pausePflicht && dayStats.break_minutes < (minBreak - breakTolerance)) {
+    // Pause = gestempelte Pausen + Lücken zwischen Gehen und Kommen (ab 15 min)
+    const pauseGesamt = dayStats.break_minutes + dayStats.gap_minutes;
+    if (pausePflicht && pauseGesamt < (minBreak - breakTolerance)) {
       missingTypes.push('break_short');
     }
   }
