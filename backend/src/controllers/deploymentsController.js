@@ -17,7 +17,7 @@ const isId = (v) => /^\d+$/.test(String(v));
 
 const DEPLOYMENT_SELECT = `
   SELECT d.*, a.name AS agent_name, a.is_active AS agent_is_active, a.last_seen_at AS agent_last_seen_at,
-         o.op_number, o.op_name, o.part_id, pt.part_number, pt.part_name,
+         o.op_number, o.op_name, o.part_id, pt.part_number, pt.part_name, pt.customer_part_number,
          ur.username AS requested_by_username,
          uc.username AS close_requested_by_username,
          ux.username AS discard_local_by_username
