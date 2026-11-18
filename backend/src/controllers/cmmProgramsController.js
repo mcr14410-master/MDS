@@ -67,7 +67,7 @@ const parseFlag = (value) => {
  * gemeldet; unbekannte Dateien und ungültiges XML sind Fehler.
  */
 const UNKNOWN_REASON = {
-  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml, .p2x, Vorschaubild .jpg)',
+  program: 'Dateityp wird nicht versioniert (nur .prg, .cad, .pdf, .MiniRoutines.xml, .p2x, Vorschaubild .jpg/.png)',
   template: 'Excel-Vorlage besteht nur aus .xlsx und .layout.xml',
   calibration: 'Beim Kalibrierprogramm zählt nur die .prg – nicht übernommen',
 };

@@ -365,7 +365,18 @@ test('PC-DMIS-Vorschaubild: .jpg mit Namen der .prg wird Begleitdatei', () => {
   assert.deepEqual(plan.errors, []);
   const bild = plan.files.find(x => x.name === 'teil-0001_op30.JPG');
   assert.equal(bild.role, 'other');
-  assert.equal(roleLabel('other', 'teil-0001_op30.JPG'), 'Vorschaubild (PC-DMIS, .jpg)');
+  assert.equal(roleLabel('other', 'teil-0001_op30.JPG'), 'Vorschaubild (PC-DMIS, .jpg/.png)');
+});
+
+test('PC-DMIS-Vorschaubild: .png (Snipping-Tool) mit Namen der .prg wird Begleitdatei', () => {
+  assert.deepEqual(classifyFile('TEIL-0001_OP30.png'), { kind: 'file', role: 'other', target: 'program_dir', preview: true });
+  const plan = planRevision({ uploaded: [...GROUP, f('TEIL-0001_OP30.PNG')], previous: null });
+  assert.deepEqual(plan.errors, []);
+  assert.equal(plan.files.find(x => x.name === 'TEIL-0001_OP30.PNG').role, 'other');
+  assert.equal(roleLabel('other', 'TEIL-0001_OP30.PNG'), 'Vorschaubild (PC-DMIS, .jpg/.png)');
+  const anders = planRevision({ uploaded: [...GROUP, f('Bildschirmfoto 2026-11-18.png')], previous: null });
+  assert.equal(anders.files.some(x => x.name === 'Bildschirmfoto 2026-11-18.png'), false);
+  assert.ok(anders.removed.some(x => x.name === 'Bildschirmfoto 2026-11-18.png'));
 });
 
 test('Bild mit anderem Namen wird aussortiert, Hinweis aufs Einrichteblatt', () => {

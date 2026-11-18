@@ -31,7 +31,7 @@ const ROLE_LABELS = {
 // Rolle „other“ umfasst mehrere Begleitdateien – Bezeichnung nach Endung
 function roleLabel(role, name = '') {
   if (role === 'other' && /\.p2x$/i.test(name)) return 'Excel-Export-Einstellung (.p2x)';
-  if (role === 'other' && /\.jpe?g$/i.test(name)) return 'Vorschaubild (PC-DMIS, .jpg)';
+  if (role === 'other' && /\.(jpe?g|png)$/i.test(name)) return 'Vorschaubild (PC-DMIS, .jpg/.png)';
   return ROLE_LABELS[role];
 }
 
@@ -87,8 +87,9 @@ function classifyByName(name) {
   if (lower.endsWith('.pdf')) return { kind: 'file', role: 'drawing', target: 'program_dir' };
   // Einstellung des alten Excel-Exports (Zielpfad, Kopfzeilen) – bei älteren Programmen noch in Gebrauch
   if (lower.endsWith('.p2x')) return { kind: 'file', role: 'other', target: 'program_dir' };
-  // Vorschaubild für PC-DMIS: gilt nur mit dem Namen der .prg (prüft planRevision), von Hand gelegt
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+  // Vorschaubild für PC-DMIS: gilt nur mit dem Namen der .prg (prüft planRevision), von Hand gelegt.
+  // .png, weil das Snipping-Tool von Windows 11 so speichert
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png')) {
     return { kind: 'file', role: 'other', target: 'program_dir', preview: true };
   }
   if (lower.endsWith('.stp') || lower.endsWith('.step')) return { kind: 'cad_import' };
