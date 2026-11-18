@@ -126,6 +126,15 @@ export default function DeploymentsPanel({ operationId = null, reloadKey = 0, on
                   <span className="text-gray-700 dark:text-gray-300">{d.agent_name}</span>
                   <span className={`px-2 py-0.5 text-xs font-semibold rounded ${status.className}`}>{status.label}</span>
                 </div>
+                {(d.part_name || d.customer_part_number) && (
+                  <div className="mt-0.5 text-sm text-gray-700 dark:text-gray-300">
+                    {d.part_name}
+                    {d.part_name && d.customer_part_number && <span className="text-gray-400"> · </span>}
+                    {d.customer_part_number && (
+                      <span>Kunden-Zeichnungsnr. <span className="font-mono">{d.customer_part_number}</span></span>
+                    )}
+                  </div>
+                )}
                 <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-gray-500 dark:text-gray-400">
                   <span title={formatDateTime(d.created_at)}>bereitgestellt {timeAgo(d.created_at)} von {d.requested_by_username || '–'}</span>
                   <span title={formatDateTime(d.last_activity_at)}>letzte Aktivität {timeAgo(d.last_activity_at)}</span>

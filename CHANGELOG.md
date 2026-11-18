@@ -18,9 +18,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Für Anwender
 - Die Gründe für fehlende Buchungen heißen jetzt überall gleich, auch in der Übersicht der Verwaltung (z. B. „Gehen fehlt“ statt nur „Gehen“).
 - Das Vorschaubild eines Messprogramms darf jetzt auch eine .png sein, so wie das Snipping-Tool von Windows sie speichert. Es muss weiterhin genauso heißen wie die .prg.
+- Unter „Auf dem Mess-PC“ steht jetzt bei jeder Bereitstellung auch die Bezeichnung des Bauteils und die Kunden-Zeichnungsnummer.
 
 ### Changed
 - Messprogramme: `.png` mit dem Namen der `.prg` zählt wie `.jpg` als PC-DMIS-Vorschaubild (`cmmProgramFiles.js`), PNGs mit anderem Namen werden mit Hinweis aussortiert
+- Bereitstellungen (`GET /api/deployments`) liefern `customer_part_number` mit; `DeploymentsPanel` zeigt Bezeichnung und Kunden-Zeichnungsnr. unter der Kopfzeile (Zeile entfällt, wenn beides leer ist)
 - Zeiterfassung: Fehlbuchungsliste (`TimeTrackingAdminPanel`) und Verwaltungs-Übersicht (`VacationsPage`) nutzen die zentralen Texte aus `utils/missingEntryLabels.js` statt eigener Zuordnungen. Unbekannte Typen erscheinen roh statt als leere Plakette
 
 ---
