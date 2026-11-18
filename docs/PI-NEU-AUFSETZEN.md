@@ -130,6 +130,7 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
    sudo raspi-config   # Advanced Options → Wayland → X11; System Options → Boot/Auto Login → Desktop Autologin
    mkdir -p ~/bin ~/.config/lxsession/LXDE-pi
    sudo cat /root/sd-alt/home/$USER/bin/kiosk.sh > ~/bin/kiosk.sh && chmod +x ~/bin/kiosk.sh
+   sudo cat /root/sd-alt/home/$USER/bin/kiosk-neustart.sh > ~/bin/kiosk-neustart.sh && chmod +x ~/bin/kiosk-neustart.sh
    sudo cat /root/sd-alt/home/$USER/.config/lxsession/LXDE-pi/autostart > ~/.config/lxsession/LXDE-pi/autostart
    sudo mkdir -p /etc/X11/xorg.conf.d && sudo cp /root/sd-alt/etc/X11/xorg.conf.d/10-blanking.conf /etc/X11/xorg.conf.d/
    ```
@@ -138,6 +139,20 @@ Dauer: ca. 1–2 h, MDS und Task-App sind während Phase C nicht erreichbar → 
    wartet auf die Task-App und startet Chromium im Kiosk-Modus. Chromium darf nur über `kiosk.sh` starten, keine
    zweite Chromium-Zeile im Autostart. Nach dem Neustart muss das Dashboard erscheinen, und alle Container müssen
    von selbst hochkommen.
+   `~/bin/kiosk-neustart.sh` startet den Kiosk ohne Reboot neu (auch per SSH). Fehlt es auf der alten Karte, neu
+   anlegen:
+   ```bash
+   cat > ~/bin/kiosk-neustart.sh <<'EOF'
+   #!/bin/bash
+   # Kiosk (Task-App-Dashboard am HDMI-Bildschirm) ohne Reboot neu starten
+   pkill -f 'bin/kiosk\.sh'
+   pkill -f chromium
+   sleep 2
+   DISPLAY=:0 setsid nohup "$HOME/bin/kiosk.sh" >/dev/null 2>&1 </dev/null &
+   echo "Kiosk neu gestartet, Chromium kommt, sobald die Task-App antwortet."
+   EOF
+   chmod +x ~/bin/kiosk-neustart.sh
+   ```
 10. **Backups wieder einrichten** (Dateien aus `/root/sd-alt` übernehmen, Rechte wie in DEPLOYMENT.md):
    - `/etc/samba/creds/mds` (`root:root`, `chmod 600`), `/root/.mds-restic-password` (`chmod 600`)
    - `/mnt/mds-offsite` anlegen, fstab-Zeile der Freigabe übernehmen (`nosharesock`!), `sudo systemctl daemon-reload`
