@@ -1,6 +1,7 @@
 // frontend/src/components/DeployDialog.jsx
 // Messprogramme eines Arbeitsgangs auf einem Gerät bereitstellen (Spec MESSPROGRAMME_AGENT_SPEC.md 5.2/5.5).
 // Bereitgestellt wird die freigegebene Version; das MDS hält sie fest, bis jemand „Aktualisieren“ wählt.
+// Ist der Arbeitsgang auf dem Gerät schon bereitgestellt, kommen weitere Programme zu dieser Bereitstellung dazu.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../utils/axios';
@@ -21,6 +22,19 @@ export default function DeployDialog({ operationId, programs, onClose, onSuccess
   const [selected, setSelected] = useState(() => programs.filter((p) => !blockReason(p)).map((p) => p.id));
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
+  const [openDeployments, setOpenDeployments] = useState([]);
+
+  useEffect(() => {
+    axios.get(`/api/deployments?status=open&operation_id=${operationId}`)
+      .then((res) => setOpenDeployments(res.data.data))
+      .catch(() => setOpenDeployments([]));
+  }, [operationId]);
+
+  // Offene Bereitstellung dieses Arbeitsgangs auf dem gewählten Gerät: ihre Programme sind schon dort
+  const existing = openDeployments.find((d) => String(d.agent_id) === agentId) || null;
+  const closing = existing?.status === 'closing';
+  const onDevice = new Map((existing?.programs || []).map((p) => [p.program_id, p]));
+  const toAdd = selected.filter((id) => !onDevice.has(id));
 
   useEffect(() => {
     axios.get('/api/agents?active=true')
@@ -38,11 +52,13 @@ export default function DeployDialog({ operationId, programs, onClose, onSuccess
     setSaving(true);
     setErrors([]);
     try {
-      const res = await axios.post('/api/deployments', {
-        agent_id: Number(agentId),
-        operation_id: operationId,
-        program_ids: selected,
-      });
+      const res = existing
+        ? await axios.post(`/api/deployments/${existing.id}/programs`, { program_ids: toAdd })
+        : await axios.post('/api/deployments', {
+          agent_id: Number(agentId),
+          operation_id: operationId,
+          program_ids: selected,
+        });
       toast.success(res.data.message);
       onSuccess(res.data.data);
     } catch (err) {
@@ -81,20 +97,33 @@ export default function DeployDialog({ operationId, programs, onClose, onSuccess
           </label>
         )}
 
+        {existing && (
+          <div className={`p-3 rounded-lg border text-sm ${closing
+            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'}`}>
+            {closing
+              ? 'Der Arbeitsgang wird auf diesem Gerät gerade abgeschlossen. Erst danach lässt er sich neu bereitstellen.'
+              : 'Der Arbeitsgang ist auf diesem Gerät schon bereitgestellt. Gewählte Messprogramme kommen zu dieser Bereitstellung dazu, „Fertig“ gilt dann für alle.'}
+          </div>
+        )}
+
         <fieldset>
           <legend className="text-sm font-medium text-gray-700 dark:text-gray-300">Messprogramme</legend>
           <div className="mt-1 divide-y divide-gray-100 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg">
             {programs.map((p) => {
-              const reason = blockReason(p);
+              const there = onDevice.get(p.id);
+              const reason = there ? null : blockReason(p);
+              const locked = Boolean(reason) || Boolean(there) || closing;
               return (
-                <label key={p.id} className={`flex items-center gap-3 px-3 py-2 text-sm ${reason ? 'opacity-60' : 'cursor-pointer'}`}>
-                  <input type="checkbox" disabled={Boolean(reason)} checked={selected.includes(p.id)} onChange={() => toggle(p.id)} />
+                <label key={p.id} className={`flex items-center gap-3 px-3 py-2 text-sm ${locked ? 'opacity-60' : 'cursor-pointer'}`}>
+                  <input type="checkbox" disabled={locked} checked={Boolean(there) || (!closing && selected.includes(p.id))} onChange={() => toggle(p.id)} />
                   <span className="flex-1 min-w-0">
                     <span className="font-mono font-medium text-gray-900 dark:text-white">{p.program_number}</span>
                     <span className="text-gray-600 dark:text-gray-400"> · {p.program_name}</span>
                   </span>
                   <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {reason ? `nicht möglich: ${reason}` : `Version ${p.released_version}`}
+                    {there ? `schon auf dem Gerät (Version ${there.version})`
+                      : reason ? `nicht möglich: ${reason}` : `Version ${p.released_version}`}
                   </span>
                 </label>
               );
@@ -113,9 +142,11 @@ export default function DeployDialog({ operationId, programs, onClose, onSuccess
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
-          <button type="button" onClick={submit} disabled={saving || !agentId || selected.length === 0}
+          <button type="button" onClick={submit} disabled={saving || !agentId || closing || (existing ? toAdd : selected).length === 0}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
-            {saving ? 'Stellt bereit…' : 'Bereitstellen'}
+            {existing
+              ? (saving ? 'Fügt hinzu…' : 'Hinzufügen')
+              : (saving ? 'Stellt bereit…' : 'Bereitstellen')}
           </button>
         </div>
       </div>
