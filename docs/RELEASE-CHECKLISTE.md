@@ -42,8 +42,11 @@ Details zum Deploy-Script: [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrationen, Datenkorrekturen, Klicktests).
 
-**Fehlbuchungs-Texte zentral (#379).** Keine Migration, nur Frontend.
+**2.29.0 – Fehlbuchungs-Texte (#379), Vorschaubild als PNG (#384), Bauteil auf dem Mess-PC (#385).** Keine Migration.
 1. Klicktest: Urlaub & Arbeitszeit → Verwaltung → Reiter Fehlbuchungen und Übersicht zeigen dieselben Texte wie die Monatsübersicht (z. B. „Gehen fehlt“, „Zu lange ohne Pause“)
+2. Klicktest: neues Messprogramm oder neue Version mit `.png`-Vorschau (Name wie die `.prg`) hochladen → Datei erscheint als „Vorschaubild (PC-DMIS, .jpg/.png)“; eine `.png` mit anderem Namen wird mit Hinweis aussortiert
+3. Klicktest: Messprogramme → „Auf dem Mess-PC“ zeigt unter der Kopfzeile Bezeichnung und Kunden-Zeichnungsnr.
+4. Hinweis: Liegt das Vorschaubild schon von Hand im Programmordner (z. B. 10154-00008, bisher „fremd“), meldet der Agent nach dem Hochladen ins MDS bei der nächsten Bereitstellung womöglich einen Konflikt – die Datei am Mess-PC einmal weglassen
 
 ---
 
