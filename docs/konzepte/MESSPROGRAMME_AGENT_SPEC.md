@@ -230,16 +230,19 @@ Rechte in derselben Migration: `agent.manage` und `program.deploy` mit `ON CONFL
 | GET | `/api/deployments?status=open\|closed&agent_id=` | Liste mit Programmen, festgehaltener Version, neuerer Freigabe, Dateizuständen |
 | GET | `/api/deployments/:id` | Detail mit Dateien und Protokoll (`program_transfers`) |
 | POST | `/api/deployments` | `{ agent_id, operation_id, program_ids? }` → `requested` |
+| POST | `/api/deployments/:id/programs` | `{ program_ids }` weitere Messprogramme des Arbeitsgangs zur offenen Bereitstellung hinzufügen (19.11.2026) |
 | POST | `/api/deployments/:id/programs/:programId/update` | auf die aktuell freigegebene Version umstellen (E3) |
 | POST | `/api/deployments/:id/close` | „Fertig“ → `closing` |
 | POST | `/api/deployments/:id/discard-local` | bearbeitete Dateien verwerfen (6.4), Bestätigung im Dialog |
 
 **Prüfungen beim Bereitstellen** (alle Fehler gesammelt, 400/409 mit `details`):
 - Der Agent ist aktiv und hat das Modul `cmm_sync`.
-- Für Agent und Arbeitsgang gibt es noch keine offene Bereitstellung. Sonst 409 mit Hinweis auf die vorhandene.
+- Für Agent und Arbeitsgang gibt es noch keine offene Bereitstellung. Sonst 409 mit Hinweis auf die vorhandene (`deployment_id`); der Dialog bietet dann „Hinzufügen“ an.
 - `program_ids` fehlt → alle Messprogramme (`kind = 'cmm'`) des Arbeitsgangs mit `released_revision_id`, die nicht archiviert sind. Programme ohne Freigabe werden im Ergebnis als „nicht freigegeben, nicht bereitgestellt“ genannt. Bleibt keins übrig → 400.
 - **Vorlagenname eindeutig je Gerät:** Keine `report_xlsx` der festgehaltenen Versionen darf (ohne Groß-/Kleinschreibung) in einer anderen offenen Bereitstellung desselben Agenten vorkommen. Das fängt den Rollback-Fall ab.
 - `local_dir` wird berechnet (5.3) und muss je Agent unter den offenen Bereitstellungen eindeutig sein.
+
+**Hinzufügen** (19.11.2026): Nur bei `requested` oder `active`, beim Abschließen 409. Jedes Programm gehört zum Arbeitsgang, ist freigegeben und noch nicht in der Bereitstellung. Vorlagenname und `local_dir` wie beim Bereitstellen. Der Agent braucht dafür nichts Neues: Er gleicht bei jedem Abgleich alle Programme der Bereitstellung aus dem Manifest ab und legt das neue ab. „Fertig“ gilt weiter für den ganzen Arbeitsgang.
 
 **Aktualisieren:** Nur möglich, wenn `released_revision_id` neuer ist als die festgehaltene Version. Dabei werden `revision_id`, `updated_by` und `updated_at` neu gesetzt. Für den Vorlagennamen gilt dieselbe Prüfung. Den Tausch auf dem Gerät erledigt der Agent (6.2).
 

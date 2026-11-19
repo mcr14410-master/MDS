@@ -17,6 +17,7 @@ router.param('programId', (req, res, next, id) => (/^\d+$/.test(id) ? next() : r
 router.get('/', deploymentsController.getDeployments);
 router.get('/:id', deploymentsController.getDeploymentById);
 router.post('/', requirePermission('program.deploy'), deploymentsController.createDeployment);
+router.post('/:id/programs', requirePermission('program.deploy'), deploymentsController.addDeploymentPrograms);
 router.post('/:id/programs/:programId/update', requirePermission('program.deploy'), deploymentsController.updateDeploymentProgram);
 router.post('/:id/close', requirePermission('program.deploy'), deploymentsController.closeDeployment);
 router.post('/:id/discard-local', requirePermission('program.deploy'), deploymentsController.discardLocal);

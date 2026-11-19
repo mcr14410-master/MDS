@@ -331,6 +331,116 @@ exports.updateDeploymentProgram = async (req, res) => {
   }
 };
 
+// POST /api/deployments/:id/programs – { program_ids } weitere Messprogramme des Arbeitsgangs
+// zur offenen Bereitstellung hinzufügen; der Agent legt sie beim nächsten Abgleich ab (wie beim Bereitstellen)
+exports.addDeploymentPrograms = async (req, res) => {
+  let client;
+  try {
+    const { id } = req.params;
+    const { program_ids } = req.body || {};
+    if (!isId(id)) return res.status(400).json({ error: 'Ungültige Bereitstellung' });
+    if (!Array.isArray(program_ids) || program_ids.length === 0 || !program_ids.every(isId)) {
+      return res.status(400).json({ error: 'program_ids muss eine nicht leere Liste von IDs sein' });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+    // Zeile sperren: „Fertig“ gleichzeitig wartet, bis die Programme drin sind (oder umgekehrt)
+    const depResult = await client.query(
+      `SELECT d.id, d.status, d.agent_id, d.operation_id, pt.part_number, a.is_active, a.name AS agent_name, a.modules
+       FROM agent_deployments d
+       JOIN agents a ON a.id = d.agent_id
+       JOIN operations o ON o.id = d.operation_id
+       LEFT JOIN parts pt ON pt.id = o.part_id
+       WHERE d.id = $1
+       FOR UPDATE OF d`,
+      [id]
+    );
+    if (depResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Bereitstellung nicht gefunden' });
+    }
+    const dep = depResult.rows[0];
+    if (!['requested', 'active'].includes(dep.status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: dep.status === 'closing'
+          ? 'Die Bereitstellung wird gerade abgeschlossen – nach dem Abschluss neu bereitstellen'
+          : 'Die Bereitstellung ist schon abgeschlossen',
+      });
+    }
+    if (!dep.is_active) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Agent ${dep.agent_name} ist deaktiviert` });
+    }
+    if (!dep.modules.includes('cmm_sync')) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Agent ${dep.agent_name} hat das Modul „Messprogramme (PC-DMIS)“ nicht` });
+    }
+
+    const already = new Set((await client.query(
+      'SELECT program_id FROM agent_deployment_programs WHERE deployment_id = $1', [dep.id]
+    )).rows.map(r => r.program_id));
+    const programsResult = await client.query(
+      `SELECT p.id, p.program_number, p.released_revision_id, ws.name AS workflow_state
+       FROM programs p LEFT JOIN workflow_states ws ON ws.id = p.workflow_state_id
+       WHERE p.operation_id = $1 AND p.kind = 'cmm'
+       ORDER BY p.program_number`,
+      [dep.operation_id]
+    );
+    const errors = [];
+    for (const pid of new Set(program_ids.map(Number))) {
+      if (already.has(pid)) {
+        const p = programsResult.rows.find(x => x.id === pid);
+        errors.push(`${p ? p.program_number : `Messprogramm ${pid}`} ist schon in dieser Bereitstellung`);
+      }
+    }
+    const { selected, errors: selectErrors } = selectPrograms(
+      programsResult.rows, program_ids.filter(pid => !already.has(Number(pid)))
+    );
+    if (errors.length === 0) errors.push(...selectErrors);
+
+    const candidates = selected.map(p => ({
+      ...p,
+      local_dir: localDirFor(dep.part_number, p.program_number),
+    }));
+    if (errors.length === 0) {
+      const open = await openOnAgent(client, dep.agent_id);
+      const templates = (await templatesOf(client, candidates.map(c => c.released_revision_id)))
+        .map(t => ({ ...t, program_number: candidates.find(c => c.released_revision_id === t.revision_id).program_number }));
+      errors.push(...templateConflicts(templates, open.templates));
+      errors.push(...localDirConflicts(candidates, open.dirs));
+    }
+    if (errors.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Hinzufügen nicht möglich', details: errors });
+    }
+
+    for (const c of candidates) {
+      await client.query(
+        `INSERT INTO agent_deployment_programs (deployment_id, program_id, revision_id, local_dir, updated_by)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [dep.id, c.id, c.released_revision_id, c.local_dir, req.user?.id || null]
+      );
+    }
+    await client.query('UPDATE agent_deployments SET last_activity_at = now() WHERE id = $1', [dep.id]);
+    await client.query('COMMIT');
+
+    const numbers = candidates.map(c => c.program_number).join(', ');
+    res.status(201).json({
+      success: true,
+      message: `${numbers} hinzugefügt – der Agent legt die Dateien beim nächsten Abgleich ab`,
+      data: await loadDeployment(pool, dep.id),
+    });
+  } catch (error) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
+    console.error('Error adding deployment programs:', error);
+    res.status(500).json({ error: 'Fehler beim Hinzufügen', details: error.message });
+  } finally {
+    if (client) client.release();
+  }
+};
+
 // POST /api/deployments/:id/close – „Fertig“
 exports.closeDeployment = async (req, res) => {
   try {
