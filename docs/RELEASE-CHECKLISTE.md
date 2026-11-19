@@ -48,6 +48,11 @@ Hier Prüfpunkte sammeln, die beim nächsten Deploy zusätzlich anfallen (Migrat
 3. Klicktest: Messprogramme → „Auf dem Mess-PC“ zeigt unter der Kopfzeile Bezeichnung und Kunden-Zeichnungsnr.
 4. Hinweis: Liegt das Vorschaubild schon von Hand im Programmordner (z. B. 10154-00008, bisher „fremd“), meldet der Agent nach dem Hochladen ins MDS bei der nächsten Bereitstellung womöglich einen Konflikt – die Datei am Mess-PC einmal weglassen
 
+**2.30.0 – Messprogramme zu offener Bereitstellung hinzufügen (#387).** Keine Migration, keine Agent-Änderung. Wird 2.29.0 nicht vorher einzeln deployt, gelten die Punkte oben mit.
+1. Klicktest: Arbeitsgang mit einem bereitgestellten Messprogramm → „Auf Gerät bereitstellen“, dasselbe Gerät wählen → blauer Hinweis, vorhandenes Programm gehakt und gesperrt („schon auf dem Gerät (Version …)“), Knopf heißt „Hinzufügen“
+2. Weiteres freigegebenes Programm haken → „Hinzufügen“ → unter „Auf dem Mess-PC“ stehen beide Programme in einer Bereitstellung
+3. Am Mess-PC: Agent legt das neue Programm beim nächsten Abgleich ab, das erste bleibt unverändert; „Fertig“ räumt danach beide ab
+
 ---
 
 ## Erledigt: Release 2.28.0 (17.11.2026)

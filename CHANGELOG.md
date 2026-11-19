@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.30.0] - 2026-11-19 - Messprogramme zur Bereitstellung hinzufügen
+
 ### Für Anwender
 - Ist ein Arbeitsgang schon auf dem Mess-PC bereitgestellt, lassen sich weitere Messprogramme dieses Arbeitsgangs dazunehmen. Der Dialog „Auf Gerät bereitstellen“ zeigt die schon vorhandenen an und bietet „Hinzufügen“ an.
 
