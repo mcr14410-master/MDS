@@ -15,6 +15,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Für Anwender
+- Ist ein Arbeitsgang schon auf dem Mess-PC bereitgestellt, lassen sich weitere Messprogramme dieses Arbeitsgangs dazunehmen. Der Dialog „Auf Gerät bereitstellen“ zeigt die schon vorhandenen an und bietet „Hinzufügen“ an.
+
+### Added
+- Bereitstellungen: `POST /api/deployments/:id/programs` `{ program_ids }` fügt Messprogramme des Arbeitsgangs zur offenen Bereitstellung hinzu (gleiche Prüfungen wie beim Bereitstellen, 409 beim Abschließen, Zeile gesperrt gegen gleichzeitiges „Fertig“). `DeployDialog` erkennt die offene Bereitstellung des gewählten Geräts, zeigt ihre Programme als „schon auf dem Gerät“ und schickt nur die neuen. Integrationstest `test-bereitstellung-hinzufuegen.js`
+
 ---
 
 ## [2.29.0] - 2026-11-19 - Vorschaubild als PNG, Bauteil auf dem Mess-PC
