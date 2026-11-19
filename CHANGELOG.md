@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+---
+
+## [2.29.0] - 2026-11-19 - Vorschaubild als PNG, Bauteil auf dem Mess-PC
+
 ### Für Anwender
 - Die Gründe für fehlende Buchungen heißen jetzt überall gleich, auch in der Übersicht der Verwaltung (z. B. „Gehen fehlt“ statt nur „Gehen“).
 - Das Vorschaubild eines Messprogramms darf jetzt auch eine .png sein, so wie das Snipping-Tool von Windows sie speichert. Es muss weiterhin genauso heißen wie die .prg.
